@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #020617; /* tailwind slate-950 */
-  --foreground: #f8fafc; /* tailwind slate-50 */
+  --background: #020617;
+  --foreground: #f8fafc;
 }
 
 body {
@@ -13,10 +13,6 @@ body {
   overflow-x: hidden;
 }
 
-/* 
-  Glassmorphism utilities 
-  Using pure CSS instead of @apply to ensure compatibility and prevent PostCSS build errors 
-*/
 .glass-panel {
   background-color: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(12px);
