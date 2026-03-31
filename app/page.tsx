@@ -2,7 +2,7 @@ import SplashScreen from "@/components/SplashScreen";
 import Hero from "@/components/Hero";
 import Impact from "@/components/Impact";
 import Experience from "@/components/Experience";
-import Education from "@/components/Education";
+import Certifications from "@/components/Certifications";
 import Navbar from "@/components/Navbar";
 
 export default function Home() {
@@ -13,7 +13,7 @@ export default function Home() {
       <Hero />
       <Impact />
       <Experience />
-      <Education />
+      <Certifications />
     </main>
   );
 }

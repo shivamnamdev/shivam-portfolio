@@ -7,79 +7,82 @@ export default function AnimatedBackground() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return;
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let particles: Particle[] =[];
     let animationFrameId: number;
+    let time = 0;
 
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      initParticles();
     };
+    window.addEventListener('resize', resize);
+    resize();
 
-    class Particle {
-      x: number; y: number; vx: number; vy: number; radius: number;
-      constructor() {
-        if(!canvas) throw new Error("Canvas missing");
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.vx = (Math.random() - 0.5) * 0.5;
-        this.vy = (Math.random() - 0.5) * 0.5;
-        this.radius = Math.random() * 1.5 + 0.5;
-      }
-      update() {
-        if(!canvas) return;
-        this.x += this.vx;
-        this.y += this.vy;
-        if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
-        if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
-      }
-      draw() {
-        if(!ctx) return;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(148, 163, 184, 0.3)';
-        ctx.fill();
-      }
-    }
-
-    const initParticles = () => {
-      particles =[];
-      if (prefersReducedMotion || !canvas) return;
-      const particleCount = Math.min(Math.floor(window.innerWidth / 20), 80);
-      for (let i = 0; i < particleCount; i++) {
-        particles.push(new Particle());
-      }
-    };
+    const particleCount = Math.min(Math.floor(window.innerWidth / 30), 40);
+    const particles = Array.from({ length: particleCount }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      size: Math.random() * 1.5 + 0.5,
+      // Gold and Amber nodes
+      color: Math.random() > 0.5 ? 'rgba(245, 158, 11, 0.8)' : 'rgba(217, 119, 6, 0.8)' 
+    }));
 
     const animate = () => {
-      if(!ctx || !canvas) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      time += 0.002;
 
-      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      gradient.addColorStop(0, 'rgba(15, 23, 42, 0.95)');
-      gradient.addColorStop(1, 'rgba(2, 6, 23, 0.95)');
-      ctx.fillStyle = gradient;
+      // Executive Charcoal Base
+      const bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      bgGradient.addColorStop(0, '#0a0a0b');
+      bgGradient.addColorStop(1, '#050505');
+      ctx.fillStyle = bgGradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       if (!prefersReducedMotion) {
-        particles.forEach(p => p.update());
-        particles.forEach(p => p.draw());
+        for (let i = 0; i < 4; i++) {
+          ctx.beginPath();
+          for (let x = 0; x <= canvas.width; x += 10) {
+            const y1 = Math.sin(x * 0.002 + time + i) * 120;
+            const y2 = Math.cos(x * 0.004 - time * 1.2 + i) * 60;
+            const y3 = Math.sin(x * 0.01 + time * 0.5) * 15;
+            const y = canvas.height / 2 + y1 + y2 + y3;
+            if (x === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          const waveGrad = ctx.createLinearGradient(0, 0, canvas.width, 0);
+          waveGrad.addColorStop(0, `rgba(245, 158, 11, ${0.1 - i * 0.02})`);
+          waveGrad.addColorStop(1, `rgba(251, 146, 60, ${0.1 - i * 0.02})`);
+          ctx.strokeStyle = waveGrad;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
 
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+          if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+        });
+
+        ctx.lineWidth = 0.5;
         for (let i = 0; i < particles.length; i++) {
           for (let j = i + 1; j < particles.length; j++) {
             const dx = particles[i].x - particles[j].x;
             const dy = particles[i].y - particles[j].y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            if (distance < 120) {
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 120) {
               ctx.beginPath();
-              ctx.strokeStyle = `rgba(148, 163, 184, ${0.1 - distance / 1200})`;
-              ctx.lineWidth = 0.5;
               ctx.moveTo(particles[i].x, particles[i].y);
               ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.strokeStyle = `rgba(245, 158, 11, ${0.15 * (1 - dist / 120)})`;
               ctx.stroke();
             }
           }
@@ -88,15 +91,18 @@ export default function AnimatedBackground() {
       animationFrameId = requestAnimationFrame(animate);
     };
 
-    window.addEventListener('resize', resize);
-    resize();
     animate();
-
     return () => {
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animationFrameId);
     };
   },[]);
 
-  return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-[-1] bg-slate-950" />;
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden bg-[#0a0a0b]">
+      <div className="absolute top-[10%] left-[20%] w-[50%] h-[50%] rounded-full opacity-30 mix-blend-screen animate-pulse"
+        style={{ background: 'radial-gradient(circle, rgba(245, 158, 11, 0.08) 0%, rgba(0,0,0,0) 70%)', filter: 'blur(80px)', animationDuration: '8s' }} />
+      <canvas ref={canvasRef} className="absolute inset-0 mix-blend-screen" />
+    </div>
+  );
 }

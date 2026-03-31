@@ -7,8 +7,13 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-inter)', 'sans-serif'],
+        display:['var(--font-space)', 'sans-serif'],
+        mono: ['var(--font-mono)', 'monospace'],
+      },
       colors: {
-        background: "#020617",
+        background: "#0a0a0b", // Deep executive charcoal
         foreground: "#f8fafc",
       },
     },

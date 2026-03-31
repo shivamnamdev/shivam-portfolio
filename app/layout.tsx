@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import ScrollProgress from "@/components/ScrollProgress";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const space = Space_Grotesk({ subsets: ["latin"], variable: "--font-space" });
+const mono = JetBrains_Mono({ subsets:["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
   title: "Shivam Namdev | QA Lead",
@@ -15,11 +17,11 @@ export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
-}) {
-  // suppressHydrationWarning is added below to safely ignore browser extension injections (like Grammarly)
+}) 
+{
   return (
-    <html lang="en" className="dark scroll-smooth" suppressHydrationWarning>
-      <body className={`${inter.className} relative antialiased`} suppressHydrationWarning>
+    <html lang="en" className={`dark scroll-smooth ${inter.variable} ${space.variable} ${mono.variable}`} suppressHydrationWarning>
+      <body className="font-sans relative antialiased" suppressHydrationWarning>
         <AnimatedBackground />
         <ScrollProgress />
         {children}

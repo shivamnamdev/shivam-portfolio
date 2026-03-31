@@ -61,7 +61,7 @@ export default function Experience() {
             <button onClick={() => setOpenIndex(openIndex === i ? null : i)} className="w-full p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left hover:bg-white/5 transition-colors">
               <div>
                 <h4 className="text-xl font-bold text-white">{job.role}</h4>
-                <span className="text-blue-400 font-medium">{job.company}</span>
+                <span className="text-amber-400 font-medium">{job.company}</span>
               </div>
               <div className="flex items-center gap-4 text-slate-400 text-sm">
                 <span>{job.dates}</span>
@@ -74,7 +74,7 @@ export default function Experience() {
                   <ul className="p-6 pt-0 space-y-3 text-slate-300 border-t border-white/5">
                     {job.bullets.map((bullet, idx) => (
                       <li key={idx} className="flex gap-3 text-sm md:text-base">
-                        <Code2 size={18} className="text-blue-500 flex-shrink-0 mt-1" />
+                        <Code2 size={18} className="text-amber-500 flex-shrink-0 mt-1" />
                         <span>{bullet}</span>
                       </li>
                     ))}
