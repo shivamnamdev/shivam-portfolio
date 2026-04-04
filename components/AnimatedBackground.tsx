@@ -25,20 +25,20 @@ export default function AnimatedBackground() {
     const particles = Array.from({ length: particleCount }, () => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.4,
-      vy: (Math.random() - 0.5) * 0.4,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
       size: Math.random() * 1.5 + 0.5,
-      // Gold and Amber nodes
-      color: Math.random() > 0.5 ? 'rgba(245, 158, 11, 0.8)' : 'rgba(217, 119, 6, 0.8)' 
+      // Dark Espresso and Amber Nodes
+      color: Math.random() > 0.5 ? 'rgba(217, 119, 6, 0.6)' : 'rgba(28, 25, 23, 0.4)' 
     }));
 
     const animate = () => {
       time += 0.002;
 
-      // Executive Charcoal Base
+      // Warm Ivory Base
       const bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      bgGradient.addColorStop(0, '#0a0a0b');
-      bgGradient.addColorStop(1, '#050505');
+      bgGradient.addColorStop(0, '#fdfcf8');
+      bgGradient.addColorStop(1, '#f5f5f0');
       ctx.fillStyle = bgGradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -54,8 +54,8 @@ export default function AnimatedBackground() {
             else ctx.lineTo(x, y);
           }
           const waveGrad = ctx.createLinearGradient(0, 0, canvas.width, 0);
-          waveGrad.addColorStop(0, `rgba(245, 158, 11, ${0.1 - i * 0.02})`);
-          waveGrad.addColorStop(1, `rgba(251, 146, 60, ${0.1 - i * 0.02})`);
+          waveGrad.addColorStop(0, `rgba(217, 119, 6, ${0.15 - i * 0.02})`); // Amber
+          waveGrad.addColorStop(1, `rgba(28, 25, 23, ${0.1 - i * 0.02})`);   // Espresso
           ctx.strokeStyle = waveGrad;
           ctx.lineWidth = 1.5;
           ctx.stroke();
@@ -82,7 +82,7 @@ export default function AnimatedBackground() {
               ctx.beginPath();
               ctx.moveTo(particles[i].x, particles[i].y);
               ctx.lineTo(particles[j].x, particles[j].y);
-              ctx.strokeStyle = `rgba(245, 158, 11, ${0.15 * (1 - dist / 120)})`;
+              ctx.strokeStyle = `rgba(28, 25, 23, ${0.1 * (1 - dist / 120)})`;
               ctx.stroke();
             }
           }
@@ -99,10 +99,11 @@ export default function AnimatedBackground() {
   },[]);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden bg-[#0a0a0b]">
-      <div className="absolute top-[10%] left-[20%] w-[50%] h-[50%] rounded-full opacity-30 mix-blend-screen animate-pulse"
-        style={{ background: 'radial-gradient(circle, rgba(245, 158, 11, 0.08) 0%, rgba(0,0,0,0) 70%)', filter: 'blur(80px)', animationDuration: '8s' }} />
-      <canvas ref={canvasRef} className="absolute inset-0 mix-blend-screen" />
+    <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden bg-[#fdfcf8]">
+      {/* Soft warm light blooms for the Ivory background */}
+      <div className="absolute top-[10%] left-[20%] w-[50%] h-[50%] rounded-full opacity-40 mix-blend-multiply animate-pulse"
+        style={{ background: 'radial-gradient(circle, rgba(217, 119, 6, 0.05) 0%, rgba(255,255,255,0) 70%)', filter: 'blur(80px)', animationDuration: '8s' }} />
+      <canvas ref={canvasRef} className="absolute inset-0" />
     </div>
   );
 }
