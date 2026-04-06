@@ -1,7 +1,7 @@
 import Navbar from "@/components/Navbar";
 import HeroVSL from "@/components/HeroVSL";
 import PainPoints from "@/components/PainPoints";
-import Curriculum from "@/components/Curriculum";
+import ActiveCohorts from "@/components/ActiveCohorts"; // The new dynamic component
 import Instructor from "@/components/Instructor";
 import Pricing from "@/components/Pricing";
 
@@ -11,9 +11,9 @@ export default function Home() {
       <Navbar />
       <HeroVSL />
       <PainPoints />
-      <Curriculum />
+      <ActiveCohorts /> 
       <Instructor />
-      <Pricing />
+      {/* (Optional: You can keep or remove <Pricing /> if the Live Cohort replaces your standard pricing for now) */}
     </main>
   );
 }
