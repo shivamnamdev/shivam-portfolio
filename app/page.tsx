@@ -1,17 +1,27 @@
+import UrgencyBanner from "@/components/UrgencyBanner";
 import Navbar from "@/components/Navbar";
 import HeroVSL from "@/components/HeroVSL";
 import PainPoints from "@/components/PainPoints";
 import ActiveCohorts from "@/components/ActiveCohorts";
 import Instructor from "@/components/Instructor";
+import Testimonials from "@/components/Testimonials";
+import FAQ from "@/components/FAQ";
+import Footer from "@/components/Footer";
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col items-center max-w-7xl mx-auto px-6 sm:px-12 pb-32 space-y-32">
+    <div className="relative min-h-screen">
+      <UrgencyBanner />
       <Navbar />
-      <HeroVSL />
-      <PainPoints />
-      <ActiveCohorts /> 
-      <Instructor />
-    </main>
+      <main className="flex flex-col items-center max-w-7xl mx-auto px-6 sm:px-12 pb-10 space-y-32">
+        <HeroVSL />
+        <PainPoints />
+        <ActiveCohorts /> 
+        <Instructor />
+        <Testimonials />
+        <FAQ />
+      </main>
+      <Footer />
+    </div>
   );
 }
