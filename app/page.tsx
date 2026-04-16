@@ -7,11 +7,12 @@ import Instructor from "@/components/Instructor";
 import Testimonials from "@/components/Testimonials";
 import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
+import WhatsAppWidget from "@/components/WhatsAppWidget";
 
 export default function Home() {
   return (
     <div className="relative min-h-screen">
-      <UrgencyBanner />
+      {/* <UrgencyBanner /> */}
       <Navbar />
       <main className="flex flex-col items-center max-w-7xl mx-auto px-6 sm:px-12 pb-10 space-y-32">
         <HeroVSL />
@@ -22,6 +23,7 @@ export default function Home() {
         <FAQ />
       </main>
       <Footer />
+      <WhatsAppWidget /> 
     </div>
   );
 }
