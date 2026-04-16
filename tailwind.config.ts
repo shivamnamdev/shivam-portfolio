@@ -12,10 +12,6 @@ const config: Config = {
         display:['var(--font-space)', 'sans-serif'],
         mono: ['var(--font-mono)', 'monospace'],
       },
-      colors: {
-        background: "#0a0a0b", // Deep executive charcoal
-        foreground: "#f8fafc",
-      },
     },
   },
   plugins:[],
