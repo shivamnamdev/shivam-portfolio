@@ -52,6 +52,7 @@
 export const activeCourses =[
   {
     id: "python-beginners-live-01",
+    slug: "python-beginners",
     title: "Python Live Session for Beginners",
     statusText: "🔒 Cohort 1 In Progress",
     demoOffer: "Join Waitlist for Cohort 2",
