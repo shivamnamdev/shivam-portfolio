@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { ClerkProvider } from '@clerk/nextjs'; // 🚨 Added Clerk Import
 import "./globals.css";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import ScrollProgress from "@/components/ScrollProgress";
@@ -43,12 +44,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`scroll-smooth ${inter.variable} ${space.variable} ${mono.variable}`} suppressHydrationWarning>
-      <body className="font-sans relative antialiased" suppressHydrationWarning>
-        <AnimatedBackground />
-        <ScrollProgress />
-        {children}
-      </body>
-    </html>
+    // 🚨 Wrap the entire HTML in ClerkProvider to enable the login system globally
+    <ClerkProvider>
+      <html lang="en" className={`scroll-smooth ${inter.variable} ${space.variable} ${mono.variable}`} suppressHydrationWarning>
+        <body className="font-sans relative antialiased" suppressHydrationWarning>
+          <AnimatedBackground />
+          <ScrollProgress />
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
