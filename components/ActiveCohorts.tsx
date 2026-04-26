@@ -1,16 +1,16 @@
 'use client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CheckCircle2, ChevronDown, Gift, Calendar, Code2, Download, CreditCard, Loader2 } from 'lucide-react';
 import { activeCourses } from '@/data/courses';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabaseClient';
 
 interface ActiveCohortsProps {
   course?: any;
 }
 
-// Helper function to safely load Razorpay's checkout script
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
     const script = document.createElement("script");
@@ -24,12 +24,38 @@ const loadRazorpayScript = () => {
 export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps) {
   const [openModule, setOpenModule] = useState<number | null>(0);
   const [isProcessing, setIsProcessing] = useState(false);
+  const[isAlreadyEnrolled, setIsAlreadyEnrolled] = useState(false);
   
   const { isSignedIn, user } = useUser();
   const { openSignIn } = useClerk();
   const router = useRouter();
 
+  // Determine the exact single course to display
   const displayCourse = propCourse || activeCourses[0];
+
+  // Safely check Supabase
+  useEffect(() => {
+    async function checkEnrollment() {
+      if (!isSignedIn || !user?.id || !displayCourse?.slug) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('user_enrollments')
+          .select('id') 
+          .eq('user_id', user.id)
+          .eq('course_slug', displayCourse.slug);
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          setIsAlreadyEnrolled(true); // This tells React to update the button!
+        }
+      } catch (err) {
+        console.error("Unexpected error checking enrollment:", err);
+      }
+    }
+    checkEnrollment();
+  }, [isSignedIn, user?.id, displayCourse?.slug]);
 
   if (!displayCourse) return null;
 
@@ -39,12 +65,10 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
       openSignIn();
       return;
     }
-
     setIsProcessing(true);
 
     try {
       const res = await loadRazorpayScript();
-      
       if (!res) {
         alert("Razorpay SDK failed to load. Are you online?");
         setIsProcessing(false);
@@ -73,24 +97,40 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
           name: user?.fullName || "",
           email: user?.primaryEmailAddress?.emailAddress || "",
         },
-        theme: {
-          color: "#f59e0b",
-        },
-        handler: function (response: any) {
-          console.log("Payment ID:", response.razorpay_payment_id);
-          alert("🎉 Payment Successful! Welcome to the Cohort.");
-          router.push('/learning');
+        theme: { color: "#f59e0b" },
+        handler: async function (response: any) {
+          console.log("Payment Successful! Verifying...", response);
+          try {
+            const verifyRes = await fetch('/api/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                userId: user?.id,
+                courseSlug: displayCourse.slug
+              })
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              alert("🎉 Payment Verified! You are now enrolled.");
+              router.push('/learning');
+            } else {
+              alert("Payment received, but verification delayed. Please contact support.");
+            }
+          } catch (err) {
+            alert("Error verifying enrollment. Please contact support with your payment ID.");
+          }
         },
       };
 
-      // Safely tell TypeScript that Razorpay exists on the window object
       const RazorpayConstructor = (window as any).Razorpay;
       const paymentObject = new RazorpayConstructor(options);
       
-      paymentObject.on("payment.failed", function (response: any) {
+      paymentObject.on("payment.failed", function () {
         alert("Payment failed or was cancelled. Please try again.");
       });
-
       paymentObject.open();
 
     } catch (error) {
@@ -108,6 +148,7 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
         <p className="text-stone-500">Everything included in this program.</p>
       </div>
 
+      {/* Notice: No more .map() loop here! We only render the displayCourse */}
       <div className="flex flex-col gap-12 max-w-6xl mx-auto">
         <div className="glass-panel rounded-3xl p-6 md:p-10 border-2 border-amber-400 bg-amber-50 shadow-xl shadow-amber-500/10 grid grid-cols-1 lg:grid-cols-2 gap-12 relative overflow-hidden">
           
@@ -132,14 +173,24 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
               <p className="text-amber-600 font-bold text-sm tracking-wide uppercase">{displayCourse.pricing?.savingsText}</p>
               
               <div className="mt-6 flex flex-col gap-3">
-                <button 
-                  onClick={handlePayment} 
-                  disabled={isProcessing}
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-lg flex items-center justify-center gap-2 hover:scale-[1.02] transition-all shadow-lg shadow-amber-500/30 disabled:opacity-70"
-                >
-                  {isProcessing ? <Loader2 className="animate-spin" size={24} /> : <CreditCard size={24} />}
-                  {isProcessing ? "Processing..." : "Buy Now & Enroll"}
-                </button>
+                {/* DYNAMIC BUTTON LOGIC */}
+                {isAlreadyEnrolled ? (
+                  <button 
+                    onClick={() => router.push('/learning')}
+                    className="w-full py-4 rounded-xl bg-green-500 text-white font-black text-lg flex items-center justify-center gap-2 hover:bg-green-600 transition-all shadow-lg shadow-green-500/30"
+                  >
+                    <CheckCircle2 size={24} /> You are Enrolled! Go to Dashboard
+                  </button>
+                ) : (
+                  <button 
+                    onClick={handlePayment} 
+                    disabled={isProcessing}
+                    className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-lg flex items-center justify-center gap-2 hover:scale-[1.02] transition-all shadow-lg shadow-amber-500/30 disabled:opacity-70"
+                  >
+                    {isProcessing ? <Loader2 className="animate-spin" size={24} /> : <CreditCard size={24} />}
+                    {isProcessing ? "Processing..." : "Buy Now & Enroll"}
+                  </button>
+                )}
                 
                 <a href="/python-syllabus.pdf" download
                    className="w-full py-4 rounded-xl border-2 border-stone-200 text-stone-700 font-bold text-lg flex items-center justify-center gap-2 hover:bg-stone-50 hover:border-amber-400 hover:text-amber-600 transition-all">
