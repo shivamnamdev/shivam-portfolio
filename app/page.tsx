@@ -3,8 +3,7 @@ import LeadMagnet from "@/components/LeadMagnet";
 import Footer from "@/components/Footer";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { ArrowRight, BookOpen, Briefcase, ChevronRight } from "lucide-react";
+import { BookOpen, Briefcase, ArrowRight } from "lucide-react";
 
 export default function Home() {
   return (
@@ -54,7 +53,6 @@ export default function Home() {
           </Link>
 
           {/* Pathway 2: Consulting/Mentorship */}
-          {/* 🚨 THE FIX: Added ?subject=mentorship to the URL */}
           <Link href="/mentorship" className="group glass-panel p-8 md:p-10 rounded-3xl border border-stone-200 bg-stone-50 shadow-sm hover:shadow-xl hover:border-stone-300 transition-all duration-300 flex flex-col items-start relative">
             <div className="w-14 h-14 rounded-2xl bg-stone-200 flex items-center justify-center mb-6 border border-stone-300">
               <Briefcase size={28} className="text-stone-700" />
