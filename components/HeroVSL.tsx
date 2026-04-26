@@ -22,7 +22,7 @@ export default function HeroVSL({ course }: HeroVSLProps) {
   };
 
   // Fallback in case VSL data is missing
-  if (!course.vsl) return null;
+  if (!course || !course.vsl) return null;
 
   return (
     <section className="w-full pt-16 md:pt-28 flex flex-col lg:flex-row items-center gap-12 relative z-10" id="hero">
