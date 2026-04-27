@@ -5,9 +5,9 @@ import Footer from "@/components/Footer";
 import { Send, CheckCircle2 } from "lucide-react";
 
 export default function ContactPage() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const[isSuccess, setIsSuccess] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
+  const[isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const[errorMsg, setErrorMsg] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -16,23 +16,25 @@ export default function ContactPage() {
 
     const formData = new FormData(e.currentTarget);
     
-    // 🚨 PASTE YOUR WEB3FORMS ACCESS KEY HERE:
-    formData.append("access_key", "YOUR_ACCESS_KEY_HERE"); 
-    
-    // Hardcoded Subject for General Contact
-    formData.append("subject", "New General Inquiry from Contact Page");
-
     try {
-      const response = await fetch("https://api.web3forms.com/submit", {
+      // Pointing to your brand new, reliable custom API!
+      const response = await fetch("/api/send-email", {
         method: "POST",
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.get("name"),
+          email: formData.get("email"),
+          message: formData.get("message"),
+          subject: "New General Inquiry from Contact Page",
+        }),
       });
+
       const data = await response.json();
       if (data.success) {
         setIsSuccess(true);
         (e.target as HTMLFormElement).reset(); 
       } else {
-        setErrorMsg("Something went wrong. Please try again or reach out on WhatsApp.");
+        setErrorMsg("Something went wrong sending the email. Please reach out on WhatsApp.");
       }
     } catch (error) {
       setErrorMsg("Network error. Please try again.");
@@ -76,8 +78,9 @@ export default function ContactPage() {
                 <label htmlFor="message" className="block text-sm font-bold text-stone-700 mb-1">Message</label>
                 <textarea name="message" required rows={5} className="w-full px-5 py-4 rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all resize-none" placeholder="I have a question about..." />
               </div>
-              <input type="checkbox" name="botcheck" className="hidden" style={{ display: 'none' }} />
+              
               {errorMsg && <p className="text-red-500 text-sm font-medium">{errorMsg}</p>}
+              
               <button type="submit" disabled={isSubmitting} className="mt-4 w-full py-4 rounded-xl bg-amber-500 text-white font-black text-lg flex items-center justify-center gap-2 hover:bg-amber-600 transition-colors disabled:opacity-70 shadow-lg shadow-amber-500/30">
                 {isSubmitting ? <span className="animate-pulse">Sending...</span> : <>Send Message <Send size={20} /></>}
               </button>

@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 
 export default function Footer() {
   return (
@@ -10,10 +11,10 @@ export default function Footer() {
         </div>
         
         <div className="flex flex-wrap justify-center gap-6 text-sm font-medium">
-          <a href="#" className="text-stone-500 hover:text-amber-600 transition-colors">Privacy Policy</a>
-          <a href="#" className="text-stone-500 hover:text-amber-600 transition-colors">Terms of Service</a>
+          <Link href="/privacy" className="text-stone-500 hover:text-amber-600 transition-colors">Privacy Policy</Link>
+          <Link href="/terms" className="text-stone-500 hover:text-amber-600 transition-colors">Terms of Service</Link>
+          <Link href="/refund" className="text-stone-500 hover:text-amber-600 transition-colors">Refund Policy</Link>
           <a href="https://linkedin.com/in/shivam-namdev" target="_blank" rel="noreferrer" className="text-stone-500 hover:text-amber-600 transition-colors">LinkedIn</a>
-          <a href="#" className="text-stone-500 hover:text-amber-600 transition-colors">Instagram (Coming Soon)</a>
         </div>
       </div>
       <div className="text-center mt-8 text-xs text-stone-400">

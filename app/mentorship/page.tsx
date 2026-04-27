@@ -23,16 +23,23 @@ export default function MentorshipPage() {
     formData.append("subject", "🚨 NEW LEAD: 1-on-1 Mentorship Request!");
 
     try {
-      const response = await fetch("https://api.web3forms.com/submit", {
+      const response = await fetch("/api/send-email", {
         method: "POST",
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.get("name"),
+          email: formData.get("email"),
+          message: formData.get("message"),
+          subject: "🚨 NEW LEAD: 1-on-1 Mentorship Request!",
+        }),
       });
+
       const data = await response.json();
       if (data.success) {
         setIsSuccess(true);
         (e.target as HTMLFormElement).reset(); 
       } else {
-        setErrorMsg("Something went wrong. Please try again or reach out on WhatsApp.");
+        setErrorMsg("Something went wrong sending the email.");
       }
     } catch (error) {
       setErrorMsg("Network error. Please try again.");

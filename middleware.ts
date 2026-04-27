@@ -1,7 +1,6 @@
 import { authMiddleware } from "@clerk/nextjs";
 
 export default authMiddleware({
-  // Tell Clerk that the entire website is public EXCEPT the /learning route!
   publicRoutes:[
     "/",
     "/courses(.*)",
@@ -9,7 +8,9 @@ export default authMiddleware({
     "/contact",
     "/mentorship",
     "/api(.*)" // Allows Web3Forms/API calls to work without logging in
-  ]
+  ],
+  // Ignore routes so Clerk doesn't break static assets
+  ignoredRoutes:["/((?!api|trpc))(_next.*|.+\.[\w]+$)", "/python-syllabus.pdf"]
 });
 
 export const config = {
