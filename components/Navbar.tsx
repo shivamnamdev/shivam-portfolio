@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
+  const[scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -24,21 +24,20 @@ export default function Navbar() {
         
         {/* LEFT: YOUR NEW LOGO */}
         <Link href="/" className="flex items-center gap-3 group">
-          {/* Ensure you have logo.png in your public folder! */}
           <img src="/logo.png" alt="Logo" className="h-8 w-auto group-hover:scale-105 transition-transform" onError={(e) => e.currentTarget.style.display = 'none'} />
           <span className="font-display font-black text-xl tracking-tight text-stone-900 hidden sm:block">SHIVAM.</span>
         </Link>
 
-        {/* MIDDLE: NAVIGATION LINKS */}
+        {/* MIDDLE: NAVIGATION LINKS (Contact is back!) */}
         <div className="hidden md:flex items-center gap-8">
           <Link href="/" className={`text-sm font-bold transition-colors ${pathname === '/' ? 'text-amber-600' : 'text-stone-600 hover:text-amber-600'}`}>Home</Link>
           <Link href="/courses" className={`text-sm font-bold transition-colors ${pathname.includes('/courses') ? 'text-amber-600' : 'text-stone-600 hover:text-amber-600'}`}>Courses</Link>
           <Link href="/about" className={`text-sm font-bold transition-colors ${pathname === '/about' ? 'text-amber-600' : 'text-stone-600 hover:text-amber-600'}`}>About</Link>
+          <Link href="/contact" className={`text-sm font-bold transition-colors ${pathname === '/contact' ? 'text-amber-600' : 'text-stone-600 hover:text-amber-600'}`}>Contact</Link>
         </div>
 
         {/* RIGHT: LOGIN SYSTEM */}
         <div className="flex items-center gap-4">
-          
           <SignedOut>
             <SignInButton mode="modal">
               <button className="px-6 py-2 rounded-full bg-stone-900 text-white font-bold text-sm hover:bg-stone-800 transition-colors shadow-md">
@@ -55,10 +54,6 @@ export default function Navbar() {
               <UserButton afterSignOutUrl="/" />
             </div>
           </SignedIn>
-
-          {/* 🚨 DEBUG TEXT: If you see this, but no buttons, Clerk is failing to read your API keys! */}
-          <div className="text-xs text-red-500 font-mono hidden">Clerk Area</div>
-
         </div>
 
       </div>

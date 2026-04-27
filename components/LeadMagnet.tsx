@@ -17,14 +17,21 @@ export default function LeadMagnet() {
     formData.append("access_key", "YOUR_ACCESS_KEY_HERE"); 
 
     try {
-      const response = await fetch("https://api.web3forms.com/submit", {
+      const response = await fetch("/api/send-email", {
         method: "POST",
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: "Cheat Sheet Lead",
+          email: formData.get("email"),
+          message: "User requested the Python Cheat Sheet and waitlist access.",
+          subject: "📥 NEW LEAD: Python Cheat Sheet Request",
+        }),
       });
 
-      if (response.ok) {
+      const data = await response.json();
+      if (data.success) {
         setIsSuccess(true);
-        (e.target as HTMLFormElement).reset(); // Clear the input
+        (e.target as HTMLFormElement).reset(); 
       }
     } catch (error) {
       console.error(error);
