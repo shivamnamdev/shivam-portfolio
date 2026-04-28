@@ -19,7 +19,31 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "8uwC1ldWPZc",
       "ln_gWzCl8Xk",
       "t8pYAstFTfg"
-    ]
+    ],
+      // 🚨 NEW: Adding Interactive Assignments!
+      // assignments: {
+      //   "OkK3E7ApZ4Q": {
+      //     question: "Write a Python script that prints 'Hello, Automation World!' to the console.",
+      //     starterCode: "# Write your code below:\n\nprint('...')",
+      //   },
+      //   "bpjcslHyYEA": {
+      //     question: "Create two variables: 'a' with the value 10, and 'b' with the value 5. Print their sum.",
+      //     starterCode: "# Create your variables here\n\n\n# Print the sum\n",
+      //   }
+      // },
+    githubAssignments: {
+        // Video 2 gets an assignment
+        "OkK3E7ApZ4Q": {
+          title: "Day 01: Introduction and print function",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2001%3A%20Introduction%20and%20print%20function/Assignment"
+        },
+        // Video 3 gets an assignment
+        "bpjcslHyYEA": {
+          title: "Day 02: Operator",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2002%3A%20Operator/Assignment"
+        }
+        // Notice we left Video 1 ("OkK3E7ApZ4Q") out entirely. The Practice tab will hide itself automatically!
+      }
   },
   {
     moduleTitle: "Module 2: Data Structures",

@@ -4,9 +4,9 @@ import Razorpay from "razorpay";
 
 export async function POST(req: NextRequest) {
   try {
-    // Check if keys are present
+    // 1. Check for Keys
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-      console.error("Missing Razorpay Environment Variables");
+      console.error("Missing Razorpay Keys");
       return NextResponse.json({ success: false, error: "Missing Keys" }, { status: 500 });
     }
 
@@ -15,23 +15,29 @@ export async function POST(req: NextRequest) {
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
 
-    const { amount } = await req.json();
+    // 2. Extract amount and currency from the frontend request
+    const { amount, courseId, currency } = await req.json();
 
-    // Create a safe, short receipt ID (under 40 characters)
-    const shortReceiptId = `rcpt_${Date.now().toString().slice(-10)}`;
+    if (!amount || isNaN(amount)) {
+      console.error("Invalid Amount Received:", amount);
+      return NextResponse.json({ success: false, error: "Invalid Amount" }, { status: 400 });
+    }
 
-    // Create an order in Razorpay
+    const shortReceiptId = `rcpt_${Date.now().toString().slice(-8)}`;
+
+    // 3. Create the Order
     const order = await razorpay.orders.create({
-      amount: amount * 100, // Razorpay takes amount in paise (multiply by 100)
-      currency: "INR",
+      amount: amount * 100, // Convert to paise/cents
+      currency: currency || "INR", // 🚨 Crucial for the USD/INR toggle
       receipt: shortReceiptId,
     });
 
-    console.log("Razorpay Order Created Successfully:", order.id);
+    console.log(`Razorpay Order Created: ${order.id} (${order.currency})`);
     return NextResponse.json({ success: true, order });
     
   } catch (error) {
-    console.error("Razorpay Backend Error:", error);
+    // 🚨 THIS WILL PRINT THE EXACT REASON RAZORPAY BLOCKED IT
+    console.error("Razorpay Backend Error Details:", error);
     return NextResponse.json(
       { success: false, error: "Failed to create order" },
       { status: 500 }
