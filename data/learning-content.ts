@@ -1,6 +1,8 @@
 // data/learning-content.ts
 
-export const pythonCourseModules =[
+export const courseCurriculumMap: Record<string, any[]> = {
+  
+  "python-beginners" :[
   {
     moduleTitle: "Module 1: Python Fundamentals",
     videoIds:[
@@ -25,5 +27,38 @@ export const pythonCourseModules =[
       "TtsqgKlLzlg", // 4. Lists & Advanced Operations
       // "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
     ]
+  },
+  {
+    moduleTitle: "Module 3: Core Programming Concepts",
+    videoIds:[
+       // 4. Lists & Advanced Operations
+      // "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
+    ]
+  },
+  {
+    moduleTitle: "Module 4: Advanced Python",
+    videoIds:[
+       // 4. Lists & Advanced Operations
+      // "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
+    ]
+  },
+  {
+    moduleTitle: "Module 5: Important Python Modules",
+    videoIds:[
+       // 4. Lists & Advanced Operations
+      // "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
+    ]
   }
-];
+  ],
+  "python-beginners-batch-2":[
+    {
+      moduleTitle: "Module 1: Python Fundamentals",
+      // 🚨 PUT YOUTUBE IDs HERE TO UNLOCK THE VIDEOS!
+      videoIds:[] 
+    },
+    {
+      moduleTitle: "Module 2: Data Structures",
+      videoIds:[]
+    }
+  ]
+};
