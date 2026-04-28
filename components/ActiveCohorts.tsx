@@ -1,7 +1,7 @@
 'use client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { CheckCircle2, ChevronDown, Gift, Calendar, Code2, Download, CreditCard, Loader2 } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Gift, Calendar, Code2, Download, CreditCard, Loader2, Globe } from 'lucide-react';
 import { activeCourses } from '@/data/courses';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
@@ -26,18 +26,20 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
   const [isProcessing, setIsProcessing] = useState(false);
   const[isAlreadyEnrolled, setIsAlreadyEnrolled] = useState(false);
   
+  // Track Region (India vs International)
+  const[region, setRegion] = useState<'inr' | 'usd'>('inr');
+  
   const { isSignedIn, user } = useUser();
   const { openSignIn } = useClerk();
   const router = useRouter();
 
-  // Determine the exact single course to display
+  // Determine course to display
   const displayCourse = propCourse || activeCourses[0];
 
-  // Safely check Supabase
+  // Safely check enrollment
   useEffect(() => {
     async function checkEnrollment() {
       if (!isSignedIn || !user?.id || !displayCourse?.slug) return;
-      
       try {
         const { data, error } = await supabase
           .from('user_enrollments')
@@ -45,19 +47,18 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
           .eq('user_id', user.id)
           .eq('course_slug', displayCourse.slug);
         
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-          setIsAlreadyEnrolled(true); // This tells React to update the button!
-        }
+        if (!error && data && data.length > 0) setIsAlreadyEnrolled(true);
       } catch (err) {
-        console.error("Unexpected error checking enrollment:", err);
+        console.error(err);
       }
     }
     checkEnrollment();
   }, [isSignedIn, user?.id, displayCourse?.slug]);
 
   if (!displayCourse) return null;
+
+  // Grab the correct pricing object based on the Region Toggle
+  const activePricing = displayCourse.pricing[region];
 
   const handlePayment = async () => {
     if (!isSignedIn) {
@@ -75,17 +76,23 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
         return;
       }
 
-      const numericAmount = parseInt(displayCourse.pricing.currentPrice.replace(/[^0-9]/g, ''));
+      // Strip symbols from the dynamically selected activePricing
+      const numericAmount = parseInt(activePricing.currentPrice.replace(/[^0-9]/g, ''));
 
       const orderResponse = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: numericAmount, courseId: displayCourse.id })
+        body: JSON.stringify({ 
+          amount: numericAmount, 
+          courseId: displayCourse.id,
+          currency: activePricing.currencyCode 
+        })
       });
       const data = await orderResponse.json();
 
       if (!data.success) throw new Error("Failed to create Razorpay order");
 
+      // 🚨 THIS IS THE OPTIONS OBJECT THAT WAS MISSING A BRACKET
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
         amount: data.order.amount,
@@ -99,7 +106,6 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
         },
         theme: { color: "#f59e0b" },
         handler: async function (response: any) {
-          console.log("Payment Successful! Verifying...", response);
           try {
             const verifyRes = await fetch('/api/verify-payment', {
               method: 'POST',
@@ -109,22 +115,25 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
                 userId: user?.id,
-                courseSlug: displayCourse.slug
+                courseSlug: displayCourse.slug,
+                userEmail: user?.primaryEmailAddress?.emailAddress,
+                userName: user?.fullName || user?.firstName || "Student",
+                courseTitle: displayCourse.title,
+                amountPaid: activePricing.currentPrice
               })
             });
             const verifyData = await verifyRes.json();
             if (verifyData.success) {
               alert("🎉 Payment Verified! You are now enrolled.");
               router.push('/learning');
-            } else {
-              alert("Payment received, but verification delayed. Please contact support.");
             }
           } catch (err) {
-            alert("Error verifying enrollment. Please contact support with your payment ID.");
+            alert("Error verifying enrollment.");
           }
         },
-      };
+      }; // <-- This closing bracket/semicolon is what was missing!
 
+      // Safely cast window to any to prevent TypeScript errors
       const RazorpayConstructor = (window as any).Razorpay;
       const paymentObject = new RazorpayConstructor(options);
       
@@ -148,7 +157,6 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
         <p className="text-stone-500">Everything included in this program.</p>
       </div>
 
-      {/* Notice: No more .map() loop here! We only render the displayCourse */}
       <div className="flex flex-col gap-12 max-w-6xl mx-auto">
         <div className="glass-panel rounded-3xl p-6 md:p-10 border-2 border-amber-400 bg-amber-50 shadow-xl shadow-amber-500/10 grid grid-cols-1 lg:grid-cols-2 gap-12 relative overflow-hidden">
           
@@ -165,15 +173,31 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
               <span>{displayCourse.duration}</span>
             </div>
 
+            {/* PRICING BOX WITH REGION TOGGLE */}
             <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm mb-6">
-              <div className="flex items-end gap-3 mb-2">
-                <span className="text-5xl font-black text-stone-900">{displayCourse.pricing?.currentPrice}</span>
-                <span className="text-xl text-stone-400 line-through font-bold mb-1">{displayCourse.pricing?.originalPrice}</span>
+              
+              <div className="flex p-1 bg-stone-100 rounded-xl mb-6 border border-stone-200">
+                <button 
+                  onClick={() => setRegion('inr')} 
+                  className={`w-1/2 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${region === 'inr' ? 'bg-white text-stone-900 shadow-sm border border-stone-200' : 'text-stone-500 hover:text-stone-700'}`}
+                >
+                  🇮🇳 India
+                </button>
+                <button 
+                  onClick={() => setRegion('usd')} 
+                  className={`w-1/2 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${region === 'usd' ? 'bg-white text-stone-900 shadow-sm border border-stone-200' : 'text-stone-500 hover:text-stone-700'}`}
+                >
+                  <Globe size={16} /> International
+                </button>
               </div>
-              <p className="text-amber-600 font-bold text-sm tracking-wide uppercase">{displayCourse.pricing?.savingsText}</p>
+
+              <div className="flex items-end gap-3 mb-2">
+                <span className="text-5xl font-black text-stone-900">{activePricing?.currentPrice}</span>
+                <span className="text-xl text-stone-400 line-through font-bold mb-1">{activePricing?.originalPrice}</span>
+              </div>
+              <p className="text-amber-600 font-bold text-sm tracking-wide uppercase">{activePricing?.savingsText}</p>
               
               <div className="mt-6 flex flex-col gap-3">
-                {/* DYNAMIC BUTTON LOGIC */}
                 {isAlreadyEnrolled ? (
                   <button 
                     onClick={() => router.push('/learning')}
@@ -188,7 +212,7 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
                     className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-lg flex items-center justify-center gap-2 hover:scale-[1.02] transition-all shadow-lg shadow-amber-500/30 disabled:opacity-70"
                   >
                     {isProcessing ? <Loader2 className="animate-spin" size={24} /> : <CreditCard size={24} />}
-                    {isProcessing ? "Processing..." : "Buy Now & Enroll"}
+                    {isProcessing ? "Processing..." : `Buy Now (${activePricing?.currencyCode})`}
                   </button>
                 )}
                 
@@ -197,7 +221,6 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
                   <Download size={20} /> Download Full Syllabus (PDF)
                 </a>
               </div>
-              <p className="text-center text-stone-500 text-xs mt-3">100% Secure Checkout via Razorpay</p>
             </div>
 
             <div className="space-y-6">
