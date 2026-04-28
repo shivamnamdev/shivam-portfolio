@@ -18,12 +18,12 @@ export const pythonCourseModules =[
       "ln_gWzCl8Xk",
       "t8pYAstFTfg"
     ]
+  },
+  {
+    moduleTitle: "Module 2: Data Structures",
+    videoIds:[
+      "TtsqgKlLzlg", // 4. Lists & Advanced Operations
+      // "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
+    ]
   }
-  // {
-  //   moduleTitle: "Module 2: Data Structures",
-  //   videoIds:[
-  //     "ohCDWZgNIU0", // 4. Lists & Advanced Operations
-  //     "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
-  //   ]
-  // }
 ];
