@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { PlayCircle, CheckCircle, Lock, ChevronLeft, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, TerminalSquare } from 'lucide-react';
+import { PlayCircle, CheckCircle, Lock, ChevronLeft, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, TerminalSquare, Award, FileCheck } from 'lucide-react';
 import Link from 'next/link';
 import { courseCurriculumMap } from '@/data/learning-content';
 import { activeCourses } from '@/data/courses';
@@ -24,48 +24,57 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   const { user, isLoaded } = useUser();
   const [playlist, setPlaylist] = useState<any[]>([]);
   const [activeVideo, setActiveVideo] = useState<any>(null);
+  
+  // Progress Tracking States
   const [completedVideos, setCompletedVideos] = useState<string[]>([]);
-  const[isLoading, setIsLoading] = useState(true);
+  const [completedAssignments, setCompletedAssignments] = useState<string[]>([]); // 🚨 NEW STATE
+  const [isLoading, setIsLoading] = useState(true);
   const [isMarking, setIsMarking] = useState(false);
   
   const [activeTab, setActiveTab] = useState<'description' | 'qa' | 'practice'>('description');
   const [comments, setComments] = useState<any[]>([]);
-  const[newComment, setNewComment] = useState("");
+  const [newComment, setNewComment] = useState("");
   const [isPosting, setIsPosting] = useState(false);
 
-  // Python IDE States
+  // IDE States
   const [code, setCode] = useState("");
   const [output, setOutput] = useState("");
   const [isRunningCode, setIsRunningCode] = useState(false);
+  const [isSubmittingAssignment, setIsSubmittingAssignment] = useState(false); // 🚨 NEW STATE
   
-  // 🚨 NEW: Pyodide (In-Browser Python) States
   const [pyodide, setPyodide] = useState<any>(null);
   const [isPyodideLoading, setIsPyodideLoading] = useState(true);
-  const [isFetchingCode, setIsFetchingCode] = useState(false);
 
   const courseDetails = activeCourses.find(c => c.slug === params.slug);
 
-  // 🚨 NEW: Load the Python WebAssembly Engine
   useEffect(() => {
     const loadPyodideScript = async () => {
-      if ((window as any).loadPyodide) return; // Prevent loading twice
+      if ((window as any).loadPyodide) return;
       const script = document.createElement("script");
       script.src = "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js";
       script.onload = async () => {
         try {
-          const py = await (window as any).loadPyodide({
-            indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/"
-          });
+          const py = await (window as any).loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/" });
           setPyodide(py);
           setIsPyodideLoading(false);
-        } catch (err) {
-          console.error("Failed to load Pyodide:", err);
-        }
+        } catch (err) { console.error("Failed to load Pyodide:", err); }
       };
       document.body.appendChild(script);
     };
     loadPyodideScript();
   },[]);
+
+  const loadGithubAssignment = async (url: string) => {
+    try {
+      const response = await fetch(`${url}?t=${Date.now()}`);
+      if (!response.ok) throw new Error("Failed to fetch assignment");
+      const rawText = await response.text();
+      const commentedText = rawText.split('\n').map(line => `# ${line}`).join('\n');
+      setCode(`${commentedText}\n\n# ==========================================\n# WRITE YOUR PYTHON CODE BELOW THIS LINE:\n# ==========================================\n\n`);
+    } catch (error) {
+      setCode("# Error loading assignment from GitHub.");
+    }
+  };
 
   useEffect(() => {
     async function loadCourseData() {
@@ -74,8 +83,13 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
         const courseModules = courseCurriculumMap[params.slug] ||[];
         const allVideoIds = courseModules.flatMap(m => m.videoIds ||[]);
 
-        const { data: progressData } = await supabase.from('video_progress').select('video_id').eq('user_id', user.id).eq('course_slug', params.slug);
-        setCompletedVideos(progressData ? progressData.map(p => p.video_id) :[]);
+        // Fetch Completed Videos
+        const { data: vidProgress } = await supabase.from('video_progress').select('video_id').eq('user_id', user.id).eq('course_slug', params.slug);
+        setCompletedVideos(vidProgress ? vidProgress.map(p => p.video_id) :[]);
+
+        // 🚨 Fetch Completed Assignments
+        const { data: assProgress } = await supabase.from('assignment_progress').select('video_id').eq('user_id', user.id).eq('course_slug', params.slug);
+        setCompletedAssignments(assProgress ? assProgress.map(p => p.video_id) :[]);
 
         if (allVideoIds.length === 0) {
           setPlaylist(courseModules.map(m => ({ moduleTitle: m.moduleTitle, videos:[] })));
@@ -90,11 +104,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
         const ytDataMap: Record<string, any> = {};
         if (ytData.items) {
           ytData.items.forEach((item: any) => {
-            ytDataMap[item.id] = { 
-              title: item.snippet.title, 
-              duration: formatYouTubeDuration(item.contentDetails.duration),
-              description: item.snippet.description 
-            };
+            ytDataMap[item.id] = { title: item.snippet.title, duration: formatYouTubeDuration(item.contentDetails.duration), description: item.snippet.description };
           });
         }
 
@@ -106,45 +116,14 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
             duration: ytDataMap[id]?.duration || "--:--",
             description: ytDataMap[id]?.description || "No description available.",
             youtubeId: id,
-            // 🚨 Map the GitHub URL if it exists
             githubAssignment: module.githubAssignments ? module.githubAssignments[id] : null 
           }))
         }));
 
-        // 🚨 NEW: Fetch the raw Python code from GitHub
-  const loadGithubAssignment = async (url: string) => {
-    setIsFetchingCode(true);
-    try {
-      // Add a cache-busting timestamp so we always get your latest GitHub pushes!
-      const response = await fetch(`${url}?t=${Date.now()}`);
-      if (!response.ok) throw new Error("Failed to fetch assignment");
-      const codeText = await response.text();
-      setCode(codeText);
-    } catch (error) {
-      setCode("# Error loading assignment from GitHub.\n# Please check your internet connection or try again later.");
-    } finally {
-      setIsFetchingCode(false);
-    }
-  };
-
-  // Update handleVideoChange to trigger the fetch
-  const handleVideoChange = (video: any) => {
-    setActiveVideo(video);
-    setOutput(""); 
-    setActiveTab('description'); 
-    
-    if (video.githubAssignment) {
-      setCode("# Loading assignment from GitHub...");
-      loadGithubAssignment(video.githubAssignment.rawUrl);
-    } else {
-      setCode(""); // Clear the editor if there is no assignment
-    }
-  };
-
         setPlaylist(enrichedModules);
         if (enrichedModules.length > 0 && enrichedModules[0].videos.length > 0) {
           setActiveVideo(enrichedModules[0].videos[0]);
-          setCode(enrichedModules[0].videos[0].assignment?.starterCode || "# Write your Python code here\n");
+          if (enrichedModules[0].videos[0].githubAssignment) loadGithubAssignment(enrichedModules[0].videos[0].githubAssignment.rawUrl);
         }
       } catch (error) {
         console.error("Error loading course:", error);
@@ -153,13 +132,18 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       }
     }
     loadCourseData();
-  }, [isLoaded, user, params.slug]);
+  },[isLoaded, user, params.slug]);
 
   const handleVideoChange = (video: any) => {
     setActiveVideo(video);
-    setCode(video.assignment?.starterCode || "# Write your Python code here\n");
     setOutput(""); 
     setActiveTab('description'); 
+    if (video.githubAssignment) {
+      setCode("# Loading assignment from GitHub...");
+      loadGithubAssignment(video.githubAssignment.rawUrl);
+    } else {
+      setCode("");
+    }
   };
 
   useEffect(() => {
@@ -178,54 +162,68 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     const newEntry = { video_id: activeVideo.id, user_id: user.id, user_name: user.fullName || user.firstName || 'Student', user_image: user.imageUrl, content: newComment.trim() };
     try {
       const { data, error } = await supabase.from('video_comments').insert([newEntry]).select();
-      if (error) throw error;
-      if (data) { setComments([data[0], ...comments]); setNewComment(""); }
-    } catch (err) {} finally { setIsPosting(false); }
+      if (!error && data) { setComments([data[0], ...comments]); setNewComment(""); }
+    } finally { setIsPosting(false); }
   };
 
+  // Video Completion
   const markAsComplete = async () => {
     if (!user || !activeVideo || isMarking) return;
     setIsMarking(true);
     try {
-      const { error } = await supabase.from('video_progress').insert([{ user_id: user.id, course_slug: params.slug, video_id: activeVideo.id }]);
-      if (error) throw error;
-      setCompletedVideos(prev => [...prev, activeVideo.id]);
-    } catch (error) {} finally { setIsMarking(false); }
+      await supabase.from('video_progress').insert([{ user_id: user.id, course_slug: params.slug, video_id: activeVideo.id }]);
+      setCompletedVideos(prev =>[...prev, activeVideo.id]);
+    } finally { setIsMarking(false); }
   };
 
-  // 🚨 NEW: Execute Python Code ENTIRELY in the Browser!
+  // 🚨 NEW: Assignment Submission
+  const submitAssignment = async () => {
+    if (!user || !activeVideo || isSubmittingAssignment) return;
+    setIsSubmittingAssignment(true);
+    try {
+      // Upsert allows them to submit again if they want to update their code
+      const { error } = await supabase.from('assignment_progress').upsert(
+        { user_id: user.id, course_slug: params.slug, video_id: activeVideo.id, submitted_code: code },
+        { onConflict: 'user_id, course_slug, video_id' }
+      );
+      if (error) throw error;
+      if (!completedAssignments.includes(activeVideo.id)) {
+        setCompletedAssignments(prev => [...prev, activeVideo.id]);
+      }
+      alert("✅ Assignment Submitted Successfully!");
+    } catch (err) {
+      alert("Failed to submit assignment. Please try again.");
+    } finally {
+      setIsSubmittingAssignment(false);
+    }
+  };
+
   const runPythonCode = async () => {
     if (!code.trim() || !pyodide) return;
     setIsRunningCode(true);
     setOutput("Running script...");
-    
     try {
-      // Intercept the Python 'print' function so it outputs to our black terminal
       await pyodide.runPythonAsync(`
 import sys
 import io
 sys.stdout = io.StringIO()
 sys.stderr = io.StringIO()
       `);
-      
-      // Run the student's code
       await pyodide.runPythonAsync(code);
-      
-      // Fetch the output
       const stdout = pyodide.runPython("sys.stdout.getvalue()");
       const stderr = pyodide.runPython("sys.stderr.getvalue()");
-      
-      if (stderr) {
-        setOutput(`Error:\n${stderr}`);
-      } else {
-        setOutput(stdout || "Script executed successfully. (No output)");
-      }
+      if (stderr) setOutput(`Error:\n${stderr}`);
+      else setOutput(stdout || "Script executed successfully. (No output)");
     } catch (error: any) {
-      // Catch syntax errors (like missing colons or brackets)
       setOutput(`Syntax Error:\n${error.message}`);
     } finally {
       setIsRunningCode(false);
     }
+  };
+
+  const handleGenerateCertificate = () => {
+    // For now, this is a placeholder. Later we connect this to Canva / Certifier API!
+    alert("🎉 Congratulations on completing the course! Certificate Generation Module will be unlocked shortly.");
   };
 
   if (isLoading) {
@@ -240,9 +238,16 @@ sys.stderr = io.StringIO()
     );
   }
 
+  // 🚨 NEW PROGRESS MATH: Calculates Videos + Assignments
   const totalVideos = playlist.flatMap(m => m.videos).length;
-  const progressPercentage = totalVideos > 0 ? Math.round((completedVideos.length / totalVideos) * 100) : 0;
-  const isCurrentlyCompleted = activeVideo ? completedVideos.includes(activeVideo.id) : false;
+  const totalAssignments = playlist.flatMap(m => m.videos.filter((v: any) => v.githubAssignment)).length;
+  
+  const totalTasks = totalVideos + totalAssignments;
+  const completedTasks = completedVideos.length + completedAssignments.length;
+  const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  
+  const isVideoCompleted = activeVideo ? completedVideos.includes(activeVideo.id) : false;
+  const isAssignmentCompleted = activeVideo ? completedAssignments.includes(activeVideo.id) : false;
 
   return (
     <div className="relative min-h-screen flex flex-col bg-stone-50">
@@ -266,11 +271,8 @@ sys.stderr = io.StringIO()
                 <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${activeVideo.youtubeId}?rel=0&modestbranding=1`} title={activeVideo.title} frameBorder="0" allowFullScreen></iframe>
               </div>
             ) : (
-              <div className="w-full bg-stone-900 rounded-2xl shadow-xl aspect-video border border-stone-200 flex flex-col items-center justify-center text-center p-8">
-                <div className="w-20 h-20 bg-stone-800 rounded-full flex items-center justify-center mb-4">
-                  <Clock size={40} className="text-amber-500" />
-                </div>
-                <h2 className="text-3xl font-black text-white mb-2">Live Classes Starting Soon</h2>
+              <div className="w-full bg-stone-900 rounded-2xl shadow-xl aspect-video flex items-center justify-center text-center p-8">
+                <h2 className="text-3xl font-black text-white">Live Classes Starting Soon</h2>
               </div>
             )}
 
@@ -281,13 +283,13 @@ sys.stderr = io.StringIO()
                     <h2 className="text-xl font-bold text-stone-900 mb-1">{activeVideo.title}</h2>
                     <p className="text-stone-500 text-sm">Instructor: Shivam Namdev</p>
                   </div>
-                  {isCurrentlyCompleted ? (
-                    <button disabled className="px-6 py-3 rounded-xl bg-green-50 text-green-600 font-bold text-sm flex items-center justify-center gap-2 border border-green-200 w-full sm:w-auto">
-                      <CheckCircle size={18} /> Completed
+                  {isVideoCompleted ? (
+                    <button disabled className="px-6 py-3 rounded-xl bg-green-50 text-green-600 font-bold text-sm flex items-center gap-2 border border-green-200">
+                      <CheckCircle size={18} /> Video Watched
                     </button>
                   ) : (
-                    <button onClick={markAsComplete} disabled={isMarking} className="px-6 py-3 rounded-xl bg-amber-500 text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-amber-600 transition-colors w-full sm:w-auto shadow-md disabled:opacity-70">
-                      {isMarking ? <Loader2 size={18} className="animate-spin"/> : <CheckCircle size={18} />} Mark as Complete
+                    <button onClick={markAsComplete} disabled={isMarking} className="px-6 py-3 rounded-xl bg-amber-500 text-white font-bold text-sm flex items-center gap-2 hover:bg-amber-600 shadow-md">
+                      {isMarking ? <Loader2 size={18} className="animate-spin"/> : <CheckCircle size={18} />} Mark Video Complete
                     </button>
                   )}
                 </div>
@@ -297,44 +299,35 @@ sys.stderr = io.StringIO()
             {activeVideo && (
               <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden mb-10">
                 <div className="flex border-b border-stone-100 bg-stone-50/50">
-                  <button onClick={() => setActiveTab('description')} className={`flex-1 py-4 font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'description' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
-                    <AlignLeft size={18} /> Lesson Details
-                  </button>
-                  <button onClick={() => setActiveTab('qa')} className={`flex-1 py-4 font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'qa' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
-                    <MessageCircle size={18} /> Q&A ({comments.length})
-                  </button>
-                  {activeVideo.assignment && (
-                    <button onClick={() => setActiveTab('practice')} className={`flex-1 py-4 font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'practice' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
-                      <Code size={18} /> Practice 💻
+                  <button onClick={() => setActiveTab('description')} className={`flex-1 py-4 font-bold text-sm flex justify-center gap-2 ${activeTab === 'description' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500'}`}><AlignLeft size={18} /> Lesson Details</button>
+                  <button onClick={() => setActiveTab('qa')} className={`flex-1 py-4 font-bold text-sm flex justify-center gap-2 ${activeTab === 'qa' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500'}`}><MessageCircle size={18} /> Q&A ({comments.length})</button>
+                  {activeVideo.githubAssignment && (
+                    <button onClick={() => setActiveTab('practice')} className={`flex-1 py-4 font-bold text-sm flex justify-center gap-2 ${activeTab === 'practice' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500'}`}>
+                      <Code size={18} /> Practice {isAssignmentCompleted && "✅"}
                     </button>
                   )}
                 </div>
 
                 <div className="p-6 md:p-8">
                   {activeTab === 'description' && (
-                    <div className="prose prose-stone max-w-none">
-                      <p className="text-stone-600 whitespace-pre-wrap leading-relaxed text-sm md:text-base">{activeVideo.description}</p>
-                    </div>
-                  )}
-
+                  <div className="prose prose-stone max-w-none">
+                    <p className="text-stone-600 whitespace-pre-wrap leading-relaxed text-sm md:text-base">
+                      {activeVideo.description}
+                    </p>
+                  </div>
+                )}
                   {activeTab === 'qa' && (
-                    <div className="flex flex-col gap-8">
+                    <div className="flex flex-col gap-6">
                       <form onSubmit={handlePostComment} className="flex flex-col gap-3">
-                        <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Ask Shivam or the community..." className="w-full p-4 rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none resize-none transition-all" rows={3} required />
-                        <div className="flex justify-end">
-                          <button type="submit" disabled={isPosting} className="px-6 py-2.5 rounded-xl bg-stone-900 text-white font-bold text-sm flex items-center gap-2 hover:bg-stone-800 transition-colors disabled:opacity-70 shadow-md">
-                            {isPosting ? <Loader2 size={16} className="animate-spin"/> : <Send size={16} />} Post Question
-                          </button>
-                        </div>
+                        <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Ask a question..." className="w-full p-4 rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none resize-none" rows={3} required />
+                        <button type="submit" disabled={isPosting} className="self-end px-6 py-2.5 rounded-xl bg-stone-900 text-white font-bold text-sm flex items-center gap-2"><Send size={16} /> Post Question</button>
                       </form>
-                      <div className="space-y-6 border-t border-stone-100 pt-6">
-                        {comments.length === 0 ? <p className="text-center text-stone-400 text-sm italic py-4">No questions yet. Start the discussion!</p> : comments.map((comment) => (
+                      <div className="space-y-6 pt-6 border-t border-stone-100">
+                        {comments.map((comment) => (
                           <div key={comment.id} className="flex gap-4">
-                            <img src={comment.user_image || "https://www.gravatar.com/avatar/?d=mp"} alt={comment.user_name} className="w-10 h-10 rounded-full border border-stone-200 shadow-sm" />
+                            <img src={comment.user_image || "https://www.gravatar.com/avatar/?d=mp"} alt="User" className="w-10 h-10 rounded-full border border-stone-200" />
                             <div className="flex-grow bg-stone-50 p-4 rounded-2xl rounded-tl-none border border-stone-100">
-                              <div className="flex justify-between items-center mb-1">
-                                <h5 className="font-bold text-stone-900 text-sm">{comment.user_name}</h5>
-                              </div>
+                              <h5 className="font-bold text-stone-900 text-sm mb-1">{comment.user_name}</h5>
                               <p className="text-stone-600 text-sm whitespace-pre-wrap">{comment.content}</p>
                             </div>
                           </div>
@@ -343,53 +336,38 @@ sys.stderr = io.StringIO()
                     </div>
                   )}
 
-                  {/* 🚨 THE UPGRADED PYODIDE IDE */}
-                  {/* 🚨 THE INTERACTIVE PYTHON IDE */}
                   {activeTab === 'practice' && activeVideo.githubAssignment && (
                     <div className="flex flex-col gap-6">
-                      
-                      {/* Dynamic GitHub Header */}
                       <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex justify-between items-center">
                         <div>
                           <h4 className="font-bold text-amber-800 mb-1">Practice Exercise:</h4>
                           <p className="text-stone-700 text-sm font-medium">{activeVideo.githubAssignment.title}</p>
                         </div>
-                        {/* Optional: Add a button linking directly to the repo file */}
-                        <a href={activeVideo.githubAssignment.rawUrl.replace('raw.githubusercontent.com', 'github.com').replace('/main/', '/blob/main/')} 
-                           target="_blank" rel="noreferrer" 
-                           className="text-xs text-amber-600 hover:text-amber-800 font-bold underline">
-                          View on GitHub
-                        </a>
                       </div>
 
                       <div className="border border-stone-200 rounded-xl overflow-hidden shadow-inner">
                         <div className="bg-stone-900 px-4 py-2 flex justify-between items-center">
-                          <span className="text-stone-400 text-xs font-mono">
-                            {isFetchingCode ? "Fetching from GitHub..." : "main.py"}
-                          </span>
-                          
-                          <button onClick={runPythonCode} disabled={isRunningCode || isPyodideLoading || isFetchingCode} className="px-4 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-bold flex items-center gap-2 transition-colors disabled:opacity-50">
-                            {isPyodideLoading || isFetchingCode ? <Loader2 size={14} className="animate-spin"/> : isRunningCode ? <Loader2 size={14} className="animate-spin"/> : <PlayCircle size={14}/>} 
-                            {isPyodideLoading ? "Loading Engine..." : isFetchingCode ? "Loading Code..." : "Run Code"}
-                          </button>
+                          <span className="text-stone-400 text-xs font-mono">main.py</span>
+                          <div className="flex gap-2">
+                            <button onClick={runPythonCode} disabled={isRunningCode || isPyodideLoading} className="px-4 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-bold flex items-center gap-2 transition-colors disabled:opacity-50">
+                              {isPyodideLoading || isRunningCode ? <Loader2 size={14} className="animate-spin"/> : <PlayCircle size={14}/>} Run Code
+                            </button>
+                            
+                            {/* 🚨 THE SUBMIT ASSIGNMENT BUTTON */}
+                            <button onClick={submitAssignment} disabled={isSubmittingAssignment} className={`px-4 py-1.5 rounded text-xs font-bold flex items-center gap-2 transition-colors ${isAssignmentCompleted ? 'bg-amber-500 text-white' : 'bg-stone-700 hover:bg-stone-600 text-white'}`}>
+                              {isSubmittingAssignment ? <Loader2 size={14} className="animate-spin"/> : <FileCheck size={14}/>} 
+                              {isAssignmentCompleted ? "Update Submission" : "Submit Assignment"}
+                            </button>
+                          </div>
                         </div>
-                        <Editor
-                          height="300px"
-                          defaultLanguage="python"
-                          theme="vs-dark"
-                          value={code}
-                          onChange={(value) => setCode(value || "")}
-                          options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }}
-                        />
+                        <Editor height="300px" defaultLanguage="python" theme="vs-dark" value={code} onChange={(value) => setCode(value || "")} options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} />
                       </div>
 
                       <div className="bg-black rounded-xl p-4 border border-stone-800 shadow-inner min-h-[120px]">
                         <div className="flex items-center gap-2 text-stone-400 mb-2 border-b border-stone-800 pb-2">
-                          <TerminalSquare size={16} /> <span className="text-xs font-mono font-bold tracking-widest uppercase">Output</span>
+                          <TerminalSquare size={16} /> <span className="text-xs font-mono font-bold uppercase">Output</span>
                         </div>
-                        <pre className={`text-sm font-mono whitespace-pre-wrap ${output.startsWith('Error') || output.startsWith('Syntax') ? 'text-red-400' : 'text-green-400'}`}>
-                          {output || "Run your code to see the output here..."}
-                        </pre>
+                        <pre className={`text-sm font-mono whitespace-pre-wrap ${output.startsWith('Error') || output.startsWith('Syntax') ? 'text-red-400' : 'text-green-400'}`}>{output || "Run your code to see the output here..."}</pre>
                       </div>
                     </div>
                   )}
@@ -399,14 +377,20 @@ sys.stderr = io.StringIO()
             )}
           </div>
 
-          {/* Right Column: Playlist */}
           <div className="bg-white rounded-2xl border border-stone-200 shadow-sm flex flex-col h-[600px] overflow-hidden sticky top-32">
             <div className="p-5 border-b border-stone-100 bg-stone-50">
               <h3 className="font-black text-stone-900 text-lg">Course Progress</h3>
-              <p className="text-stone-500 text-sm mt-1">{completedVideos.length}/{totalVideos} Lessons Completed</p>
-              <div className="w-full bg-stone-200 rounded-full h-2 mt-4 overflow-hidden">
+              <p className="text-stone-500 text-sm mt-1">{completedTasks}/{totalTasks} Tasks Completed ({progressPercentage}%)</p>
+              <div className="w-full bg-stone-200 rounded-full h-2 mt-4 overflow-hidden mb-4">
                 <div className="bg-green-500 h-2 rounded-full transition-all duration-1000 ease-out" style={{ width: `${progressPercentage}%` }}></div>
               </div>
+              
+              {/* 🚨 THE CERTIFICATE UNLOCK BUTTON */}
+              {progressPercentage === 100 && (
+                <button onClick={handleGenerateCertificate} className="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-900 font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] transition-transform animate-in zoom-in">
+                  <Award size={20} /> Claim Certificate
+                </button>
+              )}
             </div>
 
             <div className="overflow-y-auto flex-grow p-2">
@@ -416,14 +400,21 @@ sys.stderr = io.StringIO()
                   <div className="flex flex-col gap-1">
                     {module.videos.map((video: any) => {
                       const isActive = activeVideo?.id === video.id;
-                      const isDone = completedVideos.includes(video.id);
+                      const isVidDone = completedVideos.includes(video.id);
+                      const isAssDone = completedAssignments.includes(video.id);
+                      
                       return (
                         <button key={video.id} onClick={() => handleVideoChange(video)} className={`w-full text-left flex items-start gap-3 p-3 rounded-xl transition-all ${isActive ? 'bg-amber-50 border border-amber-200 shadow-sm' : 'hover:bg-stone-50 border border-transparent'}`}>
                           <div className="mt-0.5 flex-shrink-0">
-                            {isDone ? <CheckCircle size={16} className="text-green-500" /> : isActive ? <PlayCircle size={16} className="text-amber-500" /> : <Lock size={16} className="text-stone-300" />}
+                            {isVidDone ? <CheckCircle size={16} className="text-green-500" /> : <PlayCircle size={16} className="text-amber-500" />}
                           </div>
                           <div className="flex-grow pr-2">
-                            <p className={`text-sm font-bold line-clamp-2 ${isActive ? 'text-amber-700' : 'text-stone-700'} ${isDone && !isActive ? 'line-through opacity-70' : ''}`}>{video.title}</p>
+                            <p className={`text-sm font-bold line-clamp-2 ${isActive ? 'text-amber-700' : 'text-stone-700'} ${isVidDone && !isActive ? 'opacity-70' : ''}`}>{video.title}</p>
+                            {video.githubAssignment && (
+                              <p className={`text-xs mt-1 font-bold ${isAssDone ? 'text-green-600' : 'text-amber-600'}`}>
+                                {isAssDone ? "✅ Assignment Submitted" : "📝 Pending Assignment"}
+                              </p>
+                            )}
                           </div>
                         </button>
                       );

@@ -16,8 +16,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "FSsqe5-2Ni0",
       "xTktQsnpBmQ",
       "0D9Y_2mLi7Q",
-      "8uwC1ldWPZc",
       "ln_gWzCl8Xk",
+      "8uwC1ldWPZc",
       "t8pYAstFTfg"
     ],
       // 🚨 NEW: Adding Interactive Assignments!
@@ -41,6 +41,50 @@ export const courseCurriculumMap: Record<string, any[]> = {
         "bpjcslHyYEA": {
           title: "Day 02: Operator",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2002%3A%20Operator/Assignment"
+        },
+        "HDBVcmufHlg": {
+          title: "Day 03: Built-in Functions",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2003%3A%20Built-in%20Functions/Assignment"
+        },
+        "kF0wuiDRxHQ": {
+          title: "Day 04: Conditional Statement",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2004%3A%20Conditional%20Statement/Assignment"
+        },
+        "_IqLtwGJRss": {
+          title: "Day 05: Conditional Statement | Hands On",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2004%3A%20Conditional%20Statement/Assignment"
+        },
+        "eehv_5rg238": {
+          title: "Day 06: Looping (While Loop)",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2007%3A%20Jump%20Statements/Assignment"
+        },
+        "KY6nWfEeQoY": {
+          title: "Day 07: Jump Statements",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2007%3A%20Jump%20Statements/Assignment"
+        },
+        "FSsqe5-2Ni0": {
+          title: "Day 08: Thinking Method",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2008%3A%20Thinking%20Method/The%204-Step%20Thinking%20Method.docx"
+        },
+        "xTktQsnpBmQ": {
+          title: "Day 09: For Loop",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2009%3A%20For%20Loop/Assignment"
+        },
+        "0D9Y_2mLi7Q": {
+          title: "Day 10: For Loop Hands On",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2010%3A%20For%20Loop%20Hands%20On/Practice%20Questions"
+        },
+        "ln_gWzCl8Xk": {
+          title: "Day 12: Loop-Pattern",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2011%3A%20Loop-Pattern/Patterns.py"
+        },
+        "8uwC1ldWPZc": {
+          title: "Day 11: String",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2012%3A%20String/Assignment.docx"
+        },
+        "t8pYAstFTfg": {
+          title: "Day 13: String Hands On",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2012%3A%20String/Assignment2.docx"
         }
         // Notice we left Video 1 ("OkK3E7ApZ4Q") out entirely. The Practice tab will hide itself automatically!
       }
@@ -49,8 +93,25 @@ export const courseCurriculumMap: Record<string, any[]> = {
     moduleTitle: "Module 2: Data Structures",
     videoIds:[
       "TtsqgKlLzlg", // 4. Lists & Advanced Operations
+      "rikgL_Oj5Ds",
+      "aMKAALJISv4" // tuple and set
       // "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
-    ]
+    ],
+    githubAssignments: {
+        // Video 2 gets an assignment
+        "TtsqgKlLzlg": {
+          title: "Day 14: List Data Type",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2014%3A%20List%20Data%20Type/Assignment.docx"
+        },
+        "rikgL_Oj5Ds": {
+          title: "Day 15: List Hands On Practice",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2014%3A%20List%20Data%20Type/Assignment.docx"
+        },
+        "aMKAALJISv4": {
+          title: "Day 16: Tuple and Set Data Type",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/78415aab26bd2a44bb579835fb734d03f0edd2f5/Day%2015%3A%20Tuple%20and%20Set/Assignment.docx"
+        },
+    }  
   },
   {
     moduleTitle: "Module 3: Core Programming Concepts",
