@@ -176,23 +176,40 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     } finally { setIsMarking(false); }
   };
 
-  // 🚨 NEW: Assignment Submission
+  // 🚨 NEW: Assignment Submission (Captures Email if Name is missing!)
   const submitAssignment = async () => {
     if (!user || !activeVideo || isSubmittingAssignment) return;
     setIsSubmittingAssignment(true);
+    
     try {
-      // Upsert allows them to submit again if they want to update their code
+      // 1. Get the most useful identifier (Name -> Email -> Fallback)
+      const studentIdentifier = 
+        user.fullName || 
+        user.firstName || 
+        user.primaryEmailAddress?.emailAddress || 
+        'Student'; 
+      
+      // 2. Save it to Supabase
       const { error } = await supabase.from('assignment_progress').upsert(
-        { user_id: user.id, course_slug: params.slug, video_id: activeVideo.id, submitted_code: code },
+        { 
+          user_id: user.id, 
+          course_slug: params.slug, 
+          video_id: activeVideo.id, 
+          submitted_code: code,
+          user_name: studentIdentifier // Save the robust identifier
+        },
         { onConflict: 'user_id, course_slug, video_id' }
       );
+
       if (error) throw error;
+      
       if (!completedAssignments.includes(activeVideo.id)) {
-        setCompletedAssignments(prev => [...prev, activeVideo.id]);
+        setCompletedAssignments(prev =>[...prev, activeVideo.id]);
       }
       alert("✅ Assignment Submitted Successfully!");
     } catch (err) {
       alert("Failed to submit assignment. Please try again.");
+      console.error(err);
     } finally {
       setIsSubmittingAssignment(false);
     }
