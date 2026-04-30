@@ -4,35 +4,76 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { ShieldAlert, CheckCircle2, UserPlus, Loader2 } from 'lucide-react';
+import { ShieldAlert, CheckCircle2, UserPlus, Loader2, FileCode2, UserCircle, PlayCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { activeCourses } from '@/data/courses';
+import { courseCurriculumMap } from '@/data/learning-content';
 
-// 🚨 REPLACE THIS WITH YOUR EXACT CLERK EMAIL ADDRESS:
+// 🚨 Ensure this is your exact Clerk login email!
 const ADMIN_EMAIL = "shivamnamdev.corp@gmail.com"; 
+
+// Helper function to map a raw video_id to its readable title!
+function getVideoTitle(videoId: string) {
+  for (const courseSlug in courseCurriculumMap) {
+    for (const module of courseCurriculumMap[courseSlug]) {
+      // Find the index of the video to construct a title like "Lesson 2"
+      const videoIndex = module.videoIds.indexOf(videoId);
+      if (videoIndex !== -1) {
+        // If it has a GitHub assignment title, use that!
+        if (module.githubAssignments && module.githubAssignments[videoId]) {
+          return module.githubAssignments[videoId].title;
+        }
+        return `${module.moduleTitle} (Lesson ${videoIndex + 1})`;
+      }
+    }
+  }
+  return `Unknown Video (${videoId})`;
+}
 
 export default function AdminDashboard() {
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
 
-  const [studentId, setStudentId] = useState("");
+  const[studentId, setStudentId] = useState("");
   const [selectedCourse, setSelectedCourse] = useState(activeCourses[0].slug);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const[message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  // Security Check: Kick out anyone who isn't the Admin
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const[isLoadingSubmissions, setIsLoadingSubmissions] = useState(true);
+
   useEffect(() => {
     if (isLoaded) {
       if (!isSignedIn) {
         router.push('/');
       } else if (user.primaryEmailAddress?.emailAddress !== ADMIN_EMAIL) {
-        // Log them out or kick them to the homepage if they aren't you!
         router.push('/learning');
       }
     }
-  }, [isLoaded, isSignedIn, user, router]);
+  },[isLoaded, isSignedIn, user, router]);
 
-  // Show nothing while verifying admin status
+  useEffect(() => {
+    async function fetchSubmissions() {
+      if (!isLoaded || !isSignedIn || user.primaryEmailAddress?.emailAddress !== ADMIN_EMAIL) return;
+      try {
+        const { data, error } = await supabase
+          .from('assignment_progress')
+          .select('*')
+          .order('completed_at', { ascending: false }) 
+          .limit(20); 
+
+        if (!error && data) {
+          setSubmissions(data);
+        }
+      } catch (err) {
+        console.error("Failed to load submissions:", err);
+      } finally {
+        setIsLoadingSubmissions(false);
+      }
+    }
+    fetchSubmissions();
+  }, [isLoaded, isSignedIn, user]);
+
   if (!isLoaded || !isSignedIn || user.primaryEmailAddress?.emailAddress !== ADMIN_EMAIL) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-50">
@@ -53,7 +94,6 @@ export default function AdminDashboard() {
     }
 
     try {
-      // 1. Check if they already have access
       const { data: existing } = await supabase
         .from('user_enrollments')
         .select('id')
@@ -65,21 +105,15 @@ export default function AdminDashboard() {
         return;
       }
 
-      // 2. Grant Access (Backdoor Entry)
       const { error } = await supabase
         .from('user_enrollments')
-        .insert([{ 
-          user_id: studentId.trim(), 
-          course_slug: selectedCourse 
-        }]);
+        .insert([{ user_id: studentId.trim(), course_slug: selectedCourse }]);
 
       if (error) throw error;
 
       setMessage({ text: "Access Granted Successfully!", type: 'success' });
-      setStudentId(""); // Clear the input
-      
+      setStudentId(""); 
     } catch (err) {
-      console.error("Manual Enrollment Error:", err);
       setMessage({ text: "Database Error. Please check the ID and try again.", type: 'error' });
     } finally {
       setIsSubmitting(false);
@@ -98,23 +132,18 @@ export default function AdminDashboard() {
             <ShieldAlert size={32} className="text-red-600" />
           </div>
           <div>
-            <h1 className="text-4xl font-display font-black text-stone-900 mb-1">
-              Admin Portal
-            </h1>
+            <h1 className="text-4xl font-display font-black text-stone-900 mb-1">Admin Portal</h1>
             <p className="text-stone-500 font-mono text-sm">Security Level: Maximum Clearance ({ADMIN_EMAIL})</p>
           </div>
         </div>
 
-        {/* Backdoor Access Form */}
-        <div className="bg-white rounded-3xl p-8 border border-stone-200 shadow-sm relative overflow-hidden">
+        {/* TOP SECTION: Backdoor Access Form */}
+        <div className="bg-white rounded-3xl p-8 border border-stone-200 shadow-sm relative overflow-hidden mb-12">
           <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-[40px] pointer-events-none" />
-          
           <h2 className="text-2xl font-bold text-stone-900 flex items-center gap-2 mb-2 relative z-10">
             <UserPlus size={24} className="text-amber-600" /> Grant Backdoor Access
           </h2>
-          <p className="text-stone-500 text-sm mb-8 relative z-10">
-            Manually enroll students who paid via UPI/Offline. They must create a free account first to generate a User ID.
-          </p>
+          <p className="text-stone-500 text-sm mb-8 relative z-10">Manually enroll students who paid via UPI/Offline.</p>
 
           {message && (
             <div className={`p-4 rounded-xl mb-6 font-bold flex items-center gap-2 ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
@@ -124,47 +153,69 @@ export default function AdminDashboard() {
           )}
 
           <form onSubmit={handleManualEnrollment} className="flex flex-col gap-6 relative z-10">
-            
-            {/* Input: Clerk User ID */}
             <div>
               <label className="block text-sm font-bold text-stone-700 mb-2">Student's Clerk User ID</label>
-              <input 
-                type="text" 
-                value={studentId}
-                onChange={(e) => setStudentId(e.target.value)}
-                placeholder="e.g., user_2aBcD123..." 
-                className="w-full px-5 py-4 rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all font-mono text-sm"
-              />
-              <p className="text-xs text-stone-400 mt-2">Find this in your Clerk Dashboard under the 'Users' tab.</p>
+              <input type="text" value={studentId} onChange={(e) => setStudentId(e.target.value)} placeholder="e.g., user_2aBcD123..." className="w-full px-5 py-4 rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all font-mono text-sm" />
             </div>
-
-            {/* Input: Course Selection */}
             <div>
               <label className="block text-sm font-bold text-stone-700 mb-2">Select Course to Unlock</label>
-              <select 
-                value={selectedCourse}
-                onChange={(e) => setSelectedCourse(e.target.value)}
-                className="w-full px-5 py-4 rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all cursor-pointer font-bold text-stone-700"
-              >
-                {activeCourses.map(course => (
-                  <option key={course.id} value={course.slug}>
-                    {course.title}
-                  </option>
-                ))}
+              <select value={selectedCourse} onChange={(e) => setSelectedCourse(e.target.value)} className="w-full px-5 py-4 rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all cursor-pointer font-bold text-stone-700">
+                {activeCourses.map(course => <option key={course.id} value={course.slug}>{course.title}</option>)}
               </select>
             </div>
-
-            {/* Submit Button */}
-            <button 
-              type="submit" 
-              disabled={isSubmitting}
-              className="mt-4 w-full py-4 rounded-xl bg-stone-900 text-white font-black text-lg flex items-center justify-center gap-2 hover:bg-stone-800 transition-colors disabled:opacity-70 shadow-lg"
-            >
+            <button type="submit" disabled={isSubmitting} className="mt-4 w-full py-4 rounded-xl bg-stone-900 text-white font-black text-lg flex items-center justify-center gap-2 hover:bg-stone-800 transition-colors disabled:opacity-70 shadow-lg">
               {isSubmitting ? <Loader2 className="animate-spin" size={24} /> : <CheckCircle2 size={24} />}
               {isSubmitting ? "Processing..." : "Unlock Course for Student"}
             </button>
-            
           </form>
+        </div>
+
+        {/* 🚨 BOTTOM SECTION: Human-Readable Assignment Submissions Viewer */}
+        <div className="bg-white rounded-3xl p-8 border border-stone-200 shadow-sm relative overflow-hidden">
+          <h2 className="text-2xl font-bold text-stone-900 flex items-center gap-2 mb-2">
+            <FileCode2 size={24} className="text-amber-600" /> Recent Assignments
+          </h2>
+          <p className="text-stone-500 text-sm mb-8">Review the latest Python code submitted by your students.</p>
+
+          {isLoadingSubmissions ? (
+            <div className="flex justify-center py-10"><Loader2 className="animate-spin text-amber-500" size={32} /></div>
+          ) : submissions.length === 0 ? (
+            <div className="text-center py-10 bg-stone-50 rounded-xl border border-stone-200 border-dashed">
+              <p className="text-stone-500">No assignments submitted yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {submissions.map((sub) => (
+                <div key={sub.id} className="border border-stone-200 rounded-xl p-5 bg-stone-50">
+                  
+                  {/* 🚨 THE FIX: Beautifully Formatted Headers */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2 border-b border-stone-200 pb-4">
+                    <div className="flex items-center gap-2">
+                      <UserCircle className="text-stone-400" size={20} />
+                      <span className="font-bold text-stone-900">{sub.user_name || "Unknown Student"}</span>
+                    </div>
+                    <span className="text-xs text-stone-400 font-medium bg-white px-3 py-1 rounded-full border border-stone-200">
+                      {new Date(sub.completed_at).toLocaleString()}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mb-3">
+                    <PlayCircle className="text-amber-500" size={16} />
+                    <span className="text-sm font-bold text-amber-700">
+                      {getVideoTitle(sub.video_id)}
+                    </span>
+                  </div>
+
+                  <div className="bg-[#0a0a0b] rounded-xl p-4 shadow-inner overflow-x-auto border border-stone-800">
+                    <pre className="text-sm font-mono text-green-400 whitespace-pre-wrap leading-relaxed">
+                      {sub.submitted_code || "No code provided."}
+                    </pre>
+                  </div>
+                  
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
       </main>
