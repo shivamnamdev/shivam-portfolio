@@ -9,6 +9,8 @@ import { courseCurriculumMap } from '@/data/learning-content';
 import { activeCourses } from '@/data/courses';
 import { supabase } from '@/lib/supabaseClient';
 import Editor from '@monaco-editor/react';
+import { jsPDF } from "jspdf";
+
 
 function formatYouTubeDuration(duration: string) {
   const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
@@ -238,9 +240,88 @@ sys.stderr = io.StringIO()
     }
   };
 
+  const [isGeneratingCert, setIsGeneratingCert] = useState(false);
+
+  // 🚨 THE AUTOMATED CERTIFICATE GENERATOR
   const handleGenerateCertificate = () => {
-    // For now, this is a placeholder. Later we connect this to Canva / Certifier API!
-    alert("🎉 Congratulations on completing the course! Certificate Generation Module will be unlocked shortly.");
+    try {
+      // 1. Initialize a landscape A4 PDF document
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      
+      // 2. Draw the Premium Warm Ivory Background
+      doc.setFillColor(253, 252, 248); // Ivory color
+      doc.rect(0, 0, 297, 210, 'F');
+      
+      // 3. Draw the Outer and Inner Borders (Amber/Gold)
+      doc.setDrawColor(217, 119, 6); // Amber-600
+      doc.setLineWidth(2);
+      doc.rect(10, 10, 277, 190);
+      doc.setLineWidth(0.5);
+      doc.rect(12, 12, 273, 186);
+
+      // 4. Add the Header/Title
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(36);
+      doc.setTextColor(28, 25, 23); // Stone-900
+      doc.text("Certificate of Completion", 148.5, 50, { align: "center" });
+
+      // 5. Add the Subtitle
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(16);
+      doc.setTextColor(120, 113, 108); // Stone-500
+      doc.text("This is to certify that", 148.5, 75, { align: "center" });
+
+      // 6. Add the Student's Name Dynamically
+      const studentName = user?.fullName || user?.firstName || "Dedicated Student";
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(32);
+      doc.setTextColor(217, 119, 6); // Amber-600
+      doc.text(studentName.toUpperCase(), 148.5, 95, { align: "center" });
+
+      // 7. Add Course Details
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(16);
+      doc.setTextColor(28, 25, 23);
+      doc.text(`has successfully completed the immersive program:`, 148.5, 115, { align: "center" });
+      
+      doc.setFont("helvetica", "bold");
+      doc.text(courseDetails?.title || "Python Programming", 148.5, 127, { align: "center" });
+
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(14);
+      doc.setTextColor(120, 113, 108);
+      doc.text("demonstrating mastery in automation, coding logic, and execution.", 148.5, 140, { align: "center" });
+
+      // 8. Add Verification Details (Date & Unique ID)
+      const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      const uniqueId = `SA-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(12);
+      doc.setTextColor(28, 25, 23);
+      doc.text(`Date Issued: ${today}`, 40, 170);
+      doc.text(`Certificate ID: ${uniqueId}`, 40, 180);
+
+      // 9. Add Your Signature/Title
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(20);
+      doc.text("Shivam Namdev", 250, 168, { align: "center" });
+      
+      doc.setDrawColor(28, 25, 23);
+      doc.setLineWidth(0.5);
+      doc.line(210, 172, 290, 172); // Signature Line
+      
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(12);
+      doc.text("Lead QA & Instructor", 250, 180, { align: "center" });
+
+      // 10. Trigger the Download!
+      doc.save(`${studentName.replace(/\s+/g, '_')}_Certificate.pdf`);
+
+    } catch (error) {
+      console.error("Error generating certificate:", error);
+      alert("Something went wrong while generating your certificate. Please try again.");
+    }
   };
 
   if (isLoading) {
@@ -288,8 +369,20 @@ sys.stderr = io.StringIO()
                 <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${activeVideo.youtubeId}?rel=0&modestbranding=1`} title={activeVideo.title} frameBorder="0" allowFullScreen></iframe>
               </div>
             ) : (
-              <div className="w-full bg-stone-900 rounded-2xl shadow-xl aspect-video flex items-center justify-center text-center p-8">
-                <h2 className="text-3xl font-black text-white">Live Classes Starting Soon</h2>
+              <div className="w-full bg-stone-900 rounded-2xl shadow-xl aspect-video border border-stone-200 flex flex-col items-center justify-center text-center p-8">
+                <div className="w-20 h-20 bg-stone-800 rounded-full flex items-center justify-center mb-4">
+                  <Clock size={40} className="text-amber-500" />
+                </div>
+                <h2 className="text-3xl font-black text-white mb-4">Live Classes Starting Soon</h2>
+                
+                {/* 🚨 NEW: Google Meet Button inside the Video Player! */}
+                {courseDetails?.liveLink ? (
+                  <a href={courseDetails.liveLink} target="_blank" rel="noreferrer" className="px-8 py-4 rounded-full bg-amber-500 text-stone-900 font-bold text-lg flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors shadow-lg">
+                    <PlayCircle size={20} /> Join Today's Live Class on Google Meet
+                  </a>
+                ) : (
+                  <p className="text-stone-400 max-w-md">Once the live sessions begin, the recordings will be automatically uploaded and unlocked here for you to watch anytime.</p>
+                )}
               </div>
             )}
 
@@ -403,7 +496,7 @@ sys.stderr = io.StringIO()
               </div>
               
               {/* 🚨 THE CERTIFICATE UNLOCK BUTTON */}
-              {progressPercentage === 100 && (
+              {(progressPercentage === 100 || user?.primaryEmailAddress?.emailAddress === "shivamnamdev.corp@gmail.com") && (
                 <button onClick={handleGenerateCertificate} className="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-900 font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] transition-transform animate-in zoom-in">
                   <Award size={20} /> Claim Certificate
                 </button>

@@ -114,9 +114,14 @@ export default function LearningDashboard() {
                   <p className="text-stone-500 text-sm mb-6 relative z-10">Your learning materials are unlocked.</p>
                   
                   <div className="flex flex-col sm:flex-row gap-4 relative z-10">
-                    <button className="flex-1 py-3 rounded-xl bg-stone-900 text-white font-bold flex items-center justify-center gap-2 hover:bg-stone-800 transition-colors shadow-md">
+                    <a 
+                      href={course.liveLink || "#"} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="flex-1 py-3 rounded-xl bg-stone-900 text-white font-bold flex items-center justify-center gap-2 hover:bg-stone-800 transition-colors shadow-md cursor-pointer"
+                    >
                       <PlayCircle size={18} /> Join Live Class
-                    </button>
+                    </a>
                     {/* THE FIX: Replaced Link with an onClick button to bypass z-index routing bugs */}
                     <button 
                       onClick={() => router.push(`/learning/${course.slug}`)} 
