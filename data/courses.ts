@@ -12,6 +12,8 @@ export const activeCourses =[
     demoOffer: "Enrollment Closed",
     duration: "30 Sessions | Complete in 45 Days (Weekdays)",
     contactPhone: "7057034840",
+    liveLink: "https://meet.google.com/eso-nykg-qgi", 
+
     
     vsl: {
       headlinePart1: "Master Python Programming &",
