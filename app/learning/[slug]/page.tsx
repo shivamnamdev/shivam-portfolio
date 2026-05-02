@@ -9,8 +9,7 @@ import { courseCurriculumMap } from '@/data/learning-content';
 import { activeCourses } from '@/data/courses';
 import { supabase } from '@/lib/supabaseClient';
 import Editor from '@monaco-editor/react';
-import { jsPDF } from "jspdf";
-
+import { motion } from 'framer-motion';
 
 function formatYouTubeDuration(duration: string) {
   const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
@@ -29,26 +28,32 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   
   // Progress Tracking States
   const [completedVideos, setCompletedVideos] = useState<string[]>([]);
-  const [completedAssignments, setCompletedAssignments] = useState<string[]>([]); // 🚨 NEW STATE
+  const [completedAssignments, setCompletedAssignments] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMarking, setIsMarking] = useState(false);
   
+  // Tab & Q&A States
   const [activeTab, setActiveTab] = useState<'description' | 'qa' | 'practice'>('description');
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isPosting, setIsPosting] = useState(false);
 
-  // IDE States
+  // IDE & AI Tutor States
   const [code, setCode] = useState("");
   const [output, setOutput] = useState("");
   const [isRunningCode, setIsRunningCode] = useState(false);
-  const [isSubmittingAssignment, setIsSubmittingAssignment] = useState(false); // 🚨 NEW STATE
+  const [isFetchingCode, setIsFetchingCode] = useState(false);
+  const[isSubmittingAssignment, setIsSubmittingAssignment] = useState(false);
+  const [isAskingAI, setIsAskingAI] = useState(false);
+  const [aiResponse, setAiResponse] = useState<string | null>(null);
   
+  // Pyodide State
   const [pyodide, setPyodide] = useState<any>(null);
-  const [isPyodideLoading, setIsPyodideLoading] = useState(true);
+  const[isPyodideLoading, setIsPyodideLoading] = useState(true);
 
   const courseDetails = activeCourses.find(c => c.slug === params.slug);
 
+  // 1. Load Pyodide
   useEffect(() => {
     const loadPyodideScript = async () => {
       if ((window as any).loadPyodide) return;
@@ -66,7 +71,9 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     loadPyodideScript();
   },[]);
 
+  // 2. Fetch Code from GitHub (Formats it into comments)
   const loadGithubAssignment = async (url: string) => {
+    setIsFetchingCode(true);
     try {
       const response = await fetch(`${url}?t=${Date.now()}`);
       if (!response.ok) throw new Error("Failed to fetch assignment");
@@ -75,9 +82,12 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       setCode(`${commentedText}\n\n# ==========================================\n# WRITE YOUR PYTHON CODE BELOW THIS LINE:\n# ==========================================\n\n`);
     } catch (error) {
       setCode("# Error loading assignment from GitHub.");
+    } finally {
+      setIsFetchingCode(false);
     }
   };
 
+  // 3. Load Course & User Data
   useEffect(() => {
     async function loadCourseData() {
       if (!isLoaded || !user) return;
@@ -85,11 +95,9 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
         const courseModules = courseCurriculumMap[params.slug] ||[];
         const allVideoIds = courseModules.flatMap(m => m.videoIds ||[]);
 
-        // Fetch Completed Videos
         const { data: vidProgress } = await supabase.from('video_progress').select('video_id').eq('user_id', user.id).eq('course_slug', params.slug);
         setCompletedVideos(vidProgress ? vidProgress.map(p => p.video_id) :[]);
 
-        // 🚨 Fetch Completed Assignments
         const { data: assProgress } = await supabase.from('assignment_progress').select('video_id').eq('user_id', user.id).eq('course_slug', params.slug);
         setCompletedAssignments(assProgress ? assProgress.map(p => p.video_id) :[]);
 
@@ -139,6 +147,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   const handleVideoChange = (video: any) => {
     setActiveVideo(video);
     setOutput(""); 
+    setAiResponse(null);
     setActiveTab('description'); 
     if (video.githubAssignment) {
       setCode("# Loading assignment from GitHub...");
@@ -168,7 +177,6 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     } finally { setIsPosting(false); }
   };
 
-  // Video Completion
   const markAsComplete = async () => {
     if (!user || !activeVideo || isMarking) return;
     setIsMarking(true);
@@ -178,40 +186,20 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     } finally { setIsMarking(false); }
   };
 
-  // 🚨 NEW: Assignment Submission (Captures Email if Name is missing!)
   const submitAssignment = async () => {
     if (!user || !activeVideo || isSubmittingAssignment) return;
     setIsSubmittingAssignment(true);
-    
     try {
-      // 1. Get the most useful identifier (Name -> Email -> Fallback)
-      const studentIdentifier = 
-        user.fullName || 
-        user.firstName || 
-        user.primaryEmailAddress?.emailAddress || 
-        'Student'; 
-      
-      // 2. Save it to Supabase
+      const studentName = user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || 'Student';
       const { error } = await supabase.from('assignment_progress').upsert(
-        { 
-          user_id: user.id, 
-          course_slug: params.slug, 
-          video_id: activeVideo.id, 
-          submitted_code: code,
-          user_name: studentIdentifier // Save the robust identifier
-        },
+        { user_id: user.id, course_slug: params.slug, video_id: activeVideo.id, submitted_code: code, user_name: studentName },
         { onConflict: 'user_id, course_slug, video_id' }
       );
-
       if (error) throw error;
-      
-      if (!completedAssignments.includes(activeVideo.id)) {
-        setCompletedAssignments(prev =>[...prev, activeVideo.id]);
-      }
+      if (!completedAssignments.includes(activeVideo.id)) setCompletedAssignments(prev => [...prev, activeVideo.id]);
       alert("✅ Assignment Submitted Successfully!");
     } catch (err) {
       alert("Failed to submit assignment. Please try again.");
-      console.error(err);
     } finally {
       setIsSubmittingAssignment(false);
     }
@@ -228,99 +216,105 @@ import io
 sys.stdout = io.StringIO()
 sys.stderr = io.StringIO()
       `);
+      
       await pyodide.runPythonAsync(code);
       const stdout = pyodide.runPython("sys.stdout.getvalue()");
       const stderr = pyodide.runPython("sys.stderr.getvalue()");
-      if (stderr) setOutput(`Error:\n${stderr}`);
-      else setOutput(stdout || "Script executed successfully. (No output)");
+      
+      let finalOutput = stdout;
+
+      // Automated Auto-Grader / Hidden Tests!
+      if (!stderr && activeVideo?.githubAssignment?.testCode) {
+        try {
+          await pyodide.runPythonAsync(activeVideo.githubAssignment.testCode);
+          finalOutput += "\n\n✅ --------------------------\n✅ ALL TESTS PASSED! Great job.\n✅ --------------------------";
+        } catch (testError: any) {
+          const errorMsg = testError.message.split('AssertionError:')[1]?.strip() || "Test Failed: Output did not match expected results.";
+          finalOutput += `\n\n❌ --------------------------\n❌ ${errorMsg}\n❌ --------------------------`;
+        }
+      }
+
+      if (stderr) {
+        setOutput(`Error:\n${stderr}`);
+      } else {
+        setOutput(finalOutput || "Script executed successfully. (No output)");
+      }
     } catch (error: any) {
-      setOutput(`Syntax Error:\n${error.message}`);
+      setOutput(`Syntax Error:\n${error.message.split('File "<exec>"')[1] || error.message}`);
     } finally {
       setIsRunningCode(false);
     }
   };
 
-  const [isGeneratingCert, setIsGeneratingCert] = useState(false);
-
-  // 🚨 THE AUTOMATED CERTIFICATE GENERATOR
-  const handleGenerateCertificate = () => {
+  const askAITutor = async () => {
+    if (!code.trim() || isAskingAI) return;
+    setIsAskingAI(true);
+    setAiResponse(null);
     try {
-      // 1. Initialize a landscape A4 PDF document
+      const response = await fetch('/api/ai-tutor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: code,
+          assignment: activeVideo.githubAssignment?.title || "Python exercise",
+          output: output || "No output yet."
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setAiResponse(data.message);
+      } else {
+        setAiResponse("AI Tutor is taking a break. Please check your syntax manually.");
+      }
+    } catch (error) {
+      setAiResponse("Network error. AI Tutor could not be reached.");
+    } finally {
+      setIsAskingAI(false);
+    }
+  };
+
+  const handleGenerateCertificate = async () => {
+    try {
+      const { jsPDF } = await import("jspdf");
       const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
       
-      // 2. Draw the Premium Warm Ivory Background
-      doc.setFillColor(253, 252, 248); // Ivory color
-      doc.rect(0, 0, 297, 210, 'F');
-      
-      // 3. Draw the Outer and Inner Borders (Amber/Gold)
-      doc.setDrawColor(217, 119, 6); // Amber-600
-      doc.setLineWidth(2);
-      doc.rect(10, 10, 277, 190);
-      doc.setLineWidth(0.5);
-      doc.rect(12, 12, 273, 186);
+      doc.setFillColor(253, 252, 248); doc.rect(0, 0, 297, 210, 'F');
+      doc.setDrawColor(217, 119, 6); doc.setLineWidth(2); doc.rect(10, 10, 277, 190);
+      doc.setLineWidth(0.5); doc.rect(12, 12, 273, 186);
 
-      // 4. Add the Header/Title
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(36);
-      doc.setTextColor(28, 25, 23); // Stone-900
+      doc.setFont("helvetica", "bold"); doc.setFontSize(36); doc.setTextColor(28, 25, 23);
       doc.text("Certificate of Completion", 148.5, 50, { align: "center" });
 
-      // 5. Add the Subtitle
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(16);
-      doc.setTextColor(120, 113, 108); // Stone-500
+      doc.setFont("helvetica", "normal"); doc.setFontSize(16); doc.setTextColor(120, 113, 108);
       doc.text("This is to certify that", 148.5, 75, { align: "center" });
 
-      // 6. Add the Student's Name Dynamically
-      const studentName = user?.fullName || user?.firstName || "Dedicated Student";
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(32);
-      doc.setTextColor(217, 119, 6); // Amber-600
+      const studentName = String(user?.fullName || user?.firstName || "Dedicated Student");
+      doc.setFont("helvetica", "bold"); doc.setFontSize(32); doc.setTextColor(217, 119, 6);
       doc.text(studentName.toUpperCase(), 148.5, 95, { align: "center" });
 
-      // 7. Add Course Details
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(16);
-      doc.setTextColor(28, 25, 23);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(16); doc.setTextColor(28, 25, 23);
       doc.text(`has successfully completed the immersive program:`, 148.5, 115, { align: "center" });
       
       doc.setFont("helvetica", "bold");
-      doc.text(courseDetails?.title || "Python Programming", 148.5, 127, { align: "center" });
+      doc.text(String(courseDetails?.title || "Python Programming"), 148.5, 127, { align: "center" });
 
-      doc.setFont("helvetica", "italic");
-      doc.setFontSize(14);
-      doc.setTextColor(120, 113, 108);
+      doc.setFont("helvetica", "italic"); doc.setFontSize(14); doc.setTextColor(120, 113, 108);
       doc.text("demonstrating mastery in automation, coding logic, and execution.", 148.5, 140, { align: "center" });
 
-      // 8. Add Verification Details (Date & Unique ID)
       const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
       const uniqueId = `SA-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
       
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(12);
-      doc.setTextColor(28, 25, 23);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(12); doc.setTextColor(28, 25, 23);
       doc.text(`Date Issued: ${today}`, 40, 170);
       doc.text(`Certificate ID: ${uniqueId}`, 40, 180);
 
-      // 9. Add Your Signature/Title
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(20);
-      doc.text("Shivam Namdev", 250, 168, { align: "center" });
-      
-      doc.setDrawColor(28, 25, 23);
-      doc.setLineWidth(0.5);
-      doc.line(210, 172, 290, 172); // Signature Line
-      
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(12);
-      doc.text("Lead QA & Instructor", 250, 180, { align: "center" });
+      doc.setFont("helvetica", "bold"); doc.setFontSize(20); doc.text("Shivam Namdev", 250, 168, { align: "center" });
+      doc.setDrawColor(28, 25, 23); doc.setLineWidth(0.5); doc.line(210, 172, 290, 172);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(12); doc.text("Lead QA & Instructor", 250, 180, { align: "center" });
 
-      // 10. Trigger the Download!
       doc.save(`${studentName.replace(/\s+/g, '_')}_Certificate.pdf`);
-
     } catch (error) {
-      console.error("Error generating certificate:", error);
-      alert("Something went wrong while generating your certificate. Please try again.");
+      alert("Something went wrong while generating your certificate.");
     }
   };
 
@@ -336,10 +330,8 @@ sys.stderr = io.StringIO()
     );
   }
 
-  // 🚨 NEW PROGRESS MATH: Calculates Videos + Assignments
   const totalVideos = playlist.flatMap(m => m.videos).length;
   const totalAssignments = playlist.flatMap(m => m.videos.filter((v: any) => v.githubAssignment)).length;
-  
   const totalTasks = totalVideos + totalAssignments;
   const completedTasks = completedVideos.length + completedAssignments.length;
   const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
@@ -374,14 +366,12 @@ sys.stderr = io.StringIO()
                   <Clock size={40} className="text-amber-500" />
                 </div>
                 <h2 className="text-3xl font-black text-white mb-4">Live Classes Starting Soon</h2>
-                
-                {/* 🚨 NEW: Google Meet Button inside the Video Player! */}
                 {courseDetails?.liveLink ? (
                   <a href={courseDetails.liveLink} target="_blank" rel="noreferrer" className="px-8 py-4 rounded-full bg-amber-500 text-stone-900 font-bold text-lg flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors shadow-lg">
                     <PlayCircle size={20} /> Join Today's Live Class on Google Meet
                   </a>
                 ) : (
-                  <p className="text-stone-400 max-w-md">Once the live sessions begin, the recordings will be automatically uploaded and unlocked here for you to watch anytime.</p>
+                  <p className="text-stone-400 max-w-md">Once the live sessions begin, the recordings will be automatically uploaded and unlocked here.</p>
                 )}
               </div>
             )}
@@ -409,10 +399,10 @@ sys.stderr = io.StringIO()
             {activeVideo && (
               <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden mb-10">
                 <div className="flex border-b border-stone-100 bg-stone-50/50">
-                  <button onClick={() => setActiveTab('description')} className={`flex-1 py-4 font-bold text-sm flex justify-center gap-2 ${activeTab === 'description' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500'}`}><AlignLeft size={18} /> Lesson Details</button>
-                  <button onClick={() => setActiveTab('qa')} className={`flex-1 py-4 font-bold text-sm flex justify-center gap-2 ${activeTab === 'qa' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500'}`}><MessageCircle size={18} /> Q&A ({comments.length})</button>
+                  <button onClick={() => setActiveTab('description')} className={`flex-1 py-4 font-bold text-sm flex justify-center gap-2 transition-all ${activeTab === 'description' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500'}`}><AlignLeft size={18} /> Lesson Details</button>
+                  <button onClick={() => setActiveTab('qa')} className={`flex-1 py-4 font-bold text-sm flex justify-center gap-2 transition-all ${activeTab === 'qa' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500'}`}><MessageCircle size={18} /> Q&A ({comments.length})</button>
                   {activeVideo.githubAssignment && (
-                    <button onClick={() => setActiveTab('practice')} className={`flex-1 py-4 font-bold text-sm flex justify-center gap-2 ${activeTab === 'practice' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500'}`}>
+                    <button onClick={() => setActiveTab('practice')} className={`flex-1 py-4 font-bold text-sm flex justify-center gap-2 transition-all ${activeTab === 'practice' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500'}`}>
                       <Code size={18} /> Practice {isAssignmentCompleted && "✅"}
                     </button>
                   )}
@@ -420,12 +410,11 @@ sys.stderr = io.StringIO()
 
                 <div className="p-6 md:p-8">
                   {activeTab === 'description' && (
-                  <div className="prose prose-stone max-w-none">
-                    <p className="text-stone-600 whitespace-pre-wrap leading-relaxed text-sm md:text-base">
-                      {activeVideo.description}
-                    </p>
-                  </div>
-                )}
+                    <div className="prose prose-stone max-w-none">
+                      <p className="text-stone-600 whitespace-pre-wrap leading-relaxed text-sm md:text-base">{activeVideo.description}</p>
+                    </div>
+                  )}
+                  
                   {activeTab === 'qa' && (
                     <div className="flex flex-col gap-6">
                       <form onSubmit={handlePostComment} className="flex flex-col gap-3">
@@ -433,9 +422,9 @@ sys.stderr = io.StringIO()
                         <button type="submit" disabled={isPosting} className="self-end px-6 py-2.5 rounded-xl bg-stone-900 text-white font-bold text-sm flex items-center gap-2"><Send size={16} /> Post Question</button>
                       </form>
                       <div className="space-y-6 pt-6 border-t border-stone-100">
-                        {comments.map((comment) => (
+                        {comments.length === 0 ? <p className="text-center text-stone-400 text-sm italic py-4">No questions yet.</p> : comments.map((comment) => (
                           <div key={comment.id} className="flex gap-4">
-                            <img src={comment.user_image || "https://www.gravatar.com/avatar/?d=mp"} alt="User" className="w-10 h-10 rounded-full border border-stone-200" />
+                            <img src={comment.user_image || "https://www.gravatar.com/avatar/?d=mp"} alt="User" className="w-10 h-10 rounded-full border border-stone-200 shadow-sm" />
                             <div className="flex-grow bg-stone-50 p-4 rounded-2xl rounded-tl-none border border-stone-100">
                               <h5 className="font-bold text-stone-900 text-sm mb-1">{comment.user_name}</h5>
                               <p className="text-stone-600 text-sm whitespace-pre-wrap">{comment.content}</p>
@@ -446,6 +435,7 @@ sys.stderr = io.StringIO()
                     </div>
                   )}
 
+                  {/* 🚨 REPAIRED PRACTICE TAB: ONLY ONE IDE & TERMINAL! */}
                   {activeTab === 'practice' && activeVideo.githubAssignment && (
                     <div className="flex flex-col gap-6">
                       <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex justify-between items-center">
@@ -453,32 +443,49 @@ sys.stderr = io.StringIO()
                           <h4 className="font-bold text-amber-800 mb-1">Practice Exercise:</h4>
                           <p className="text-stone-700 text-sm font-medium">{activeVideo.githubAssignment.title}</p>
                         </div>
+                        <a href={activeVideo.githubAssignment.rawUrl.replace('raw.githubusercontent.com', 'github.com').replace('/refs/heads/main/', '/tree/main/')} target="_blank" rel="noreferrer" className="text-xs text-amber-600 hover:text-amber-800 font-bold underline">
+                          View on GitHub
+                        </a>
                       </div>
 
                       <div className="border border-stone-200 rounded-xl overflow-hidden shadow-inner">
-                        <div className="bg-stone-900 px-4 py-2 flex justify-between items-center">
-                          <span className="text-stone-400 text-xs font-mono">main.py</span>
-                          <div className="flex gap-2">
-                            <button onClick={runPythonCode} disabled={isRunningCode || isPyodideLoading} className="px-4 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-bold flex items-center gap-2 transition-colors disabled:opacity-50">
-                              {isPyodideLoading || isRunningCode ? <Loader2 size={14} className="animate-spin"/> : <PlayCircle size={14}/>} Run Code
+                        <div className="bg-stone-900 px-4 py-2 flex flex-wrap justify-between items-center gap-2">
+                          <span className="text-stone-400 text-xs font-mono mr-4 hidden sm:block">main.py</span>
+                          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                            
+                            <button onClick={askAITutor} disabled={isAskingAI || !code.trim()} className="flex-1 sm:flex-none px-4 py-1.5 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white rounded text-xs font-bold flex justify-center items-center gap-2 transition-all disabled:opacity-50 shadow-md">
+                              {isAskingAI ? <Loader2 size={14} className="animate-spin"/> : <MessageCircle size={14}/>} Ask AI Tutor
+                            </button>
+
+                            <button onClick={runPythonCode} disabled={isRunningCode || isPyodideLoading || isFetchingCode} className="flex-1 sm:flex-none px-4 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-bold flex justify-center items-center gap-2 transition-colors disabled:opacity-50">
+                              {isPyodideLoading || isFetchingCode ? <Loader2 size={14} className="animate-spin"/> : isRunningCode ? <Loader2 size={14} className="animate-spin"/> : <PlayCircle size={14}/>} Run Code
                             </button>
                             
-                            {/* 🚨 THE SUBMIT ASSIGNMENT BUTTON */}
-                            <button onClick={submitAssignment} disabled={isSubmittingAssignment} className={`px-4 py-1.5 rounded text-xs font-bold flex items-center gap-2 transition-colors ${isAssignmentCompleted ? 'bg-amber-500 text-white' : 'bg-stone-700 hover:bg-stone-600 text-white'}`}>
-                              {isSubmittingAssignment ? <Loader2 size={14} className="animate-spin"/> : <FileCheck size={14}/>} 
-                              {isAssignmentCompleted ? "Update Submission" : "Submit Assignment"}
+                            <button onClick={submitAssignment} disabled={isSubmittingAssignment} className={`flex-1 sm:flex-none px-4 py-1.5 rounded text-xs font-bold flex justify-center items-center gap-2 transition-colors ${isAssignmentCompleted ? 'bg-amber-500 text-white' : 'bg-stone-700 hover:bg-stone-600 text-white'}`}>
+                              {isSubmittingAssignment ? <Loader2 size={14} className="animate-spin"/> : <FileCheck size={14}/>} {isAssignmentCompleted ? "Update Code" : "Submit"}
                             </button>
                           </div>
                         </div>
-                        <Editor height="300px" defaultLanguage="python" theme="vs-dark" value={code} onChange={(value) => setCode(value || "")} options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} />
+                        <Editor height="350px" defaultLanguage="python" theme="vs-dark" value={code} onChange={(value) => { setCode(value || ""); setAiResponse(null); }} options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} />
                       </div>
 
                       <div className="bg-black rounded-xl p-4 border border-stone-800 shadow-inner min-h-[120px]">
                         <div className="flex items-center gap-2 text-stone-400 mb-2 border-b border-stone-800 pb-2">
-                          <TerminalSquare size={16} /> <span className="text-xs font-mono font-bold uppercase">Output</span>
+                          <TerminalSquare size={16} /> <span className="text-xs font-mono font-bold uppercase tracking-widest">Output</span>
                         </div>
                         <pre className={`text-sm font-mono whitespace-pre-wrap ${output.startsWith('Error') || output.startsWith('Syntax') ? 'text-red-400' : 'text-green-400'}`}>{output || "Run your code to see the output here..."}</pre>
                       </div>
+
+                      {/* AI Response Box */}
+                      {aiResponse && (
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-5 bg-purple-50 border border-purple-200 rounded-xl flex gap-4 items-start shadow-sm mt-2">
+                          <div className="w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center flex-shrink-0 text-2xl">🤖</div>
+                          <div>
+                            <h4 className="font-bold text-purple-900 mb-1">Shivam's AI Assistant</h4>
+                            <p className="text-purple-800 text-sm leading-relaxed whitespace-pre-wrap">{aiResponse}</p>
+                          </div>
+                        </motion.div>
+                      )}
                     </div>
                   )}
 
@@ -495,7 +502,7 @@ sys.stderr = io.StringIO()
                 <div className="bg-green-500 h-2 rounded-full transition-all duration-1000 ease-out" style={{ width: `${progressPercentage}%` }}></div>
               </div>
               
-              {/* 🚨 THE CERTIFICATE UNLOCK BUTTON */}
+              {/* Admin Override to test Certificate! */}
               {(progressPercentage === 100 || user?.primaryEmailAddress?.emailAddress === "shivamnamdev.corp@gmail.com") && (
                 <button onClick={handleGenerateCertificate} className="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-900 font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] transition-transform animate-in zoom-in">
                   <Award size={20} /> Claim Certificate

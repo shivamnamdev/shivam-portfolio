@@ -94,7 +94,9 @@ export const courseCurriculumMap: Record<string, any[]> = {
     videoIds:[
       "TtsqgKlLzlg", // 4. Lists & Advanced Operations
       "rikgL_Oj5Ds",
-      "aMKAALJISv4" // tuple and set
+      "aMKAALJISv4",// tuple and set
+      "ri_osXAdVNs", // Dictionary
+      "HUXjBqiJ6sk"
       // "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
     ],
     githubAssignments: {
@@ -111,6 +113,10 @@ export const courseCurriculumMap: Record<string, any[]> = {
           title: "Day 16: Tuple and Set Data Type",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/78415aab26bd2a44bb579835fb734d03f0edd2f5/Day%2015%3A%20Tuple%20and%20Set/Assignment.docx"
         },
+        "ri_osXAdVNs":{
+          title: "Day 17: Dictionary",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2016%3A%20Dictionary/Assignment.docx"
+        }
     }  
   },
   {
