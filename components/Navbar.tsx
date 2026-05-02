@@ -68,10 +68,16 @@ export default function Navbar() {
     >
       <div className="flex items-center justify-between w-full max-w-7xl mx-auto px-6 py-3 rounded-full border border-stone-200 bg-white/90 backdrop-blur-xl shadow-lg">
         
-        {/* LEFT: LOGO */}
+        {/* LEFT: YOUR NEW LOGO */}
         <Link href="/" className="flex items-center gap-3 group">
-          <img src="/logo.png" alt="Logo" className="h-8 w-auto group-hover:scale-105 transition-transform" onError={(e) => e.currentTarget.style.display = 'none'} />
-          <span className="font-display font-black text-xl tracking-tight text-stone-900 hidden sm:block">SHIVAM.</span>
+          <img 
+            src="/logo.jpg" 
+            alt="Shivam Academy Logo" 
+            className="h-8 w-auto group-hover:scale-105 transition-transform" 
+          />
+          <span className="font-display font-black text-xl tracking-tight text-stone-900 hidden sm:block">
+            SHIVAM.
+          </span>
         </Link>
 
         {/* MIDDLE: NAVIGATION LINKS */}
