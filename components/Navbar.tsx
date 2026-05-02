@@ -8,10 +8,14 @@ import { Bell, Sparkles, Calendar, AlertCircle } from 'lucide-react';
 import { platformNotifications } from '@/data/notifications';
 
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-  const[showNotifications, setShowNotifications] = useState(false);
+  const[scrolled, setScrolled] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const pathname = usePathname();
   const notifRef = useRef<HTMLDivElement>(null);
+
+  // 🚨 NEW STATES: To track unread notifications & prevent hydration errors
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Handle scroll effect
   useEffect(() => {
@@ -31,7 +35,24 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   },[]);
 
-  // Helper to choose the right icon based on notification type
+  // 🚨 NEW LOGIC: Check LocalStorage to see if they've read the notifications
+  useEffect(() => {
+    setIsMounted(true);
+    const savedReadCount = parseInt(localStorage.getItem('shivam_academy_read_count') || '0');
+    const totalNotifications = platformNotifications.length;
+    
+    // If there are more notifications now than what they previously read, show the difference!
+    setUnreadCount(Math.max(0, totalNotifications - savedReadCount));
+  },[]);
+
+  // 🚨 NEW LOGIC: Mark as read and save to LocalStorage
+  const handleMarkAllAsRead = () => {
+    localStorage.setItem('shivam_academy_read_count', platformNotifications.length.toString());
+    setUnreadCount(0); // Clear the red dot immediately
+    setShowNotifications(false); // Close the dropdown
+  };
+
+  // Helper to choose the right icon
   const getIcon = (type: string) => {
     switch(type) {
       case 'feature': return <Sparkles size={16} className="text-purple-500" />;
@@ -74,15 +95,15 @@ export default function Navbar() {
           <SignedIn>
             <div className="flex items-center gap-3 md:gap-5">
               
-              {/* 🚨 THE NOTIFICATION BELL */}
+              {/* THE NOTIFICATION BELL */}
               <div className="relative" ref={notifRef}>
                 <button 
                   onClick={() => setShowNotifications(!showNotifications)}
                   className="relative p-2 text-stone-600 hover:text-amber-600 hover:bg-stone-100 rounded-full transition-all"
                 >
                   <Bell size={20} />
-                  {/* Unread Red Dot */}
-                  {platformNotifications.length > 0 && (
+                  {/* 🚨 DYNAMIC Red Dot */}
+                  {isMounted && unreadCount > 0 && (
                     <span className="absolute top-1.5 right-2 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
                   )}
                 </button>
@@ -98,7 +119,10 @@ export default function Navbar() {
                     >
                       <div className="bg-stone-50 border-b border-stone-100 px-5 py-3 flex justify-between items-center">
                         <h3 className="font-bold text-stone-900">Notifications</h3>
-                        <span className="text-xs font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">{platformNotifications.length} New</span>
+                        {/* 🚨 DYNAMIC Unread Count Badge */}
+                        <span className="text-xs font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                          {isMounted ? unreadCount : 0} New
+                        </span>
                       </div>
                       
                       <div className="max-h-[350px] overflow-y-auto">
@@ -126,7 +150,11 @@ export default function Navbar() {
                       </div>
                       
                       <div className="p-3 bg-stone-50 border-t border-stone-100 text-center">
-                        <button onClick={() => setShowNotifications(false)} className="text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors">
+                        {/* 🚨 THE UPDATED 'MARK AS READ' BUTTON */}
+                        <button 
+                          onClick={handleMarkAllAsRead} 
+                          className="text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors"
+                        >
                           Mark all as read
                         </button>
                       </div>
