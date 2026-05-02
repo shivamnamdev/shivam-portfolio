@@ -1,13 +1,21 @@
 // data/notifications.ts
 
 export const platformNotifications =[
+    {
+    id: "notif-dict-video",
+    title: "📽️ Python Session: Recording Update",
+    message: "Python Session Dictionary Hands On Live Recording as uploaded.",
+    date: "Just now",
+    type: "alert", // Can be 'alert', 'feature', or 'event'
+    link: "/learning/python-beginners"
+  },
   {
     id: "notif-01",
     title: "🚨 Python Batch 2 Enrollment Will Open Soon",
     message: "Early bird pricing is now live for the upcoming Python cohort. Secure your spot!",
     date: "Just now",
     type: "alert", // Can be 'alert', 'feature', or 'event'
-    link: "/courses/python-beginners-batch-2"
+    link: "/courses/python-beginners"
   },
   {
     id: "notif-02",
