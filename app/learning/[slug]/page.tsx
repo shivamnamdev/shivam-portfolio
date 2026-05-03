@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { PlayCircle, CheckCircle, Lock, ChevronLeft, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, TerminalSquare, Award, FileCheck } from 'lucide-react';
+import { PlayCircle, CheckCircle, Lock, ChevronLeft, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, TerminalSquare, Award, FileCheck, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { courseCurriculumMap } from '@/data/learning-content';
 import { activeCourses } from '@/data/courses';
@@ -33,8 +33,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   const [isMarking, setIsMarking] = useState(false);
   
   // Tab & Q&A States
-  const [activeTab, setActiveTab] = useState<'description' | 'qa' | 'practice'>('description');
-  const [comments, setComments] = useState<any[]>([]);
+  const[activeTab, setActiveTab] = useState<'description' | 'qa' | 'practice' | 'visualize'>('description');  const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isPosting, setIsPosting] = useState(false);
 
@@ -398,13 +397,25 @@ sys.stderr = io.StringIO()
 
             {activeVideo && (
               <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden mb-10">
-                <div className="flex border-b border-stone-100 bg-stone-50/50">
-                  <button onClick={() => setActiveTab('description')} className={`flex-1 py-4 font-bold text-sm flex justify-center gap-2 transition-all ${activeTab === 'description' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500'}`}><AlignLeft size={18} /> Lesson Details</button>
-                  <button onClick={() => setActiveTab('qa')} className={`flex-1 py-4 font-bold text-sm flex justify-center gap-2 transition-all ${activeTab === 'qa' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500'}`}><MessageCircle size={18} /> Q&A ({comments.length})</button>
+                <div className="flex overflow-x-auto border-b border-stone-100 bg-stone-50/50">
+                  <button onClick={() => setActiveTab('description')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'description' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
+                    <AlignLeft size={18} /> Lesson Details
+                  </button>
+                  <button onClick={() => setActiveTab('qa')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'qa' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
+                    <MessageCircle size={18} /> Q&A ({comments.length})
+                  </button>
+                  
                   {activeVideo.githubAssignment && (
-                    <button onClick={() => setActiveTab('practice')} className={`flex-1 py-4 font-bold text-sm flex justify-center gap-2 transition-all ${activeTab === 'practice' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500'}`}>
-                      <Code size={18} /> Practice {isAssignmentCompleted && "✅"}
-                    </button>
+                    <>
+                      <button onClick={() => setActiveTab('practice')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'practice' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
+                        <Code size={18} /> Practice {isAssignmentCompleted && "✅"}
+                      </button>
+                      
+                      {/* 🚨 THE MISSING VISUALIZE BUTTON */}
+                      <button onClick={() => setActiveTab('visualize')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'visualize' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
+                        <Eye size={18} /> Visualize
+                      </button>
+                    </>
                   )}
                 </div>
 
@@ -488,6 +499,45 @@ sys.stderr = io.StringIO()
                       )}
                     </div>
                   )}
+
+                  {/* 🚨 UPDATED: THE PYTHON TUTOR VISUALIZER TAB CONTENT */}
+                  {activeTab === 'visualize' && activeVideo.githubAssignment && (
+                    <div className="flex flex-col gap-6">
+                      <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl flex justify-between items-center">
+                        <div>
+                          <h4 className="font-bold text-blue-800 mb-1">Code Visualizer</h4>
+                          <p className="text-blue-900/70 text-sm">Step through your code line-by-line to see how variables change in memory.</p>
+                        </div>
+                      </div>
+                      
+                      {/* 🚨 THE UX HACK: Native Window Wrapper & CSS Filters */}
+                      <div className="w-full bg-[#fdfcf8] rounded-xl border border-stone-200 shadow-inner overflow-hidden h-[600px] flex flex-col">
+                        
+                        {/* Custom Window Header */}
+                        <div className="h-10 bg-stone-100 border-b border-stone-200 flex items-center px-4 gap-2">
+                          <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                          <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+                          <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                          <span className="text-xs font-mono font-bold text-stone-400 ml-4">shivam-academy-visualizer.exe</span>
+                        </div>
+
+                        {/* Iframe with Blend Modes */}
+                        <div className="flex-grow bg-[#fdfcf8] relative overflow-hidden">
+                          <iframe
+                            className="absolute top-0 left-0 w-full h-full"
+                            style={{
+                              // Softens the harsh colors and blends the white background into our Ivory theme!
+                              filter: "contrast(0.95) sepia(0.05)",
+                              mixBlendMode: "multiply"
+                            }}
+                            frameBorder="0"
+                            src={`https://pythontutor.com/iframe-embed.html#code=${encodeURIComponent(code)}&cumulative=false&heapPrimitives=nevernest&mode=display&origin=opt-frontend.js&py=3&rawInputLstJSON=%5B%5D&textReferences=false`}
+                          ></iframe>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
 
                 </div>
               </div>
