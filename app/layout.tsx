@@ -11,12 +11,12 @@ const mono = JetBrains_Mono({ subsets:["latin"], variable: "--font-mono" });
 
 // This is the SEO Block!
 export const metadata: Metadata = {
-  title: "Shivam Namdev | Master Python & Automation",
-  description: "Stop getting stuck in tutorial hell. Join my interactive live cohort to write code confidently, build real-world projects, and become job-ready in 45 days.",
+  title: "Shivam Academy | Empowering Tech Mastery",
+  description: "Helping IT and Non-IT professionals achieve Tech Mastery. Master Python, DevOps, Linux, Cloud, and Automation through real-world engineering.",
   metadataBase: new URL('https://shivamnamdev.com'), 
   openGraph: {
-    title: "Master Python Programming | Shivam Namdev",
-    description: "Join the exclusive Live Cohort. Build strong coding logic from scratch and master Python in 45 days.",
+    title: "Shivam Academy | Tech Mastery for IT & Non-IT Professionals",
+    description: "From beginner to expert. Master Python, DevOps, and Cloud architecture through interactive live cohorts and real-world projects.",
     url: "https://shivamnamdev.com",
     siteName: "Shivam Namdev",
     images:[
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
         url: "/og-image.jpg", 
         width: 1200,
         height: 630,
-        alt: "Python Live Sessions by Shivam Namdev",
+        alt: "Tech Mastery by Shivam Namdev",
       },
     ],
     locale: "en_IN",
@@ -32,8 +32,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Master Python Programming | Shivam Namdev",
-    description: "Join the exclusive Live Cohort. Build strong coding logic from scratch and master Python in 45 days.",
+    title: "Shivam Academy | Empowering Tech Mastery",
+    description: "Master Python, DevOps, Linux, Cloud, and Automation through real-world engineering.",
     images:["/og-image.jpg"],
   },
 };

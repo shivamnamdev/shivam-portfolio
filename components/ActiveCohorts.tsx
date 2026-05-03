@@ -1,8 +1,9 @@
 'use client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { CheckCircle2, ChevronDown, Gift, Calendar, Code2, Download, CreditCard, Loader2, Globe } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Gift, Calendar, Code2, Download, CreditCard, Loader2, Globe, Tag } from 'lucide-react';
 import { activeCourses } from '@/data/courses';
+import { activeCoupons } from '@/data/coupons';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
@@ -23,20 +24,21 @@ const loadRazorpayScript = () => {
 
 export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps) {
   const [openModule, setOpenModule] = useState<number | null>(0);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const[isAlreadyEnrolled, setIsAlreadyEnrolled] = useState(false);
+  const[isProcessing, setIsProcessing] = useState(false);
+  const [isAlreadyEnrolled, setIsAlreadyEnrolled] = useState(false);
+  const [region, setRegion] = useState<'inr' | 'usd'>('inr');
   
-  // Track Region (India vs International)
-  const[region, setRegion] = useState<'inr' | 'usd'>('inr');
-  
+  // Coupon States
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [couponMessage, setCouponMessage] = useState({ text: "", type: "" });
+
   const { isSignedIn, user } = useUser();
   const { openSignIn } = useClerk();
   const router = useRouter();
 
-  // Determine course to display
   const displayCourse = propCourse || activeCourses[0];
 
-  // Safely check enrollment
   useEffect(() => {
     async function checkEnrollment() {
       if (!isSignedIn || !user?.id || !displayCourse?.slug) return;
@@ -48,17 +50,53 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
           .eq('course_slug', displayCourse.slug);
         
         if (!error && data && data.length > 0) setIsAlreadyEnrolled(true);
-      } catch (err) {
-        console.error(err);
-      }
+      } catch (err) {}
     }
     checkEnrollment();
   }, [isSignedIn, user?.id, displayCourse?.slug]);
 
   if (!displayCourse) return null;
 
-  // Grab the correct pricing object based on the Region Toggle
   const activePricing = displayCourse.pricing[region];
+
+  let displayPriceNumeric = parseInt(activePricing.currentPrice.replace(/[^0-9]/g, ''));
+  const originalPriceNumeric = displayPriceNumeric;
+
+  if (appliedCoupon) {
+    if (appliedCoupon.discountType === 'percentage') {
+      displayPriceNumeric = displayPriceNumeric - (displayPriceNumeric * (appliedCoupon.discountValue / 100));
+    } else if (appliedCoupon.discountType === 'fixed') {
+      displayPriceNumeric = displayPriceNumeric - (appliedCoupon.discountValue[region] || 0);
+    }
+    // Limit to 0 so we can bypass Razorpay!
+    displayPriceNumeric = Math.max(Math.round(displayPriceNumeric), 0);
+  }
+
+  const handleApplyCoupon = () => {
+    if (!isSignedIn) {
+      alert("Please log in first to apply a coupon!");
+      openSignIn();
+      return;
+    }
+    
+    setCouponMessage({ text: "", type: "" });
+    const coupon = activeCoupons.find(c => c.code.toUpperCase() === couponInput.toUpperCase());
+    
+    if (!coupon) {
+      setCouponMessage({ text: "Invalid coupon code.", type: "error" });
+      setAppliedCoupon(null);
+      return;
+    }
+    
+    if (coupon.allowedUsers && coupon.allowedUsers.length > 0 && !coupon.allowedUsers.includes(user?.id)) {
+      setCouponMessage({ text: "This coupon is restricted to specific accounts.", type: "error" });
+      setAppliedCoupon(null);
+      return;
+    }
+
+    setAppliedCoupon(coupon);
+    setCouponMessage({ text: "Coupon applied successfully!", type: "success" });
+  };
 
   const handlePayment = async () => {
     if (!isSignedIn) {
@@ -69,6 +107,32 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
     setIsProcessing(true);
 
     try {
+      // 🚨 BYPASS RAZORPAY IF FREE
+      if (displayPriceNumeric === 0) {
+        const res = await fetch('/api/enroll-free', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            courseId: displayCourse.id, 
+            courseSlug: displayCourse.slug,
+            currency: activePricing.currencyCode, 
+            couponCode: appliedCoupon?.code, 
+            userId: user?.id 
+          })
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+          alert("🎉 100% Discount Applied! You are now enrolled.");
+          router.push('/learning');
+        } else {
+          alert(data.error || "Failed to process free enrollment.");
+        }
+        setIsProcessing(false);
+        return; 
+      }
+
+      // NORMAL RAZORPAY CHECKOUT
       const res = await loadRazorpayScript();
       if (!res) {
         alert("Razorpay SDK failed to load. Are you online?");
@@ -76,23 +140,21 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
         return;
       }
 
-      // Strip symbols from the dynamically selected activePricing
-      const numericAmount = parseInt(activePricing.currentPrice.replace(/[^0-9]/g, ''));
-
       const orderResponse = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          amount: numericAmount, 
+          amount: displayPriceNumeric, 
           courseId: displayCourse.id,
-          currency: activePricing.currencyCode 
+          currency: activePricing.currencyCode,
+          couponCode: appliedCoupon?.code,
+          userId: user?.id 
         })
       });
       const data = await orderResponse.json();
 
-      if (!data.success) throw new Error("Failed to create Razorpay order");
+      if (!data.success) throw new Error(data.error || "Failed to create Razorpay order");
 
-      // 🚨 THIS IS THE OPTIONS OBJECT THAT WAS MISSING A BRACKET
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
         amount: data.order.amount,
@@ -119,7 +181,7 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
                 userEmail: user?.primaryEmailAddress?.emailAddress,
                 userName: user?.fullName || user?.firstName || "Student",
                 courseTitle: displayCourse.title,
-                amountPaid: activePricing.currentPrice
+                amountPaid: `${activePricing.currencyCode === 'USD' ? '$' : '₹'}${displayPriceNumeric}`
               })
             });
             const verifyData = await verifyRes.json();
@@ -131,9 +193,8 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
             alert("Error verifying enrollment.");
           }
         },
-      }; // <-- This closing bracket/semicolon is what was missing!
+      };
 
-      // Safely cast window to any to prevent TypeScript errors
       const RazorpayConstructor = (window as any).Razorpay;
       const paymentObject = new RazorpayConstructor(options);
       
@@ -142,9 +203,9 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
       });
       paymentObject.open();
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Payment Error:", error);
-      alert("Something went wrong connecting to the payment gateway.");
+      alert(error.message || "Something went wrong connecting to the payment gateway.");
     } finally {
       setIsProcessing(false);
     }
@@ -173,36 +234,43 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
               <span>{displayCourse.duration}</span>
             </div>
 
-            {/* PRICING BOX WITH REGION TOGGLE */}
             <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm mb-6">
               
               <div className="flex p-1 bg-stone-100 rounded-xl mb-6 border border-stone-200">
-                <button 
-                  onClick={() => setRegion('inr')} 
-                  className={`w-1/2 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${region === 'inr' ? 'bg-white text-stone-900 shadow-sm border border-stone-200' : 'text-stone-500 hover:text-stone-700'}`}
-                >
-                  🇮🇳 India
-                </button>
-                <button 
-                  onClick={() => setRegion('usd')} 
-                  className={`w-1/2 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${region === 'usd' ? 'bg-white text-stone-900 shadow-sm border border-stone-200' : 'text-stone-500 hover:text-stone-700'}`}
-                >
-                  <Globe size={16} /> International
-                </button>
+                <button onClick={() => setRegion('inr')} className={`w-1/2 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${region === 'inr' ? 'bg-white text-stone-900 shadow-sm border border-stone-200' : 'text-stone-500 hover:text-stone-700'}`}>🇮🇳 India</button>
+                <button onClick={() => setRegion('usd')} className={`w-1/2 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${region === 'usd' ? 'bg-white text-stone-900 shadow-sm border border-stone-200' : 'text-stone-500 hover:text-stone-700'}`}><Globe size={16} /> International</button>
               </div>
 
               <div className="flex items-end gap-3 mb-2">
-                <span className="text-5xl font-black text-stone-900">{activePricing?.currentPrice}</span>
-                <span className="text-xl text-stone-400 line-through font-bold mb-1">{activePricing?.originalPrice}</span>
+                <span className="text-5xl font-black text-stone-900">{activePricing.currencyCode === 'USD' ? '$' : '₹'}{displayPriceNumeric}</span>
+                <span className={`text-xl font-bold mb-1 ${appliedCoupon ? 'text-red-400 line-through' : 'text-stone-400 line-through'}`}>
+                  {appliedCoupon ? activePricing.currentPrice : activePricing.originalPrice}
+                </span>
               </div>
-              <p className="text-amber-600 font-bold text-sm tracking-wide uppercase">{activePricing?.savingsText}</p>
+              <p className="text-amber-600 font-bold text-sm tracking-wide uppercase mb-6">
+                {appliedCoupon ? `🎉 ${appliedCoupon.code} Applied!` : activePricing?.savingsText}
+              </p>
               
-              <div className="mt-6 flex flex-col gap-3">
+              {!isAlreadyEnrolled && (
+                <div className="mb-6 p-4 rounded-xl border border-stone-200 bg-stone-50">
+                  <label className="text-xs font-bold text-stone-500 uppercase tracking-widest mb-2 flex items-center gap-1"><Tag size={12}/> Have a Coupon Code?</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={couponInput} 
+                      onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                      placeholder="Enter code" 
+                      className="flex-1 px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 font-mono text-sm"
+                    />
+                    <button onClick={handleApplyCoupon} className="px-4 py-2 bg-stone-800 text-white rounded-lg font-bold text-sm hover:bg-stone-900 transition-colors">Apply</button>
+                  </div>
+                  {couponMessage.text && <p className={`text-xs font-bold mt-2 ${couponMessage.type === 'error' ? 'text-red-500' : 'text-green-600'}`}>{couponMessage.text}</p>}
+                </div>
+              )}
+
+              <div className="mt-2 flex flex-col gap-3">
                 {isAlreadyEnrolled ? (
-                  <button 
-                    onClick={() => router.push('/learning')}
-                    className="w-full py-4 rounded-xl bg-green-500 text-white font-black text-lg flex items-center justify-center gap-2 hover:bg-green-600 transition-all shadow-lg shadow-green-500/30"
-                  >
+                  <button onClick={() => router.push('/learning')} className="w-full py-4 rounded-xl bg-green-500 text-white font-black text-lg flex items-center justify-center gap-2 hover:bg-green-600 transition-all shadow-lg shadow-green-500/30">
                     <CheckCircle2 size={24} /> You are Enrolled! Go to Dashboard
                   </button>
                 ) : (
@@ -212,12 +280,11 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
                     className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-lg flex items-center justify-center gap-2 hover:scale-[1.02] transition-all shadow-lg shadow-amber-500/30 disabled:opacity-70"
                   >
                     {isProcessing ? <Loader2 className="animate-spin" size={24} /> : <CreditCard size={24} />}
-                    {isProcessing ? "Processing..." : `Buy Now (${activePricing?.currencyCode})`}
+                    {isProcessing ? "Processing..." : displayPriceNumeric === 0 ? "Enroll for Free" : `Buy Now (${activePricing.currencyCode})`}
                   </button>
                 )}
                 
-                <a href="/python-syllabus.pdf" download
-                   className="w-full py-4 rounded-xl border-2 border-stone-200 text-stone-700 font-bold text-lg flex items-center justify-center gap-2 hover:bg-stone-50 hover:border-amber-400 hover:text-amber-600 transition-all">
+                <a href="/python-syllabus.pdf" download className="w-full py-4 rounded-xl border-2 border-stone-200 text-stone-700 font-bold text-lg flex items-center justify-center gap-2 hover:bg-stone-50 hover:border-amber-400 hover:text-amber-600 transition-all">
                   <Download size={20} /> Download Full Syllabus (PDF)
                 </a>
               </div>
@@ -227,22 +294,13 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
               <div>
                 <h4 className="font-bold text-stone-800 mb-3 text-lg">What You Will Achieve:</h4>
                 <ul className="space-y-2">
-                  {displayCourse.outcomes?.map((outcome: string, idx: number) => (
-                    <li key={idx} className="flex gap-3 text-stone-600 text-sm font-medium">
-                      <CheckCircle2 size={18} className="text-amber-500 flex-shrink-0" /> {outcome}
-                    </li>
-                  ))}
+                  {displayCourse.outcomes?.map((outcome: string, idx: number) => <li key={idx} className="flex gap-3 text-stone-600 text-sm font-medium"><CheckCircle2 size={18} className="text-amber-500 flex-shrink-0" /> {outcome}</li>)}
                 </ul>
               </div>
-              
               <div className="p-4 bg-amber-100/50 rounded-xl border border-amber-200">
                 <h4 className="font-bold text-amber-800 mb-2 flex items-center gap-2"><Gift size={18}/> Special Bonuses included:</h4>
                 <ul className="space-y-2">
-                  {displayCourse.bonuses?.map((bonus: string, idx: number) => (
-                    <li key={idx} className="flex gap-2 text-stone-700 text-sm">
-                      <span className="text-amber-600">✔</span> {bonus}
-                    </li>
-                  ))}
+                  {displayCourse.bonuses?.map((bonus: string, idx: number) => <li key={idx} className="flex gap-2 text-stone-700 text-sm"><span className="text-amber-600">✔</span> {bonus}</li>)}
                 </ul>
               </div>
             </div>
