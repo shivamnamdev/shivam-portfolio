@@ -12,14 +12,12 @@ import { courseCurriculumMap } from '@/data/learning-content';
 // 🚨 Ensure this is your exact Clerk login email!
 const ADMIN_EMAIL = "shivamnamdev.corp@gmail.com"; 
 
-// Helper function to map a raw video_id to its readable title!
+// Helper function to map a raw video_id to its readable title
 function getVideoTitle(videoId: string) {
   for (const courseSlug in courseCurriculumMap) {
     for (const module of courseCurriculumMap[courseSlug]) {
-      // Find the index of the video to construct a title like "Lesson 2"
       const videoIndex = module.videoIds.indexOf(videoId);
       if (videoIndex !== -1) {
-        // If it has a GitHub assignment title, use that!
         if (module.githubAssignments && module.githubAssignments[videoId]) {
           return module.githubAssignments[videoId].title;
         }
@@ -34,14 +32,20 @@ export default function AdminDashboard() {
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
 
+  // Manual Enrollment States
   const[studentId, setStudentId] = useState("");
   const [selectedCourse, setSelectedCourse] = useState(activeCourses[0].slug);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
+  // Submissions States
   const [submissions, setSubmissions] = useState<any[]>([]);
-  const[isLoadingSubmissions, setIsLoadingSubmissions] = useState(true);
+  const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(true);
 
+  // 🚨 NEW: Analytics States (Properly placed INSIDE the component!)
+  const [analytics, setAnalytics] = useState({ totalStudents: 0, couponUsage: {} as Record<string, number> });
+
+  // Security Check
   useEffect(() => {
     if (isLoaded) {
       if (!isSignedIn) {
@@ -50,8 +54,9 @@ export default function AdminDashboard() {
         router.push('/learning');
       }
     }
-  },[isLoaded, isSignedIn, user, router]);
+  }, [isLoaded, isSignedIn, user, router]);
 
+  // Fetch Submissions
   useEffect(() => {
     async function fetchSubmissions() {
       if (!isLoaded || !isSignedIn || user.primaryEmailAddress?.emailAddress !== ADMIN_EMAIL) return;
@@ -73,6 +78,31 @@ export default function AdminDashboard() {
     }
     fetchSubmissions();
   }, [isLoaded, isSignedIn, user]);
+
+  // 🚨 NEW: Fetch Revenue & Coupon Data
+  useEffect(() => {
+    async function fetchAnalytics() {
+      if (!isLoaded || !isSignedIn || user.primaryEmailAddress?.emailAddress !== ADMIN_EMAIL) return;
+      try {
+        const { data, error } = await supabase.from('user_enrollments').select('coupon_used');
+        if (!error && data) {
+          const total = data.length;
+          const usage: Record<string, number> = {};
+          
+          data.forEach((row) => {
+            if (row.coupon_used) {
+              usage[row.coupon_used] = (usage[row.coupon_used] || 0) + 1;
+            }
+          });
+
+          setAnalytics({ totalStudents: total, couponUsage: usage });
+        }
+      } catch (err) {
+        console.error("Failed to load analytics:", err);
+      }
+    }
+    fetchAnalytics();
+  },[isLoaded, isSignedIn, user]);
 
   if (!isLoaded || !isSignedIn || user.primaryEmailAddress?.emailAddress !== ADMIN_EMAIL) {
     return (
@@ -113,6 +143,10 @@ export default function AdminDashboard() {
 
       setMessage({ text: "Access Granted Successfully!", type: 'success' });
       setStudentId(""); 
+      
+      // Update analytics instantly
+      setAnalytics(prev => ({ ...prev, totalStudents: prev.totalStudents + 1 }));
+      
     } catch (err) {
       setMessage({ text: "Database Error. Please check the ID and try again.", type: 'error' });
     } finally {
@@ -134,6 +168,35 @@ export default function AdminDashboard() {
           <div>
             <h1 className="text-4xl font-display font-black text-stone-900 mb-1">Admin Portal</h1>
             <p className="text-stone-500 font-mono text-sm">Security Level: Maximum Clearance ({ADMIN_EMAIL})</p>
+          </div>
+        </div>
+
+        {/* 🚨 NEW: Analytics & Coupon Dashboard */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+          {/* Total Students Card */}
+          <div className="bg-stone-900 rounded-3xl p-8 shadow-xl relative overflow-hidden flex flex-col justify-center">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/20 blur-[50px] pointer-events-none" />
+            <h3 className="text-stone-400 font-bold uppercase tracking-widest text-xs mb-2">Total Enrollments</h3>
+            <p className="text-6xl font-black text-white">{analytics.totalStudents}</p>
+          </div>
+
+          {/* Coupon Tracker Card */}
+          <div className="bg-white rounded-3xl p-8 border border-stone-200 shadow-sm relative">
+            <h3 className="text-stone-500 font-bold uppercase tracking-widest text-xs mb-4">Coupon Performance</h3>
+            {Object.keys(analytics.couponUsage).length === 0 ? (
+              <p className="text-stone-400 italic text-sm">No coupons used yet.</p>
+            ) : (
+              <div className="space-y-3 max-h-[120px] overflow-y-auto">
+                {Object.entries(analytics.couponUsage).map(([code, count]) => (
+                  <div key={code} className="flex justify-between items-center bg-stone-50 border border-stone-100 px-4 py-2.5 rounded-xl">
+                    <span className="font-bold text-amber-600 bg-amber-100/50 px-2 py-0.5 rounded font-mono text-sm">{code}</span>
+                    <span className="font-bold text-stone-900 text-sm bg-white px-3 py-1 rounded-full shadow-sm border border-stone-200">
+                      Used {count} times
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -170,7 +233,7 @@ export default function AdminDashboard() {
           </form>
         </div>
 
-        {/* 🚨 BOTTOM SECTION: Human-Readable Assignment Submissions Viewer */}
+        {/* BOTTOM SECTION: Assignment Submissions Viewer */}
         <div className="bg-white rounded-3xl p-8 border border-stone-200 shadow-sm relative overflow-hidden">
           <h2 className="text-2xl font-bold text-stone-900 flex items-center gap-2 mb-2">
             <FileCode2 size={24} className="text-amber-600" /> Recent Assignments
@@ -187,8 +250,6 @@ export default function AdminDashboard() {
             <div className="space-y-6">
               {submissions.map((sub) => (
                 <div key={sub.id} className="border border-stone-200 rounded-xl p-5 bg-stone-50">
-                  
-                  {/* 🚨 THE FIX: Beautifully Formatted Headers */}
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2 border-b border-stone-200 pb-4">
                     <div className="flex items-center gap-2">
                       <UserCircle className="text-stone-400" size={20} />
@@ -211,7 +272,6 @@ export default function AdminDashboard() {
                       {sub.submitted_code || "No code provided."}
                     </pre>
                   </div>
-                  
                 </div>
               ))}
             </div>

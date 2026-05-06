@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { supabase } from "@/lib/supabaseClient";
 import nodemailer from "nodemailer";
 
+
 export async function POST(req: NextRequest) {
   try {
     const { 
@@ -15,7 +16,8 @@ export async function POST(req: NextRequest) {
       userEmail,
       userName,
       courseTitle,
-      amountPaid
+      amountPaid, 
+      couponCode
     } = await req.json();
 
     const secret = process.env.RAZORPAY_KEY_SECRET;
@@ -34,11 +36,11 @@ export async function POST(req: NextRequest) {
     // 2. Payment is legit! Enroll the student in the database
     const { error: dbError } = await supabase
       .from('user_enrollments')
-      .insert([{ user_id: userId, course_slug: courseSlug }]);
-
-    if (dbError) {
-      console.error("Supabase Error:", dbError);
-    }
+      .insert([{ 
+        user_id: userId, 
+        course_slug: courseSlug,
+        coupon_used: couponCode || null // 🚨 NEW: Save the coupon!
+      }]);
 
     // 3. 🚨 SEND THE AUTOMATED WELCOME EMAIL & INVOICE
     if (userEmail && process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {

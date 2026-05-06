@@ -178,6 +178,7 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
                 razorpay_signature: response.razorpay_signature,
                 userId: user?.id,
                 courseSlug: displayCourse.slug,
+                couponCode: appliedCoupon?.code, // 🚨 NEW: Send coupon to backend!
                 userEmail: user?.primaryEmailAddress?.emailAddress,
                 userName: user?.fullName || user?.firstName || "Student",
                 courseTitle: displayCourse.title,

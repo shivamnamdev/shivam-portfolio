@@ -44,7 +44,11 @@ export async function POST(req: NextRequest) {
     // 4. Bypass Razorpay and enroll the student directly!
     const { error: dbError } = await supabase
       .from('user_enrollments')
-      .insert([{ user_id: userId, course_slug: courseSlug }]);
+      .insert([{ 
+        user_id: userId, 
+        course_slug: courseSlug,
+        coupon_used: couponCode || null // 🚨 NEW: Save the coupon!
+      }]);
 
     if (dbError) {
       console.error("Supabase Error:", dbError);
