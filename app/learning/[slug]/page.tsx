@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { PlayCircle, CheckCircle, Lock, ChevronLeft, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, TerminalSquare, Award, FileCheck, Eye } from 'lucide-react';
+import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, Code2, TerminalSquare, Award, FileCheck, Eye, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { courseCurriculumMap } from '@/data/learning-content';
 import { activeCourses } from '@/data/courses';
@@ -23,36 +23,37 @@ function formatYouTubeDuration(duration: string) {
 
 export default function CoursePlayerPage({ params }: { params: { slug: string } }) {
   const { user, isLoaded } = useUser();
-  const [playlist, setPlaylist] = useState<any[]>([]);
+  const[playlist, setPlaylist] = useState<any[]>([]);
   const [activeVideo, setActiveVideo] = useState<any>(null);
   
-  // Progress Tracking States
   const [completedVideos, setCompletedVideos] = useState<string[]>([]);
   const [completedAssignments, setCompletedAssignments] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const[isLoading, setIsLoading] = useState(true);
   const [isMarking, setIsMarking] = useState(false);
   
-  // Tab & Q&A States
-  const[activeTab, setActiveTab] = useState<'description' | 'qa' | 'practice' | 'visualize'>('description');  const [comments, setComments] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'description' | 'qa' | 'practice' | 'visualize'>('description');
+  const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
-  const [isPosting, setIsPosting] = useState(false);
+  const[isPosting, setIsPosting] = useState(false);
 
-  // IDE & AI Tutor States
+  // IDE & Assignment States
   const [code, setCode] = useState("");
   const [output, setOutput] = useState("");
   const [isRunningCode, setIsRunningCode] = useState(false);
   const [isFetchingCode, setIsFetchingCode] = useState(false);
-  const[isSubmittingAssignment, setIsSubmittingAssignment] = useState(false);
-  const [isAskingAI, setIsAskingAI] = useState(false);
+  const [isSubmittingAssignment, setIsSubmittingAssignment] = useState(false);
+  const[isAskingAI, setIsAskingAI] = useState(false);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   
-  // Pyodide State
+  // 🚨 NEW: Multi-Step Lab States
+  const[assignmentSteps, setAssignmentSteps] = useState<string[]>([]);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+
   const [pyodide, setPyodide] = useState<any>(null);
   const[isPyodideLoading, setIsPyodideLoading] = useState(true);
 
   const courseDetails = activeCourses.find(c => c.slug === params.slug);
 
-  // 1. Load Pyodide
   useEffect(() => {
     const loadPyodideScript = async () => {
       if ((window as any).loadPyodide) return;
@@ -70,23 +71,29 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     loadPyodideScript();
   },[]);
 
-  // 2. Fetch Code from GitHub (Formats it into comments)
+  // 🚨 UPDATED: Parse GitHub file into multiple Steps!
   const loadGithubAssignment = async (url: string) => {
     setIsFetchingCode(true);
     try {
       const response = await fetch(`${url}?t=${Date.now()}`);
       if (!response.ok) throw new Error("Failed to fetch assignment");
       const rawText = await response.text();
-      const commentedText = rawText.split('\n').map(line => `# ${line}`).join('\n');
-      setCode(`${commentedText}\n\n# ==========================================\n# WRITE YOUR PYTHON CODE BELOW THIS LINE:\n# ==========================================\n\n`);
+      
+      // Split the text wherever there is a Markdown horizontal rule "---"
+      const steps = rawText.split(/^---$/gm).map(s => s.trim()).filter(s => s.length > 0);
+      
+      setAssignmentSteps(steps.length > 0 ? steps : [rawText]);
+      setCurrentStepIndex(0); // Always start at step 1
+      setCode("# Write your Python code below:\n\n"); 
+      
     } catch (error) {
-      setCode("# Error loading assignment from GitHub.");
+      setAssignmentSteps(["Error loading assignment instructions from GitHub."]);
+      setCode("");
     } finally {
       setIsFetchingCode(false);
     }
   };
 
-  // 3. Load Course & User Data
   useEffect(() => {
     async function loadCourseData() {
       if (!isLoaded || !user) return;
@@ -131,8 +138,13 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
 
         setPlaylist(enrichedModules);
         if (enrichedModules.length > 0 && enrichedModules[0].videos.length > 0) {
-          setActiveVideo(enrichedModules[0].videos[0]);
-          if (enrichedModules[0].videos[0].githubAssignment) loadGithubAssignment(enrichedModules[0].videos[0].githubAssignment.rawUrl);
+          const firstVideo = enrichedModules[0].videos[0];
+          setActiveVideo(firstVideo);
+          if (firstVideo.githubAssignment) {
+            setAssignmentSteps(["Loading instructions..."]);
+            setCode("# Loading workspace...");
+            loadGithubAssignment(firstVideo.githubAssignment.rawUrl);
+          }
         }
       } catch (error) {
         console.error("Error loading course:", error);
@@ -148,8 +160,14 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     setOutput(""); 
     setAiResponse(null);
     setActiveTab('description'); 
+    
+    // Reset steps
+    setAssignmentSteps([]);
+    setCurrentStepIndex(0);
+    
     if (video.githubAssignment) {
-      setCode("# Loading assignment from GitHub...");
+      setAssignmentSteps(["Loading instructions..."]);
+      setCode("# Loading workspace...");
       loadGithubAssignment(video.githubAssignment.rawUrl);
     } else {
       setCode("");
@@ -169,7 +187,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     e.preventDefault();
     if (!newComment.trim() || !user || !activeVideo) return;
     setIsPosting(true);
-    const newEntry = { video_id: activeVideo.id, user_id: user.id, user_name: user.fullName || user.firstName || 'Student', user_image: user.imageUrl, content: newComment.trim() };
+    const newEntry = { video_id: activeVideo.id, user_id: user.id, user_name: user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || 'Student', user_image: user.imageUrl, content: newComment.trim() };
     try {
       const { data, error } = await supabase.from('video_comments').insert([newEntry]).select();
       if (!error && data) { setComments([data[0], ...comments]); setNewComment(""); }
@@ -215,14 +233,11 @@ import io
 sys.stdout = io.StringIO()
 sys.stderr = io.StringIO()
       `);
-      
       await pyodide.runPythonAsync(code);
       const stdout = pyodide.runPython("sys.stdout.getvalue()");
       const stderr = pyodide.runPython("sys.stderr.getvalue()");
-      
       let finalOutput = stdout;
 
-      // Automated Auto-Grader / Hidden Tests!
       if (!stderr && activeVideo?.githubAssignment?.testCode) {
         try {
           await pyodide.runPythonAsync(activeVideo.githubAssignment.testCode);
@@ -233,11 +248,8 @@ sys.stderr = io.StringIO()
         }
       }
 
-      if (stderr) {
-        setOutput(`Error:\n${stderr}`);
-      } else {
-        setOutput(finalOutput || "Script executed successfully. (No output)");
-      }
+      if (stderr) setOutput(`Error:\n${stderr}`);
+      else setOutput(finalOutput || "Script executed successfully. (No output)");
     } catch (error: any) {
       setOutput(`Syntax Error:\n${error.message.split('File "<exec>"')[1] || error.message}`);
     } finally {
@@ -253,18 +265,11 @@ sys.stderr = io.StringIO()
       const response = await fetch('/api/ai-tutor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          code: code,
-          assignment: activeVideo.githubAssignment?.title || "Python exercise",
-          output: output || "No output yet."
-        })
+        body: JSON.stringify({ code: code, assignment: activeVideo.githubAssignment?.title || "Python exercise", output: output || "No output yet." })
       });
       const data = await response.json();
-      if (data.success) {
-        setAiResponse(data.message);
-      } else {
-        setAiResponse("AI Tutor is taking a break. Please check your syntax manually.");
-      }
+      if (data.success) setAiResponse(data.message);
+      else setAiResponse("AI Tutor is taking a break. Please check your syntax manually.");
     } catch (error) {
       setAiResponse("Network error. AI Tutor could not be reached.");
     } finally {
@@ -365,13 +370,6 @@ sys.stderr = io.StringIO()
                   <Clock size={40} className="text-amber-500" />
                 </div>
                 <h2 className="text-3xl font-black text-white mb-4">Live Classes Starting Soon</h2>
-                {courseDetails?.liveLink ? (
-                  <a href={courseDetails.liveLink} target="_blank" rel="noreferrer" className="px-8 py-4 rounded-full bg-amber-500 text-stone-900 font-bold text-lg flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors shadow-lg">
-                    <PlayCircle size={20} /> Join Today's Live Class on Google Meet
-                  </a>
-                ) : (
-                  <p className="text-stone-400 max-w-md">Once the live sessions begin, the recordings will be automatically uploaded and unlocked here.</p>
-                )}
               </div>
             )}
 
@@ -383,11 +381,11 @@ sys.stderr = io.StringIO()
                     <p className="text-stone-500 text-sm">Instructor: Shivam Namdev</p>
                   </div>
                   {isVideoCompleted ? (
-                    <button disabled className="px-6 py-3 rounded-xl bg-green-50 text-green-600 font-bold text-sm flex items-center gap-2 border border-green-200">
+                    <button disabled className="px-6 py-3 rounded-xl bg-green-50 text-green-600 font-bold text-sm flex items-center justify-center gap-2 border border-green-200 w-full sm:w-auto">
                       <CheckCircle size={18} /> Video Watched
                     </button>
                   ) : (
-                    <button onClick={markAsComplete} disabled={isMarking} className="px-6 py-3 rounded-xl bg-amber-500 text-white font-bold text-sm flex items-center gap-2 hover:bg-amber-600 shadow-md">
+                    <button onClick={markAsComplete} disabled={isMarking} className="px-6 py-3 rounded-xl bg-amber-500 text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-amber-600 transition-colors w-full sm:w-auto shadow-md disabled:opacity-70">
                       {isMarking ? <Loader2 size={18} className="animate-spin"/> : <CheckCircle size={18} />} Mark Video Complete
                     </button>
                   )}
@@ -404,40 +402,44 @@ sys.stderr = io.StringIO()
                   <button onClick={() => setActiveTab('qa')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'qa' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
                     <MessageCircle size={18} /> Q&A ({comments.length})
                   </button>
-                  
                   {activeVideo.githubAssignment && (
                     <>
                       <button onClick={() => setActiveTab('practice')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'practice' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
                         <Code size={18} /> Practice {isAssignmentCompleted && "✅"}
                       </button>
-                      
-                      {/* 🚨 THE MISSING VISUALIZE BUTTON */}
                       <button onClick={() => setActiveTab('visualize')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'visualize' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
-                        <Eye size={18} /> Visualize
+                        <Eye size={18} /> Visualize 👁️
                       </button>
                     </>
                   )}
                 </div>
 
-                <div className="p-6 md:p-8">
+                <div className="p-0 md:p-0">
+                  
                   {activeTab === 'description' && (
-                    <div className="prose prose-stone max-w-none">
+                    <div className="p-6 md:p-8 prose prose-stone max-w-none">
                       <p className="text-stone-600 whitespace-pre-wrap leading-relaxed text-sm md:text-base">{activeVideo.description}</p>
                     </div>
                   )}
-                  
+
                   {activeTab === 'qa' && (
-                    <div className="flex flex-col gap-6">
+                    <div className="p-6 md:p-8 flex flex-col gap-6">
                       <form onSubmit={handlePostComment} className="flex flex-col gap-3">
-                        <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Ask a question..." className="w-full p-4 rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none resize-none" rows={3} required />
-                        <button type="submit" disabled={isPosting} className="self-end px-6 py-2.5 rounded-xl bg-stone-900 text-white font-bold text-sm flex items-center gap-2"><Send size={16} /> Post Question</button>
+                        <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Ask a question..." className="w-full p-4 rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none resize-none transition-all" rows={3} required />
+                        <div className="flex justify-end">
+                          <button type="submit" disabled={isPosting} className="px-6 py-2.5 rounded-xl bg-stone-900 text-white font-bold text-sm flex items-center gap-2 hover:bg-stone-800 transition-colors disabled:opacity-70 shadow-md">
+                            {isPosting ? <Loader2 size={16} className="animate-spin"/> : <Send size={16} />} Post Question
+                          </button>
+                        </div>
                       </form>
                       <div className="space-y-6 pt-6 border-t border-stone-100">
-                        {comments.length === 0 ? <p className="text-center text-stone-400 text-sm italic py-4">No questions yet.</p> : comments.map((comment) => (
+                        {comments.length === 0 ? <p className="text-center text-stone-400 text-sm italic py-4">No questions yet. Start the discussion!</p> : comments.map((comment) => (
                           <div key={comment.id} className="flex gap-4">
                             <img src={comment.user_image || "https://www.gravatar.com/avatar/?d=mp"} alt="User" className="w-10 h-10 rounded-full border border-stone-200 shadow-sm" />
                             <div className="flex-grow bg-stone-50 p-4 rounded-2xl rounded-tl-none border border-stone-100">
-                              <h5 className="font-bold text-stone-900 text-sm mb-1">{comment.user_name}</h5>
+                              <div className="flex justify-between items-center mb-1">
+                                <h5 className="font-bold text-stone-900 text-sm">{comment.user_name}</h5>
+                              </div>
                               <p className="text-stone-600 text-sm whitespace-pre-wrap">{comment.content}</p>
                             </div>
                           </div>
@@ -446,98 +448,137 @@ sys.stderr = io.StringIO()
                     </div>
                   )}
 
-                  {/* 🚨 REPAIRED PRACTICE TAB: ONLY ONE IDE & TERMINAL! */}
+                  {/* 🚨 THE KODEKLOUD-STYLE SPLIT SCREEN LAB WITH MULTI-STEP PAGINATION */}
                   {activeTab === 'practice' && activeVideo.githubAssignment && (
-                    <div className="flex flex-col gap-6">
-                      <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex justify-between items-center">
-                        <div>
-                          <h4 className="font-bold text-amber-800 mb-1">Practice Exercise:</h4>
-                          <p className="text-stone-700 text-sm font-medium">{activeVideo.githubAssignment.title}</p>
+                    <div className="flex flex-col lg:flex-row h-[700px] bg-[#0d1117] overflow-hidden border-t border-stone-200 shadow-inner">
+                      
+                      {/* LEFT PANEL: Multi-Step Task Instructions */}
+                      <div className="w-full lg:w-1/3 flex flex-col border-r border-stone-800 bg-[#161b22]">
+                        
+                        {/* 🚨 TOP BAR: Progress Indicators */}
+                        <div className="flex flex-col items-center p-4 border-b border-stone-800 bg-[#0d1117]">
+                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3">
+                            Question {currentStepIndex + 1} of {assignmentSteps.length}
+                          </span>
+                          <div className="flex gap-1.5 w-full justify-center">
+                            {assignmentSteps.map((_, idx) => (
+                              <div key={idx} className={`h-1.5 w-8 rounded-full ${idx < currentStepIndex ? 'bg-green-500' : idx === currentStepIndex ? 'bg-blue-500' : 'bg-stone-700'}`} />
+                            ))}
+                          </div>
                         </div>
-                        <a href={activeVideo.githubAssignment.rawUrl.replace('raw.githubusercontent.com', 'github.com').replace('/refs/heads/main/', '/tree/main/')} target="_blank" rel="noreferrer" className="text-xs text-amber-600 hover:text-amber-800 font-bold underline">
-                          View on GitHub
-                        </a>
+
+                        <div className="flex-grow p-6 overflow-y-auto">
+                          <h3 className="text-xl font-bold text-white mb-6">{activeVideo.githubAssignment.title}</h3>
+
+                          <div className="prose prose-invert max-w-none text-sm text-stone-300 leading-relaxed mb-8 whitespace-pre-wrap font-sans">
+                            {assignmentSteps[currentStepIndex] || "Loading instructions..."}
+                          </div>
+
+                          <div className="p-4 mt-6 bg-blue-900/20 border border-blue-500/30 rounded-lg flex items-start gap-3">
+                            <span className="text-xl">💡</span>
+                            <p className="text-blue-200 text-xs leading-relaxed m-0">
+                              <strong>Tip:</strong> Need help? Run your code first, then use the AI Tutor to get hints!
+                            </p>
+                          </div>
+
+                          {aiResponse && (
+                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-purple-900/20 border border-purple-500/30 rounded-xl flex gap-3 items-start mt-6">
+                              <div className="text-2xl">🤖</div>
+                              <div>
+                                <h4 className="font-bold text-purple-300 text-xs uppercase tracking-widest mb-1">AI Assistant</h4>
+                                <p className="text-purple-200 text-xs leading-relaxed whitespace-pre-wrap">{aiResponse}</p>
+                              </div>
+                            </motion.div>
+                          )}
+                        </div>
+
+                        {/* 🚨 BOTTOM BAR: Pagination & Submission */}
+                        <div className="p-4 border-t border-stone-800 bg-[#0d1117] flex justify-between items-center gap-2">
+                          <button
+                            onClick={() => setCurrentStepIndex(Math.max(0, currentStepIndex - 1))}
+                            disabled={currentStepIndex === 0}
+                            className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-bold transition-colors ${currentStepIndex === 0 ? 'text-stone-600 cursor-not-allowed' : 'text-stone-300 hover:bg-stone-800 hover:text-white'}`}
+                          >
+                            <ChevronLeft size={16} /> Previous
+                          </button>
+
+                          {currentStepIndex < assignmentSteps.length - 1 ? (
+                            <button
+                              onClick={() => setCurrentStepIndex(currentStepIndex + 1)}
+                              className="flex items-center gap-1 px-4 py-2 bg-stone-800 rounded-lg text-sm font-bold text-amber-500 hover:bg-stone-700 hover:text-amber-400 transition-colors border border-stone-700 shadow-sm"
+                            >
+                              Next <ChevronRight size={16} />
+                            </button>
+                          ) : (
+                            /* 🚨 ONLY SHOW SUBMIT ON THE LAST STEP */
+                            <button onClick={submitAssignment} disabled={isSubmittingAssignment} className={`px-4 py-2 rounded-lg text-xs font-bold flex justify-center items-center gap-2 transition-colors shadow-md ${isAssignmentCompleted ? 'bg-green-600 text-white' : 'bg-amber-500 hover:bg-amber-400 text-stone-900'}`}>
+                              {isSubmittingAssignment ? <Loader2 size={14} className="animate-spin"/> : <CheckCircle2 size={14}/>} {isAssignmentCompleted ? "Update Submission" : "Submit Assignment"}
+                            </button>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="border border-stone-200 rounded-xl overflow-hidden shadow-inner">
-                        <div className="bg-stone-900 px-4 py-2 flex flex-wrap justify-between items-center gap-2">
-                          <span className="text-stone-400 text-xs font-mono mr-4 hidden sm:block">main.py</span>
-                          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                            
-                            <button onClick={askAITutor} disabled={isAskingAI || !code.trim()} className="flex-1 sm:flex-none px-4 py-1.5 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white rounded text-xs font-bold flex justify-center items-center gap-2 transition-all disabled:opacity-50 shadow-md">
-                              {isAskingAI ? <Loader2 size={14} className="animate-spin"/> : <MessageCircle size={14}/>} Ask AI Tutor
+                      {/* RIGHT PANEL: VS Code & Terminal */}
+                      <div className="w-full lg:w-2/3 flex flex-col bg-[#0d1117]">
+                        <div className="flex bg-[#161b22] border-b border-stone-800 justify-between items-center pr-4">
+                          <div className="px-4 py-2.5 bg-[#0d1117] text-amber-400 text-xs font-mono border-t-2 border-t-amber-500 flex items-center gap-2">
+                            <Code2 size={14}/> main.py
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            <button onClick={askAITutor} disabled={isAskingAI || !code.trim()} className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-purple-400 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-colors border border-stone-700 disabled:opacity-50">
+                              {isAskingAI ? <Loader2 size={12} className="animate-spin"/> : <MessageCircle size={12}/>} Ask AI
                             </button>
-
-                            <button onClick={runPythonCode} disabled={isRunningCode || isPyodideLoading || isFetchingCode} className="flex-1 sm:flex-none px-4 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-bold flex justify-center items-center gap-2 transition-colors disabled:opacity-50">
-                              {isPyodideLoading || isFetchingCode ? <Loader2 size={14} className="animate-spin"/> : isRunningCode ? <Loader2 size={14} className="animate-spin"/> : <PlayCircle size={14}/>} Run Code
-                            </button>
-                            
-                            <button onClick={submitAssignment} disabled={isSubmittingAssignment} className={`flex-1 sm:flex-none px-4 py-1.5 rounded text-xs font-bold flex justify-center items-center gap-2 transition-colors ${isAssignmentCompleted ? 'bg-amber-500 text-white' : 'bg-stone-700 hover:bg-stone-600 text-white'}`}>
-                              {isSubmittingAssignment ? <Loader2 size={14} className="animate-spin"/> : <FileCheck size={14}/>} {isAssignmentCompleted ? "Update Code" : "Submit"}
+                            <button onClick={runPythonCode} disabled={isRunningCode || isPyodideLoading || isFetchingCode} className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs font-bold flex items-center gap-1 transition-colors disabled:opacity-50">
+                              {isPyodideLoading || isFetchingCode ? <Loader2 size={12} className="animate-spin"/> : isRunningCode ? <Loader2 size={12} className="animate-spin"/> : <PlayCircle size={12}/>} Run
                             </button>
                           </div>
                         </div>
-                        <Editor height="350px" defaultLanguage="python" theme="vs-dark" value={code} onChange={(value) => { setCode(value || ""); setAiResponse(null); }} options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} />
-                      </div>
 
-                      <div className="bg-black rounded-xl p-4 border border-stone-800 shadow-inner min-h-[120px]">
-                        <div className="flex items-center gap-2 text-stone-400 mb-2 border-b border-stone-800 pb-2">
-                          <TerminalSquare size={16} /> <span className="text-xs font-mono font-bold uppercase tracking-widest">Output</span>
+                        <div className="flex-grow relative">
+                          <Editor height="100%" defaultLanguage="python" theme="vs-dark" value={code} onChange={(value) => { setCode(value || ""); setAiResponse(null); }} options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} />
                         </div>
-                        <pre className={`text-sm font-mono whitespace-pre-wrap ${output.startsWith('Error') || output.startsWith('Syntax') ? 'text-red-400' : 'text-green-400'}`}>{output || "Run your code to see the output here..."}</pre>
-                      </div>
 
-                      {/* AI Response Box */}
-                      {aiResponse && (
-                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-5 bg-purple-50 border border-purple-200 rounded-xl flex gap-4 items-start shadow-sm mt-2">
-                          <div className="w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center flex-shrink-0 text-2xl">🤖</div>
-                          <div>
-                            <h4 className="font-bold text-purple-900 mb-1">Shivam's AI Assistant</h4>
-                            <p className="text-purple-800 text-sm leading-relaxed whitespace-pre-wrap">{aiResponse}</p>
+                        <div className="h-[200px] border-t border-stone-800 flex flex-col bg-[#0d1117]">
+                          <div className="flex items-center justify-between px-4 py-2 bg-[#161b22] border-b border-stone-800">
+                            <div className="flex gap-4">
+                              <span className="text-xs font-mono text-white border-b border-blue-500 pb-1">TERMINAL</span>
+                              <span className="text-xs font-mono text-stone-600">OUTPUT</span>
+                            </div>
+                            <button onClick={() => setOutput("")} className="text-stone-500 hover:text-stone-300 text-xs flex items-center gap-1"><RefreshCw size={12}/> Clear</button>
                           </div>
-                        </motion.div>
-                      )}
+                          <div className="flex-grow p-4 overflow-y-auto bg-[#0d1117]">
+                            <pre className={`text-sm font-mono whitespace-pre-wrap ${output.startsWith('Error') || output.startsWith('Syntax') || output.includes('❌') ? 'text-red-400' : 'text-green-400'}`}>
+                              {output || "shivam@academy:~$ _"}
+                            </pre>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
 
-                  {/* 🚨 UPDATED: THE PYTHON TUTOR VISUALIZER TAB CONTENT */}
+                  {/* VISUALIZER TAB */}
                   {activeTab === 'visualize' && activeVideo.githubAssignment && (
-                    <div className="flex flex-col gap-6">
+                    <div className="p-6 md:p-8 flex flex-col gap-6">
                       <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl flex justify-between items-center">
                         <div>
                           <h4 className="font-bold text-blue-800 mb-1">Code Visualizer</h4>
                           <p className="text-blue-900/70 text-sm">Step through your code line-by-line to see how variables change in memory.</p>
                         </div>
                       </div>
-                      
-                      {/* 🚨 THE UX HACK: Native Window Wrapper & CSS Filters */}
                       <div className="w-full bg-[#fdfcf8] rounded-xl border border-stone-200 shadow-inner overflow-hidden h-[600px] flex flex-col">
-                        
-                        {/* Custom Window Header */}
                         <div className="h-10 bg-stone-100 border-b border-stone-200 flex items-center px-4 gap-2">
                           <div className="w-3 h-3 rounded-full bg-red-400"></div>
                           <div className="w-3 h-3 rounded-full bg-amber-400"></div>
                           <div className="w-3 h-3 rounded-full bg-green-400"></div>
                           <span className="text-xs font-mono font-bold text-stone-400 ml-4">shivam-academy-visualizer.exe</span>
                         </div>
-
-                        {/* Iframe with Blend Modes */}
                         <div className="flex-grow bg-[#fdfcf8] relative overflow-hidden">
-                          <iframe
-                            className="absolute top-0 left-0 w-full h-full"
-                            style={{
-                              // Softens the harsh colors and blends the white background into our Ivory theme!
-                              filter: "contrast(0.95) sepia(0.05)",
-                              mixBlendMode: "multiply"
-                            }}
-                            frameBorder="0"
-                            src={`https://pythontutor.com/iframe-embed.html#code=${encodeURIComponent(code)}&cumulative=false&heapPrimitives=nevernest&mode=display&origin=opt-frontend.js&py=3&rawInputLstJSON=%5B%5D&textReferences=false`}
-                          ></iframe>
+                          <iframe className="absolute top-0 left-0 w-full h-full" style={{ filter: "contrast(0.95) sepia(0.05)", mixBlendMode: "multiply" }} frameBorder="0" src={`https://pythontutor.com/iframe-embed.html#code=${encodeURIComponent(code)}&cumulative=false&heapPrimitives=nevernest&mode=display&origin=opt-frontend.js&py=3&rawInputLstJSON=%5B%5D&textReferences=false`}></iframe>
                         </div>
                       </div>
                     </div>
                   )}
-
 
                 </div>
               </div>
@@ -552,7 +593,6 @@ sys.stderr = io.StringIO()
                 <div className="bg-green-500 h-2 rounded-full transition-all duration-1000 ease-out" style={{ width: `${progressPercentage}%` }}></div>
               </div>
               
-              {/* Admin Override to test Certificate! */}
               {(progressPercentage === 100 || user?.primaryEmailAddress?.emailAddress === "shivamnamdev.corp@gmail.com") && (
                 <button onClick={handleGenerateCertificate} className="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-900 font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] transition-transform animate-in zoom-in">
                   <Award size={20} /> Claim Certificate
