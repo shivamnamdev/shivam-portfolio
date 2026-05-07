@@ -35,24 +35,29 @@ export const courseCurriculumMap: Record<string, any[]> = {
         // Video 2 gets an assignment
         "OkK3E7ApZ4Q": {
           title: "Day 01: Introduction and print function",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2001%3A%20Introduction%20and%20print%20function/Assignment"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2001%3A%20Introduction%20and%20print%20function/Assignment",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2001%3A%20Introduction%20and%20print%20function/Solution.py"
         },
         // Video 3 gets an assignment
         "bpjcslHyYEA": {
           title: "Day 02: Operator",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2002%3A%20Operator/Assignment"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2002%3A%20Operator/Assignment",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2002%3A%20Operator/Solution.py"
         },
         "HDBVcmufHlg": {
           title: "Day 03: Built-in Functions",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2003%3A%20Built-in%20Functions/Assignment"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2003%3A%20Built-in%20Functions/Assignment",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2003%3A%20Built-in%20Functions/Solution.py"
         },
         "kF0wuiDRxHQ": {
           title: "Day 04: Conditional Statement",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2004%3A%20Conditional%20Statement/Assignment"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2004%3A%20Conditional%20Statement/Assignment",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2004%3A%20Conditional%20Statement/Solution.py"
         },
         "_IqLtwGJRss": {
           title: "Day 05: Conditional Statement | Hands On",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2004%3A%20Conditional%20Statement/Assignment"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2004%3A%20Conditional%20Statement/Assignment2.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2004%3A%20Conditional%20Statement/Solution2.py"
         },
         "eehv_5rg238": {
           title: "Day 06: Looping (While Loop)",
@@ -122,9 +127,15 @@ export const courseCurriculumMap: Record<string, any[]> = {
   {
     moduleTitle: "Module 3: Core Programming Concepts",
     videoIds:[
-       // 4. Lists & Advanced Operations
-      // "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
-    ]
+       "A-HB_9s1KtU",// 4. Lists & Advanced Operations
+       "ihTNWJ-R3Xk"  // 5. Dictionaries & Real-world Usage
+    ],
+    githubAssignments: {
+        "A-HB_9s1KtU": {
+          title: "Day 18: File Handling",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day-18%3A%20File%20Handling/Assignment"
+        }
+    }
   },
   {
     moduleTitle: "Module 4: Advanced Python",
