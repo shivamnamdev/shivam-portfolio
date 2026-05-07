@@ -3,13 +3,14 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, Code2, TerminalSquare, Award, FileCheck, Eye, RefreshCw } from 'lucide-react';
+// 🚨 IMPORTED 'X' ICON FOR THE MODAL CLOSE BUTTON
+import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, Code2, TerminalSquare, Award, FileCheck, Eye, RefreshCw, X } from 'lucide-react';
 import Link from 'next/link';
 import { courseCurriculumMap } from '@/data/learning-content';
 import { activeCourses } from '@/data/courses';
 import { supabase } from '@/lib/supabaseClient';
 import Editor from '@monaco-editor/react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 function formatYouTubeDuration(duration: string) {
   const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
@@ -23,34 +24,37 @@ function formatYouTubeDuration(duration: string) {
 
 export default function CoursePlayerPage({ params }: { params: { slug: string } }) {
   const { user, isLoaded } = useUser();
-  const[playlist, setPlaylist] = useState<any[]>([]);
+  const [playlist, setPlaylist] = useState<any[]>([]);
   const [activeVideo, setActiveVideo] = useState<any>(null);
   
   const [completedVideos, setCompletedVideos] = useState<string[]>([]);
-  const [completedAssignments, setCompletedAssignments] = useState<string[]>([]);
-  const[isLoading, setIsLoading] = useState(true);
+  const[completedAssignments, setCompletedAssignments] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isMarking, setIsMarking] = useState(false);
   
-  const [activeTab, setActiveTab] = useState<'description' | 'qa' | 'practice' | 'visualize'>('description');
+  const[activeTab, setActiveTab] = useState<'description' | 'qa' | 'practice' | 'visualize'>('description');
   const [comments, setComments] = useState<any[]>([]);
-  const [newComment, setNewComment] = useState("");
-  const[isPosting, setIsPosting] = useState(false);
+  const[newComment, setNewComment] = useState("");
+  const [isPosting, setIsPosting] = useState(false);
 
-  // IDE & Assignment States
-  const [code, setCode] = useState("");
+  const[code, setCode] = useState("");
   const [output, setOutput] = useState("");
-  const [isRunningCode, setIsRunningCode] = useState(false);
+  const[isRunningCode, setIsRunningCode] = useState(false);
   const [isFetchingCode, setIsFetchingCode] = useState(false);
   const [isSubmittingAssignment, setIsSubmittingAssignment] = useState(false);
   const[isAskingAI, setIsAskingAI] = useState(false);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
   
-  // 🚨 NEW: Multi-Step Lab States
+  // 🚨 NEW: Stores an array of solutions!
+  const[officialSolutionSteps, setOfficialSolutionSteps] = useState<string[]>([]);
+  const [showSolutionModal, setShowSolutionModal] = useState(false);
+  
   const[assignmentSteps, setAssignmentSteps] = useState<string[]>([]);
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const[currentStepIndex, setCurrentStepIndex] = useState(0);
 
   const [pyodide, setPyodide] = useState<any>(null);
-  const[isPyodideLoading, setIsPyodideLoading] = useState(true);
+  const [isPyodideLoading, setIsPyodideLoading] = useState(true);
 
   const courseDetails = activeCourses.find(c => c.slug === params.slug);
 
@@ -71,24 +75,38 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     loadPyodideScript();
   },[]);
 
-  // 🚨 UPDATED: Parse GitHub file into multiple Steps!
-  const loadGithubAssignment = async (url: string) => {
+  // 🚨 UPDATED: Fetches Assignment AND the Solution Code from GitHub
+  const loadGithubAssignment = async (assignmentObj: any) => {
     setIsFetchingCode(true);
     try {
-      const response = await fetch(`${url}?t=${Date.now()}`);
+      const response = await fetch(`${assignmentObj.rawUrl}?t=${Date.now()}`);
       if (!response.ok) throw new Error("Failed to fetch assignment");
       const rawText = await response.text();
       
-      // Split the text wherever there is a Markdown horizontal rule "---"
       const steps = rawText.split(/^---$/gm).map(s => s.trim()).filter(s => s.length > 0);
-      
       setAssignmentSteps(steps.length > 0 ? steps : [rawText]);
-      setCurrentStepIndex(0); // Always start at step 1
+      setCurrentStepIndex(0);
       setCode("# Write your Python code below:\n\n"); 
+
+      // Fetch official solution if provided
+      if (assignmentObj.solutionUrl) {
+        const solRes = await fetch(`${assignmentObj.solutionUrl}?t=${Date.now()}`);
+        if (solRes.ok) {
+          const rawSol = await solRes.text();
+          // 🚨 THE FIX: Split the Python solution file wherever there is a comment line of dashes!
+          const solSteps = rawSol.split(/^#\s*-{10,}\s*$/gm).map(s => s.trim()).filter(s => s.length > 0);
+          setOfficialSolutionSteps(solSteps.length > 0 ? solSteps : [rawSol]);
+        } else {
+          setOfficialSolutionSteps(["# Official solution file could not be loaded."]);
+        }
+      } else {
+        setOfficialSolutionSteps([]);
+      }
       
     } catch (error) {
       setAssignmentSteps(["Error loading assignment instructions from GitHub."]);
       setCode("");
+      setOfficialSolution(null);
     } finally {
       setIsFetchingCode(false);
     }
@@ -143,7 +161,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
           if (firstVideo.githubAssignment) {
             setAssignmentSteps(["Loading instructions..."]);
             setCode("# Loading workspace...");
-            loadGithubAssignment(firstVideo.githubAssignment.rawUrl);
+            loadGithubAssignment(firstVideo.githubAssignment);
           }
         }
       } catch (error) {
@@ -160,15 +178,14 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     setOutput(""); 
     setAiResponse(null);
     setActiveTab('description'); 
-    
-    // Reset steps
     setAssignmentSteps([]);
     setCurrentStepIndex(0);
+    setOfficialSolutionSteps([]);
     
     if (video.githubAssignment) {
       setAssignmentSteps(["Loading instructions..."]);
       setCode("# Loading workspace...");
-      loadGithubAssignment(video.githubAssignment.rawUrl);
+      loadGithubAssignment(video.githubAssignment);
     } else {
       setCode("");
     }
@@ -213,8 +230,19 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
         { onConflict: 'user_id, course_slug, video_id' }
       );
       if (error) throw error;
-      if (!completedAssignments.includes(activeVideo.id)) setCompletedAssignments(prev => [...prev, activeVideo.id]);
-      alert("✅ Assignment Submitted Successfully!");
+      
+      if (!completedAssignments.includes(activeVideo.id)) {
+        setCompletedAssignments(prev => [...prev, activeVideo.id]);
+      }
+      
+      setShowSuccessOverlay(true);
+      setTimeout(() => setShowSuccessOverlay(false), 4000);
+
+      // 🚨 Pop open the Official Solution Modal after successful submission!
+      if (officialSolution) {
+        setShowSolutionModal(true);
+      }
+
     } catch (err) {
       alert("Failed to submit assignment. Please try again.");
     } finally {
@@ -347,6 +375,66 @@ sys.stderr = io.StringIO()
     <div className="relative min-h-screen flex flex-col bg-stone-50">
       <Navbar />
       <main className="flex-grow max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        {/* 🚨 THE MASTER SOLUTION MODAL */}
+        <AnimatePresence>
+          {showSolutionModal && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 md:p-8">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="bg-[#0d1117] w-full max-w-6xl rounded-3xl border border-stone-700 shadow-2xl flex flex-col overflow-hidden max-h-[90vh]"
+              >
+                {/* Modal Header */}
+                <div className="px-6 py-4 border-b border-stone-800 flex justify-between items-center bg-[#161b22]">
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Award className="text-amber-500" /> Official Solution & Code Review
+                  </h3>
+                  <button onClick={() => setShowSolutionModal(false)} className="text-stone-400 hover:text-white transition-colors">
+                    <X size={24} />
+                  </button>
+                </div>
+                
+                {/* Modal Body: Side by Side Comparison */}
+                <div className="flex flex-col md:flex-row flex-grow overflow-hidden h-[60vh]">
+                   
+                   {/* Left: Student's Code */}
+                   <div className="w-full md:w-1/2 border-r border-stone-800 flex flex-col">
+                      <div className="bg-[#161b22] px-4 py-3 border-b border-stone-800 text-stone-400 text-xs font-mono font-bold uppercase tracking-widest flex items-center gap-2">
+                        Your Submitted Code
+                      </div>
+                      <div className="flex-grow p-5 overflow-y-auto">
+                         <pre className="text-sm font-mono text-stone-300 whitespace-pre-wrap leading-relaxed">{code}</pre>
+                      </div>
+                   </div>
+
+                   {/* Right: Instructor's Official Solution */}
+                   <div className="w-full md:w-1/2 flex flex-col bg-[#0a0c10]">
+                      <div className="bg-[#161b22] px-4 py-3 border-b border-stone-800 text-amber-500 text-xs font-mono font-bold uppercase tracking-widest flex items-center gap-2">
+                        <Code2 size={16}/> Instructor's Solution (Step {currentStepIndex + 1})
+                      </div>
+                      <div className="flex-grow relative">
+                         <Editor 
+                           height="100%" 
+                           defaultLanguage="python" 
+                           theme="vs-dark" 
+                           // 🚨 Grabs the solution matching the current step!
+                           value={officialSolutionSteps[currentStepIndex] || "# No official solution provided for this specific step."} 
+                           options={{ readOnly: true, minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} 
+                         />
+                      </div>
+                   </div>
+                </div>
+
+                <div className="p-4 border-t border-stone-800 bg-[#161b22] flex justify-end">
+                  <button onClick={() => setShowSolutionModal(false)} className="px-8 py-3 bg-stone-700 hover:bg-stone-600 text-white rounded-xl font-bold transition-colors">Close Code Review</button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
         <div className="mb-6">
           <Link href="/learning" className="inline-flex items-center gap-2 text-stone-500 hover:text-amber-600 transition-colors mb-4 font-bold text-sm">
             <ChevronLeft size={16} /> Back to Dashboard
@@ -370,6 +458,13 @@ sys.stderr = io.StringIO()
                   <Clock size={40} className="text-amber-500" />
                 </div>
                 <h2 className="text-3xl font-black text-white mb-4">Live Classes Starting Soon</h2>
+                {courseDetails?.liveLink ? (
+                  <a href={courseDetails.liveLink} target="_blank" rel="noreferrer" className="px-8 py-4 rounded-full bg-amber-500 text-stone-900 font-bold text-lg flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors shadow-lg">
+                    <PlayCircle size={20} /> Join Today's Live Class on Google Meet
+                  </a>
+                ) : (
+                  <p className="text-stone-400 max-w-md">Once the live sessions begin, the recordings will be automatically uploaded and unlocked here.</p>
+                )}
               </div>
             )}
 
@@ -425,14 +520,14 @@ sys.stderr = io.StringIO()
                   {activeTab === 'qa' && (
                     <div className="p-6 md:p-8 flex flex-col gap-6">
                       <form onSubmit={handlePostComment} className="flex flex-col gap-3">
-                        <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Ask a question..." className="w-full p-4 rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none resize-none transition-all" rows={3} required />
+                        <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Ask Shivam or the community..." className="w-full p-4 rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none resize-none transition-all" rows={3} required />
                         <div className="flex justify-end">
                           <button type="submit" disabled={isPosting} className="px-6 py-2.5 rounded-xl bg-stone-900 text-white font-bold text-sm flex items-center gap-2 hover:bg-stone-800 transition-colors disabled:opacity-70 shadow-md">
                             {isPosting ? <Loader2 size={16} className="animate-spin"/> : <Send size={16} />} Post Question
                           </button>
                         </div>
                       </form>
-                      <div className="space-y-6 pt-6 border-t border-stone-100">
+                      <div className="space-y-6 border-t border-stone-100 pt-6">
                         {comments.length === 0 ? <p className="text-center text-stone-400 text-sm italic py-4">No questions yet. Start the discussion!</p> : comments.map((comment) => (
                           <div key={comment.id} className="flex gap-4">
                             <img src={comment.user_image || "https://www.gravatar.com/avatar/?d=mp"} alt="User" className="w-10 h-10 rounded-full border border-stone-200 shadow-sm" />
@@ -448,14 +543,10 @@ sys.stderr = io.StringIO()
                     </div>
                   )}
 
-                  {/* 🚨 THE KODEKLOUD-STYLE SPLIT SCREEN LAB WITH MULTI-STEP PAGINATION */}
                   {activeTab === 'practice' && activeVideo.githubAssignment && (
                     <div className="flex flex-col lg:flex-row h-[700px] bg-[#0d1117] overflow-hidden border-t border-stone-200 shadow-inner">
                       
-                      {/* LEFT PANEL: Multi-Step Task Instructions */}
                       <div className="w-full lg:w-1/3 flex flex-col border-r border-stone-800 bg-[#161b22]">
-                        
-                        {/* 🚨 TOP BAR: Progress Indicators */}
                         <div className="flex flex-col items-center p-4 border-b border-stone-800 bg-[#0d1117]">
                           <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3">
                             Question {currentStepIndex + 1} of {assignmentSteps.length}
@@ -469,56 +560,44 @@ sys.stderr = io.StringIO()
 
                         <div className="flex-grow p-6 overflow-y-auto">
                           <h3 className="text-xl font-bold text-white mb-6">{activeVideo.githubAssignment.title}</h3>
-
                           <div className="prose prose-invert max-w-none text-sm text-stone-300 leading-relaxed mb-8 whitespace-pre-wrap font-sans">
                             {assignmentSteps[currentStepIndex] || "Loading instructions..."}
                           </div>
-
-                          <div className="p-4 mt-6 bg-blue-900/20 border border-blue-500/30 rounded-lg flex items-start gap-3">
-                            <span className="text-xl">💡</span>
-                            <p className="text-blue-200 text-xs leading-relaxed m-0">
-                              <strong>Tip:</strong> Need help? Run your code first, then use the AI Tutor to get hints!
-                            </p>
-                          </div>
-
-                          {aiResponse && (
-                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-purple-900/20 border border-purple-500/30 rounded-xl flex gap-3 items-start mt-6">
-                              <div className="text-2xl">🤖</div>
-                              <div>
-                                <h4 className="font-bold text-purple-300 text-xs uppercase tracking-widest mb-1">AI Assistant</h4>
-                                <p className="text-purple-200 text-xs leading-relaxed whitespace-pre-wrap">{aiResponse}</p>
-                              </div>
-                            </motion.div>
-                          )}
                         </div>
 
-                        {/* 🚨 BOTTOM BAR: Pagination & Submission */}
+                        {/* 🚨 UPDATED BOTTOM BAR: "View Solution" is now visible on every step! */}
                         <div className="p-4 border-t border-stone-800 bg-[#0d1117] flex justify-between items-center gap-2">
-                          <button
-                            onClick={() => setCurrentStepIndex(Math.max(0, currentStepIndex - 1))}
-                            disabled={currentStepIndex === 0}
-                            className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-bold transition-colors ${currentStepIndex === 0 ? 'text-stone-600 cursor-not-allowed' : 'text-stone-300 hover:bg-stone-800 hover:text-white'}`}
-                          >
+                          
+                          {/* Left Side: Previous Button */}
+                          <button onClick={() => setCurrentStepIndex(Math.max(0, currentStepIndex - 1))} disabled={currentStepIndex === 0} className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-bold transition-colors ${currentStepIndex === 0 ? 'text-stone-600 cursor-not-allowed' : 'text-stone-300 hover:bg-stone-800 hover:text-white'}`}>
                             <ChevronLeft size={16} /> Previous
                           </button>
 
-                          {currentStepIndex < assignmentSteps.length - 1 ? (
-                            <button
-                              onClick={() => setCurrentStepIndex(currentStepIndex + 1)}
-                              className="flex items-center gap-1 px-4 py-2 bg-stone-800 rounded-lg text-sm font-bold text-amber-500 hover:bg-stone-700 hover:text-amber-400 transition-colors border border-stone-700 shadow-sm"
-                            >
-                              Next <ChevronRight size={16} />
-                            </button>
-                          ) : (
-                            /* 🚨 ONLY SHOW SUBMIT ON THE LAST STEP */
-                            <button onClick={submitAssignment} disabled={isSubmittingAssignment} className={`px-4 py-2 rounded-lg text-xs font-bold flex justify-center items-center gap-2 transition-colors shadow-md ${isAssignmentCompleted ? 'bg-green-600 text-white' : 'bg-amber-500 hover:bg-amber-400 text-stone-900'}`}>
-                              {isSubmittingAssignment ? <Loader2 size={14} className="animate-spin"/> : <CheckCircle2 size={14}/>} {isAssignmentCompleted ? "Update Submission" : "Submit Assignment"}
-                            </button>
-                          )}
+                          {/* Right Side: View Solution + (Next OR Submit) */}
+                          <div className="flex items-center gap-2">
+                            
+                            {/* Shows on EVERY step if a solution exists */}
+                            {officialSolutionSteps.length > 0 && (
+                              <button onClick={() => setShowSolutionModal(true)} className="px-3 py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg text-xs font-bold transition-colors border border-stone-700">
+                                View Solution
+                              </button>
+                            )}
+
+                            {/* Toggles between Next and Submit depending on the step */}
+                            {currentStepIndex < assignmentSteps.length - 1 ? (
+                              <button onClick={() => setCurrentStepIndex(currentStepIndex + 1)} className="flex items-center gap-1 px-4 py-2 bg-stone-800 rounded-lg text-sm font-bold text-amber-500 hover:bg-stone-700 hover:text-amber-400 transition-colors border border-stone-700 shadow-sm">
+                                Next <ChevronRight size={16} />
+                              </button>
+                            ) : (
+                              <button onClick={submitAssignment} disabled={isSubmittingAssignment} className={`px-4 py-2 rounded-lg text-xs font-bold flex justify-center items-center gap-2 transition-colors shadow-md ${isAssignmentCompleted ? 'bg-green-600 text-white' : 'bg-amber-500 hover:bg-amber-400 text-stone-900'}`}>
+                                {isSubmittingAssignment ? <Loader2 size={14} className="animate-spin"/> : <CheckCircle2 size={14}/>} {isAssignmentCompleted ? "Update" : "Submit"}
+                              </button>
+                            )}
+
+                          </div>
                         </div>
                       </div>
 
-                      {/* RIGHT PANEL: VS Code & Terminal */}
                       <div className="w-full lg:w-2/3 flex flex-col bg-[#0d1117]">
                         <div className="flex bg-[#161b22] border-b border-stone-800 justify-between items-center pr-4">
                           <div className="px-4 py-2.5 bg-[#0d1117] text-amber-400 text-xs font-mono border-t-2 border-t-amber-500 flex items-center gap-2">
@@ -557,7 +636,6 @@ sys.stderr = io.StringIO()
                     </div>
                   )}
 
-                  {/* VISUALIZER TAB */}
                   {activeTab === 'visualize' && activeVideo.githubAssignment && (
                     <div className="p-6 md:p-8 flex flex-col gap-6">
                       <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl flex justify-between items-center">
@@ -635,6 +713,22 @@ sys.stderr = io.StringIO()
         </div>
       </main>
       <Footer />
+
+      <AnimatePresence>
+        {showSuccessOverlay && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+            className="fixed bottom-10 right-10 bg-green-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 z-[9999] border border-green-400"
+          >
+            <div className="bg-white/20 p-2 rounded-full"><Award size={24} className="text-white" /></div>
+            <div>
+              <h4 className="font-black text-sm uppercase tracking-widest">Success!</h4>
+              <p className="text-xs text-green-100 font-medium">Your code has been securely saved.</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
