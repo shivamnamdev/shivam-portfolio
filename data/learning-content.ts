@@ -71,7 +71,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
         },
         "FSsqe5-2Ni0": {
           title: "Day 08: Thinking Method",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2008%3A%20Thinking%20Method/The%204-Step%20Thinking%20Method.docx"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2008%3A%20Thinking%20Method/Assignment",
+          solutionUrl: "https://github.com/shivamnamdev/learn-python-step-by-step/blob/main/Day%2008%3A%20Thinking%20Method/Solution.py"
         },
         "xTktQsnpBmQ": {
           title: "Day 09: For Loop",
