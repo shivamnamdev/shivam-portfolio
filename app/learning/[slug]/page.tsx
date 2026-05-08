@@ -83,7 +83,8 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       if (!response.ok) throw new Error("Failed to fetch assignment");
       const rawText = await response.text();
       
-      const steps = rawText.split(/^---$/gm).map(s => s.trim()).filter(s => s.length > 0);
+      // 🚨 THE FIX: This regex allows invisible spaces, Windows formatting, and 3 or more dashes!
+      const steps = rawText.split(/^\s*-{3,}\s*$/gm).map(s => s.trim()).filter(s => s.length > 0);
       setAssignmentSteps(steps.length > 0 ? steps : [rawText]);
       setCurrentStepIndex(0);
       setCode("# Write your Python code below:\n\n"); 
