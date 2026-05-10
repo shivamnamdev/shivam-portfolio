@@ -63,26 +63,26 @@ export const courseCurriculumMap: Record<string, any[]> = {
           title: "Day 06: Looping (While Loop)",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2006%3A%20Looping/Assignment",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2006%3A%20Looping/Solution.py"
-        },
+        }, /*
         "KY6nWfEeQoY": {
           title: "Day 07: Jump Statements",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2007%3A%20Jump%20Statements/Assignment",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2007%3A%20Jump%20Statements/Solution.py"
-        },
-        "FSsqe5-2Ni0": {
+        },*/
+        "KY6nWfEeQoY": {
           title: "Day 08: Thinking Method",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2008%3A%20Thinking%20Method/Assignment",
-          solutionUrl: "https://github.com/shivamnamdev/learn-python-step-by-step/blob/main/Day%2008%3A%20Thinking%20Method/Solution.py"
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2008%3A%20Thinking%20Method/Solution.py"
         },
-        "xTktQsnpBmQ": {
+        "FSsqe5-2Ni0": {
           title: "Day 09: For Loop",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2009%3A%20For%20Loop/Assignment"
         },
-        "0D9Y_2mLi7Q": {
+        "xTktQsnpBmQ": {
           title: "Day 10: For Loop Hands On",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2010%3A%20For%20Loop%20Hands%20On/Practice%20Questions"
         },
-        "ln_gWzCl8Xk": {
+        "0D9Y_2mLi7Q": {
           title: "Day 12: Loop-Pattern",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2011%3A%20Loop-Pattern/Patterns.py"
         },
