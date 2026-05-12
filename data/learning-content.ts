@@ -135,7 +135,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
     videoIds:[
        "A-HB_9s1KtU",// 4. Lists & Advanced Operations
        "ihTNWJ-R3Xk",
-       "bIXouqD29z0"  // 5. Dictionaries & Real-world Usage
+       "bIXouqD29z0",
+       "eyNMM-GXtyI"  // 5. Dictionaries & Real-world Usage
     ],
     githubAssignments: {
         "A-HB_9s1KtU": {
@@ -147,6 +148,12 @@ export const courseCurriculumMap: Record<string, any[]> = {
           title: "Day 19: File Handling Day 2",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day-18%3A%20File%20Handling/Assigment3",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day-18%3A%20File%20Handling/Solution3.py"
+        },
+        "eyNMM-GXtyI":{
+          title: "Day 20: Exceptional Handling",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2020%3A%20Exceptional%20Handling/Assignment",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2020%3A%20Exceptional%20Handling/Solutions.py"
+        
         }
     }
   },
