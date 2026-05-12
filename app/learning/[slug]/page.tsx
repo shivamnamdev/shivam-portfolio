@@ -333,19 +333,36 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   };
 
   // 🚨 THE FIX: TWO-WAY VIRTUAL FILE SYSTEM SYNC!
+  // 🚨 THE UPGRADED RUN COMMAND (Now supports Python input()!)
   const runPythonCode = async () => {
     if (!files['main.py'].trim() || !pyodide) return;
     setIsRunningCode(true);
     setOutput("Running script...");
     try {
+      // 1. Setup Python terminal capture & OVERRIDE input() function!
       await pyodide.runPythonAsync(`
 import sys
 import io
+import builtins
+from js import prompt
+
 sys.stdout = io.StringIO()
 sys.stderr = io.StringIO()
+
+# Custom input handler to route Python input() to Browser prompt()
+def custom_input(p=""):
+    sys.stdout.write(str(p)) # Print the prompt question to our terminal
+    val = prompt(str(p))     # Open the browser popup
+    if val is None:          # If user clicks 'Cancel'
+        sys.stdout.write("\\n")
+        raise EOFError("EOF when reading a line")
+    sys.stdout.write(val + "\\n") # Echo what they typed into our terminal
+    return val
+
+builtins.input = custom_input
       `);
       
-      // 1. Wipe old files from previous steps
+      // 2. Wipe old files from previous steps
       try {
         const pyodideFiles = pyodide.FS.readdir('.');
         for (const fname of pyodideFiles) {
@@ -356,18 +373,19 @@ sys.stderr = io.StringIO()
         }
       } catch(e) {}
 
-      // 2. Inject React files into Pyodide
+      // 3. Inject React files into Pyodide VFS
       for (const [fname, content] of Object.entries(files)) {
         pyodide.FS.writeFile(fname, content);
       }
 
-      // 3. Execute
+      // 4. Execute main.py
       await pyodide.runPythonAsync(files['main.py']);
       
       const stdout = pyodide.runPython("sys.stdout.getvalue()");
       const stderr = pyodide.runPython("sys.stderr.getvalue()");
       let finalOutput = stdout;
 
+      // 5. Run Hidden Auto-Grader Tests
       if (!stderr && activeVideo?.githubAssignment?.testCode) {
         try {
           await pyodide.runPythonAsync(activeVideo.githubAssignment.testCode);
@@ -378,12 +396,11 @@ sys.stderr = io.StringIO()
         }
       }
 
-      // 4. Extract generated files from Pyodide back to React Tabs!
+      // 6. Sync Generated Files back to React UI
       try {
         const currentPyodideFiles = pyodide.FS.readdir('.');
         const syncedFiles = { ...files };
         
-        // Add new files
         for (const fname of currentPyodideFiles) {
           if (fname !== '.' && fname !== '..') {
             const stat = pyodide.FS.stat(fname);
@@ -392,18 +409,16 @@ sys.stderr = io.StringIO()
             }
           }
         }
-        
-        // Remove deleted files
         for (const fname in files) {
-          if (!currentPyodideFiles.includes(fname)) {
-            delete syncedFiles[fname];
-          }
+          if (!currentPyodideFiles.includes(fname)) delete syncedFiles[fname];
         }
         setFiles(syncedFiles);
       } catch(e) {}
 
+      // 7. Render Output
       if (stderr) setOutput(`Error:\n${stderr}`);
       else setOutput(finalOutput || "Script executed successfully. (No output)");
+      
     } catch (error: any) {
       setOutput(`Syntax Error:\n${error.message.split('File "<exec>"')[1] || error.message}`);
     } finally {
