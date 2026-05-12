@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-// 🚨 IMPORTED 'X' ICON FOR THE MODAL CLOSE BUTTON
 import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, Code2, TerminalSquare, Award, FileCheck, Eye, RefreshCw, X } from 'lucide-react';
 import Link from 'next/link';
 import { courseCurriculumMap } from '@/data/learning-content';
@@ -24,30 +23,32 @@ function formatYouTubeDuration(duration: string) {
 
 export default function CoursePlayerPage({ params }: { params: { slug: string } }) {
   const { user, isLoaded } = useUser();
-  const [playlist, setPlaylist] = useState<any[]>([]);
+  const[playlist, setPlaylist] = useState<any[]>([]);
   const [activeVideo, setActiveVideo] = useState<any>(null);
   
   const [completedVideos, setCompletedVideos] = useState<string[]>([]);
-  const[completedAssignments, setCompletedAssignments] = useState<string[]>([]);
+  const [completedAssignments, setCompletedAssignments] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMarking, setIsMarking] = useState(false);
   
-  const[activeTab, setActiveTab] = useState<'description' | 'qa' | 'practice' | 'visualize'>('description');
+  const [activeTab, setActiveTab] = useState<'description' | 'qa' | 'practice' | 'visualize'>('description');
   const [comments, setComments] = useState<any[]>([]);
-  const[newComment, setNewComment] = useState("");
+  const [newComment, setNewComment] = useState("");
   const [isPosting, setIsPosting] = useState(false);
 
-  const[code, setCode] = useState("");
+  // 🚨 REFACTORED IDE STATES: Decoupled live code from the storage array!
+  const [code, setCode] = useState(""); // What the editor currently shows
+  const[codes, setCodes] = useState<string[]>([]); // Hidden array storing previous steps
+  
   const [output, setOutput] = useState("");
-  const[isRunningCode, setIsRunningCode] = useState(false);
-  const [isFetchingCode, setIsFetchingCode] = useState(false);
+  const [isRunningCode, setIsRunningCode] = useState(false);
+  const[isFetchingCode, setIsFetchingCode] = useState(false);
   const [isSubmittingAssignment, setIsSubmittingAssignment] = useState(false);
-  const[isAskingAI, setIsAskingAI] = useState(false);
+  const [isAskingAI, setIsAskingAI] = useState(false);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
   
-  // 🚨 NEW: Stores an array of solutions!
-  const[officialSolutionSteps, setOfficialSolutionSteps] = useState<string[]>([]);
+  const [officialSolutionSteps, setOfficialSolutionSteps] = useState<string[]>([]);
   const [showSolutionModal, setShowSolutionModal] = useState(false);
   
   const[assignmentSteps, setAssignmentSteps] = useState<string[]>([]);
@@ -58,6 +59,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
 
   const courseDetails = activeCourses.find(c => c.slug === params.slug);
 
+  // Load Pyodide
   useEffect(() => {
     const loadPyodideScript = async () => {
       if ((window as any).loadPyodide) return;
@@ -75,7 +77,6 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     loadPyodideScript();
   },[]);
 
-  // 🚨 UPDATED: Fetches Assignment AND the Solution Code from GitHub
   const loadGithubAssignment = async (assignmentObj: any) => {
     setIsFetchingCode(true);
     try {
@@ -83,18 +84,21 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       if (!response.ok) throw new Error("Failed to fetch assignment");
       const rawText = await response.text();
       
-      // 🚨 THE FIX: This regex allows invisible spaces, Windows formatting, and 3 or more dashes!
       const steps = rawText.split(/^\s*-{3,}\s*$/gm).map(s => s.trim()).filter(s => s.length > 0);
-      setAssignmentSteps(steps.length > 0 ? steps : [rawText]);
+      const finalSteps = steps.length > 0 ? steps : [rawText];
+      
+      setAssignmentSteps(finalSteps);
       setCurrentStepIndex(0);
-      setCode("# Write your Python code below:\n\n"); 
+      
+      // Initialize the hidden array and the live editor
+      const initialCodes = new Array(finalSteps.length).fill("# Write your Python code below:\n\n");
+      setCodes(initialCodes);
+      setCode(initialCodes[0]);
 
-      // Fetch official solution if provided
       if (assignmentObj.solutionUrl) {
         const solRes = await fetch(`${assignmentObj.solutionUrl}?t=${Date.now()}`);
         if (solRes.ok) {
           const rawSol = await solRes.text();
-          // 🚨 THE FIX: Split the Python solution file wherever there is a comment line of dashes!
           const solSteps = rawSol.split(/^#\s*-{10,}\s*$/gm).map(s => s.trim()).filter(s => s.length > 0);
           setOfficialSolutionSteps(solSteps.length > 0 ? solSteps : [rawSol]);
         } else {
@@ -103,19 +107,20 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       } else {
         setOfficialSolutionSteps([]);
       }
-      
     } catch (error) {
       setAssignmentSteps(["Error loading assignment instructions from GitHub."]);
+      setCodes([]);
       setCode("");
-      setOfficialSolution(null);
+      setOfficialSolutionSteps([]);
     } finally {
       setIsFetchingCode(false);
     }
   };
 
+  // 🚨 THE FIX: Only depend on user?.id so Clerk session refreshes don't wipe the code!
   useEffect(() => {
     async function loadCourseData() {
-      if (!isLoaded || !user) return;
+      if (!isLoaded || !user?.id) return;
       try {
         const courseModules = courseCurriculumMap[params.slug] ||[];
         const allVideoIds = courseModules.flatMap(m => m.videoIds ||[]);
@@ -157,12 +162,9 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
 
         setPlaylist(enrichedModules);
         if (enrichedModules.length > 0 && enrichedModules[0].videos.length > 0) {
-          const firstVideo = enrichedModules[0].videos[0];
-          setActiveVideo(firstVideo);
-          if (firstVideo.githubAssignment) {
-            setAssignmentSteps(["Loading instructions..."]);
-            setCode("# Loading workspace...");
-            loadGithubAssignment(firstVideo.githubAssignment);
+          setActiveVideo(enrichedModules[0].videos[0]);
+          if (enrichedModules[0].videos[0].githubAssignment) {
+            loadGithubAssignment(enrichedModules[0].videos[0].githubAssignment);
           }
         }
       } catch (error) {
@@ -172,8 +174,9 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       }
     }
     loadCourseData();
-  },[isLoaded, user, params.slug]);
+  },[isLoaded, user?.id, params.slug]);
 
+  // Handle Video Change
   const handleVideoChange = (video: any) => {
     setActiveVideo(video);
     setOutput(""); 
@@ -188,8 +191,26 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       setCode("# Loading workspace...");
       loadGithubAssignment(video.githubAssignment);
     } else {
+      setCodes([]);
       setCode("");
     }
+  };
+
+  // 🚨 NEW LOGIC: Safely handles navigating between steps!
+  const handleStepChange = (newIndex: number) => {
+    // 1. Save the current live code into the array
+    setCodes(prev => {
+      const updatedCodes = [...prev];
+      updatedCodes[currentStepIndex] = code;
+      
+      // 2. Fetch the target step's code from the array and push it to the editor
+      setCode(updatedCodes[newIndex] || "# Write your Python code below:\n\n");
+      return updatedCodes;
+    });
+    
+    setCurrentStepIndex(newIndex);
+    setOutput("");
+    setAiResponse(null);
   };
 
   useEffect(() => {
@@ -221,13 +242,21 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     } finally { setIsMarking(false); }
   };
 
+  // 🚨 UPDATED: Merges all code from the array at the moment of submission
   const submitAssignment = async () => {
     if (!user || !activeVideo || isSubmittingAssignment) return;
     setIsSubmittingAssignment(true);
     try {
+      // Create a final copy of the array and ensure the currently visible code is injected
+      const finalCodes = [...codes];
+      finalCodes[currentStepIndex] = code;
+      
+      // Merge all steps into one beautiful file
+      const combinedCode = finalCodes.map((c, idx) => `# === Step ${idx + 1} ===\n${c}`).join('\n\n');
+      
       const studentName = user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || 'Student';
       const { error } = await supabase.from('assignment_progress').upsert(
-        { user_id: user.id, course_slug: params.slug, video_id: activeVideo.id, submitted_code: code, user_name: studentName },
+        { user_id: user.id, course_slug: params.slug, video_id: activeVideo.id, submitted_code: combinedCode, user_name: studentName },
         { onConflict: 'user_id, course_slug, video_id' }
       );
       if (error) throw error;
@@ -238,11 +267,6 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       
       setShowSuccessOverlay(true);
       setTimeout(() => setShowSuccessOverlay(false), 4000);
-
-      // 🚨 Pop open the Official Solution Modal after successful submission!
-      if (officialSolution) {
-        setShowSolutionModal(true);
-      }
 
     } catch (err) {
       alert("Failed to submit assignment. Please try again.");
@@ -262,6 +286,8 @@ import io
 sys.stdout = io.StringIO()
 sys.stderr = io.StringIO()
       `);
+      
+      // Run the currently visible step's code
       await pyodide.runPythonAsync(code);
       const stdout = pyodide.runPython("sys.stdout.getvalue()");
       const stderr = pyodide.runPython("sys.stderr.getvalue()");
@@ -377,17 +403,13 @@ sys.stderr = io.StringIO()
       <Navbar />
       <main className="flex-grow max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         
-        {/* 🚨 THE MASTER SOLUTION MODAL */}
         <AnimatePresence>
           {showSolutionModal && (
             <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 md:p-8">
               <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 className="bg-[#0d1117] w-full max-w-6xl rounded-3xl border border-stone-700 shadow-2xl flex flex-col overflow-hidden max-h-[90vh]"
               >
-                {/* Modal Header */}
                 <div className="px-6 py-4 border-b border-stone-800 flex justify-between items-center bg-[#161b22]">
                   <h3 className="text-xl font-bold text-white flex items-center gap-2">
                     <Award className="text-amber-500" /> Official Solution & Code Review
@@ -397,33 +419,23 @@ sys.stderr = io.StringIO()
                   </button>
                 </div>
                 
-                {/* Modal Body: Side by Side Comparison */}
                 <div className="flex flex-col md:flex-row flex-grow overflow-hidden h-[60vh]">
-                   
-                   {/* Left: Student's Code */}
                    <div className="w-full md:w-1/2 border-r border-stone-800 flex flex-col">
                       <div className="bg-[#161b22] px-4 py-3 border-b border-stone-800 text-stone-400 text-xs font-mono font-bold uppercase tracking-widest flex items-center gap-2">
-                        Your Submitted Code
+                        Your Submitted Code (Step {currentStepIndex + 1})
                       </div>
-                      <div className="flex-grow p-5 overflow-y-auto">
-                         <pre className="text-sm font-mono text-stone-300 whitespace-pre-wrap leading-relaxed">{code}</pre>
+                      <div className="flex-grow relative">
+                         {/* Notice it pulls from the 'code' state which is perfectly synced! */}
+                         <Editor height="100%" defaultLanguage="python" theme="vs-dark" value={code} options={{ readOnly: true, minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} />
                       </div>
                    </div>
 
-                   {/* Right: Instructor's Official Solution */}
                    <div className="w-full md:w-1/2 flex flex-col bg-[#0a0c10]">
                       <div className="bg-[#161b22] px-4 py-3 border-b border-stone-800 text-amber-500 text-xs font-mono font-bold uppercase tracking-widest flex items-center gap-2">
                         <Code2 size={16}/> Instructor's Solution (Step {currentStepIndex + 1})
                       </div>
                       <div className="flex-grow relative">
-                         <Editor 
-                           height="100%" 
-                           defaultLanguage="python" 
-                           theme="vs-dark" 
-                           // 🚨 Grabs the solution matching the current step!
-                           value={officialSolutionSteps[currentStepIndex] || "# No official solution provided for this specific step."} 
-                           options={{ readOnly: true, minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} 
-                         />
+                         <Editor height="100%" defaultLanguage="python" theme="vs-dark" value={officialSolutionSteps[currentStepIndex] || "# No official solution provided for this specific step."} options={{ readOnly: true, minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} />
                       </div>
                    </div>
                 </div>
@@ -446,18 +458,19 @@ sys.stderr = io.StringIO()
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
           <div className="lg:col-span-2 flex flex-col gap-6">
-            
             {activeVideo ? (
-              <div className="w-full bg-black rounded-2xl overflow-hidden shadow-xl aspect-video border border-stone-200">
+              <div className="w-full bg-black rounded-2xl overflow-hidden shadow-xl aspect-video border border-stone-200 relative select-none">
                 <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${activeVideo.youtubeId}?rel=0&modestbranding=1`} title={activeVideo.title} frameBorder="0" allowFullScreen></iframe>
+                <div className="absolute inset-0 pointer-events-none overflow-hidden z-50 flex items-center justify-center mix-blend-difference">
+                  <motion.div animate={{ x:[-150, 150, 150, -150, -150], y:[-80, -80, 80, 80, -80] }} transition={{ duration: 25, repeat: Infinity, ease: "linear" }} className="absolute text-white/30 font-mono text-sm md:text-lg font-bold tracking-widest pointer-events-none drop-shadow-md transform -rotate-12">
+                    {user?.primaryEmailAddress?.emailAddress || user?.id} <br/><span className="text-xs">DO NOT DISTRIBUTE</span>
+                  </motion.div>
+                </div>
               </div>
             ) : (
               <div className="w-full bg-stone-900 rounded-2xl shadow-xl aspect-video border border-stone-200 flex flex-col items-center justify-center text-center p-8">
-                <div className="w-20 h-20 bg-stone-800 rounded-full flex items-center justify-center mb-4">
-                  <Clock size={40} className="text-amber-500" />
-                </div>
+                <div className="w-20 h-20 bg-stone-800 rounded-full flex items-center justify-center mb-4"><Clock size={40} className="text-amber-500" /></div>
                 <h2 className="text-3xl font-black text-white mb-4">Live Classes Starting Soon</h2>
                 {courseDetails?.liveLink ? (
                   <a href={courseDetails.liveLink} target="_blank" rel="noreferrer" className="px-8 py-4 rounded-full bg-amber-500 text-stone-900 font-bold text-lg flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors shadow-lg">
@@ -492,43 +505,27 @@ sys.stderr = io.StringIO()
             {activeVideo && (
               <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden mb-10">
                 <div className="flex overflow-x-auto border-b border-stone-100 bg-stone-50/50">
-                  <button onClick={() => setActiveTab('description')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'description' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
-                    <AlignLeft size={18} /> Lesson Details
-                  </button>
-                  <button onClick={() => setActiveTab('qa')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'qa' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
-                    <MessageCircle size={18} /> Q&A ({comments.length})
-                  </button>
+                  <button onClick={() => setActiveTab('description')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'description' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}><AlignLeft size={18} /> Lesson Details</button>
+                  <button onClick={() => setActiveTab('qa')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'qa' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}><MessageCircle size={18} /> Q&A ({comments.length})</button>
                   {activeVideo.githubAssignment && (
                     <>
-                      <button onClick={() => setActiveTab('practice')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'practice' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
-                        <Code size={18} /> Practice {isAssignmentCompleted && "✅"}
-                      </button>
-                      <button onClick={() => setActiveTab('visualize')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'visualize' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
-                        <Eye size={18} /> Visualize 👁️
-                      </button>
+                      <button onClick={() => setActiveTab('practice')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'practice' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}><Code size={18} /> Practice {isAssignmentCompleted && "✅"}</button>
+                      <button onClick={() => setActiveTab('visualize')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'visualize' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}><Eye size={18} /> Visualize 👁️</button>
                     </>
                   )}
                 </div>
 
                 <div className="p-0 md:p-0">
                   
-                  {activeTab === 'description' && (
-                    <div className="p-6 md:p-8 prose prose-stone max-w-none">
-                      <p className="text-stone-600 whitespace-pre-wrap leading-relaxed text-sm md:text-base">{activeVideo.description}</p>
-                    </div>
-                  )}
-
+                  {activeTab === 'description' && (<div className="p-6 md:p-8 prose prose-stone max-w-none"><p className="text-stone-600 whitespace-pre-wrap leading-relaxed text-sm md:text-base">{activeVideo.description}</p></div>)}
+                  
                   {activeTab === 'qa' && (
                     <div className="p-6 md:p-8 flex flex-col gap-6">
                       <form onSubmit={handlePostComment} className="flex flex-col gap-3">
                         <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Ask Shivam or the community..." className="w-full p-4 rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none resize-none transition-all" rows={3} required />
-                        <div className="flex justify-end">
-                          <button type="submit" disabled={isPosting} className="px-6 py-2.5 rounded-xl bg-stone-900 text-white font-bold text-sm flex items-center gap-2 hover:bg-stone-800 transition-colors disabled:opacity-70 shadow-md">
-                            {isPosting ? <Loader2 size={16} className="animate-spin"/> : <Send size={16} />} Post Question
-                          </button>
-                        </div>
+                        <div className="flex justify-end"><button type="submit" disabled={isPosting} className="px-6 py-2.5 rounded-xl bg-stone-900 text-white font-bold text-sm flex items-center gap-2 hover:bg-stone-800 transition-colors disabled:opacity-70 shadow-md">{isPosting ? <Loader2 size={16} className="animate-spin"/> : <Send size={16} />} Post Question</button></div>
                       </form>
-                      <div className="space-y-6 border-t border-stone-100 pt-6">
+                      <div className="space-y-6 pt-6 border-t border-stone-100">
                         {comments.length === 0 ? <p className="text-center text-stone-400 text-sm italic py-4">No questions yet. Start the discussion!</p> : comments.map((comment) => (
                           <div key={comment.id} className="flex gap-4">
                             <img src={comment.user_image || "https://www.gravatar.com/avatar/?d=mp"} alt="User" className="w-10 h-10 rounded-full border border-stone-200 shadow-sm" />
@@ -549,13 +546,9 @@ sys.stderr = io.StringIO()
                       
                       <div className="w-full lg:w-1/3 flex flex-col border-r border-stone-800 bg-[#161b22]">
                         <div className="flex flex-col items-center p-4 border-b border-stone-800 bg-[#0d1117]">
-                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3">
-                            Question {currentStepIndex + 1} of {assignmentSteps.length}
-                          </span>
+                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3">Question {currentStepIndex + 1} of {assignmentSteps.length}</span>
                           <div className="flex gap-1.5 w-full justify-center">
-                            {assignmentSteps.map((_, idx) => (
-                              <div key={idx} className={`h-1.5 w-8 rounded-full ${idx < currentStepIndex ? 'bg-green-500' : idx === currentStepIndex ? 'bg-blue-500' : 'bg-stone-700'}`} />
-                            ))}
+                            {assignmentSteps.map((_, idx) => <div key={idx} className={`h-1.5 w-8 rounded-full ${idx < currentStepIndex ? 'bg-green-500' : idx === currentStepIndex ? 'bg-blue-500' : 'bg-stone-700'}`} />)}
                           </div>
                         </div>
 
@@ -564,29 +557,30 @@ sys.stderr = io.StringIO()
                           <div className="prose prose-invert max-w-none text-sm text-stone-300 leading-relaxed mb-8 whitespace-pre-wrap font-sans">
                             {assignmentSteps[currentStepIndex] || "Loading instructions..."}
                           </div>
+                          
+                          {aiResponse && (
+                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-purple-900/20 border border-purple-500/30 rounded-xl flex gap-3 items-start mt-6">
+                              <div className="text-2xl">🤖</div>
+                              <div>
+                                <h4 className="font-bold text-purple-300 text-xs uppercase tracking-widest mb-1">AI Assistant</h4>
+                                <p className="text-purple-200 text-xs leading-relaxed whitespace-pre-wrap">{aiResponse}</p>
+                              </div>
+                            </motion.div>
+                          )}
                         </div>
 
-                        {/* 🚨 UPDATED BOTTOM BAR: "View Solution" is now visible on every step! */}
+                        {/* 🚨 THE 100% FIXED NAVIGATION BAR */}
                         <div className="p-4 border-t border-stone-800 bg-[#0d1117] flex justify-between items-center gap-2">
-                          
-                          {/* Left Side: Previous Button */}
-                          <button onClick={() => setCurrentStepIndex(Math.max(0, currentStepIndex - 1))} disabled={currentStepIndex === 0} className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-bold transition-colors ${currentStepIndex === 0 ? 'text-stone-600 cursor-not-allowed' : 'text-stone-300 hover:bg-stone-800 hover:text-white'}`}>
+                          <button onClick={() => handleStepChange(Math.max(0, currentStepIndex - 1))} disabled={currentStepIndex === 0} className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-bold transition-colors ${currentStepIndex === 0 ? 'text-stone-600 cursor-not-allowed' : 'text-stone-300 hover:bg-stone-800 hover:text-white'}`}>
                             <ChevronLeft size={16} /> Previous
                           </button>
 
-                          {/* Right Side: View Solution + (Next OR Submit) */}
                           <div className="flex items-center gap-2">
-                            
-                            {/* Shows on EVERY step if a solution exists */}
                             {officialSolutionSteps.length > 0 && (
-                              <button onClick={() => setShowSolutionModal(true)} className="px-3 py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg text-xs font-bold transition-colors border border-stone-700">
-                                View Solution
-                              </button>
+                              <button onClick={() => setShowSolutionModal(true)} className="px-3 py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg text-xs font-bold transition-colors border border-stone-700">View Solution</button>
                             )}
-
-                            {/* Toggles between Next and Submit depending on the step */}
                             {currentStepIndex < assignmentSteps.length - 1 ? (
-                              <button onClick={() => setCurrentStepIndex(currentStepIndex + 1)} className="flex items-center gap-1 px-4 py-2 bg-stone-800 rounded-lg text-sm font-bold text-amber-500 hover:bg-stone-700 hover:text-amber-400 transition-colors border border-stone-700 shadow-sm">
+                              <button onClick={() => handleStepChange(currentStepIndex + 1)} className="flex items-center gap-1 px-4 py-2 bg-stone-800 rounded-lg text-sm font-bold text-amber-500 hover:bg-stone-700 hover:text-amber-400 transition-colors border border-stone-700 shadow-sm">
                                 Next <ChevronRight size={16} />
                               </button>
                             ) : (
@@ -594,7 +588,6 @@ sys.stderr = io.StringIO()
                                 {isSubmittingAssignment ? <Loader2 size={14} className="animate-spin"/> : <CheckCircle2 size={14}/>} {isAssignmentCompleted ? "Update" : "Submit"}
                               </button>
                             )}
-
                           </div>
                         </div>
                       </div>
@@ -604,12 +597,11 @@ sys.stderr = io.StringIO()
                           <div className="px-4 py-2.5 bg-[#0d1117] text-amber-400 text-xs font-mono border-t-2 border-t-amber-500 flex items-center gap-2">
                             <Code2 size={14}/> main.py
                           </div>
-                          
                           <div className="flex gap-2">
-                            <button onClick={askAITutor} disabled={isAskingAI || !code.trim()} className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-purple-400 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-colors border border-stone-700 disabled:opacity-50">
+                            <button onClick={askAITutor} disabled={!code.trim() || isAskingAI} className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-purple-400 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-colors border border-stone-700 disabled:opacity-50">
                               {isAskingAI ? <Loader2 size={12} className="animate-spin"/> : <MessageCircle size={12}/>} Ask AI
                             </button>
-                            <button onClick={runPythonCode} disabled={isRunningCode || isPyodideLoading || isFetchingCode} className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs font-bold flex items-center gap-1 transition-colors disabled:opacity-50">
+                            <button onClick={runPythonCode} disabled={isRunningCode || isPyodideLoading || isFetchingCode} className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-colors disabled:opacity-50">
                               {isPyodideLoading || isFetchingCode ? <Loader2 size={12} className="animate-spin"/> : isRunningCode ? <Loader2 size={12} className="animate-spin"/> : <PlayCircle size={12}/>} Run
                             </button>
                           </div>
@@ -628,9 +620,7 @@ sys.stderr = io.StringIO()
                             <button onClick={() => setOutput("")} className="text-stone-500 hover:text-stone-300 text-xs flex items-center gap-1"><RefreshCw size={12}/> Clear</button>
                           </div>
                           <div className="flex-grow p-4 overflow-y-auto bg-[#0d1117]">
-                            <pre className={`text-sm font-mono whitespace-pre-wrap ${output.startsWith('Error') || output.startsWith('Syntax') || output.includes('❌') ? 'text-red-400' : 'text-green-400'}`}>
-                              {output || "shivam@academy:~$ _"}
-                            </pre>
+                            <pre className={`text-sm font-mono whitespace-pre-wrap ${output.startsWith('Error') || output.startsWith('Syntax') || output.includes('❌') ? 'text-red-400' : 'text-green-400'}`}>{output || "shivam@academy:~$ _"}</pre>
                           </div>
                         </div>
                       </div>
@@ -664,6 +654,7 @@ sys.stderr = io.StringIO()
             )}
           </div>
 
+          {/* Playlist Column */}
           <div className="bg-white rounded-2xl border border-stone-200 shadow-sm flex flex-col h-[600px] overflow-hidden sticky top-32">
             <div className="p-5 border-b border-stone-100 bg-stone-50">
               <h3 className="font-black text-stone-900 text-lg">Course Progress</h3>
@@ -692,7 +683,7 @@ sys.stderr = io.StringIO()
                       return (
                         <button key={video.id} onClick={() => handleVideoChange(video)} className={`w-full text-left flex items-start gap-3 p-3 rounded-xl transition-all ${isActive ? 'bg-amber-50 border border-amber-200 shadow-sm' : 'hover:bg-stone-50 border border-transparent'}`}>
                           <div className="mt-0.5 flex-shrink-0">
-                            {isVidDone ? <CheckCircle size={16} className="text-green-500" /> : <PlayCircle size={16} className="text-amber-500" />}
+                            {isVidDone ? <CheckCircle size={16} className="text-green-500" /> : isActive ? <PlayCircle size={16} className="text-amber-500" /> : <Lock size={16} className="text-stone-300" />}
                           </div>
                           <div className="flex-grow pr-2">
                             <p className={`text-sm font-bold line-clamp-2 ${isActive ? 'text-amber-700' : 'text-stone-700'} ${isVidDone && !isActive ? 'opacity-70' : ''}`}>{video.title}</p>

@@ -111,15 +111,18 @@ export const courseCurriculumMap: Record<string, any[]> = {
         // Video 2 gets an assignment
         "TtsqgKlLzlg": {
           title: "Day 14: List Data Type",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2014%3A%20List%20Data%20Type/Assignment.docx"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2014%3A%20List%20Data%20Type/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2014%3A%20List%20Data%20Type/Solution.py"
         },
         "rikgL_Oj5Ds": {
           title: "Day 15: List Hands On Practice",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2014%3A%20List%20Data%20Type/Assignment.docx"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2014%3A%20List%20Data%20Type/Assignment.docx",
+          solutionUrl: ""
         },
         "aMKAALJISv4": {
           title: "Day 16: Tuple and Set Data Type",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/78415aab26bd2a44bb579835fb734d03f0edd2f5/Day%2015%3A%20Tuple%20and%20Set/Assignment.docx"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/78415aab26bd2a44bb579835fb734d03f0edd2f5/Day%2015%3A%20Tuple%20and%20Set/Assignment.docx",
+          urlSolutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2015%3A%20Tuple%20and%20Set/Solution.py"
         },
         "ri_osXAdVNs":{
           title: "Day 17: Dictionary",
@@ -131,12 +134,19 @@ export const courseCurriculumMap: Record<string, any[]> = {
     moduleTitle: "Module 3: Core Programming Concepts",
     videoIds:[
        "A-HB_9s1KtU",// 4. Lists & Advanced Operations
-       "ihTNWJ-R3Xk"  // 5. Dictionaries & Real-world Usage
+       "ihTNWJ-R3Xk",
+       "bIXouqD29z0"  // 5. Dictionaries & Real-world Usage
     ],
     githubAssignments: {
         "A-HB_9s1KtU": {
           title: "Day 18: File Handling",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day-18%3A%20File%20Handling/Assignment"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day-18%3A%20File%20Handling/Assignment",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day-18%3A%20File%20Handling/Solution.py"
+        },
+        "bIXouqD29z0":{
+          title: "Day 19: File Handling Day 2",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day-18%3A%20File%20Handling/Assigment3",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day-18%3A%20File%20Handling/Solution3.py"
         }
     }
   },
