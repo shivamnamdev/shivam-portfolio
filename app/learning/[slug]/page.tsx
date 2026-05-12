@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, Code2, TerminalSquare, Award, FileCheck, Eye, RefreshCw, X } from 'lucide-react';
+import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, Code2, TerminalSquare, Award, FileCheck, Eye, RefreshCw, X, Plus, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { courseCurriculumMap } from '@/data/learning-content';
 import { activeCourses } from '@/data/courses';
@@ -23,7 +23,7 @@ function formatYouTubeDuration(duration: string) {
 
 export default function CoursePlayerPage({ params }: { params: { slug: string } }) {
   const { user, isLoaded } = useUser();
-  const[playlist, setPlaylist] = useState<any[]>([]);
+  const [playlist, setPlaylist] = useState<any[]>([]);
   const [activeVideo, setActiveVideo] = useState<any>(null);
   
   const [completedVideos, setCompletedVideos] = useState<string[]>([]);
@@ -36,13 +36,13 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   const [newComment, setNewComment] = useState("");
   const [isPosting, setIsPosting] = useState(false);
 
-  // 🚨 REFACTORED IDE STATES: Decoupled live code from the storage array!
-  const [code, setCode] = useState(""); // What the editor currently shows
-  const[codes, setCodes] = useState<string[]>([]); // Hidden array storing previous steps
+  const [files, setFiles] = useState<Record<string, string>>({ "main.py": "" });
+  const [activeFile, setActiveFile] = useState("main.py");
+  const [stepFiles, setStepFiles] = useState<Record<string, string>[]>([]); 
   
   const [output, setOutput] = useState("");
   const [isRunningCode, setIsRunningCode] = useState(false);
-  const[isFetchingCode, setIsFetchingCode] = useState(false);
+  const [isFetchingCode, setIsFetchingCode] = useState(false);
   const [isSubmittingAssignment, setIsSubmittingAssignment] = useState(false);
   const [isAskingAI, setIsAskingAI] = useState(false);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
@@ -51,15 +51,14 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   const [officialSolutionSteps, setOfficialSolutionSteps] = useState<string[]>([]);
   const [showSolutionModal, setShowSolutionModal] = useState(false);
   
-  const[assignmentSteps, setAssignmentSteps] = useState<string[]>([]);
-  const[currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [assignmentSteps, setAssignmentSteps] = useState<string[]>([]);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
   const [pyodide, setPyodide] = useState<any>(null);
   const [isPyodideLoading, setIsPyodideLoading] = useState(true);
 
   const courseDetails = activeCourses.find(c => c.slug === params.slug);
 
-  // Load Pyodide
   useEffect(() => {
     const loadPyodideScript = async () => {
       if ((window as any).loadPyodide) return;
@@ -89,11 +88,22 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       
       setAssignmentSteps(finalSteps);
       setCurrentStepIndex(0);
+
+      let initialWorkspace: Record<string, string> = { "main.py": "# Write your Python code below:\n\n" };
       
-      // Initialize the hidden array and the live editor
-      const initialCodes = new Array(finalSteps.length).fill("# Write your Python code below:\n\n");
-      setCodes(initialCodes);
-      setCode(initialCodes[0]);
+      if (assignmentObj.supportingFiles) {
+        for (const file of assignmentObj.supportingFiles) {
+          try {
+            const res = await fetch(`${file.rawUrl}?t=${Date.now()}`);
+            initialWorkspace[file.filename] = await res.text();
+          } catch (err) {}
+        }
+      }
+      
+      const initialFilesArray = Array.from({ length: finalSteps.length }, () => ({ ...initialWorkspace }));
+      setStepFiles(initialFilesArray);
+      setFiles(initialFilesArray[0]);
+      setActiveFile("main.py");
 
       if (assignmentObj.solutionUrl) {
         const solRes = await fetch(`${assignmentObj.solutionUrl}?t=${Date.now()}`);
@@ -109,15 +119,14 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       }
     } catch (error) {
       setAssignmentSteps(["Error loading assignment instructions from GitHub."]);
-      setCodes([]);
-      setCode("");
+      setStepFiles([{ "main.py": "" }]);
+      setFiles({ "main.py": "" });
       setOfficialSolutionSteps([]);
     } finally {
       setIsFetchingCode(false);
     }
   };
 
-  // 🚨 THE FIX: Only depend on user?.id so Clerk session refreshes don't wipe the code!
   useEffect(() => {
     async function loadCourseData() {
       if (!isLoaded || !user?.id) return;
@@ -176,7 +185,6 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     loadCourseData();
   },[isLoaded, user?.id, params.slug]);
 
-  // Handle Video Change
   const handleVideoChange = (video: any) => {
     setActiveVideo(video);
     setOutput(""); 
@@ -188,29 +196,54 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     
     if (video.githubAssignment) {
       setAssignmentSteps(["Loading instructions..."]);
-      setCode("# Loading workspace...");
+      setFiles({ "main.py": "# Loading workspace..." });
+      setActiveFile("main.py");
       loadGithubAssignment(video.githubAssignment);
     } else {
-      setCodes([]);
-      setCode("");
+      setStepFiles([]);
+      setFiles({ "main.py": "" });
     }
   };
 
-  // 🚨 NEW LOGIC: Safely handles navigating between steps!
   const handleStepChange = (newIndex: number) => {
-    // 1. Save the current live code into the array
-    setCodes(prev => {
-      const updatedCodes = [...prev];
-      updatedCodes[currentStepIndex] = code;
-      
-      // 2. Fetch the target step's code from the array and push it to the editor
-      setCode(updatedCodes[newIndex] || "# Write your Python code below:\n\n");
-      return updatedCodes;
-    });
-    
+    const newStepFiles = [...stepFiles];
+    newStepFiles[currentStepIndex] = files;
+    setStepFiles(newStepFiles);
+
+    setFiles(newStepFiles[newIndex] || { "main.py": "# Write your Python code below:\n\n" });
+    setActiveFile("main.py");
     setCurrentStepIndex(newIndex);
     setOutput("");
     setAiResponse(null);
+  };
+
+  // 🚨 FIXED: Now explicitly checks if name exists in object keys to prevent overwriting
+  const handleAddFile = () => {
+    const name = prompt("Enter file name (e.g., utils.py or data.txt):");
+    if (name) {
+      if (name in files) {
+        alert("A file with this name already exists.");
+      } else {
+        setFiles(prev => ({ ...prev, [name]: "" }));
+        setActiveFile(name);
+      }
+    }
+  };
+
+  // 🚨 FIXED: Also deletes the file from Pyodide Virtual Hard Drive so it doesn't resurrect!
+  const handleDeleteFile = (name: string) => {
+    if (name === 'main.py') return alert("You cannot delete main.py!");
+    if (confirm(`Are you sure you want to delete ${name}?`)) {
+      const newFiles = { ...files };
+      delete newFiles[name];
+      setFiles(newFiles);
+      if (activeFile === name) setActiveFile("main.py");
+      
+      // Wipe it from Pyodide memory
+      if (pyodide) {
+        try { pyodide.FS.unlink(name); } catch (e) {}
+      }
+    }
   };
 
   useEffect(() => {
@@ -242,24 +275,42 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     } finally { setIsMarking(false); }
   };
 
-  // 🚨 UPDATED: Merges all code from the array at the moment of submission
+  // 🚨 UPDATED: Assignment Submission with Timestamp Forcing & Safety Checks
   const submitAssignment = async () => {
     if (!user || !activeVideo || isSubmittingAssignment) return;
     setIsSubmittingAssignment(true);
+    
     try {
-      // Create a final copy of the array and ensure the currently visible code is injected
-      const finalCodes = [...codes];
-      finalCodes[currentStepIndex] = code;
+      // 1. Create a final copy of the current step safely
+      const finalStepFiles = [...stepFiles];
+      finalStepFiles[currentStepIndex] = files;
       
-      // Merge all steps into one beautiful file
-      const combinedCode = finalCodes.map((c, idx) => `# === Step ${idx + 1} ===\n${c}`).join('\n\n');
+      // 2. Merge all files from all steps (with safety fallback for empty steps)
+      const combinedCode = finalStepFiles.map((stepDict, idx) => {
+        const safeDict = stepDict || { "main.py": "# No code provided" };
+        const filesText = Object.entries(safeDict).map(([name, cont]) => `# --- File: ${name} ---\n${cont}`).join('\n\n');
+        return `# === Step ${idx + 1} ===\n${filesText}`;
+      }).join('\n\n');
       
       const studentName = user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || 'Student';
+      
+      // 3. Upsert to Supabase AND force the timestamp to update!
       const { error } = await supabase.from('assignment_progress').upsert(
-        { user_id: user.id, course_slug: params.slug, video_id: activeVideo.id, submitted_code: combinedCode, user_name: studentName },
+        { 
+          user_id: user.id, 
+          course_slug: params.slug, 
+          video_id: activeVideo.id, 
+          submitted_code: combinedCode, 
+          user_name: studentName,
+          completed_at: new Date().toISOString() // 🚨 THE FIX: Forces it to the top of your Admin list!
+        },
         { onConflict: 'user_id, course_slug, video_id' }
       );
-      if (error) throw error;
+
+      if (error) {
+        console.error("Supabase Submission Error:", error);
+        throw error;
+      }
       
       if (!completedAssignments.includes(activeVideo.id)) {
         setCompletedAssignments(prev => [...prev, activeVideo.id]);
@@ -268,15 +319,22 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       setShowSuccessOverlay(true);
       setTimeout(() => setShowSuccessOverlay(false), 4000);
 
-    } catch (err) {
-      alert("Failed to submit assignment. Please try again.");
+      // Pop open the solution modal if it exists
+      if (officialSolutionSteps.length > 0) {
+        setShowSolutionModal(true);
+      }
+
+    } catch (err: any) {
+      console.error("Submission Crash:", err);
+      alert(`Failed to submit assignment. Please check your internet connection.`);
     } finally {
       setIsSubmittingAssignment(false);
     }
   };
 
+  // 🚨 THE FIX: TWO-WAY VIRTUAL FILE SYSTEM SYNC!
   const runPythonCode = async () => {
-    if (!code.trim() || !pyodide) return;
+    if (!files['main.py'].trim() || !pyodide) return;
     setIsRunningCode(true);
     setOutput("Running script...");
     try {
@@ -287,8 +345,25 @@ sys.stdout = io.StringIO()
 sys.stderr = io.StringIO()
       `);
       
-      // Run the currently visible step's code
-      await pyodide.runPythonAsync(code);
+      // 1. Wipe old files from previous steps
+      try {
+        const pyodideFiles = pyodide.FS.readdir('.');
+        for (const fname of pyodideFiles) {
+          if (fname !== '.' && fname !== '..') {
+            const stat = pyodide.FS.stat(fname);
+            if (pyodide.FS.isFileSync(stat.mode)) pyodide.FS.unlink(fname);
+          }
+        }
+      } catch(e) {}
+
+      // 2. Inject React files into Pyodide
+      for (const [fname, content] of Object.entries(files)) {
+        pyodide.FS.writeFile(fname, content);
+      }
+
+      // 3. Execute
+      await pyodide.runPythonAsync(files['main.py']);
+      
       const stdout = pyodide.runPython("sys.stdout.getvalue()");
       const stderr = pyodide.runPython("sys.stderr.getvalue()");
       let finalOutput = stdout;
@@ -303,6 +378,30 @@ sys.stderr = io.StringIO()
         }
       }
 
+      // 4. Extract generated files from Pyodide back to React Tabs!
+      try {
+        const currentPyodideFiles = pyodide.FS.readdir('.');
+        const syncedFiles = { ...files };
+        
+        // Add new files
+        for (const fname of currentPyodideFiles) {
+          if (fname !== '.' && fname !== '..') {
+            const stat = pyodide.FS.stat(fname);
+            if (pyodide.FS.isFileSync(stat.mode)) {
+              syncedFiles[fname] = pyodide.FS.readFile(fname, { encoding: 'utf8' });
+            }
+          }
+        }
+        
+        // Remove deleted files
+        for (const fname in files) {
+          if (!currentPyodideFiles.includes(fname)) {
+            delete syncedFiles[fname];
+          }
+        }
+        setFiles(syncedFiles);
+      } catch(e) {}
+
       if (stderr) setOutput(`Error:\n${stderr}`);
       else setOutput(finalOutput || "Script executed successfully. (No output)");
     } catch (error: any) {
@@ -313,14 +412,14 @@ sys.stderr = io.StringIO()
   };
 
   const askAITutor = async () => {
-    if (!code.trim() || isAskingAI) return;
+    if (!files['main.py'].trim() || isAskingAI) return;
     setIsAskingAI(true);
     setAiResponse(null);
     try {
       const response = await fetch('/api/ai-tutor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: code, assignment: activeVideo.githubAssignment?.title || "Python exercise", output: output || "No output yet." })
+        body: JSON.stringify({ code: files['main.py'], assignment: activeVideo.githubAssignment?.title || "Python exercise", output: output || "No output yet." })
       });
       const data = await response.json();
       if (data.success) setAiResponse(data.message);
@@ -377,6 +476,13 @@ sys.stderr = io.StringIO()
     }
   };
 
+  const getLanguage = (filename: string) => {
+    if (filename.endsWith('.py')) return 'python';
+    if (filename.endsWith('.csv')) return 'csv';
+    if (filename.endsWith('.json')) return 'json';
+    return 'plaintext';
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-stone-50">
@@ -424,9 +530,8 @@ sys.stderr = io.StringIO()
                       <div className="bg-[#161b22] px-4 py-3 border-b border-stone-800 text-stone-400 text-xs font-mono font-bold uppercase tracking-widest flex items-center gap-2">
                         Your Submitted Code (Step {currentStepIndex + 1})
                       </div>
-                      <div className="flex-grow relative">
-                         {/* Notice it pulls from the 'code' state which is perfectly synced! */}
-                         <Editor height="100%" defaultLanguage="python" theme="vs-dark" value={code} options={{ readOnly: true, minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} />
+                      <div className="flex-grow p-5 overflow-y-auto">
+                         <pre className="text-sm font-mono text-stone-300 whitespace-pre-wrap leading-relaxed">{files['main.py']}</pre>
                       </div>
                    </div>
 
@@ -458,7 +563,9 @@ sys.stderr = io.StringIO()
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
           <div className="lg:col-span-2 flex flex-col gap-6">
+            
             {activeVideo ? (
               <div className="w-full bg-black rounded-2xl overflow-hidden shadow-xl aspect-video border border-stone-200 relative select-none">
                 <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${activeVideo.youtubeId}?rel=0&modestbranding=1`} title={activeVideo.title} frameBorder="0" allowFullScreen></iframe>
@@ -470,7 +577,9 @@ sys.stderr = io.StringIO()
               </div>
             ) : (
               <div className="w-full bg-stone-900 rounded-2xl shadow-xl aspect-video border border-stone-200 flex flex-col items-center justify-center text-center p-8">
-                <div className="w-20 h-20 bg-stone-800 rounded-full flex items-center justify-center mb-4"><Clock size={40} className="text-amber-500" /></div>
+                <div className="w-20 h-20 bg-stone-800 rounded-full flex items-center justify-center mb-4">
+                  <Clock size={40} className="text-amber-500" />
+                </div>
                 <h2 className="text-3xl font-black text-white mb-4">Live Classes Starting Soon</h2>
                 {courseDetails?.liveLink ? (
                   <a href={courseDetails.liveLink} target="_blank" rel="noreferrer" className="px-8 py-4 rounded-full bg-amber-500 text-stone-900 font-bold text-lg flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors shadow-lg">
@@ -505,25 +614,41 @@ sys.stderr = io.StringIO()
             {activeVideo && (
               <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden mb-10">
                 <div className="flex overflow-x-auto border-b border-stone-100 bg-stone-50/50">
-                  <button onClick={() => setActiveTab('description')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'description' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}><AlignLeft size={18} /> Lesson Details</button>
-                  <button onClick={() => setActiveTab('qa')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'qa' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}><MessageCircle size={18} /> Q&A ({comments.length})</button>
+                  <button onClick={() => setActiveTab('description')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'description' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
+                    <AlignLeft size={18} /> Lesson Details
+                  </button>
+                  <button onClick={() => setActiveTab('qa')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'qa' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
+                    <MessageCircle size={18} /> Q&A ({comments.length})
+                  </button>
                   {activeVideo.githubAssignment && (
                     <>
-                      <button onClick={() => setActiveTab('practice')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'practice' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}><Code size={18} /> Practice {isAssignmentCompleted && "✅"}</button>
-                      <button onClick={() => setActiveTab('visualize')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'visualize' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}><Eye size={18} /> Visualize 👁️</button>
+                      <button onClick={() => setActiveTab('practice')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'practice' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
+                        <Code size={18} /> Practice {isAssignmentCompleted && "✅"}
+                      </button>
+                      <button onClick={() => setActiveTab('visualize')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'visualize' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
+                        <Eye size={18} /> Visualize 👁️
+                      </button>
                     </>
                   )}
                 </div>
 
                 <div className="p-0 md:p-0">
                   
-                  {activeTab === 'description' && (<div className="p-6 md:p-8 prose prose-stone max-w-none"><p className="text-stone-600 whitespace-pre-wrap leading-relaxed text-sm md:text-base">{activeVideo.description}</p></div>)}
-                  
+                  {activeTab === 'description' && (
+                    <div className="p-6 md:p-8 prose prose-stone max-w-none">
+                      <p className="text-stone-600 whitespace-pre-wrap leading-relaxed text-sm md:text-base">{activeVideo.description}</p>
+                    </div>
+                  )}
+
                   {activeTab === 'qa' && (
                     <div className="p-6 md:p-8 flex flex-col gap-6">
                       <form onSubmit={handlePostComment} className="flex flex-col gap-3">
                         <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Ask Shivam or the community..." className="w-full p-4 rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none resize-none transition-all" rows={3} required />
-                        <div className="flex justify-end"><button type="submit" disabled={isPosting} className="px-6 py-2.5 rounded-xl bg-stone-900 text-white font-bold text-sm flex items-center gap-2 hover:bg-stone-800 transition-colors disabled:opacity-70 shadow-md">{isPosting ? <Loader2 size={16} className="animate-spin"/> : <Send size={16} />} Post Question</button></div>
+                        <div className="flex justify-end">
+                          <button type="submit" disabled={isPosting} className="px-6 py-2.5 rounded-xl bg-stone-900 text-white font-bold text-sm flex items-center gap-2 hover:bg-stone-800 transition-colors disabled:opacity-70 shadow-md">
+                            {isPosting ? <Loader2 size={16} className="animate-spin"/> : <Send size={16} />} Post Question
+                          </button>
+                        </div>
                       </form>
                       <div className="space-y-6 pt-6 border-t border-stone-100">
                         {comments.length === 0 ? <p className="text-center text-stone-400 text-sm italic py-4">No questions yet. Start the discussion!</p> : comments.map((comment) => (
@@ -541,18 +666,24 @@ sys.stderr = io.StringIO()
                     </div>
                   )}
 
+                  {/* 🚨 THE UPDATED KODEKLOUD LAB: VFS SYNC */}
                   {activeTab === 'practice' && activeVideo.githubAssignment && (
                     <div className="flex flex-col lg:flex-row h-[700px] bg-[#0d1117] overflow-hidden border-t border-stone-200 shadow-inner">
                       
                       <div className="w-full lg:w-1/3 flex flex-col border-r border-stone-800 bg-[#161b22]">
-                        <div className="flex flex-col items-center p-4 border-b border-stone-800 bg-[#0d1117]">
-                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3">Question {currentStepIndex + 1} of {assignmentSteps.length}</span>
-                          <div className="flex gap-1.5 w-full justify-center">
-                            {assignmentSteps.map((_, idx) => <div key={idx} className={`h-1.5 w-8 rounded-full ${idx < currentStepIndex ? 'bg-green-500' : idx === currentStepIndex ? 'bg-blue-500' : 'bg-stone-700'}`} />)}
-                          </div>
+                        <div className="flex justify-between items-center p-3 border-b border-stone-800 bg-[#0d1117]">
+                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest flex items-center gap-2">
+                            <FileCheck size={14} className="text-amber-500" /> Task {currentStepIndex + 1} of {assignmentSteps.length}
+                          </span>
                         </div>
 
                         <div className="flex-grow p-6 overflow-y-auto">
+                          <div className="flex gap-1.5 w-full justify-center mb-6">
+                            {assignmentSteps.map((_, idx) => (
+                              <div key={idx} className={`h-1.5 w-8 rounded-full ${idx < currentStepIndex ? 'bg-green-500' : idx === currentStepIndex ? 'bg-blue-500' : 'bg-stone-700'}`} />
+                            ))}
+                          </div>
+                          
                           <h3 className="text-xl font-bold text-white mb-6">{activeVideo.githubAssignment.title}</h3>
                           <div className="prose prose-invert max-w-none text-sm text-stone-300 leading-relaxed mb-8 whitespace-pre-wrap font-sans">
                             {assignmentSteps[currentStepIndex] || "Loading instructions..."}
@@ -569,10 +700,9 @@ sys.stderr = io.StringIO()
                           )}
                         </div>
 
-                        {/* 🚨 THE 100% FIXED NAVIGATION BAR */}
                         <div className="p-4 border-t border-stone-800 bg-[#0d1117] flex justify-between items-center gap-2">
                           <button onClick={() => handleStepChange(Math.max(0, currentStepIndex - 1))} disabled={currentStepIndex === 0} className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-bold transition-colors ${currentStepIndex === 0 ? 'text-stone-600 cursor-not-allowed' : 'text-stone-300 hover:bg-stone-800 hover:text-white'}`}>
-                            <ChevronLeft size={16} /> Previous
+                            <ChevronLeft size={16} /> Prev
                           </button>
 
                           <div className="flex items-center gap-2">
@@ -592,13 +722,28 @@ sys.stderr = io.StringIO()
                         </div>
                       </div>
 
+                      {/* Right Panel: File Tabs & Editor */}
                       <div className="w-full lg:w-2/3 flex flex-col bg-[#0d1117]">
-                        <div className="flex bg-[#161b22] border-b border-stone-800 justify-between items-center pr-4">
-                          <div className="px-4 py-2.5 bg-[#0d1117] text-amber-400 text-xs font-mono border-t-2 border-t-amber-500 flex items-center gap-2">
-                            <Code2 size={14}/> main.py
+                        
+                        <div className="flex bg-[#161b22] border-b border-stone-800 justify-between items-center pr-4 overflow-x-auto">
+                          <div className="flex">
+                            {Object.keys(files).map(filename => (
+                              <div 
+                                key={filename} 
+                                onClick={() => setActiveFile(filename)}
+                                className={`px-4 py-2.5 text-xs font-mono flex items-center gap-2 cursor-pointer border-r border-stone-800 ${activeFile === filename ? 'bg-[#0d1117] text-amber-400 border-t-2 border-t-amber-500' : 'bg-[#161b22] text-stone-500 hover:text-stone-300 border-t-2 border-t-transparent'}`}
+                              >
+                                <FileText size={14} /> {filename}
+                                {filename !== 'main.py' && (
+                                  <X size={12} className="hover:text-red-400 ml-2" onClick={(e) => { e.stopPropagation(); handleDeleteFile(filename); }}/>
+                                )}
+                              </div>
+                            ))}
+                            <button onClick={handleAddFile} className="px-3 py-2 text-stone-500 hover:text-white transition-colors"><Plus size={16} /></button>
                           </div>
-                          <div className="flex gap-2">
-                            <button onClick={askAITutor} disabled={!code.trim() || isAskingAI} className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-purple-400 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-colors border border-stone-700 disabled:opacity-50">
+                          
+                          <div className="flex gap-2 shrink-0 py-1.5">
+                            <button onClick={askAITutor} disabled={!files['main.py']?.trim() || isAskingAI} className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-purple-400 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-colors border border-stone-700 disabled:opacity-50">
                               {isAskingAI ? <Loader2 size={12} className="animate-spin"/> : <MessageCircle size={12}/>} Ask AI
                             </button>
                             <button onClick={runPythonCode} disabled={isRunningCode || isPyodideLoading || isFetchingCode} className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-colors disabled:opacity-50">
@@ -608,7 +753,17 @@ sys.stderr = io.StringIO()
                         </div>
 
                         <div className="flex-grow relative">
-                          <Editor height="100%" defaultLanguage="python" theme="vs-dark" value={code} onChange={(value) => { setCode(value || ""); setAiResponse(null); }} options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} />
+                          <Editor 
+                            height="100%" 
+                            defaultLanguage={getLanguage(activeFile)} 
+                            theme="vs-dark" 
+                            value={files[activeFile] || ""} 
+                            onChange={(value) => { 
+                              setFiles(prev => ({ ...prev, [activeFile]: value || "" })); 
+                              setAiResponse(null); 
+                            }} 
+                            options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} 
+                          />
                         </div>
 
                         <div className="h-[200px] border-t border-stone-800 flex flex-col bg-[#0d1117]">
@@ -627,12 +782,13 @@ sys.stderr = io.StringIO()
                     </div>
                   )}
 
+                  {/* VISUALIZER TAB */}
                   {activeTab === 'visualize' && activeVideo.githubAssignment && (
                     <div className="p-6 md:p-8 flex flex-col gap-6">
                       <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl flex justify-between items-center">
                         <div>
                           <h4 className="font-bold text-blue-800 mb-1">Code Visualizer</h4>
-                          <p className="text-blue-900/70 text-sm">Step through your code line-by-line to see how variables change in memory.</p>
+                          <p className="text-blue-900/70 text-sm">Note: The visualizer only steps through your <code className="bg-blue-100 px-1 rounded">main.py</code> file.</p>
                         </div>
                       </div>
                       <div className="w-full bg-[#fdfcf8] rounded-xl border border-stone-200 shadow-inner overflow-hidden h-[600px] flex flex-col">
@@ -643,7 +799,7 @@ sys.stderr = io.StringIO()
                           <span className="text-xs font-mono font-bold text-stone-400 ml-4">shivam-academy-visualizer.exe</span>
                         </div>
                         <div className="flex-grow bg-[#fdfcf8] relative overflow-hidden">
-                          <iframe className="absolute top-0 left-0 w-full h-full" style={{ filter: "contrast(0.95) sepia(0.05)", mixBlendMode: "multiply" }} frameBorder="0" src={`https://pythontutor.com/iframe-embed.html#code=${encodeURIComponent(code)}&cumulative=false&heapPrimitives=nevernest&mode=display&origin=opt-frontend.js&py=3&rawInputLstJSON=%5B%5D&textReferences=false`}></iframe>
+                          <iframe className="absolute top-0 left-0 w-full h-full" style={{ filter: "contrast(0.95) sepia(0.05)", mixBlendMode: "multiply" }} frameBorder="0" src={`https://pythontutor.com/iframe-embed.html#code=${encodeURIComponent(files['main.py'] || "")}&cumulative=false&heapPrimitives=nevernest&mode=display&origin=opt-frontend.js&py=3&rawInputLstJSON=%5B%5D&textReferences=false`}></iframe>
                         </div>
                       </div>
                     </div>
@@ -683,7 +839,7 @@ sys.stderr = io.StringIO()
                       return (
                         <button key={video.id} onClick={() => handleVideoChange(video)} className={`w-full text-left flex items-start gap-3 p-3 rounded-xl transition-all ${isActive ? 'bg-amber-50 border border-amber-200 shadow-sm' : 'hover:bg-stone-50 border border-transparent'}`}>
                           <div className="mt-0.5 flex-shrink-0">
-                            {isVidDone ? <CheckCircle size={16} className="text-green-500" /> : isActive ? <PlayCircle size={16} className="text-amber-500" /> : <Lock size={16} className="text-stone-300" />}
+                            {isVidDone ? <CheckCircle size={16} className="text-green-500" /> : <PlayCircle size={16} className="text-amber-500" />}
                           </div>
                           <div className="flex-grow pr-2">
                             <p className={`text-sm font-bold line-clamp-2 ${isActive ? 'text-amber-700' : 'text-stone-700'} ${isVidDone && !isActive ? 'opacity-70' : ''}`}>{video.title}</p>
