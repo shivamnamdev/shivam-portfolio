@@ -31,6 +31,14 @@ export async function POST(req: NextRequest) {
       user_email: userEmail
     }]);
 
+    // 🚨 NEW: TRIGGER ADMIN NOTIFICATION!
+    await supabase.from('admin_activity_log').insert([{
+      type: 'enrollment',
+      message: `New Paid Enrollment: ${courseTitle}`,
+      user_email: userEmail
+    }]);
+
+    
     if (userEmail && process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
       try {
         const transporter = nodemailer.createTransport({

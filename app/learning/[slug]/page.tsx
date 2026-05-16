@@ -310,55 +310,44 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   const submitAssignment = async () => {
     if (!user || !activeVideo || isSubmittingAssignment) return;
     setIsSubmittingAssignment(true);
-    
     try {
-      // 1. Create a final copy of the current step safely
       const finalStepFiles = [...stepFiles];
       finalStepFiles[currentStepIndex] = files;
       
-      // 2. Merge all files from all steps (with safety fallback for empty steps)
       const combinedCode = finalStepFiles.map((stepDict, idx) => {
-        const safeDict = stepDict || { "main.py": "# No code provided" };
-        const filesText = Object.entries(safeDict).map(([name, cont]) => `# --- File: ${name} ---\n${cont}`).join('\n\n');
+        const filesText = Object.entries(stepDict).map(([name, cont]) => `# --- File: ${name} ---\n${cont}`).join('\n\n');
         return `# === Step ${idx + 1} ===\n${filesText}`;
       }).join('\n\n');
       
       const studentName = user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || 'Student';
-      
-      // 3. Upsert to Supabase AND force the timestamp to update!
+      const studentEmail = user.primaryEmailAddress?.emailAddress || "Unknown Email";
+
       const { error } = await supabase.from('assignment_progress').upsert(
-        { 
-          user_id: user.id, 
-          course_slug: params.slug, 
-          video_id: activeVideo.id, 
-          submitted_code: combinedCode, 
-          user_name: studentName,
-          completed_at: new Date().toISOString() // 🚨 THE FIX: Forces it to the top of your Admin list!
-        },
+        { user_id: user.id, course_slug: params.slug, video_id: activeVideo.id, submitted_code: combinedCode, user_name: studentName },
         { onConflict: 'user_id, course_slug, video_id' }
       );
-
-      if (error) {
-        console.error("Supabase Submission Error:", error);
-        throw error;
-      }
+      if (error) throw error;
       
       if (!completedAssignments.includes(activeVideo.id)) {
         setCompletedAssignments(prev => [...prev, activeVideo.id]);
-        await awardPoints(50); // 🚨 AWARD 50 POINTS ONLY FOR FIRST-TIME SUBMISSION!
+        
+        // 🚨 NEW: TRIGGER ADMIN NOTIFICATION (Fire & Forget so it doesn't slow down the student's UI!)
+        supabase.from('admin_activity_log').insert([{
+          type: 'submission',
+          message: `New Code Submission: ${activeVideo.githubAssignment?.title || activeVideo.title}`,
+          user_email: studentEmail
+        }]).then();
       }
       
       setShowSuccessOverlay(true);
       setTimeout(() => setShowSuccessOverlay(false), 4000);
 
-      // Pop open the solution modal if it exists
       if (officialSolutionSteps.length > 0) {
         setShowSolutionModal(true);
       }
 
-    } catch (err: any) {
-      console.error("Submission Crash:", err);
-      alert(`Failed to submit assignment. Please check your internet connection.`);
+    } catch (err) {
+      alert("Failed to submit assignment. Please try again.");
     } finally {
       setIsSubmittingAssignment(false);
     }
