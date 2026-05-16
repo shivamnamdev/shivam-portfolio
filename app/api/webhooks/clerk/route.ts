@@ -4,16 +4,15 @@ import { headers } from 'next/headers';
 import { WebhookEvent } from '@clerk/nextjs/server';
 import nodemailer from 'nodemailer';
 import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabaseClient'; // 🚨 NEW: Imported Supabase
 
 export async function POST(req: Request) {
-  // 1. Get the Webhook Secret from your .env
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
 
   if (!WEBHOOK_SECRET) {
     return NextResponse.json({ error: 'Please add CLERK_WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local' }, { status: 500 });
   }
 
-  // 2. Get the headers and body to verify the request
   const headerPayload = headers();
   const svix_id = headerPayload.get("svix-id");
   const svix_timestamp = headerPayload.get("svix-timestamp");
@@ -29,7 +28,6 @@ export async function POST(req: Request) {
   const wh = new Webhook(WEBHOOK_SECRET);
   let evt: WebhookEvent;
 
-  // 3. Verify the signature securely
   try {
     evt = wh.verify(body, {
       "svix-id": svix_id,
@@ -41,13 +39,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Error verifying' }, { status: 400 });
   }
 
-  // 4. If a NEW USER just signed up!
+  // If a NEW USER just signed up!
   if (evt.type === 'user.created') {
     const { id, first_name, last_name, email_addresses } = evt.data;
     
     const email = email_addresses[0]?.email_address;
     const firstName = first_name || "Student";
     const fullName = `${first_name || ''} ${last_name || ''}`.trim() || "A New Student";
+
+    // 🚨 NEW: Log the signup to Supabase so it appears in your Admin Bell!
+    try {
+      await supabase.from('admin_activity_log').insert([{
+        type: 'signup',
+        message: `New Account Created: ${fullName}`,
+        user_email: email || "No email"
+      }]);
+    } catch (dbError) {
+      console.error("Failed to log signup to Supabase:", dbError);
+    }
 
     if (email && process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
       try {
@@ -56,7 +65,6 @@ export async function POST(req: Request) {
           auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
         });
 
-        // 📨 EMAIL 1: The Welcome Email to the Student
         const studentMailOptions = {
           from: `Shivam Academy <${process.env.GMAIL_USER}>`,
           to: email,
@@ -82,7 +90,6 @@ export async function POST(req: Request) {
           `,
         };
 
-        // 📨 EMAIL 2: The Notification Email to YOU (Admin)
         const adminMailOptions = {
           from: `Academy Bot <${process.env.GMAIL_USER}>`,
           to: process.env.GMAIL_USER,
@@ -97,13 +104,11 @@ export async function POST(req: Request) {
           `,
         };
 
-        // Send both emails simultaneously
         await Promise.all([
           transporter.sendMail(studentMailOptions),
           transporter.sendMail(adminMailOptions)
         ]);
 
-        console.log("Welcome and Admin Notification emails sent for:", email);
       } catch (err) {
         console.error("Failed to send welcome emails:", err);
       }

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SignInButton, SignedIn, SignedOut, UserButton, useUser } from '@clerk/nextjs';
-import { Bell, Sparkles, Calendar, AlertCircle, Menu, X, ShieldAlert } from 'lucide-react';
+import { Bell, Sparkles, Calendar, AlertCircle, Menu, X, ShieldAlert, Code } from 'lucide-react';
 import { platformNotifications } from '@/data/notifications';
 import { supabase } from '@/lib/supabaseClient';
 
