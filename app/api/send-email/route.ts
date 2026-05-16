@@ -6,20 +6,26 @@ export async function POST(req: NextRequest) {
   try {
     const { name, email, message, subject } = await req.json();
 
-    // 1. Configure the email transporter using your Gmail account
+    // 1. Safety Check: Are the environment variables loaded?
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+      console.error("CRITICAL: Missing GMAIL_USER or GMAIL_APP_PASSWORD in environment variables.");
+      return NextResponse.json({ success: false, error: "Server Configuration Error: Missing Keys" }, { status: 500 });
+    }
+
+    // 2. Configure the email transporter
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
+        pass: process.env.GMAIL_APP_PASSWORD.replace(/\s+/g, ''), // Safely strips accidental spaces
       },
     });
 
-    // 2. Format the email beautifully
+    // 3. Format the email
     const mailOptions = {
       from: `Shivam Academy <${process.env.GMAIL_USER}>`,
-      to: process.env.GMAIL_USER, // Send the email to yourself
-      replyTo: email, // When you click "Reply" in Gmail, it emails the student!
+      to: process.env.GMAIL_USER, 
+      replyTo: email, 
       subject: subject,
       html: `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -28,17 +34,20 @@ export async function POST(req: NextRequest) {
           <p><strong>Email:</strong> ${email}</p>
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
           <p><strong>Message / Request:</strong></p>
-          <p style="white-space: pre-wrap;">${message || 'Requested Python Cheat Sheet / Priority Access'}</p>
+          <p style="white-space: pre-wrap;">${message || 'No message provided.'}</p>
         </div>
       `,
     };
 
-    // 3. Send it!
-    await transporter.sendMail(mailOptions);
+    // 4. Send it and log success
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email sent successfully! Message ID:", info.messageId);
 
     return NextResponse.json({ success: true, message: "Email sent successfully!" });
-  } catch (error) {
-    console.error("Email API Error:", error);
-    return NextResponse.json({ success: false, error: "Failed to send email" }, { status: 500 });
+
+  } catch (error: any) {
+    // 🚨 THIS PRINTS THE EXACT REASON GMAIL FAILED
+    console.error("🚨 Nodemailer Error Details:", error.message || error);
+    return NextResponse.json({ success: false, error: error.message || "Failed to send email" }, { status: 500 });
   }
 }
