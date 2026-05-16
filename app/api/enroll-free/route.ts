@@ -43,6 +43,14 @@ export async function POST(req: NextRequest) {
       }]);
 
     if (dbError) throw dbError;
+
+    // 🚨 NEW: TRIGGER ADMIN NOTIFICATION!
+    await supabase.from('admin_activity_log').insert([{
+      type: 'enrollment',
+      message: `New Free Enrollment (Coupon: ${couponCode}): ${courseSlug}`,
+      user_email: userEmail
+    }]);
+    
     return NextResponse.json({ success: true, message: "Enrolled for free successfully!" });
     
   } catch (error) {
