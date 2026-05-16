@@ -272,7 +272,38 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     try {
       await supabase.from('video_progress').insert([{ user_id: user.id, course_slug: params.slug, video_id: activeVideo.id }]);
       setCompletedVideos(prev =>[...prev, activeVideo.id]);
+      
+      await awardPoints(10); // 🚨 AWARD 10 POINTS!
+      
     } finally { setIsMarking(false); }
+  };
+
+  // 🚨 GAMIFICATION - Award Points & Save Email
+  const awardPoints = async (pointsToAdd: number) => {
+    if (!user) return;
+    try {
+      const studentName = user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || 'Student';
+      const studentEmail = user.primaryEmailAddress?.emailAddress || "";
+
+      const { data } = await supabase.from('user_stats').select('*').eq('user_id', user.id).single();
+      
+      if (data) {
+        await supabase.from('user_stats').update({ 
+          total_points: (data.total_points || 0) + pointsToAdd,
+          user_name: studentName,
+          user_email: studentEmail // 🚨 Update email
+        }).eq('user_id', user.id);
+      } else {
+        await supabase.from('user_stats').insert([{ 
+          user_id: user.id, 
+          user_name: studentName,
+          user_email: studentEmail, // 🚨 Save email
+          total_points: pointsToAdd,
+          current_streak: 1,
+          last_active_date: new Date().toISOString().split('T')[0]
+        }]);
+      }
+    } catch (err) { console.error("Gamification Error:", err); }
   };
 
   // 🚨 UPDATED: Assignment Submission with Timestamp Forcing & Safety Checks
@@ -314,6 +345,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       
       if (!completedAssignments.includes(activeVideo.id)) {
         setCompletedAssignments(prev => [...prev, activeVideo.id]);
+        await awardPoints(50); // 🚨 AWARD 50 POINTS ONLY FOR FIRST-TIME SUBMISSION!
       }
       
       setShowSuccessOverlay(true);
@@ -595,7 +627,10 @@ builtins.input = custom_input
                 <div className="w-20 h-20 bg-stone-800 rounded-full flex items-center justify-center mb-4">
                   <Clock size={40} className="text-amber-500" />
                 </div>
-                <h2 className="text-3xl font-black text-white mb-4">Live Classes Starting Soon</h2>
+                {/* 🚨 THE NEW NATIVE LIVE CLASS LINK */}
+                <Link href={`/live/${params.slug}`} className="px-8 py-4 rounded-full bg-amber-500 text-stone-900 font-bold text-lg flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors shadow-lg mt-4">
+                  <PlayCircle size={20} /> Enter Live Classroom
+                </Link>
                 {courseDetails?.liveLink ? (
                   <a href={courseDetails.liveLink} target="_blank" rel="noreferrer" className="px-8 py-4 rounded-full bg-amber-500 text-stone-900 font-bold text-lg flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors shadow-lg">
                     <PlayCircle size={20} /> Join Today's Live Class on Google Meet

@@ -136,7 +136,9 @@ export const courseCurriculumMap: Record<string, any[]> = {
        "A-HB_9s1KtU",// 4. Lists & Advanced Operations
        "ihTNWJ-R3Xk",
        "bIXouqD29z0",
-       "eyNMM-GXtyI"  // 5. Dictionaries & Real-world Usage
+       "eyNMM-GXtyI",
+       "ZUym9YQfNwI",  // 21. Functions Introduction
+       "lkETxENiTEA"
     ],
     githubAssignments: {
         "A-HB_9s1KtU": {
@@ -153,7 +155,16 @@ export const courseCurriculumMap: Record<string, any[]> = {
           title: "Day 20: Exceptional Handling",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2020%3A%20Exceptional%20Handling/Assignment",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2020%3A%20Exceptional%20Handling/Solutions.py"
-        
+        },
+        "ZUym9YQfNwI": {
+          title: "Day 21: Functions",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Assignment",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Solution.py"
+        },
+        "lkETxENiTEA": {
+          title: "Day 22: Functions Day 2",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Assignment2",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Solution2.py"
         }
     }
   },
