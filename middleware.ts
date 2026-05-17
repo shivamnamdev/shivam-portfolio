@@ -7,10 +7,15 @@ export default authMiddleware({
     "/about",
     "/contact",
     "/mentorship",
-    "/api(.*)" // Allows Web3Forms/API calls to work without logging in
+    "/api/(.*)", // 🚨 This allows your free enrollment & email APIs
+    "/api/webhooks/clerk" // 🚨 THIS IS THE CRITICAL FIX FOR THE WEBHOOK!
   ],
-  // Ignore routes so Clerk doesn't break static assets
-  ignoredRoutes:["/((?!api|trpc))(_next.*|.+\.[\w]+$)", "/python-syllabus.pdf"]
+  // Ignore routes so Clerk doesn't break static assets or webhooks
+  ignoredRoutes: [
+    "/((?!api|trpc))(_next.*|.+\\.[\w]+$)", 
+    "/python-syllabus.pdf",
+    "/api/webhooks/clerk" // 🚨 We completely ignore the webhook so Clerk doesn't even try to authenticate it
+  ]
 });
 
 export const config = {
