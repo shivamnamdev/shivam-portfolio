@@ -66,16 +66,25 @@ export default function Navbar() {
 
   const handleMarkAllAsRead = async () => {
     if (isAdmin) {
-      // Mark all admin logs as read in database
-      const unreadIds = adminLogs.map(log => log.id);
+      // 1. Mark all admin logs as read in the database
+      const unreadIds = adminLogs.filter(log => !log.is_read).map(log => log.id);
+      
       if (unreadIds.length > 0) {
         await supabase.from('admin_activity_log').update({ is_read: true }).in('id', unreadIds);
       }
-      setAdminLogs([]);
+      
+      // 2. 🚨 THE FIX: Update the local state to mark them as read, but DO NOT delete them!
+      setAdminLogs(prevLogs => 
+        prevLogs.map(log => ({ ...log, is_read: true }))
+      );
+      
     } else {
+      // Student logic remains the same
       localStorage.setItem('shivam_academy_read_count', platformNotifications.length.toString());
       setUnreadCount(0);
     }
+    
+    // Close the dropdown menu
     setShowNotifications(false);
   };
 
@@ -90,7 +99,8 @@ export default function Navbar() {
   };
 
   // Determine total unread based on role
-  const totalUnread = isAdmin ? adminLogs.length : unreadCount;
+  const totalUnread = isAdmin ? adminLogs.filter(log => !log.is_read).length : unreadCount;
+
 
   return (
     <motion.nav

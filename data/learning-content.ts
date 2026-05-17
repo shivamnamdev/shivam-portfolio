@@ -8,29 +8,18 @@ export const courseCurriculumMap: Record<string, any[]> = {
     videoIds:[
       "OkK3E7ApZ4Q", // 1. Python Basics & Setup
       "bpjcslHyYEA", // 2. Variables, Inputs & Operators
-      "HDBVcmufHlg",  // 3. Conditional Statements
-      "kF0wuiDRxHQ",
-      "_IqLtwGJRss",
-      "eehv_5rg238",
-      "KY6nWfEeQoY",
-      "FSsqe5-2Ni0",
-      "xTktQsnpBmQ",
-      "0D9Y_2mLi7Q",
-      "ln_gWzCl8Xk",
-      "8uwC1ldWPZc",
-      "t8pYAstFTfg"
+      "HDBVcmufHlg", // 3. Operators and Built-in Function
+      "kF0wuiDRxHQ", // 4. Conditional Statements
+      "_IqLtwGJRss", // 5. Conditional Statements Hands On
+      "eehv_5rg238", // 7. Jump Statement | While Loop
+      "KY6nWfEeQoY", // 8. Thinking Pattern
+      "FSsqe5-2Ni0", // 9. For Loop
+      "xTktQsnpBmQ", // 10. For Loop Drill Down
+      "0D9Y_2mLi7Q", // 11. For Loop - Pattern
+      "ln_gWzCl8Xk", // 12. Loops Brush Up
+      "8uwC1ldWPZc", // 13. Strings Data Type
+      "t8pYAstFTfg"  // 14. Strings Hands On
     ],
-      // 🚨 NEW: Adding Interactive Assignments!
-      // assignments: {
-      //   "OkK3E7ApZ4Q": {
-      //     question: "Write a Python script that prints 'Hello, Automation World!' to the console.",
-      //     starterCode: "# Write your code below:\n\nprint('...')",
-      //   },
-      //   "bpjcslHyYEA": {
-      //     question: "Create two variables: 'a' with the value 10, and 'b' with the value 5. Print their sum.",
-      //     starterCode: "# Create your variables here\n\n\n# Print the sum\n",
-      //   }
-      // },
     githubAssignments: {
         // Video 2 gets an assignment
         "OkK3E7ApZ4Q": {
@@ -88,11 +77,13 @@ export const courseCurriculumMap: Record<string, any[]> = {
         },
         "8uwC1ldWPZc": {
           title: "Day 11: String",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2012%3A%20String/Assignment.docx"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2012%3A%20String/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2012%3A%20String/Solutions.py"
         },
         "t8pYAstFTfg": {
           title: "Day 13: String Hands On",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2012%3A%20String/Assignment2.docx"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2012%3A%20String/Assignment2.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2012%3A%20String/Solutions2.py"
         }
         // Notice we left Video 1 ("OkK3E7ApZ4Q") out entirely. The Practice tab will hide itself automatically!
       }
@@ -116,17 +107,18 @@ export const courseCurriculumMap: Record<string, any[]> = {
         },
         "rikgL_Oj5Ds": {
           title: "Day 15: List Hands On Practice",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2014%3A%20List%20Data%20Type/Assignment.docx",
+          rawUrl: "",
           solutionUrl: ""
         },
         "aMKAALJISv4": {
           title: "Day 16: Tuple and Set Data Type",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/78415aab26bd2a44bb579835fb734d03f0edd2f5/Day%2015%3A%20Tuple%20and%20Set/Assignment.docx",
-          urlSolutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2015%3A%20Tuple%20and%20Set/Solution.py"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2015%3A%20Tuple%20and%20Set/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2015%3A%20Tuple%20and%20Set/Solution.py"
         },
         "ri_osXAdVNs":{
           title: "Day 17: Dictionary",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2016%3A%20Dictionary/Assignment.docx"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2016%3A%20Dictionary/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2016%3A%20Dictionary/Solutions.py"
         }
     }  
   },
