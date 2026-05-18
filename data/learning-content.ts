@@ -130,7 +130,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
        "bIXouqD29z0",
        "eyNMM-GXtyI",
        "ZUym9YQfNwI",  // 21. Functions Introduction
-       "lkETxENiTEA"
+       "lkETxENiTEA",
+       "3A0ZXNh3rbA"
     ],
     githubAssignments: {
         "A-HB_9s1KtU": {
@@ -154,9 +155,14 @@ export const courseCurriculumMap: Record<string, any[]> = {
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Solution.py"
         },
         "lkETxENiTEA": {
-          title: "Day 22: Functions Day 2",
+          title: "Day 22: Functions Day 2: Global Variables",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Assignment2",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Solution2.py"
+        },
+        "3A0ZXNh3rbA" :{
+          title: "Day 23: Functions Day 3: Dunders | Import",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Assignment3",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Solution3.py"
         }
     }
   },
