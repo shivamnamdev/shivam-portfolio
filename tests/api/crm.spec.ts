@@ -5,13 +5,14 @@ import { test, expect } from '@playwright/test';
 test.describe('Authenticated API Tests', () => {
 
   test('POST /api/create-order should reject invalid coupons with valid auth', async ({ request }) => {
-    const adminApiKey = (process.env.ADMIN_API_KEY || 'shivam_secure_api_key_2026').trim();
+    const adminApiKey = process.env.ADMIN_API_KEY?.trim();
+    expect(adminApiKey, 'ADMIN_API_KEY must be set for API tests').toBeTruthy();
     
     // 1. Send the request EXACTLY how the browser sends it (Cookies are attached automatically!)
     const response = await request.post('/api/create-order', {
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': adminApiKey,
+        'x-api-key': adminApiKey as string,
       },
       data: {
         courseId: "python-beginners-live-01",
