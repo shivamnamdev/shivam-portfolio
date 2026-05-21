@@ -169,9 +169,21 @@ export const courseCurriculumMap: Record<string, any[]> = {
   {
     moduleTitle: "Module 4: Advanced Python",
     videoIds:[
-       // 4. Lists & Advanced Operations
-      // "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
-    ]
+      "uHRAKjaju04",// OOPS Basics: Class and Objects
+      "6FT7QQmf-CM" // OOPS: Constructor and Polymorphism
+    ],
+    githubAssignments: {
+      "uHRAKjaju04": {
+          title: "Day 24: OOPs Concepts: Class & Objects",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2024%3A%20OOPS%3A%20Class/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2024%3A%20OOPS%3A%20Class/Solutions.py"
+        },
+      "6FT7QQmf-CM": {
+          title: "Day 25: OOPs Concepts: Constructor & Polymorphism",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2025%3A%20OOPS%3A%20Constructor%20%26%20Method%20Overriding/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2025%3A%20OOPS%3A%20Constructor%20%26%20Method%20Overriding/Solutions.py"
+        },
+    }
   },
   {
     moduleTitle: "Module 5: Important Python Modules",
