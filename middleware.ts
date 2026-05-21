@@ -1,20 +1,25 @@
 import { authMiddleware } from "@clerk/nextjs";
 
 export default authMiddleware({
+  // 1. Explicitly whitelist EVERY public page and API route
   publicRoutes:[
     "/",
     "/courses(.*)",
     "/about",
     "/contact",
     "/mentorship",
-    "/api/(.*)", // 🚨 This allows your free enrollment & email APIs
-    "/api/webhooks/clerk" // 🚨 THIS IS THE CRITICAL FIX FOR THE WEBHOOK!
+    // 🚨 Explicit API Routes (No more buggy wildcards!)
+    "/api/create-order",
+    "/api/verify-payment",
+    "/api/enroll-free",
+    "/api/send-email",
+    "/api/ai-tutor",
+    "/api/get-clerk-users",
+    "/api/get-all-users"
   ],
-  // Ignore routes so Clerk doesn't break static assets or webhooks
+  // 2. Webhooks should be completely ignored by Clerk
   ignoredRoutes: [
-    "/((?!api|trpc))(_next.*|.+\\.[\w]+$)", 
-    "/python-syllabus.pdf",
-    "/api/webhooks/clerk" // 🚨 We completely ignore the webhook so Clerk doesn't even try to authenticate it
+    "/api/webhooks/clerk"
   ]
 });
 
