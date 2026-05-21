@@ -19,6 +19,13 @@ export default authMiddleware({
   ],
   // 2. Webhooks should be completely ignored by Clerk
   ignoredRoutes: [
+    "/api/create-order",
+    "/api/verify-payment",
+    "/api/enroll-free",
+    "/api/send-email",
+    "/api/ai-tutor",
+    "/api/get-clerk-users",
+    "/api/get-all-users",
     "/api/webhooks/clerk"
   ]
 });

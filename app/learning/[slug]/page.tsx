@@ -3,13 +3,16 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, Code2, TerminalSquare, Award, FileCheck, Eye, RefreshCw, X, Plus, FileText } from 'lucide-react';
+// 🚨 ADDED ThumbsUp and Share2 icons
+import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, Code2, TerminalSquare, Award, FileCheck, Eye, RefreshCw, X, Plus, FileText, ThumbsUp, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { courseCurriculumMap } from '@/data/learning-content';
 import { activeCourses } from '@/data/courses';
 import { supabase } from '@/lib/supabaseClient';
 import Editor from '@monaco-editor/react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+const ADMIN_EMAIL = "shivamnamdev.corp@gmail.com";
 
 function formatYouTubeDuration(duration: string) {
   const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
@@ -23,6 +26,8 @@ function formatYouTubeDuration(duration: string) {
 
 export default function CoursePlayerPage({ params }: { params: { slug: string } }) {
   const { user, isLoaded } = useUser();
+  const isAdmin = user?.primaryEmailAddress?.emailAddress === ADMIN_EMAIL;
+
   const [playlist, setPlaylist] = useState<any[]>([]);
   const [activeVideo, setActiveVideo] = useState<any>(null);
   
@@ -31,6 +36,10 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   const [isLoading, setIsLoading] = useState(true);
   const [isMarking, setIsMarking] = useState(false);
   
+  // 🚨 NEW: Like Button States
+  const [likesCount, setLikesCount] = useState(0);
+  const [hasLiked, setHasLiked] = useState(false);
+
   const [activeTab, setActiveTab] = useState<'description' | 'qa' | 'practice' | 'visualize'>('description');
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -69,13 +78,14 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
           const py = await (window as any).loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/" });
           setPyodide(py);
           setIsPyodideLoading(false);
-        } catch (err) { console.error("Failed to load Pyodide:", err); }
+        } catch (err) {}
       };
       document.body.appendChild(script);
     };
     loadPyodideScript();
   },[]);
 
+  // 🚨 UPDATED: Fetches Starter Code if provided!
   const loadGithubAssignment = async (assignmentObj: any) => {
     setIsFetchingCode(true);
     try {
@@ -89,7 +99,16 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       setAssignmentSteps(finalSteps);
       setCurrentStepIndex(0);
 
-      let initialWorkspace: Record<string, string> = { "main.py": "# Write your Python code below:\n\n" };
+      // Check for Starter Code URL
+      let starterCodeText = "# Write your Python code below:\n\n";
+      if (assignmentObj.starterCodeUrl) {
+        try {
+          const starterRes = await fetch(`${assignmentObj.starterCodeUrl}?t=${Date.now()}`);
+          if (starterRes.ok) starterCodeText = await starterRes.text();
+        } catch (e) { console.error("Failed to load starter code"); }
+      }
+
+      let initialWorkspace: Record<string, string> = { "main.py": starterCodeText };
       
       if (assignmentObj.supportingFiles) {
         for (const file of assignmentObj.supportingFiles) {
@@ -185,6 +204,25 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     loadCourseData();
   },[isLoaded, user?.id, params.slug]);
 
+  // 🚨 NEW: Fetch Likes when Video Changes
+  useEffect(() => {
+    async function fetchLikesAndComments() {
+      if (!activeVideo || !user) return;
+      
+      // Fetch Comments
+      const { data: commentData } = await supabase.from('video_comments').select('*').eq('video_id', activeVideo.id).order('created_at', { ascending: false });
+      if (commentData) setComments(commentData);
+
+      // Fetch Likes Count
+      const { data: likesData } = await supabase.from('video_likes').select('user_id').eq('video_id', activeVideo.id);
+      if (likesData) {
+        setLikesCount(likesData.length);
+        setHasLiked(likesData.some(l => l.user_id === user.id));
+      }
+    }
+    fetchLikesAndComments();
+  }, [activeVideo, user]);
+
   const handleVideoChange = (video: any) => {
     setActiveVideo(video);
     setOutput(""); 
@@ -193,6 +231,8 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     setAssignmentSteps([]);
     setCurrentStepIndex(0);
     setOfficialSolutionSteps([]);
+    setHasLiked(false);
+    setLikesCount(0);
     
     if (video.githubAssignment) {
       setAssignmentSteps(["Loading instructions..."]);
@@ -209,7 +249,6 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     const newStepFiles = [...stepFiles];
     newStepFiles[currentStepIndex] = files;
     setStepFiles(newStepFiles);
-
     setFiles(newStepFiles[newIndex] || { "main.py": "# Write your Python code below:\n\n" });
     setActiveFile("main.py");
     setCurrentStepIndex(newIndex);
@@ -217,20 +256,14 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     setAiResponse(null);
   };
 
-  // 🚨 FIXED: Now explicitly checks if name exists in object keys to prevent overwriting
   const handleAddFile = () => {
     const name = prompt("Enter file name (e.g., utils.py or data.txt):");
     if (name) {
-      if (name in files) {
-        alert("A file with this name already exists.");
-      } else {
-        setFiles(prev => ({ ...prev, [name]: "" }));
-        setActiveFile(name);
-      }
+      if (name in files) alert("A file with this name already exists.");
+      else { setFiles(prev => ({ ...prev, [name]: "" })); setActiveFile(name); }
     }
   };
 
-  // 🚨 FIXED: Also deletes the file from Pyodide Virtual Hard Drive so it doesn't resurrect!
   const handleDeleteFile = (name: string) => {
     if (name === 'main.py') return alert("You cannot delete main.py!");
     if (confirm(`Are you sure you want to delete ${name}?`)) {
@@ -238,22 +271,32 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       delete newFiles[name];
       setFiles(newFiles);
       if (activeFile === name) setActiveFile("main.py");
-      
-      // Wipe it from Pyodide memory
-      if (pyodide) {
-        try { pyodide.FS.unlink(name); } catch (e) {}
-      }
+      if (pyodide) { try { pyodide.FS.unlink(name); } catch (e) {} }
     }
   };
 
-  useEffect(() => {
-    async function fetchComments() {
-      if (!activeVideo) return;
-      const { data, error } = await supabase.from('video_comments').select('*').eq('video_id', activeVideo.id).order('created_at', { ascending: false });
-      if (!error && data) setComments(data);
-    }
-    fetchComments();
-  }, [activeVideo]);
+  // 🚨 NEW: Handle Liking the Video
+  const toggleLike = async () => {
+    if (!user || !activeVideo) return;
+    try {
+      if (hasLiked) {
+        setHasLiked(false);
+        setLikesCount(prev => prev - 1);
+        await supabase.from('video_likes').delete().eq('video_id', activeVideo.id).eq('user_id', user.id);
+      } else {
+        setHasLiked(true);
+        setLikesCount(prev => prev + 1);
+        await supabase.from('video_likes').insert([{ video_id: activeVideo.id, user_id: user.id }]);
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  // 🚨 NEW: Admin Share Functionality
+  const handleAdminShare = () => {
+    const shareText = `🚀 Ready to Master Python?\n\nCheck out this exclusive lesson: "${activeVideo.title}" from Shivam Academy!\n\nEnroll here to unlock the full platform and interactive labs:\nhttps://shivamnamdev.com/courses/${params.slug}`;
+    navigator.clipboard.writeText(shareText);
+    alert("Branded share message copied to clipboard! Paste it into WhatsApp or LinkedIn.");
+  };
 
   const handlePostComment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -272,41 +315,9 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     try {
       await supabase.from('video_progress').insert([{ user_id: user.id, course_slug: params.slug, video_id: activeVideo.id }]);
       setCompletedVideos(prev =>[...prev, activeVideo.id]);
-      
-      await awardPoints(10); // 🚨 AWARD 10 POINTS!
-      
     } finally { setIsMarking(false); }
   };
 
-  // 🚨 GAMIFICATION - Award Points & Save Email
-  const awardPoints = async (pointsToAdd: number) => {
-    if (!user) return;
-    try {
-      const studentName = user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || 'Student';
-      const studentEmail = user.primaryEmailAddress?.emailAddress || "";
-
-      const { data } = await supabase.from('user_stats').select('*').eq('user_id', user.id).single();
-      
-      if (data) {
-        await supabase.from('user_stats').update({ 
-          total_points: (data.total_points || 0) + pointsToAdd,
-          user_name: studentName,
-          user_email: studentEmail // 🚨 Update email
-        }).eq('user_id', user.id);
-      } else {
-        await supabase.from('user_stats').insert([{ 
-          user_id: user.id, 
-          user_name: studentName,
-          user_email: studentEmail, // 🚨 Save email
-          total_points: pointsToAdd,
-          current_streak: 1,
-          last_active_date: new Date().toISOString().split('T')[0]
-        }]);
-      }
-    } catch (err) { console.error("Gamification Error:", err); }
-  };
-
-  // 🚨 UPDATED: Assignment Submission with Timestamp Forcing & Safety Checks
   const submitAssignment = async () => {
     if (!user || !activeVideo || isSubmittingAssignment) return;
     setIsSubmittingAssignment(true);
@@ -315,75 +326,50 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       finalStepFiles[currentStepIndex] = files;
       
       const combinedCode = finalStepFiles.map((stepDict, idx) => {
-        const filesText = Object.entries(stepDict).map(([name, cont]) => `# --- File: ${name} ---\n${cont}`).join('\n\n');
+        const safeDict = stepDict || { "main.py": "# No code provided" };
+        const filesText = Object.entries(safeDict).map(([name, cont]) => `# --- File: ${name} ---\n${cont}`).join('\n\n');
         return `# === Step ${idx + 1} ===\n${filesText}`;
       }).join('\n\n');
       
       const studentName = user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || 'Student';
-      const studentEmail = user.primaryEmailAddress?.emailAddress || "Unknown Email";
-
       const { error } = await supabase.from('assignment_progress').upsert(
-        { user_id: user.id, course_slug: params.slug, video_id: activeVideo.id, submitted_code: combinedCode, user_name: studentName },
+        { user_id: user.id, course_slug: params.slug, video_id: activeVideo.id, submitted_code: combinedCode, user_name: studentName, completed_at: new Date().toISOString() },
         { onConflict: 'user_id, course_slug, video_id' }
       );
       if (error) throw error;
       
-      if (!completedAssignments.includes(activeVideo.id)) {
-        setCompletedAssignments(prev => [...prev, activeVideo.id]);
-        
-        // 🚨 NEW: TRIGGER ADMIN NOTIFICATION (Fire & Forget so it doesn't slow down the student's UI!)
-        supabase.from('admin_activity_log').insert([{
-          type: 'submission',
-          message: `New Code Submission: ${activeVideo.githubAssignment?.title || activeVideo.title}`,
-          user_email: studentEmail
-        }]).then();
-      }
+      if (!completedAssignments.includes(activeVideo.id)) setCompletedAssignments(prev => [...prev, activeVideo.id]);
       
       setShowSuccessOverlay(true);
       setTimeout(() => setShowSuccessOverlay(false), 4000);
 
-      if (officialSolutionSteps.length > 0) {
-        setShowSolutionModal(true);
-      }
-
-    } catch (err) {
-      alert("Failed to submit assignment. Please try again.");
-    } finally {
-      setIsSubmittingAssignment(false);
-    }
+      if (officialSolutionSteps.length > 0) setShowSolutionModal(true);
+    } catch (err) { alert("Failed to submit assignment. Please try again."); } finally { setIsSubmittingAssignment(false); }
   };
 
-  // 🚨 THE FIX: TWO-WAY VIRTUAL FILE SYSTEM SYNC!
-  // 🚨 THE UPGRADED RUN COMMAND (Now supports Python input()!)
   const runPythonCode = async () => {
     if (!files['main.py'].trim() || !pyodide) return;
     setIsRunningCode(true);
     setOutput("Running script...");
     try {
-      // 1. Setup Python terminal capture & OVERRIDE input() function!
       await pyodide.runPythonAsync(`
 import sys
 import io
 import builtins
 from js import prompt
-
 sys.stdout = io.StringIO()
 sys.stderr = io.StringIO()
-
-# Custom input handler to route Python input() to Browser prompt()
 def custom_input(p=""):
-    sys.stdout.write(str(p)) # Print the prompt question to our terminal
-    val = prompt(str(p))     # Open the browser popup
-    if val is None:          # If user clicks 'Cancel'
+    sys.stdout.write(str(p))
+    val = prompt(str(p))
+    if val is None:
         sys.stdout.write("\\n")
         raise EOFError("EOF when reading a line")
-    sys.stdout.write(val + "\\n") # Echo what they typed into our terminal
+    sys.stdout.write(val + "\\n")
     return val
-
 builtins.input = custom_input
       `);
       
-      // 2. Wipe old files from previous steps
       try {
         const pyodideFiles = pyodide.FS.readdir('.');
         for (const fname of pyodideFiles) {
@@ -394,19 +380,16 @@ builtins.input = custom_input
         }
       } catch(e) {}
 
-      // 3. Inject React files into Pyodide VFS
       for (const [fname, content] of Object.entries(files)) {
         pyodide.FS.writeFile(fname, content);
       }
 
-      // 4. Execute main.py
       await pyodide.runPythonAsync(files['main.py']);
       
       const stdout = pyodide.runPython("sys.stdout.getvalue()");
       const stderr = pyodide.runPython("sys.stderr.getvalue()");
       let finalOutput = stdout;
 
-      // 5. Run Hidden Auto-Grader Tests
       if (!stderr && activeVideo?.githubAssignment?.testCode) {
         try {
           await pyodide.runPythonAsync(activeVideo.githubAssignment.testCode);
@@ -417,17 +400,13 @@ builtins.input = custom_input
         }
       }
 
-      // 6. Sync Generated Files back to React UI
       try {
         const currentPyodideFiles = pyodide.FS.readdir('.');
         const syncedFiles = { ...files };
-        
         for (const fname of currentPyodideFiles) {
           if (fname !== '.' && fname !== '..') {
             const stat = pyodide.FS.stat(fname);
-            if (pyodide.FS.isFileSync(stat.mode)) {
-              syncedFiles[fname] = pyodide.FS.readFile(fname, { encoding: 'utf8' });
-            }
+            if (pyodide.FS.isFileSync(stat.mode)) syncedFiles[fname] = pyodide.FS.readFile(fname, { encoding: 'utf8' });
           }
         }
         for (const fname in files) {
@@ -436,10 +415,8 @@ builtins.input = custom_input
         setFiles(syncedFiles);
       } catch(e) {}
 
-      // 7. Render Output
       if (stderr) setOutput(`Error:\n${stderr}`);
       else setOutput(finalOutput || "Script executed successfully. (No output)");
-      
     } catch (error: any) {
       setOutput(`Syntax Error:\n${error.message.split('File "<exec>"')[1] || error.message}`);
     } finally {
@@ -616,10 +593,7 @@ builtins.input = custom_input
                 <div className="w-20 h-20 bg-stone-800 rounded-full flex items-center justify-center mb-4">
                   <Clock size={40} className="text-amber-500" />
                 </div>
-                {/* 🚨 THE NEW NATIVE LIVE CLASS LINK */}
-                <Link href={`/live/${params.slug}`} className="px-8 py-4 rounded-full bg-amber-500 text-stone-900 font-bold text-lg flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors shadow-lg mt-4">
-                  <PlayCircle size={20} /> Enter Live Classroom
-                </Link>
+                <h2 className="text-3xl font-black text-white mb-4">Live Classes Starting Soon</h2>
                 {courseDetails?.liveLink ? (
                   <a href={courseDetails.liveLink} target="_blank" rel="noreferrer" className="px-8 py-4 rounded-full bg-amber-500 text-stone-900 font-bold text-lg flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors shadow-lg">
                     <PlayCircle size={20} /> Join Today's Live Class on Google Meet
@@ -637,15 +611,35 @@ builtins.input = custom_input
                     <h2 className="text-xl font-bold text-stone-900 mb-1">{activeVideo.title}</h2>
                     <p className="text-stone-500 text-sm">Instructor: Shivam Namdev</p>
                   </div>
-                  {isVideoCompleted ? (
-                    <button disabled className="px-6 py-3 rounded-xl bg-green-50 text-green-600 font-bold text-sm flex items-center justify-center gap-2 border border-green-200 w-full sm:w-auto">
-                      <CheckCircle size={18} /> Video Watched
+                  
+                  {/* 🚨 NEW: Like & Share Buttons (Admin only for Share) */}
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={toggleLike}
+                      className={`px-4 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors border ${hasLiked ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'}`}
+                    >
+                      <ThumbsUp size={18} className={hasLiked ? "fill-blue-600" : ""} /> {likesCount} Likes
                     </button>
-                  ) : (
-                    <button onClick={markAsComplete} disabled={isMarking} className="px-6 py-3 rounded-xl bg-amber-500 text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-amber-600 transition-colors w-full sm:w-auto shadow-md disabled:opacity-70">
-                      {isMarking ? <Loader2 size={18} className="animate-spin"/> : <CheckCircle size={18} />} Mark Video Complete
-                    </button>
-                  )}
+
+                    {isAdmin && (
+                      <button 
+                        onClick={handleAdminShare}
+                        className="px-4 py-3 rounded-xl bg-purple-50 text-purple-700 font-bold text-sm flex items-center justify-center gap-2 border border-purple-200 hover:bg-purple-100 transition-colors"
+                      >
+                        <Share2 size={18} /> Share Preview
+                      </button>
+                    )}
+
+                    {isVideoCompleted ? (
+                      <button disabled className="px-6 py-3 rounded-xl bg-green-50 text-green-600 font-bold text-sm flex items-center justify-center gap-2 border border-green-200 shadow-sm">
+                        <CheckCircle size={18} /> Completed
+                      </button>
+                    ) : (
+                      <button onClick={markAsComplete} disabled={isMarking} className="px-6 py-3 rounded-xl bg-amber-500 text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-amber-600 transition-colors shadow-md disabled:opacity-70">
+                        {isMarking ? <Loader2 size={18} className="animate-spin"/> : <CheckCircle size={18} />} Mark Complete
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -705,24 +699,18 @@ builtins.input = custom_input
                     </div>
                   )}
 
-                  {/* 🚨 THE UPDATED KODEKLOUD LAB: VFS SYNC */}
                   {activeTab === 'practice' && activeVideo.githubAssignment && (
                     <div className="flex flex-col lg:flex-row h-[700px] bg-[#0d1117] overflow-hidden border-t border-stone-200 shadow-inner">
                       
                       <div className="w-full lg:w-1/3 flex flex-col border-r border-stone-800 bg-[#161b22]">
-                        <div className="flex justify-between items-center p-3 border-b border-stone-800 bg-[#0d1117]">
-                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest flex items-center gap-2">
-                            <FileCheck size={14} className="text-amber-500" /> Task {currentStepIndex + 1} of {assignmentSteps.length}
-                          </span>
+                        <div className="flex flex-col items-center p-4 border-b border-stone-800 bg-[#0d1117]">
+                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3">Question {currentStepIndex + 1} of {assignmentSteps.length}</span>
+                          <div className="flex gap-1.5 w-full justify-center">
+                            {assignmentSteps.map((_, idx) => <div key={idx} className={`h-1.5 w-8 rounded-full ${idx < currentStepIndex ? 'bg-green-500' : idx === currentStepIndex ? 'bg-blue-500' : 'bg-stone-700'}`} />)}
+                          </div>
                         </div>
 
                         <div className="flex-grow p-6 overflow-y-auto">
-                          <div className="flex gap-1.5 w-full justify-center mb-6">
-                            {assignmentSteps.map((_, idx) => (
-                              <div key={idx} className={`h-1.5 w-8 rounded-full ${idx < currentStepIndex ? 'bg-green-500' : idx === currentStepIndex ? 'bg-blue-500' : 'bg-stone-700'}`} />
-                            ))}
-                          </div>
-                          
                           <h3 className="text-xl font-bold text-white mb-6">{activeVideo.githubAssignment.title}</h3>
                           <div className="prose prose-invert max-w-none text-sm text-stone-300 leading-relaxed mb-8 whitespace-pre-wrap font-sans">
                             {assignmentSteps[currentStepIndex] || "Loading instructions..."}
@@ -761,7 +749,6 @@ builtins.input = custom_input
                         </div>
                       </div>
 
-                      {/* Right Panel: File Tabs & Editor */}
                       <div className="w-full lg:w-2/3 flex flex-col bg-[#0d1117]">
                         
                         <div className="flex bg-[#161b22] border-b border-stone-800 justify-between items-center pr-4 overflow-x-auto">
@@ -858,7 +845,7 @@ builtins.input = custom_input
                 <div className="bg-green-500 h-2 rounded-full transition-all duration-1000 ease-out" style={{ width: `${progressPercentage}%` }}></div>
               </div>
               
-              {(progressPercentage === 100 || user?.primaryEmailAddress?.emailAddress === "shivamnamdev.corp@gmail.com") && (
+              {(progressPercentage === 100 || user?.primaryEmailAddress?.emailAddress === ADMIN_EMAIL) && (
                 <button onClick={handleGenerateCertificate} className="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-900 font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] transition-transform animate-in zoom-in">
                   <Award size={20} /> Claim Certificate
                 </button>
