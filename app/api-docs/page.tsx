@@ -26,8 +26,10 @@ const swaggerSpec = {
     description: 'Internal API documentation for automated testing and Playwright E2E integration.',
   },
   servers:[
-    { url: 'http://localhost:3000', description: 'Local Development Server' },
-    { url: 'https://shivamnamdev.com', description: 'Production Server' }
+    // 🚨 Placing '/' at the top forces Swagger to use the current website domain automatically!
+    { url: '/', description: 'Current Environment (Auto-detect)' },
+    { url: 'https://shivamnamdev.com', description: 'Production Server' },
+    { url: 'http://localhost:3000', description: 'Local Development Server' }
   ],
   paths: {
     '/api/send-email': {
