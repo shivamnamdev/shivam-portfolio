@@ -235,60 +235,75 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
               <span>{displayCourse.duration}</span>
             </div>
 
+            {/* 🚨 DYNAMIC ENROLLMENT & PRICING BOX */}
             <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm mb-6">
               
-              <div className="flex p-1 bg-stone-100 rounded-xl mb-6 border border-stone-200">
-                <button onClick={() => setRegion('inr')} className={`w-1/2 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${region === 'inr' ? 'bg-white text-stone-900 shadow-sm border border-stone-200' : 'text-stone-500 hover:text-stone-700'}`}>🇮🇳 India</button>
-                <button onClick={() => setRegion('usd')} className={`w-1/2 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${region === 'usd' ? 'bg-white text-stone-900 shadow-sm border border-stone-200' : 'text-stone-500 hover:text-stone-700'}`}><Globe size={16} /> International</button>
-              </div>
-
-              <div className="flex items-end gap-3 mb-2">
-                <span className="text-5xl font-black text-stone-900">{activePricing.currencyCode === 'USD' ? '$' : '₹'}{displayPriceNumeric}</span>
-                <span className={`text-xl font-bold mb-1 ${appliedCoupon ? 'text-red-400 line-through' : 'text-stone-400 line-through'}`}>
-                  {appliedCoupon ? activePricing.currentPrice : activePricing.originalPrice}
-                </span>
-              </div>
-              <p className="text-amber-600 font-bold text-sm tracking-wide uppercase mb-6">
-                {appliedCoupon ? `🎉 ${appliedCoupon.code} Applied!` : activePricing?.savingsText}
-              </p>
-              
-              {!isAlreadyEnrolled && (
-                <div className="mb-6 p-4 rounded-xl border border-stone-200 bg-stone-50">
-                  <label className="text-xs font-bold text-stone-500 uppercase tracking-widest mb-2 flex items-center gap-1"><Tag size={12}/> Have a Coupon Code?</label>
-                  <div className="flex gap-2">
-                    <input 
-                      type="text" 
-                      value={couponInput} 
-                      onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                      placeholder="Enter code" 
-                      className="flex-1 px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 font-mono text-sm"
-                    />
-                    <button onClick={handleApplyCoupon} className="px-4 py-2 bg-stone-800 text-white rounded-lg font-bold text-sm hover:bg-stone-900 transition-colors">Apply</button>
-                  </div>
-                  {couponMessage.text && <p className={`text-xs font-bold mt-2 ${couponMessage.type === 'error' ? 'text-red-500' : 'text-green-600'}`}>{couponMessage.text}</p>}
+              {displayCourse.enrollmentClosed ? (
+                <div className="text-center py-4">
+                  <h4 className="text-2xl font-black text-stone-900 mb-2">Enrollment Closed</h4>
+                  <p className="text-stone-500 text-sm mb-6">This cohort is no longer accepting new students. Please check our latest batches to enroll.</p>
+                  
+                  {isAlreadyEnrolled ? (
+                    <button onClick={() => router.push('/learning')} className="w-full py-4 rounded-xl bg-green-500 text-white font-black text-lg flex items-center justify-center gap-2 hover:bg-green-600 transition-all shadow-lg">
+                      <CheckCircle2 size={24} /> You are Enrolled! Go to Dashboard
+                    </button>
+                  ) : (
+                    <button onClick={() => router.push('/courses')} className="w-full py-4 rounded-xl bg-stone-900 text-white font-black text-lg flex items-center justify-center gap-2 hover:bg-stone-800 transition-all shadow-lg">
+                      View Open Cohorts
+                    </button>
+                  )}
                 </div>
-              )}
+              ) : (
+                <>
+                  {/* Active Pricing & Region Toggle (Only shows if NOT closed) */}
+                  <div className="flex p-1 bg-stone-100 rounded-xl mb-6 border border-stone-200">
+                    <button onClick={() => setRegion('inr')} className={`w-1/2 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${region === 'inr' ? 'bg-white text-stone-900 shadow-sm border border-stone-200' : 'text-stone-500 hover:text-stone-700'}`}>🇮🇳 India</button>
+                    <button onClick={() => setRegion('usd')} className={`w-1/2 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${region === 'usd' ? 'bg-white text-stone-900 shadow-sm border border-stone-200' : 'text-stone-500 hover:text-stone-700'}`}><Globe size={16} /> International</button>
+                  </div>
 
-              <div className="mt-2 flex flex-col gap-3">
-                {isAlreadyEnrolled ? (
-                  <button onClick={() => router.push('/learning')} className="w-full py-4 rounded-xl bg-green-500 text-white font-black text-lg flex items-center justify-center gap-2 hover:bg-green-600 transition-all shadow-lg shadow-green-500/30">
-                    <CheckCircle2 size={24} /> You are Enrolled! Go to Dashboard
-                  </button>
-                ) : (
-                  <button 
-                    onClick={handlePayment} 
-                    disabled={isProcessing}
-                    className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-lg flex items-center justify-center gap-2 hover:scale-[1.02] transition-all shadow-lg shadow-amber-500/30 disabled:opacity-70"
-                  >
-                    {isProcessing ? <Loader2 className="animate-spin" size={24} /> : <CreditCard size={24} />}
-                    {isProcessing ? "Processing..." : displayPriceNumeric === 0 ? "Enroll for Free" : `Buy Now (${activePricing.currencyCode})`}
-                  </button>
-                )}
-                
+                  <div className="flex items-end gap-3 mb-2">
+                    <span className="text-5xl font-black text-stone-900">{activePricing.currencyCode === 'USD' ? '$' : '₹'}{displayPriceNumeric}</span>
+                    <span className={`text-xl font-bold mb-1 ${appliedCoupon ? 'text-red-400 line-through' : 'text-stone-400 line-through'}`}>
+                      {appliedCoupon ? activePricing.currentPrice : activePricing.originalPrice}
+                    </span>
+                  </div>
+                  <p className="text-amber-600 font-bold text-sm tracking-wide uppercase mb-6">
+                    {appliedCoupon ? `🎉 ${appliedCoupon.code} Applied!` : activePricing?.savingsText}
+                  </p>
+                  
+                  {!isAlreadyEnrolled && (
+                    <div className="mb-6 p-4 rounded-xl border border-stone-200 bg-stone-50">
+                      <label className="text-xs font-bold text-stone-500 uppercase tracking-widest mb-2 block flex items-center gap-1"><Tag size={12}/> Have a Coupon Code?</label>
+                      <div className="flex gap-2">
+                        <input type="text" value={couponInput} onChange={(e) => setCouponInput(e.target.value.toUpperCase())} placeholder="Enter code" className="flex-1 px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 font-mono text-sm" />
+                        <button onClick={handleApplyCoupon} className="px-4 py-2 bg-stone-800 text-white rounded-lg font-bold text-sm hover:bg-stone-900 transition-colors">Apply</button>
+                      </div>
+                      {couponMessage.text && <p className={`text-xs font-bold mt-2 ${couponMessage.type === 'error' ? 'text-red-500' : 'text-green-600'}`}>{couponMessage.text}</p>}
+                    </div>
+                  )}
+
+                  <div className="mt-2 flex flex-col gap-3">
+                    {isAlreadyEnrolled ? (
+                      <button onClick={() => router.push('/learning')} className="w-full py-4 rounded-xl bg-green-500 text-white font-black text-lg flex items-center justify-center gap-2 hover:bg-green-600 transition-all shadow-lg shadow-green-500/30">
+                        <CheckCircle2 size={24} /> You are Enrolled! Go to Dashboard
+                      </button>
+                    ) : (
+                      <button onClick={handlePayment} disabled={isProcessing} className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-lg flex items-center justify-center gap-2 hover:scale-[1.02] transition-all shadow-lg shadow-amber-500/30 disabled:opacity-70">
+                        {isProcessing ? <Loader2 className="animate-spin" size={24} /> : <CreditCard size={24} />}
+                        {isProcessing ? "Processing..." : displayPriceNumeric === 0 ? "Enroll for Free" : `Buy Now (${activePricing.currencyCode})`}
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+              
+              {/* Syllabus download is available to everyone always */}
+              <div className="mt-3">
                 <a href="/python-syllabus.pdf" download className="w-full py-4 rounded-xl border-2 border-stone-200 text-stone-700 font-bold text-lg flex items-center justify-center gap-2 hover:bg-stone-50 hover:border-amber-400 hover:text-amber-600 transition-all">
                   <Download size={20} /> Download Full Syllabus (PDF)
                 </a>
               </div>
+              {!displayCourse.enrollmentClosed && <p className="text-center text-stone-500 text-xs mt-4">100% Secure Checkout via Razorpay</p>}
             </div>
 
             <div className="space-y-6">
