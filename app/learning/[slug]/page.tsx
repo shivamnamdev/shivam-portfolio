@@ -89,6 +89,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   const loadGithubAssignment = async (assignmentObj: any) => {
     setIsFetchingCode(true);
     try {
+      // 1. Fetch the Assignment Instructions
       const response = await fetch(`${assignmentObj.rawUrl}?t=${Date.now()}`);
       if (!response.ok) throw new Error("Failed to fetch assignment");
       const rawText = await response.text();
@@ -99,31 +100,46 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       setAssignmentSteps(finalSteps);
       setCurrentStepIndex(0);
 
-      // Check for Starter Code URL
-      let starterCodeText = "# Write your Python code below:\n\n";
+      // 🚨 2. Fetch and Split the Starter Code!
+      let starterCodeSteps = ["# Write your Python code below:\n\n"];
+      
       if (assignmentObj.starterCodeUrl) {
         try {
           const starterRes = await fetch(`${assignmentObj.starterCodeUrl}?t=${Date.now()}`);
-          if (starterRes.ok) starterCodeText = await starterRes.text();
+          if (starterRes.ok) {
+            const rawStarter = await starterRes.text();
+            // Split by Python comment dashes (e.g., # --------------------)
+            const parsedStarter = rawStarter.split(/^#\s*-{10,}\s*$/gm).map(s => s.trim()).filter(s => s.length > 0);
+            if (parsedStarter.length > 0) {
+              starterCodeSteps = parsedStarter;
+            }
+          }
         } catch (e) { console.error("Failed to load starter code"); }
       }
 
-      let initialWorkspace: Record<string, string> = { "main.py": starterCodeText };
-      
+      // 3. Fetch Supporting Files (e.g., CSVs or txt files)
+      let supportingWorkspace: Record<string, string> = {};
       if (assignmentObj.supportingFiles) {
         for (const file of assignmentObj.supportingFiles) {
           try {
             const res = await fetch(`${file.rawUrl}?t=${Date.now()}`);
-            initialWorkspace[file.filename] = await res.text();
+            supportingWorkspace[file.filename] = await res.text();
           } catch (err) {}
         }
       }
       
-      const initialFilesArray = Array.from({ length: finalSteps.length }, () => ({ ...initialWorkspace }));
+      // 🚨 4. Inject the correct Starter Code into each specific step!
+      const initialFilesArray = Array.from({ length: finalSteps.length }, (_, idx) => ({ 
+        ...supportingWorkspace,
+        // Grabs the specific starter code for this step, or falls back to Step 1 code if missing
+        "main.py": starterCodeSteps[idx] || starterCodeSteps[0] || "# Write your Python code below:\n\n"
+      }));
+
       setStepFiles(initialFilesArray);
       setFiles(initialFilesArray[0]);
       setActiveFile("main.py");
 
+      // 5. Fetch Official Solutions
       if (assignmentObj.solutionUrl) {
         const solRes = await fetch(`${assignmentObj.solutionUrl}?t=${Date.now()}`);
         if (solRes.ok) {
