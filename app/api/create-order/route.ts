@@ -8,7 +8,14 @@ import { auth } from "@clerk/nextjs"; // 🚨 Import Clerk Auth
 export async function POST(req: NextRequest) {
   try {
     // 1. 🚨 ENTERPRISE SECURITY CHECK (Clerk Session OR API Key)
-    const { userId: clerkUserId } = auth();
+    let clerkUserId: string | null = null;
+    try {
+      const authResult = auth();
+      clerkUserId = authResult.userId;
+    } catch {
+      // Ignored on routes where Clerk middleware is intentionally bypassed.
+      clerkUserId = null;
+    }
     const apiKey = req.headers.get("x-api-key");
 
     if (!clerkUserId && apiKey !== process.env.ADMIN_API_KEY) {
