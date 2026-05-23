@@ -59,21 +59,24 @@ export const courseCurriculumMap: Record<string, any[]> = {
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2007%3A%20Jump%20Statements/Solution.py"
         },
         "FSsqe5-2Ni0": {
-          title: "Day 08: Thinking Method",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2008%3A%20Thinking%20Method/Assignment",
-          solutionUrl: "https://github.com/shivamnamdev/learn-python-step-by-step/blob/main/Day%2008%3A%20Thinking%20Method/Solution.py"
+          title: "Day 09: For Loop",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2009%3A%20For%20Loop/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2009%3A%20For%20Loop/Solution.py"
         },
         "xTktQsnpBmQ": {
           title: "Day 09: For Loop",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2009%3A%20For%20Loop/Assignment"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2010%3A%20For%20Loop%20Hands%20On/Practice%20Questions",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2010%3A%20For%20Loop%20Hands%20On/Solution.py"
         },
         "0D9Y_2mLi7Q": {
           title: "Day 10: For Loop Hands On",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2010%3A%20For%20Loop%20Hands%20On/Practice%20Questions"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2010%3A%20For%20Loop%20Hands%20On/Assignment2",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2010%3A%20For%20Loop%20Hands%20On/Solution2.py"
         },
         "ln_gWzCl8Xk": {
           title: "Day 12: Loop-Pattern",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2011%3A%20Loop-Pattern/Patterns.py"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2011%3A%20Loop-Pattern/Assignment",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2011%3A%20Loop-Pattern/Solution.py"
         },
         "8uwC1ldWPZc": {
           title: "Day 11: String",
@@ -170,7 +173,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
     moduleTitle: "Module 4: Advanced Python",
     videoIds:[
       "uHRAKjaju04",// OOPS Basics: Class and Objects
-      "6FT7QQmf-CM" // OOPS: Constructor and Polymorphism
+      "6FT7QQmf-CM",
+      "P4lUW1xQDG0" // OOPS: Constructor and Polymorphism
     ],
     githubAssignments: {
       "uHRAKjaju04": {
@@ -184,6 +188,11 @@ export const courseCurriculumMap: Record<string, any[]> = {
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2025%3A%20OOPS%3A%20Constructor%20%26%20Method%20Overriding/Solutions.py",
           starterCodeUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2025%3A%20OOPS%3A%20Constructor%20%26%20Method%20Overriding/AssignmentAddon.docx"
         },
+      "P4lUW1xQDG0": {
+          title: "Day 25: OOPs Concepts: Inheritance",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2026%3A%20OOPs%3A%20Inheritance/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2026%3A%20OOPs%3A%20Inheritance/Solution.py"
+        },  
     }
   },
   {
