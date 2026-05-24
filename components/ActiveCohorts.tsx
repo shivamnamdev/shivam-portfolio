@@ -7,6 +7,7 @@ import { activeCoupons } from '@/data/coupons';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import SpotlightCard from '@/components/SpotlightCard';
 
 interface ActiveCohortsProps {
   course?: any;
@@ -24,11 +25,10 @@ const loadRazorpayScript = () => {
 
 export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps) {
   const [openModule, setOpenModule] = useState<number | null>(0);
-  const[isProcessing, setIsProcessing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [isAlreadyEnrolled, setIsAlreadyEnrolled] = useState(false);
   const [region, setRegion] = useState<'inr' | 'usd'>('inr');
   
-  // Coupon States
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [couponMessage, setCouponMessage] = useState({ text: "", type: "" });
@@ -45,10 +45,10 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
       try {
         const { data, error } = await supabase
           .from('user_enrollments')
-          .select('id') 
+          .select('id')
           .eq('user_id', user.id)
           .eq('course_slug', displayCourse.slug);
-        
+          
         if (!error && data && data.length > 0) setIsAlreadyEnrolled(true);
       } catch (err) {}
     }
@@ -68,7 +68,6 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
     } else if (appliedCoupon.discountType === 'fixed') {
       displayPriceNumeric = displayPriceNumeric - (appliedCoupon.discountValue[region] || 0);
     }
-    // Limit to 0 so we can bypass Razorpay!
     displayPriceNumeric = Math.max(Math.round(displayPriceNumeric), 0);
   }
 
@@ -88,10 +87,12 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
       return;
     }
     
-    if (coupon.allowedUsers && coupon.allowedUsers.length > 0 && !coupon.allowedUsers.includes(user?.id)) {
-      setCouponMessage({ text: "This coupon is restricted to specific accounts.", type: "error" });
-      setAppliedCoupon(null);
-      return;
+    if (coupon.allowedUsers && coupon.allowedUsers.length > 0) {
+      if (!user?.id || !coupon.allowedUsers.includes(user.id)) {
+        setCouponMessage({ text: "This coupon is restricted to specific accounts.", type: "error" });
+        setAppliedCoupon(null);
+        return;
+      }
     }
 
     setAppliedCoupon(coupon);
@@ -107,20 +108,18 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
     setIsProcessing(true);
 
     try {
-      // 🚨 BYPASS RAZORPAY IF FREE
       if (displayPriceNumeric === 0) {
         const res = await fetch('/api/enroll-free', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             courseId: displayCourse.id, 
-            courseSlug: displayCourse.slug,
+            courseSlug: displayCourse.slug, 
             currency: activePricing.currencyCode, 
             couponCode: appliedCoupon?.code, 
             userId: user?.id 
           })
         });
-        
         const data = await res.json();
         if (data.success) {
           alert("🎉 100% Discount Applied! You are now enrolled.");
@@ -132,7 +131,6 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
         return; 
       }
 
-      // NORMAL RAZORPAY CHECKOUT
       const res = await loadRazorpayScript();
       if (!res) {
         alert("Razorpay SDK failed to load. Are you online?");
@@ -145,9 +143,9 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           amount: displayPriceNumeric, 
-          courseId: displayCourse.id,
-          currency: activePricing.currencyCode,
-          couponCode: appliedCoupon?.code,
+          courseId: displayCourse.id, 
+          currency: activePricing.currencyCode, 
+          couponCode: appliedCoupon?.code, 
           userId: user?.id 
         })
       });
@@ -156,16 +154,13 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
       if (!data.success) throw new Error(data.error || "Failed to create Razorpay order");
 
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
         amount: data.order.amount,
         currency: data.order.currency,
         name: "Shivam Academy",
         description: `Enrollment: ${displayCourse.title}`,
         order_id: data.order.id,
-        prefill: {
-          name: user?.fullName || "",
-          email: user?.primaryEmailAddress?.emailAddress || "",
-        },
+        prefill: { name: user?.fullName || "", email: user?.primaryEmailAddress?.emailAddress || "" },
         theme: { color: "#f59e0b" },
         handler: async function (response: any) {
           try {
@@ -178,11 +173,11 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
                 razorpay_signature: response.razorpay_signature,
                 userId: user?.id,
                 courseSlug: displayCourse.slug,
-                couponCode: appliedCoupon?.code, // 🚨 NEW: Send coupon to backend!
                 userEmail: user?.primaryEmailAddress?.emailAddress,
                 userName: user?.fullName || user?.firstName || "Student",
                 courseTitle: displayCourse.title,
-                amountPaid: `${activePricing.currencyCode === 'USD' ? '$' : '₹'}${displayPriceNumeric}`
+                amountPaid: `${activePricing.currencyCode === 'USD' ? '$' : '₹'}${displayPriceNumeric}`,
+                couponCode: appliedCoupon?.code
               })
             });
             const verifyData = await verifyRes.json();
@@ -190,18 +185,13 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
               alert("🎉 Payment Verified! You are now enrolled.");
               router.push('/learning');
             }
-          } catch (err) {
-            alert("Error verifying enrollment.");
-          }
+          } catch (err) { alert("Error verifying enrollment."); }
         },
       };
 
       const RazorpayConstructor = (window as any).Razorpay;
       const paymentObject = new RazorpayConstructor(options);
-      
-      paymentObject.on("payment.failed", function () {
-        alert("Payment failed or was cancelled. Please try again.");
-      });
+      paymentObject.on("payment.failed", function () { alert("Payment failed or was cancelled. Please try again."); });
       paymentObject.open();
 
     } catch (error: any) {
@@ -215,143 +205,168 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
   return (
     <section className="w-full relative z-10 py-12" id="live-sessions">
       <div className="text-center mb-12">
-        <h2 className="text-4xl font-display font-black text-transparent bg-clip-text bg-gradient-to-r from-stone-900 to-stone-600 mb-4">Course Breakdown</h2>
-        <p className="text-stone-500">Everything included in this program.</p>
+        <h2 className="text-4xl font-display font-black text-white mb-4 drop-shadow-lg">Course Breakdown</h2>
+        <p className="text-stone-400">Everything included in this program.</p>
       </div>
 
       <div className="flex flex-col gap-12 max-w-6xl mx-auto">
-        <div className="glass-panel rounded-3xl p-6 md:p-10 border-2 border-amber-400 bg-amber-50 shadow-xl shadow-amber-500/10 grid grid-cols-1 lg:grid-cols-2 gap-12 relative overflow-hidden">
+        <SpotlightCard className="p-6 md:p-10 relative overflow-hidden bg-gradient-to-br from-[#0a0a0a] to-[#121212]">
           
-          <div className="flex flex-col relative z-10">
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              <span className="px-4 py-1 bg-red-500 text-white font-bold rounded-full text-sm animate-pulse shadow-md">{displayCourse.statusText}</span>
-              <span className="px-4 py-1 bg-amber-500 text-white font-bold rounded-full text-sm shadow-md">{displayCourse.demoOffer}</span>
-            </div>
+          {/* 🚨 THE FIX: Added this Grid container to force the side-by-side layout! */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 relative z-10 w-full">
             
-            <h3 className="text-3xl md:text-4xl font-black text-stone-900 mb-4">{displayCourse.title}</h3>
-            
-            <div className="flex items-center gap-2 text-stone-600 font-medium mb-6">
-              <Calendar size={18} className="text-amber-500" />
-              <span>{displayCourse.duration}</span>
-            </div>
-
-            {/* 🚨 DYNAMIC ENROLLMENT & PRICING BOX */}
-            <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm mb-6">
+            {/* Left Column */}
+            <div className="flex flex-col relative z-10">
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <span className={`px-4 py-1 font-bold rounded-full text-sm shadow-md ${displayCourse.enrollmentClosed ? 'bg-white/10 text-stone-400 border border-white/10' : 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse'}`}>
+                  {displayCourse.statusText}
+                </span>
+                <span className={`px-4 py-1 font-bold rounded-full text-sm shadow-md ${displayCourse.enrollmentClosed ? 'bg-white/10 text-stone-400 border border-white/10' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`}>
+                  {displayCourse.demoOffer}
+                </span>
+              </div>
               
-              {displayCourse.enrollmentClosed ? (
-                <div className="text-center py-4">
-                  <h4 className="text-2xl font-black text-stone-900 mb-2">Enrollment Closed</h4>
-                  <p className="text-stone-500 text-sm mb-6">This cohort is no longer accepting new students. Please check our latest batches to enroll.</p>
-                  
-                  {isAlreadyEnrolled ? (
-                    <button onClick={() => router.push('/learning')} className="w-full py-4 rounded-xl bg-green-500 text-white font-black text-lg flex items-center justify-center gap-2 hover:bg-green-600 transition-all shadow-lg">
-                      <CheckCircle2 size={24} /> You are Enrolled! Go to Dashboard
-                    </button>
-                  ) : (
-                    <button onClick={() => router.push('/courses')} className="w-full py-4 rounded-xl bg-stone-900 text-white font-black text-lg flex items-center justify-center gap-2 hover:bg-stone-800 transition-all shadow-lg">
-                      View Open Cohorts
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <>
-                  {/* Active Pricing & Region Toggle (Only shows if NOT closed) */}
-                  <div className="flex p-1 bg-stone-100 rounded-xl mb-6 border border-stone-200">
-                    <button onClick={() => setRegion('inr')} className={`w-1/2 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${region === 'inr' ? 'bg-white text-stone-900 shadow-sm border border-stone-200' : 'text-stone-500 hover:text-stone-700'}`}>🇮🇳 India</button>
-                    <button onClick={() => setRegion('usd')} className={`w-1/2 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${region === 'usd' ? 'bg-white text-stone-900 shadow-sm border border-stone-200' : 'text-stone-500 hover:text-stone-700'}`}><Globe size={16} /> International</button>
-                  </div>
+              <h3 className="text-3xl md:text-4xl font-black text-white mb-4 drop-shadow-md">{displayCourse.title}</h3>
+              
+              <div className="flex items-center gap-2 text-stone-400 font-medium mb-6">
+                <Calendar size={18} className="text-amber-500" />
+                <span>{displayCourse.duration}</span>
+              </div>
 
-                  <div className="flex items-end gap-3 mb-2">
-                    <span className="text-5xl font-black text-stone-900">{activePricing.currencyCode === 'USD' ? '$' : '₹'}{displayPriceNumeric}</span>
-                    <span className={`text-xl font-bold mb-1 ${appliedCoupon ? 'text-red-400 line-through' : 'text-stone-400 line-through'}`}>
-                      {appliedCoupon ? activePricing.currentPrice : activePricing.originalPrice}
-                    </span>
-                  </div>
-                  <p className="text-amber-600 font-bold text-sm tracking-wide uppercase mb-6">
-                    {appliedCoupon ? `🎉 ${appliedCoupon.code} Applied!` : activePricing?.savingsText}
-                  </p>
-                  
-                  {!isAlreadyEnrolled && (
-                    <div className="mb-6 p-4 rounded-xl border border-stone-200 bg-stone-50">
-                      <label className="text-xs font-bold text-stone-500 uppercase tracking-widest mb-2 block flex items-center gap-1"><Tag size={12}/> Have a Coupon Code?</label>
-                      <div className="flex gap-2">
-                        <input type="text" value={couponInput} onChange={(e) => setCouponInput(e.target.value.toUpperCase())} placeholder="Enter code" className="flex-1 px-4 py-2 rounded-lg border border-stone-300 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 font-mono text-sm" />
-                        <button onClick={handleApplyCoupon} className="px-4 py-2 bg-stone-800 text-white rounded-lg font-bold text-sm hover:bg-stone-900 transition-colors">Apply</button>
-                      </div>
-                      {couponMessage.text && <p className={`text-xs font-bold mt-2 ${couponMessage.type === 'error' ? 'text-red-500' : 'text-green-600'}`}>{couponMessage.text}</p>}
-                    </div>
-                  )}
+              <div className="bg-[#121212] p-6 rounded-2xl border border-white/10 shadow-2xl mb-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-[50px] pointer-events-none" />
 
-                  <div className="mt-2 flex flex-col gap-3">
+                {displayCourse.enrollmentClosed ? (
+                  <div className="text-center py-4 relative z-10">
+                    <h4 className="text-2xl font-black text-white mb-2">Enrollment Closed</h4>
+                    <p className="text-stone-400 text-sm mb-6">This cohort is no longer accepting new students. Please check our latest batches to enroll.</p>
+                    
                     {isAlreadyEnrolled ? (
-                      <button onClick={() => router.push('/learning')} className="w-full py-4 rounded-xl bg-green-500 text-white font-black text-lg flex items-center justify-center gap-2 hover:bg-green-600 transition-all shadow-lg shadow-green-500/30">
+                      <button onClick={() => router.push('/learning')} className="w-full py-4 rounded-xl bg-green-500/20 text-green-400 font-black text-lg flex items-center justify-center gap-2 border border-green-500/30 transition-all shadow-[0_0_15px_rgba(34,197,94,0.1)] hover:bg-green-500/30">
                         <CheckCircle2 size={24} /> You are Enrolled! Go to Dashboard
                       </button>
                     ) : (
-                      <button onClick={handlePayment} disabled={isProcessing} className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black text-lg flex items-center justify-center gap-2 hover:scale-[1.02] transition-all shadow-lg shadow-amber-500/30 disabled:opacity-70">
-                        {isProcessing ? <Loader2 className="animate-spin" size={24} /> : <CreditCard size={24} />}
-                        {isProcessing ? "Processing..." : displayPriceNumeric === 0 ? "Enroll for Free" : `Buy Now (${activePricing.currencyCode})`}
+                      <button onClick={() => router.push('/courses')} className="w-full py-4 rounded-xl bg-white text-black font-black text-lg flex items-center justify-center gap-2 hover:bg-stone-200 transition-all shadow-xl">
+                        View Open Cohorts
                       </button>
                     )}
                   </div>
-                </>
-              )}
-              
-              {/* Syllabus download is available to everyone always */}
-              <div className="mt-3">
-                <a href="/python-syllabus.pdf" download className="w-full py-4 rounded-xl border-2 border-stone-200 text-stone-700 font-bold text-lg flex items-center justify-center gap-2 hover:bg-stone-50 hover:border-amber-400 hover:text-amber-600 transition-all">
-                  <Download size={20} /> Download Full Syllabus (PDF)
-                </a>
-              </div>
-              {!displayCourse.enrollmentClosed && <p className="text-center text-stone-500 text-xs mt-4">100% Secure Checkout via Razorpay</p>}
-            </div>
+                ) : (
+                  <div className="relative z-10">
+                    <div className="flex p-1 bg-[#0a0a0a] rounded-xl mb-6 border border-white/10">
+                      <button onClick={() => setRegion('inr')} className={`w-1/2 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${region === 'inr' ? 'bg-[#1a1a1a] text-amber-500 shadow-lg border border-white/10' : 'text-stone-500 hover:text-stone-300'}`}>🇮🇳 India</button>
+                      <button onClick={() => setRegion('usd')} className={`w-1/2 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${region === 'usd' ? 'bg-[#1a1a1a] text-amber-500 shadow-lg border border-white/10' : 'text-stone-500 hover:text-stone-300'}`}><Globe size={16} /> International</button>
+                    </div>
 
-            <div className="space-y-6">
-              <div>
-                <h4 className="font-bold text-stone-800 mb-3 text-lg">What You Will Achieve:</h4>
-                <ul className="space-y-2">
-                  {displayCourse.outcomes?.map((outcome: string, idx: number) => <li key={idx} className="flex gap-3 text-stone-600 text-sm font-medium"><CheckCircle2 size={18} className="text-amber-500 flex-shrink-0" /> {outcome}</li>)}
-                </ul>
-              </div>
-              <div className="p-4 bg-amber-100/50 rounded-xl border border-amber-200">
-                <h4 className="font-bold text-amber-800 mb-2 flex items-center gap-2"><Gift size={18}/> Special Bonuses included:</h4>
-                <ul className="space-y-2">
-                  {displayCourse.bonuses?.map((bonus: string, idx: number) => <li key={idx} className="flex gap-2 text-stone-700 text-sm"><span className="text-amber-600">✔</span> {bonus}</li>)}
-                </ul>
-              </div>
-            </div>
-          </div>
+                    <div className="flex items-end gap-3 mb-2">
+                      <span className="text-5xl font-black text-white">{activePricing.currencyCode === 'USD' ? '$' : '₹'}{displayPriceNumeric}</span>
+                      <span className={`text-xl font-bold mb-1 ${appliedCoupon ? 'text-red-400 line-through' : 'text-stone-500 line-through'}`}>
+                        {appliedCoupon ? activePricing.currentPrice : activePricing.originalPrice}
+                      </span>
+                    </div>
+                    <p className="text-amber-500 font-bold text-sm tracking-wide uppercase mb-6">
+                      {appliedCoupon ? `🎉 ${appliedCoupon.code} Applied!` : activePricing?.savingsText}
+                    </p>
+                    
+                    {!isAlreadyEnrolled && (
+                      <div className="mb-6 p-4 rounded-xl border border-white/10 bg-[#0a0a0a]">
+                        <label className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-2 block flex items-center gap-1"><Tag size={12}/> Have a Coupon Code?</label>
+                        <div className="flex gap-2">
+                          <input type="text" value={couponInput} onChange={(e) => setCouponInput(e.target.value.toUpperCase())} placeholder="Enter code" className="flex-1 px-4 py-2 rounded-lg border border-white/10 bg-[#121212] text-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 font-mono text-sm transition-all" />
+                          <button onClick={handleApplyCoupon} className="px-4 py-2 bg-white text-black rounded-lg font-bold text-sm hover:bg-stone-200 transition-colors">Apply</button>
+                        </div>
+                        {couponMessage.text && <p className={`text-xs font-bold mt-2 ${couponMessage.type === 'error' ? 'text-red-400' : 'text-green-400'}`}>{couponMessage.text}</p>}
+                      </div>
+                    )}
 
-          <div className="flex flex-col z-10">
-            <h4 className="font-display font-black text-2xl text-stone-900 mb-6 border-b border-stone-200 pb-4">Program Curriculum</h4>
-            <div className="flex flex-col gap-3">
-              {displayCourse.modules?.map((mod: any, i: number) => {
-                const isActive = openModule === i;
-                return (
-                  <div key={i} className={`rounded-2xl overflow-hidden transition-all border bg-white ${isActive ? 'border-amber-400 shadow-md' : 'border-stone-200 hover:border-amber-300'}`}>
-                    <button onClick={() => setOpenModule(isActive ? null : i)} className="w-full p-4 md:p-5 flex items-center justify-between text-left">
-                      <h5 className={`font-bold ${isActive ? 'text-amber-600' : 'text-stone-700'}`}>{mod.title}</h5>
-                      <motion.div animate={{ rotate: isActive ? 180 : 0 }}><ChevronDown className="text-stone-400"/></motion.div>
-                    </button>
-                    <AnimatePresence>
-                      {isActive && (
-                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                          <ul className="p-4 md:p-5 pt-0 space-y-3 border-t border-stone-100 mt-2 bg-stone-50">
-                            {mod.topics.map((topic: string, idx: number) => (
-                              <li key={idx} className="flex items-start gap-3 text-stone-600 text-sm">
-                                <Code2 size={16} className="text-amber-500 opacity-80 mt-0.5 flex-shrink-0" /> {topic}
-                              </li>
-                            ))}
-                          </ul>
-                        </motion.div>
+                    <div className="mt-2 flex flex-col gap-3">
+                      {isAlreadyEnrolled ? (
+                        <button onClick={() => router.push('/learning')} className="w-full py-4 rounded-xl bg-green-500/20 border border-green-500/30 text-green-400 font-black text-lg flex items-center justify-center gap-2 hover:bg-green-500/30 transition-all shadow-[0_0_15px_rgba(34,197,94,0.1)]">
+                          <CheckCircle2 size={24} /> You are Enrolled! Go to Dashboard
+                        </button>
+                      ) : (
+                        <button onClick={handlePayment} disabled={isProcessing} className="w-full py-4 rounded-xl bg-amber-500 text-black font-black text-lg flex items-center justify-center gap-2 hover:scale-[1.02] hover:bg-amber-400 transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] disabled:opacity-70">
+                          {isProcessing ? <Loader2 className="animate-spin text-black" size={24} /> : <CreditCard size={24} className="text-black" />}
+                          {isProcessing ? "Processing..." : displayPriceNumeric === 0 ? "Enroll for Free" : `Buy Now (${activePricing.currencyCode})`}
+                        </button>
                       )}
-                    </AnimatePresence>
+                      
+                      <a href="/python-syllabus.pdf" download className="w-full py-4 rounded-xl border border-white/20 bg-[#0a0a0a] text-stone-300 font-bold text-lg flex items-center justify-center gap-2 hover:bg-white/10 hover:border-amber-500 hover:text-amber-400 transition-all">
+                        <Download size={20} /> Download Full Syllabus (PDF)
+                      </a>
+                    </div>
                   </div>
-                )
-              })}
+                )}
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <h4 className="font-bold text-white mb-3 text-lg">What You Will Achieve:</h4>
+                  <ul className="space-y-2">
+                    {displayCourse.outcomes?.map((outcome: string, idx: number) => <li key={idx} className="flex gap-3 text-stone-400 text-sm font-medium"><CheckCircle2 size={18} className="text-amber-500 flex-shrink-0" /> {outcome}</li>)}
+                  </ul>
+                </div>
+                
+                <div className="p-4 bg-amber-500/10 rounded-xl border border-amber-500/20">
+                  <h4 className="font-bold text-amber-500 mb-2 flex items-center gap-2"><Gift size={18}/> Special Bonuses included:</h4>
+                  <ul className="space-y-2">
+                    {displayCourse.bonuses?.map((bonus: string, idx: number) => <li key={idx} className="flex gap-2 text-stone-300 text-sm"><span className="text-amber-500">✔</span> {bonus}</li>)}
+                  </ul>
+                </div>
+              </div>
             </div>
+
+            {/* Right Column: Accordion */}
+            <div className="flex flex-col z-10">
+            
+            {/* 🚨 NEW: COHORT HIGHLIGHTS (Only shows if data exists) */}
+            {displayCourse.cohortHighlights && (
+              <div className="mb-10 p-8 rounded-3xl bg-amber-500/5 border border-amber-500/20 shadow-[0_0_30px_rgba(245,158,11,0.1)] relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-[40px] pointer-events-none" />
+                <h4 className="font-display font-black text-2xl text-amber-500 mb-6 relative z-10 uppercase tracking-wide">
+                  Cohort Highlights
+                </h4>
+                <ul className="space-y-4 relative z-10">
+                  {displayCourse.cohortHighlights.map((highlight: string, idx: number) => (
+                    <li key={idx} className="flex gap-3 text-stone-300 text-[15px] font-medium leading-relaxed">
+                      <CheckCircle2 size={20} className="text-amber-500 flex-shrink-0 mt-0.5" /> 
+                      {highlight}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+              <h4 className="font-display font-black text-2xl text-white mb-6 border-b border-white/10 pb-4">Program Curriculum</h4>
+              <div className="flex flex-col gap-3">
+                {displayCourse.modules?.map((mod: any, i: number) => {
+                  const isActive = openModule === i;
+                  return (
+                    <div key={i} className={`rounded-2xl overflow-hidden transition-all border bg-[#0a0a0a] ${isActive ? 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.15)]' : 'border-white/10 hover:border-amber-500/50'}`}>
+                      <button onClick={() => setOpenModule(isActive ? null : i)} className="w-full p-4 md:p-5 flex items-center justify-between text-left">
+                        <h5 className={`font-bold ${isActive ? 'text-amber-500' : 'text-stone-300'}`}>{mod.title}</h5>
+                        <motion.div animate={{ rotate: isActive ? 180 : 0 }}><ChevronDown className="text-stone-500"/></motion.div>
+                      </button>
+                      <AnimatePresence>
+                        {isActive && (
+                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                            <ul className="p-4 md:p-5 pt-0 space-y-3 border-t border-white/10 mt-2 bg-[#121212]">
+                              {mod.topics.map((topic: string, idx: number) => (
+                                <li key={idx} className="flex items-start gap-3 text-stone-400 text-sm">
+                                  <Code2 size={16} className="text-amber-500/80 mt-0.5 flex-shrink-0" /> {topic}
+                                </li>
+                              ))}
+                            </ul>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
           </div>
-        </div>
+        </SpotlightCard>
       </div>
     </section>
   );

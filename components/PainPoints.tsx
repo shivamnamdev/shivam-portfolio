@@ -1,35 +1,50 @@
 'use client';
-import { motion } from 'framer-motion';
 import { XCircle, CheckCircle2 } from 'lucide-react';
+import SpotlightCard from '@/components/SpotlightCard';
 
 export default function PainPoints() {
   return (
     <section className="w-full relative z-10 my-20">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+        
         {/* The Old Way */}
-        <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="glass-panel p-8 rounded-3xl border border-red-200 bg-red-50/50 shadow-sm">
-          <h3 className="text-2xl font-bold text-stone-900 mb-6">The Self-Taught Struggle</h3>
-          <ul className="space-y-4">
-            {['Watching hours of tutorials but unable to write code from scratch.', 'Struggling to build strong programming logic.', 'Feeling overwhelmed by complex coding jargon and theory.', 'Learning syntax but failing to solve real-world problems.'].map((point, i) => (
-              <li key={i} className="flex gap-3 text-stone-700">
-                <XCircle className="text-red-500 flex-shrink-0 mt-0.5" /> <span>{point}</span>
+        <SpotlightCard className="p-8 md:p-10 border-red-500/20 bg-[#121212] group">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/5 blur-[80px] pointer-events-none transition-opacity opacity-50 group-hover:opacity-100" />
+          <h3 className="text-2xl md:text-3xl font-bold text-white mb-6 relative z-10">The Self-Taught Struggle</h3>
+          <ul className="space-y-5 relative z-10">
+            {[
+              'Watching hours of tutorials but unable to write code from scratch.', 
+              'Struggling to build strong programming logic.', 
+              'Feeling overwhelmed by complex coding jargon and theory.', 
+              'Learning syntax but failing to solve real-world problems.'
+            ].map((point, i) => (
+              <li key={i} className="flex gap-4 text-stone-400 font-medium">
+                <XCircle className="text-red-500 flex-shrink-0 mt-0.5" size={24} /> 
+                <span className="leading-relaxed">{point}</span>
               </li>
             ))}
           </ul>
-        </motion.div>
+        </SpotlightCard>
 
         {/* The New Way */}
-        <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="glass-panel p-8 rounded-3xl border border-amber-300 bg-amber-50/50 relative overflow-hidden shadow-md">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 blur-[80px] pointer-events-none" />
-          <h3 className="text-2xl font-bold text-stone-900 mb-6 relative z-10">The Live Cohort Reality</h3>
-          <ul className="space-y-4 relative z-10">
-            {['Building strong coding logic step-by-step from scratch.', 'Writing Python programs confidently and independently.', 'Working on real-world capstone projects, not just theory.', 'Becoming job-ready for entry-level roles with modern tools.'].map((point, i) => (
-              <li key={i} className="flex gap-3 text-stone-800 font-medium">
-                <CheckCircle2 className="text-amber-600 flex-shrink-0 mt-0.5" /> <span>{point}</span>
+        <SpotlightCard className="p-8 md:p-10 border-amber-500/30 bg-gradient-to-br from-[#0a0a0a] to-[#121212] group shadow-[0_0_30px_rgba(245,158,11,0.1)]">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 blur-[80px] pointer-events-none transition-opacity opacity-50 group-hover:opacity-100" />
+          <h3 className="text-2xl md:text-3xl font-bold text-white mb-6 relative z-10">The Live Cohort Reality</h3>
+          <ul className="space-y-5 relative z-10">
+            {[
+              'Building strong coding logic step-by-step from scratch.', 
+              'Writing Python programs confidently and independently.', 
+              'Working on real-world capstone projects, not just theory.', 
+              'Becoming job-ready for entry-level roles with modern tools.'
+            ].map((point, i) => (
+              <li key={i} className="flex gap-4 text-stone-300 font-bold">
+                <CheckCircle2 className="text-amber-500 flex-shrink-0 mt-0.5" size={24} /> 
+                <span className="leading-relaxed">{point}</span>
               </li>
             ))}
           </ul>
-        </motion.div>
+        </SpotlightCard>
+
       </div>
     </section>
   );

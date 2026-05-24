@@ -4,7 +4,7 @@ test.describe('Course Sales Page UI', () => {
 
   test('Should load Python Course page and toggle pricing regions', async ({ page }) => {
     // 1. Navigate and wait for the page to fully settle (fixes Chromium hydration speed issues)
-    await page.goto('/courses/python-beginners');
+    await page.goto('/courses/python-beginners-batch-2');
     await page.waitForLoadState('networkidle');
 
     // 2. Verify the page title loads correctly using a strict heading locator
@@ -16,7 +16,8 @@ test.describe('Course Sales Page UI', () => {
     
     // Use getByText with exact matching to prevent DOM overlap issues
     // await expect(page.getByText('₹599', { exact: true })).toBeVisible(); 
-    await expect(page.getByText('₹899', { exact: true })).toBeVisible(); 
+    await expect(page.getByText('₹1999', { exact: true })).toBeVisible(); 
+    await expect(page.getByText('₹2,499', { exact: true })).toBeVisible();
     
     // Locate the specific button
     const buyButtonInr = page.getByRole('button', { name: /Buy Now \(INR\)/i });

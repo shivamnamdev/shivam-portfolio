@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #fdfcf8; /* Warm Ivory / Cream */
-  --foreground: #1c1917; /* Dark Espresso (Stone 900) */
+  --background: #000000; /* Pitch Black */
+  --foreground: #f8fafc; /* Crisp White */
 }
 
 body {
@@ -15,12 +15,30 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(28, 25, 23, 0.2); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(28, 25, 23, 0.4); }
+/* 🚨 THE HACKER BACKGROUND GRID */
+.bg-grid-pattern {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  mask-image: radial-gradient(ellipse 80% 80% at 50% -20%, black 40%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% -20%, black 40%, transparent 100%);
+}
 
-::selection { background: rgba(217, 119, 6, 0.2); color: #1c1917; }
+/* Base Glassmorphism for Dark Mode */
+.glass-panel {
+  background: rgba(20, 20, 20, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+::selection { background: rgba(245, 158, 11, 0.3); color: #fff; } 
 
 /* Light Theme Glassmorphism */
 .glass-panel {
