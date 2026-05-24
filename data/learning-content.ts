@@ -203,7 +203,7 @@ export const courseCurriculumMap: Record<string, any[]> = {
     ]
   }
   ],
-  "python-beginners-batch-3": [
+  "python-beginners-batch-2": [
     {
     moduleTitle: "Module 1: Python Fundamentals",
     videoIds:[

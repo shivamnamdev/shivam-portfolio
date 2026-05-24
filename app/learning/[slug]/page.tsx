@@ -3,14 +3,15 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-// 🚨 ADDED ThumbsUp and Share2 icons
-import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, Code2, TerminalSquare, Award, FileCheck, Eye, RefreshCw, X, Plus, FileText, ThumbsUp, Share2 } from 'lucide-react';
+import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, Code2, TerminalSquare, Award, FileCheck, Eye, RefreshCw, X, Plus, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { courseCurriculumMap } from '@/data/learning-content';
 import { activeCourses } from '@/data/courses';
 import { supabase } from '@/lib/supabaseClient';
 import Editor from '@monaco-editor/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import SpotlightCard from '@/components/SpotlightCard'; // 🚨 IMPORTED THE SPOTLIGHT CARD!
+import { useUISounds } from '@/hooks/useUISounds';
 
 const ADMIN_EMAIL = "shivamnamdev.corp@gmail.com";
 
@@ -25,9 +26,8 @@ function formatYouTubeDuration(duration: string) {
 }
 
 export default function CoursePlayerPage({ params }: { params: { slug: string } }) {
+  const { playHover, playClick } = useUISounds(); 
   const { user, isLoaded } = useUser();
-  const isAdmin = user?.primaryEmailAddress?.emailAddress === ADMIN_EMAIL;
-
   const [playlist, setPlaylist] = useState<any[]>([]);
   const [activeVideo, setActiveVideo] = useState<any>(null);
   
@@ -36,10 +36,6 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   const [isLoading, setIsLoading] = useState(true);
   const [isMarking, setIsMarking] = useState(false);
   
-  // 🚨 NEW: Like Button States
-  const [likesCount, setLikesCount] = useState(0);
-  const [hasLiked, setHasLiked] = useState(false);
-
   const [activeTab, setActiveTab] = useState<'description' | 'qa' | 'practice' | 'visualize'>('description');
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -85,11 +81,9 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     loadPyodideScript();
   },[]);
 
-  // 🚨 UPDATED: Fetches Starter Code if provided!
   const loadGithubAssignment = async (assignmentObj: any) => {
     setIsFetchingCode(true);
     try {
-      // 1. Fetch the Assignment Instructions
       const response = await fetch(`${assignmentObj.rawUrl}?t=${Date.now()}`);
       if (!response.ok) throw new Error("Failed to fetch assignment");
       const rawText = await response.text();
@@ -100,24 +94,18 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       setAssignmentSteps(finalSteps);
       setCurrentStepIndex(0);
 
-      // 🚨 2. Fetch and Split the Starter Code!
       let starterCodeSteps = ["# Write your Python code below:\n\n"];
-      
       if (assignmentObj.starterCodeUrl) {
         try {
           const starterRes = await fetch(`${assignmentObj.starterCodeUrl}?t=${Date.now()}`);
           if (starterRes.ok) {
             const rawStarter = await starterRes.text();
-            // Split by Python comment dashes (e.g., # --------------------)
             const parsedStarter = rawStarter.split(/^#\s*-{10,}\s*$/gm).map(s => s.trim()).filter(s => s.length > 0);
-            if (parsedStarter.length > 0) {
-              starterCodeSteps = parsedStarter;
-            }
+            if (parsedStarter.length > 0) starterCodeSteps = parsedStarter;
           }
-        } catch (e) { console.error("Failed to load starter code"); }
+        } catch (e) {}
       }
 
-      // 3. Fetch Supporting Files (e.g., CSVs or txt files)
       let supportingWorkspace: Record<string, string> = {};
       if (assignmentObj.supportingFiles) {
         for (const file of assignmentObj.supportingFiles) {
@@ -128,10 +116,8 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
         }
       }
       
-      // 🚨 4. Inject the correct Starter Code into each specific step!
       const initialFilesArray = Array.from({ length: finalSteps.length }, (_, idx) => ({ 
         ...supportingWorkspace,
-        // Grabs the specific starter code for this step, or falls back to Step 1 code if missing
         "main.py": starterCodeSteps[idx] || starterCodeSteps[0] || "# Write your Python code below:\n\n"
       }));
 
@@ -139,7 +125,6 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       setFiles(initialFilesArray[0]);
       setActiveFile("main.py");
 
-      // 5. Fetch Official Solutions
       if (assignmentObj.solutionUrl) {
         const solRes = await fetch(`${assignmentObj.solutionUrl}?t=${Date.now()}`);
         if (solRes.ok) {
@@ -220,25 +205,6 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     loadCourseData();
   },[isLoaded, user?.id, params.slug]);
 
-  // 🚨 NEW: Fetch Likes when Video Changes
-  useEffect(() => {
-    async function fetchLikesAndComments() {
-      if (!activeVideo || !user) return;
-      
-      // Fetch Comments
-      const { data: commentData } = await supabase.from('video_comments').select('*').eq('video_id', activeVideo.id).order('created_at', { ascending: false });
-      if (commentData) setComments(commentData);
-
-      // Fetch Likes Count
-      const { data: likesData } = await supabase.from('video_likes').select('user_id').eq('video_id', activeVideo.id);
-      if (likesData) {
-        setLikesCount(likesData.length);
-        setHasLiked(likesData.some(l => l.user_id === user.id));
-      }
-    }
-    fetchLikesAndComments();
-  }, [activeVideo, user]);
-
   const handleVideoChange = (video: any) => {
     setActiveVideo(video);
     setOutput(""); 
@@ -247,8 +213,6 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     setAssignmentSteps([]);
     setCurrentStepIndex(0);
     setOfficialSolutionSteps([]);
-    setHasLiked(false);
-    setLikesCount(0);
     
     if (video.githubAssignment) {
       setAssignmentSteps(["Loading instructions..."]);
@@ -265,6 +229,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     const newStepFiles = [...stepFiles];
     newStepFiles[currentStepIndex] = files;
     setStepFiles(newStepFiles);
+
     setFiles(newStepFiles[newIndex] || { "main.py": "# Write your Python code below:\n\n" });
     setActiveFile("main.py");
     setCurrentStepIndex(newIndex);
@@ -291,28 +256,14 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     }
   };
 
-  // 🚨 NEW: Handle Liking the Video
-  const toggleLike = async () => {
-    if (!user || !activeVideo) return;
-    try {
-      if (hasLiked) {
-        setHasLiked(false);
-        setLikesCount(prev => prev - 1);
-        await supabase.from('video_likes').delete().eq('video_id', activeVideo.id).eq('user_id', user.id);
-      } else {
-        setHasLiked(true);
-        setLikesCount(prev => prev + 1);
-        await supabase.from('video_likes').insert([{ video_id: activeVideo.id, user_id: user.id }]);
-      }
-    } catch (err) { console.error(err); }
-  };
-
-  // 🚨 NEW: Admin Share Functionality
-  const handleAdminShare = () => {
-    const shareText = `🚀 Ready to Master Python?\n\nCheck out this exclusive lesson: "${activeVideo.title}" from Shivam Academy!\n\nEnroll here to unlock the full platform and interactive labs:\nhttps://shivamnamdev.com/courses/${params.slug}`;
-    navigator.clipboard.writeText(shareText);
-    alert("Branded share message copied to clipboard! Paste it into WhatsApp or LinkedIn.");
-  };
+  useEffect(() => {
+    async function fetchComments() {
+      if (!activeVideo) return;
+      const { data, error } = await supabase.from('video_comments').select('*').eq('video_id', activeVideo.id).order('created_at', { ascending: false });
+      if (!error && data) setComments(data);
+    }
+    fetchComments();
+  }, [activeVideo]);
 
   const handlePostComment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -360,7 +311,12 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       setTimeout(() => setShowSuccessOverlay(false), 4000);
 
       if (officialSolutionSteps.length > 0) setShowSolutionModal(true);
-    } catch (err) { alert("Failed to submit assignment. Please try again."); } finally { setIsSubmittingAssignment(false); }
+
+    } catch (err) {
+      alert("Failed to submit assignment. Please try again.");
+    } finally {
+      setIsSubmittingAssignment(false);
+    }
   };
 
   const runPythonCode = async () => {
@@ -514,11 +470,11 @@ builtins.input = custom_input
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-stone-50">
+      <div className="min-h-screen flex flex-col bg-black">
         <Navbar />
         <div className="flex-grow flex items-center justify-center flex-col gap-4">
           <Loader2 className="animate-spin text-amber-500" size={48} />
-          <p className="text-stone-500 font-medium">Loading your personalized curriculum...</p>
+          <p className="text-stone-400 font-medium">Loading your personalized curriculum...</p>
         </div>
       </div>
     );
@@ -534,9 +490,11 @@ builtins.input = custom_input
   const isAssignmentCompleted = activeVideo ? completedAssignments.includes(activeVideo.id) : false;
 
   return (
-    <div className="relative min-h-screen flex flex-col bg-stone-50">
+    <div className="relative min-h-screen flex flex-col bg-black">
+      <div className="absolute inset-0 bg-grid-pattern z-0 opacity-30 pointer-events-none" />
       <Navbar />
-      <main className="flex-grow max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      
+      <main className="flex-grow max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-36 pb-8 w-full relative z-10">
         
         <AnimatePresence>
           {showSolutionModal && (
@@ -582,11 +540,11 @@ builtins.input = custom_input
           )}
         </AnimatePresence>
 
-        <div className="mb-6">
-          <Link href="/learning" className="inline-flex items-center gap-2 text-stone-500 hover:text-amber-600 transition-colors mb-4 font-bold text-sm">
+        <div className="mb-8">
+          <Link href="/learning" className="inline-flex items-center gap-2 text-stone-400 hover:text-amber-500 transition-colors mb-4 font-bold text-sm">
             <ChevronLeft size={16} /> Back to Dashboard
           </Link>
-          <h1 className="text-2xl md:text-3xl font-display font-black text-stone-900">
+          <h1 className="text-3xl md:text-4xl font-display font-black text-white drop-shadow-md">
             {courseDetails?.title || "Python Live Session"}
           </h1>
         </div>
@@ -595,119 +553,104 @@ builtins.input = custom_input
           
           <div className="lg:col-span-2 flex flex-col gap-6">
             
-            {activeVideo ? (
-              <div className="w-full bg-black rounded-2xl overflow-hidden shadow-xl aspect-video border border-stone-200 relative select-none">
-                <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${activeVideo.youtubeId}?rel=0&modestbranding=1`} title={activeVideo.title} frameBorder="0" allowFullScreen></iframe>
-                <div className="absolute inset-0 pointer-events-none overflow-hidden z-50 flex items-center justify-center mix-blend-difference">
-                  <motion.div animate={{ x:[-150, 150, 150, -150, -150], y:[-80, -80, 80, 80, -80] }} transition={{ duration: 25, repeat: Infinity, ease: "linear" }} className="absolute text-white/30 font-mono text-sm md:text-lg font-bold tracking-widest pointer-events-none drop-shadow-md transform -rotate-12">
-                    {user?.primaryEmailAddress?.emailAddress || user?.id} <br/><span className="text-xs">DO NOT DISTRIBUTE</span>
-                  </motion.div>
+            {/* 🚨 TILE 1: SPOTLIGHT VIDEO PLAYER */}
+            <SpotlightCard interactive className="w-full shadow-xl aspect-video relative select-none !p-0">
+              {activeVideo ? (
+                <>
+                  <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${activeVideo.youtubeId}?rel=0&modestbranding=1`} title={activeVideo.title} frameBorder="0" allowFullScreen></iframe>
+                  <div className="absolute inset-0 pointer-events-none overflow-hidden z-50 flex items-center justify-center mix-blend-difference">
+                    <motion.div animate={{ x:[-150, 150, 150, -150, -150], y:[-80, -80, 80, 80, -80] }} transition={{ duration: 25, repeat: Infinity, ease: "linear" }} className="absolute text-white/30 font-mono text-sm md:text-lg font-bold tracking-widest pointer-events-none drop-shadow-md transform -rotate-12">
+                      {user?.primaryEmailAddress?.emailAddress || user?.id} <br/><span className="text-xs">DO NOT DISTRIBUTE</span>
+                    </motion.div>
+                  </div>
+                </>
+              ) : (
+                <div className="w-full h-full bg-[#0a0a0a] flex flex-col items-center justify-center text-center p-8">
+                  <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-4 border border-white/10">
+                    <Clock size={40} className="text-amber-500" />
+                  </div>
+                  <h2 className="text-3xl font-black text-white mb-4">Live Classes Starting Soon</h2>
+                  {courseDetails?.liveLink ? (
+                    <a href={courseDetails.liveLink} target="_blank" rel="noreferrer" className="px-8 py-4 rounded-full bg-amber-500 text-stone-900 font-bold text-lg flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors shadow-lg mt-4">
+                      <PlayCircle size={20} /> Enter Live Classroom
+                    </a>
+                  ) : (
+                    <p className="text-stone-400 max-w-md">Once the live sessions begin, the recordings will be automatically uploaded and unlocked here.</p>
+                  )}
                 </div>
-              </div>
-            ) : (
-              <div className="w-full bg-stone-900 rounded-2xl shadow-xl aspect-video border border-stone-200 flex flex-col items-center justify-center text-center p-8">
-                <div className="w-20 h-20 bg-stone-800 rounded-full flex items-center justify-center mb-4">
-                  <Clock size={40} className="text-amber-500" />
-                </div>
-                <h2 className="text-3xl font-black text-white mb-4">Live Classes Starting Soon</h2>
-                {courseDetails?.liveLink ? (
-                  <a href={courseDetails.liveLink} target="_blank" rel="noreferrer" className="px-8 py-4 rounded-full bg-amber-500 text-stone-900 font-bold text-lg flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors shadow-lg">
-                    <PlayCircle size={20} /> Join Today's Live Class on Google Meet
-                  </a>
-                ) : (
-                  <p className="text-stone-400 max-w-md">Once the live sessions begin, the recordings will be automatically uploaded and unlocked here.</p>
-                )}
-              </div>
-            )}
+              )}
+            </SpotlightCard>
 
+            {/* 🚨 TILE 2: SPOTLIGHT TITLE / ACTION BAR */}
             {activeVideo && (
-              <div className="glass-panel p-6 rounded-2xl border border-stone-200 bg-white">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <SpotlightCard interactive className="p-6 md:p-8 bg-[#121212] shadow-2xl">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6 relative z-10">
                   <div>
-                    <h2 className="text-xl font-bold text-stone-900 mb-1">{activeVideo.title}</h2>
-                    <p className="text-stone-500 text-sm">Instructor: Shivam Namdev</p>
+                    <h2 className="text-2xl font-bold text-white mb-2 leading-snug">{activeVideo.title}</h2>
+                    <p className="text-stone-400 text-sm font-medium">Instructor: Shivam Namdev</p>
                   </div>
-                  
-                  {/* 🚨 NEW: Like & Share Buttons (Admin only for Share) */}
-                  <div className="flex items-center gap-3">
-                    <button 
-                      onClick={toggleLike}
-                      className={`px-4 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors border ${hasLiked ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'}`}
-                    >
-                      <ThumbsUp size={18} className={hasLiked ? "fill-blue-600" : ""} /> {likesCount} Likes
+                  {isVideoCompleted ? (
+                    <button disabled className="px-6 py-3.5 rounded-xl bg-green-500/10 text-green-400 font-bold text-sm flex items-center justify-center gap-2 border border-green-500/20 w-full sm:w-auto shrink-0 shadow-[0_0_15px_rgba(34,197,94,0.1)]">
+                      <CheckCircle size={18} /> Video Watched
                     </button>
-
-                    {isAdmin && (
-                      <button 
-                        onClick={handleAdminShare}
-                        className="px-4 py-3 rounded-xl bg-purple-50 text-purple-700 font-bold text-sm flex items-center justify-center gap-2 border border-purple-200 hover:bg-purple-100 transition-colors"
-                      >
-                        <Share2 size={18} /> Share Preview
-                      </button>
-                    )}
-
-                    {isVideoCompleted ? (
-                      <button disabled className="px-6 py-3 rounded-xl bg-green-50 text-green-600 font-bold text-sm flex items-center justify-center gap-2 border border-green-200 shadow-sm">
-                        <CheckCircle size={18} /> Completed
-                      </button>
-                    ) : (
-                      <button onClick={markAsComplete} disabled={isMarking} className="px-6 py-3 rounded-xl bg-amber-500 text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-amber-600 transition-colors shadow-md disabled:opacity-70">
-                        {isMarking ? <Loader2 size={18} className="animate-spin"/> : <CheckCircle size={18} />} Mark Complete
-                      </button>
-                    )}
-                  </div>
+                  ) : (
+                    <button onClick={markAsComplete} disabled={isMarking} className="px-6 py-3.5 rounded-xl bg-amber-500 text-black font-black text-sm flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors w-full sm:w-auto shadow-[0_0_20px_rgba(245,158,11,0.2)] disabled:opacity-70 shrink-0">
+                      {isMarking ? <Loader2 size={18} className="animate-spin"/> : <CheckCircle size={18} />} Mark Video Complete
+                    </button>
+                  )}
                 </div>
-              </div>
+              </SpotlightCard>
             )}
 
+            {/* 🚨 TILE 3: SPOTLIGHT TABS & IDE */}
             {activeVideo && (
-              <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden mb-10">
-                <div className="flex overflow-x-auto border-b border-stone-100 bg-stone-50/50">
-                  <button onClick={() => setActiveTab('description')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'description' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
+              <SpotlightCard interactive className="mb-10 !p-0 flex flex-col shadow-2xl">
+                <div className="flex overflow-x-auto border-b border-white/10 bg-[#121212] relative z-10">
+                  <button onClick={() => setActiveTab('description')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'description' ? 'text-amber-500 border-b-2 border-amber-500 bg-[#0a0a0a]' : 'text-stone-400 hover:text-stone-200'}`}>
                     <AlignLeft size={18} /> Lesson Details
                   </button>
-                  <button onClick={() => setActiveTab('qa')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'qa' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
+                  <button onClick={() => setActiveTab('qa')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'qa' ? 'text-amber-500 border-b-2 border-amber-500 bg-[#0a0a0a]' : 'text-stone-400 hover:text-stone-200'}`}>
                     <MessageCircle size={18} /> Q&A ({comments.length})
                   </button>
                   {activeVideo.githubAssignment && (
                     <>
-                      <button onClick={() => setActiveTab('practice')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'practice' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
+                      <button onClick={() => setActiveTab('practice')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'practice' ? 'text-amber-500 border-b-2 border-amber-500 bg-[#0a0a0a]' : 'text-stone-400 hover:text-stone-200'}`}>
                         <Code size={18} /> Practice {isAssignmentCompleted && "✅"}
                       </button>
-                      <button onClick={() => setActiveTab('visualize')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'visualize' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-700'}`}>
+                      <button onClick={() => setActiveTab('visualize')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'visualize' ? 'text-amber-500 border-b-2 border-amber-500 bg-[#0a0a0a]' : 'text-stone-400 hover:text-stone-200'}`}>
                         <Eye size={18} /> Visualize 👁️
                       </button>
                     </>
                   )}
                 </div>
 
-                <div className="p-0 md:p-0">
+                <div className="p-0 md:p-0 relative z-10">
                   
                   {activeTab === 'description' && (
-                    <div className="p-6 md:p-8 prose prose-stone max-w-none">
-                      <p className="text-stone-600 whitespace-pre-wrap leading-relaxed text-sm md:text-base">{activeVideo.description}</p>
+                    <div className="p-6 md:p-8 prose prose-invert max-w-none">
+                      <p className="text-stone-300 whitespace-pre-wrap leading-relaxed text-sm md:text-base">{activeVideo.description}</p>
                     </div>
                   )}
 
                   {activeTab === 'qa' && (
                     <div className="p-6 md:p-8 flex flex-col gap-6">
                       <form onSubmit={handlePostComment} className="flex flex-col gap-3">
-                        <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Ask Shivam or the community..." className="w-full p-4 rounded-xl border border-stone-200 bg-stone-50 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none resize-none transition-all" rows={3} required />
+                        <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Ask Shivam or the community..." className="w-full p-4 rounded-xl border border-white/10 bg-black text-white focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none transition-all" rows={3} required />
                         <div className="flex justify-end">
-                          <button type="submit" disabled={isPosting} className="px-6 py-2.5 rounded-xl bg-stone-900 text-white font-bold text-sm flex items-center gap-2 hover:bg-stone-800 transition-colors disabled:opacity-70 shadow-md">
+                          <button type="submit" disabled={isPosting} className="px-6 py-2.5 rounded-xl bg-amber-500 text-black font-bold text-sm flex items-center gap-2 hover:bg-amber-400 transition-colors disabled:opacity-70 shadow-md">
                             {isPosting ? <Loader2 size={16} className="animate-spin"/> : <Send size={16} />} Post Question
                           </button>
                         </div>
                       </form>
-                      <div className="space-y-6 pt-6 border-t border-stone-100">
-                        {comments.length === 0 ? <p className="text-center text-stone-400 text-sm italic py-4">No questions yet. Start the discussion!</p> : comments.map((comment) => (
+                      <div className="space-y-6 pt-6 border-t border-white/10">
+                        {comments.length === 0 ? <p className="text-center text-stone-500 text-sm italic py-4">No questions yet. Start the discussion!</p> : comments.map((comment) => (
                           <div key={comment.id} className="flex gap-4">
-                            <img src={comment.user_image || "https://www.gravatar.com/avatar/?d=mp"} alt="User" className="w-10 h-10 rounded-full border border-stone-200 shadow-sm" />
-                            <div className="flex-grow bg-stone-50 p-4 rounded-2xl rounded-tl-none border border-stone-100">
+                            <img src={comment.user_image || "https://www.gravatar.com/avatar/?d=mp"} alt="User" className="w-10 h-10 rounded-full border border-white/10 shadow-sm" />
+                            <div className="flex-grow bg-[#121212] p-4 rounded-2xl rounded-tl-none border border-white/5">
                               <div className="flex justify-between items-center mb-1">
-                                <h5 className="font-bold text-stone-900 text-sm">{comment.user_name}</h5>
+                                <h5 className="font-bold text-white text-sm">{comment.user_name}</h5>
                               </div>
-                              <p className="text-stone-600 text-sm whitespace-pre-wrap">{comment.content}</p>
+                              <p className="text-stone-300 text-sm whitespace-pre-wrap">{comment.content}</p>
                             </div>
                           </div>
                         ))}
@@ -716,7 +659,7 @@ builtins.input = custom_input
                   )}
 
                   {activeTab === 'practice' && activeVideo.githubAssignment && (
-                    <div className="flex flex-col lg:flex-row h-[700px] bg-[#0d1117] overflow-hidden border-t border-stone-200 shadow-inner">
+                    <div className="flex flex-col lg:flex-row h-[700px] bg-[#0d1117] overflow-hidden border-t border-white/10 shadow-inner">
                       
                       <div className="w-full lg:w-1/3 flex flex-col border-r border-stone-800 bg-[#161b22]">
                         <div className="flex flex-col items-center p-4 border-b border-stone-800 bg-[#0d1117]">
@@ -766,7 +709,6 @@ builtins.input = custom_input
                       </div>
 
                       <div className="w-full lg:w-2/3 flex flex-col bg-[#0d1117]">
-                        
                         <div className="flex bg-[#161b22] border-b border-stone-800 justify-between items-center pr-4 overflow-x-auto">
                           <div className="flex">
                             {Object.keys(files).map(filename => (
@@ -795,17 +737,7 @@ builtins.input = custom_input
                         </div>
 
                         <div className="flex-grow relative">
-                          <Editor 
-                            height="100%" 
-                            defaultLanguage={getLanguage(activeFile)} 
-                            theme="vs-dark" 
-                            value={files[activeFile] || ""} 
-                            onChange={(value) => { 
-                              setFiles(prev => ({ ...prev, [activeFile]: value || "" })); 
-                              setAiResponse(null); 
-                            }} 
-                            options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} 
-                          />
+                          <Editor height="100%" defaultLanguage={getLanguage(activeFile)} theme="vs-dark" value={files[activeFile] || ""} onChange={(value) => { setFiles(prev => ({ ...prev, [activeFile]: value || "" })); setAiResponse(null); }} options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} />
                         </div>
 
                         <div className="h-[200px] border-t border-stone-800 flex flex-col bg-[#0d1117]">
@@ -824,54 +756,53 @@ builtins.input = custom_input
                     </div>
                   )}
 
-                  {/* VISUALIZER TAB */}
                   {activeTab === 'visualize' && activeVideo.githubAssignment && (
                     <div className="p-6 md:p-8 flex flex-col gap-6">
-                      <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl flex justify-between items-center">
+                      <div className="bg-[#121212] border border-white/10 p-4 rounded-xl flex justify-between items-center">
                         <div>
-                          <h4 className="font-bold text-blue-800 mb-1">Code Visualizer</h4>
-                          <p className="text-blue-900/70 text-sm">Note: The visualizer only steps through your <code className="bg-blue-100 px-1 rounded">main.py</code> file.</p>
+                          <h4 className="font-bold text-white mb-1">Code Visualizer</h4>
+                          <p className="text-stone-400 text-sm">Note: The visualizer only steps through your <code className="bg-white/10 px-1 rounded">main.py</code> file.</p>
                         </div>
                       </div>
-                      <div className="w-full bg-[#fdfcf8] rounded-xl border border-stone-200 shadow-inner overflow-hidden h-[600px] flex flex-col">
-                        <div className="h-10 bg-stone-100 border-b border-stone-200 flex items-center px-4 gap-2">
+                      <div className="w-full bg-[#0d1117] rounded-xl border border-white/10 shadow-inner overflow-hidden h-[600px] flex flex-col">
+                        <div className="h-10 bg-[#0a0a0a] border-b border-white/10 flex items-center px-4 gap-2">
                           <div className="w-3 h-3 rounded-full bg-red-400"></div>
                           <div className="w-3 h-3 rounded-full bg-amber-400"></div>
                           <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                          <span className="text-xs font-mono font-bold text-stone-400 ml-4">shivam-academy-visualizer.exe</span>
+                          <span className="text-xs font-mono font-bold text-stone-500 ml-4">shivam-academy-visualizer.exe</span>
                         </div>
-                        <div className="flex-grow bg-[#fdfcf8] relative overflow-hidden">
-                          <iframe className="absolute top-0 left-0 w-full h-full" style={{ filter: "contrast(0.95) sepia(0.05)", mixBlendMode: "multiply" }} frameBorder="0" src={`https://pythontutor.com/iframe-embed.html#code=${encodeURIComponent(files['main.py'] || "")}&cumulative=false&heapPrimitives=nevernest&mode=display&origin=opt-frontend.js&py=3&rawInputLstJSON=%5B%5D&textReferences=false`}></iframe>
+                        <div className="flex-grow bg-[#0d1117] relative overflow-hidden">
+                          <iframe className="absolute top-0 left-0 w-full h-full invert hue-rotate-180 contrast-125 brightness-110" style={{ backgroundColor: "transparent" }} frameBorder="0" src={`https://pythontutor.com/iframe-embed.html#code=${encodeURIComponent(files['main.py'] || "")}&cumulative=false&heapPrimitives=nevernest&mode=display&origin=opt-frontend.js&py=3&rawInputLstJSON=%5B%5D&textReferences=false`}></iframe>
                         </div>
                       </div>
                     </div>
                   )}
 
                 </div>
-              </div>
+              </SpotlightCard>
             )}
           </div>
 
-          {/* Playlist Column */}
-          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm flex flex-col h-[600px] overflow-hidden sticky top-32">
-            <div className="p-5 border-b border-stone-100 bg-stone-50">
-              <h3 className="font-black text-stone-900 text-lg">Course Progress</h3>
-              <p className="text-stone-500 text-sm mt-1">{completedTasks}/{totalTasks} Tasks Completed ({progressPercentage}%)</p>
-              <div className="w-full bg-stone-200 rounded-full h-2 mt-4 overflow-hidden mb-4">
+          {/* 🚨 TILE 4: SPOTLIGHT PLAYLIST & PROGRESS */}
+          <SpotlightCard interactive className="flex flex-col h-[600px] sticky top-32 !p-0 shadow-2xl">
+            <div className="p-5 border-b border-white/10 bg-[#121212] relative z-10">
+              <h3 className="font-black text-white text-lg">Course Progress</h3>
+              <p className="text-stone-400 text-sm mt-1">{completedTasks}/{totalTasks} Tasks Completed ({progressPercentage}%)</p>
+              <div className="w-full bg-stone-800 rounded-full h-2 mt-4 overflow-hidden mb-4">
                 <div className="bg-green-500 h-2 rounded-full transition-all duration-1000 ease-out" style={{ width: `${progressPercentage}%` }}></div>
               </div>
               
               {(progressPercentage === 100 || user?.primaryEmailAddress?.emailAddress === ADMIN_EMAIL) && (
-                <button onClick={handleGenerateCertificate} className="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-900 font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] transition-transform animate-in zoom-in">
+                <button onClick={handleGenerateCertificate} className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 hover:scale-[1.02] transition-transform animate-in zoom-in">
                   <Award size={20} /> Claim Certificate
                 </button>
               )}
             </div>
 
-            <div className="overflow-y-auto flex-grow p-2">
+            <div className="overflow-y-auto flex-grow p-2 relative z-10">
               {playlist.map((module, mIdx) => (
                 <div key={mIdx} className="mb-4">
-                  <h4 className="px-3 py-2 text-xs font-bold text-stone-400 uppercase tracking-wider">{module.moduleTitle}</h4>
+                  <h4 className="px-3 py-2 text-xs font-bold text-stone-500 uppercase tracking-wider">{module.moduleTitle}</h4>
                   <div className="flex flex-col gap-1">
                     {module.videos.map((video: any) => {
                       const isActive = activeVideo?.id === video.id;
@@ -879,14 +810,22 @@ builtins.input = custom_input
                       const isAssDone = completedAssignments.includes(video.id);
                       
                       return (
-                        <button key={video.id} onClick={() => handleVideoChange(video)} className={`w-full text-left flex items-start gap-3 p-3 rounded-xl transition-all ${isActive ? 'bg-amber-50 border border-amber-200 shadow-sm' : 'hover:bg-stone-50 border border-transparent'}`}>
+                        <button 
+                            key={video.id} 
+                            onMouseEnter={playHover} // 🚨 PLAYS TICK SOUND ON HOVER
+                            onClick={() => {
+                              playClick(); // 🚨 PLAYS POP SOUND ON CLICK
+                              handleVideoChange(video);
+                            }} 
+                            className={`w-full text-left flex items-start gap-3 p-3 rounded-xl transition-all ${isActive ? 'bg-amber-500/10 border border-amber-500/30 shadow-sm' : 'hover:bg-white/5 border border-transparent'}`}
+                          >
                           <div className="mt-0.5 flex-shrink-0">
-                            {isVidDone ? <CheckCircle size={16} className="text-green-500" /> : <PlayCircle size={16} className="text-amber-500" />}
+                            {isVidDone ? <CheckCircle size={16} className="text-green-400" /> : <PlayCircle size={16} className="text-amber-500" />}
                           </div>
                           <div className="flex-grow pr-2">
-                            <p className={`text-sm font-bold line-clamp-2 ${isActive ? 'text-amber-700' : 'text-stone-700'} ${isVidDone && !isActive ? 'opacity-70' : ''}`}>{video.title}</p>
+                            <p className={`text-sm font-bold line-clamp-2 ${isActive ? 'text-amber-400' : 'text-stone-300'} ${isVidDone && !isActive ? 'opacity-50' : ''}`}>{video.title}</p>
                             {video.githubAssignment && (
-                              <p className={`text-xs mt-1 font-bold ${isAssDone ? 'text-green-600' : 'text-amber-600'}`}>
+                              <p className={`text-xs mt-1 font-bold ${isAssDone ? 'text-green-400' : 'text-amber-500'}`}>
                                 {isAssDone ? "✅ Assignment Submitted" : "📝 Pending Assignment"}
                               </p>
                             )}
@@ -898,7 +837,7 @@ builtins.input = custom_input
                 </div>
               ))}
             </div>
-          </div>
+          </SpotlightCard>
 
         </div>
       </main>
@@ -908,12 +847,12 @@ builtins.input = custom_input
         {showSuccessOverlay && (
           <motion.div 
             initial={{ opacity: 0, y: 50, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-            className="fixed bottom-10 right-10 bg-green-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 z-[9999] border border-green-400"
+            className="fixed bottom-10 right-10 bg-green-500 text-black px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 z-[9999] border border-green-400"
           >
-            <div className="bg-white/20 p-2 rounded-full"><Award size={24} className="text-white" /></div>
+            <div className="bg-black/20 p-2 rounded-full"><Award size={24} className="text-black" /></div>
             <div>
               <h4 className="font-black text-sm uppercase tracking-widest">Success!</h4>
-              <p className="text-xs text-green-100 font-medium">Your code has been securely saved.</p>
+              <p className="text-xs text-green-900 font-bold">Your code has been securely saved.</p>
             </div>
           </motion.div>
         )}
