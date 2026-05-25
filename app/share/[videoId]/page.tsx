@@ -1,5 +1,4 @@
 // app/share/[videoId]/page.tsx
-import { redirect } from 'next/navigation';
 import { Metadata } from 'next';
 import { courseCurriculumMap } from '@/data/learning-content';
 import { activeCourses } from '@/data/courses';
@@ -22,13 +21,13 @@ function getVideoDetails(videoId: string) {
   return null;
 }
 
-// 2. 🚨 THE MAGIC: Generate Dynamic SEO Metadata for WhatsApp!
+// 2. Generate Dynamic SEO Metadata for WhatsApp!
 export async function generateMetadata({ params }: { params: { videoId: string } }): Promise<Metadata> {
   const details = getVideoDetails(params.videoId);
   const title = details ? `${details.title} | ${details.courseTitle}` : "Exclusive Lesson | Shivam Academy";
   
-  // Force WhatsApp to pull the YouTube High-Quality Thumbnail
-  const imageUrl = `https://img.youtube.com/vi/${params.videoId}/hqdefault.jpg`;
+  // 🚨 THE FIX: Use 0.jpg which is guaranteed to exist even for Unlisted YouTube videos!
+  const imageUrl = `https://img.youtube.com/vi/${params.videoId}/0.jpg`;
 
   return {
     title: title,
@@ -36,7 +35,7 @@ export async function generateMetadata({ params }: { params: { videoId: string }
     openGraph: {
       title: title,
       description: "Click to watch this specific lesson directly on the student dashboard!",
-      images: [imageUrl], // 🚨 Feeds the exact video thumbnail to WhatsApp
+      images: [imageUrl], 
       type: "website",
     },
     twitter: {
@@ -48,15 +47,19 @@ export async function generateMetadata({ params }: { params: { videoId: string }
   }
 }
 
-// 3. 🚨 THE REDIRECT: When a human clicks the link, instantly send them to the dashboard!
+// 3. 🚨 THE FIX: A 200 OK page with a Client-Side JavaScript Redirect
 export default function ShareRedirectPage({ params }: { params: { videoId: string } }) {
   const details = getVideoDetails(params.videoId);
-  
-  if (details) {
-    // Redirects to the specific course AND the specific video!
-    redirect(`/learning/${details.slug}?v=${params.videoId}`);
-  } else {
-    // Fallback if video isn't found
-    redirect('/learning');
-  }
+  const destination = details ? `/learning/${details.slug}?v=${params.videoId}` : '/learning';
+
+  return (
+    <div className="min-h-screen bg-[#0d1117] flex flex-col items-center justify-center text-white font-sans p-6 text-center">
+      <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+      <h1 className="text-xl font-bold mb-2">Unlocking Secure Classroom...</h1>
+      <p className="text-stone-400 text-sm">Please wait while we redirect you to your dashboard.</p>
+      
+      {/* This tiny script instantly routes humans to the dashboard, but allows WhatsApp bots to read the page! */}
+      <script dangerouslySetInnerHTML={{ __html: `window.location.href = "${destination}";` }} />
+    </div>
+  );
 }
