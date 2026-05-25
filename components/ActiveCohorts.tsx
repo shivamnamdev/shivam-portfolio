@@ -1,7 +1,7 @@
 'use client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { CheckCircle2, ChevronDown, Gift, Calendar, Code2, Download, CreditCard, Loader2, Globe, Tag } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Gift, Calendar, Code2, Download, CreditCard, Loader2, Globe, Tag, PartyPopper, ExternalLink } from 'lucide-react';
 import { activeCourses } from '@/data/courses';
 import { activeCoupons } from '@/data/coupons';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -32,6 +32,9 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [couponMessage, setCouponMessage] = useState({ text: "", type: "" });
+
+  // 🚨 NEW: State to control the Post-Checkout WhatsApp Modal
+  const [paymentSuccessData, setPaymentSuccessData] = useState<{show: boolean, whatsappLink: string}>({ show: false, whatsappLink: "" });
 
   const { isSignedIn, user } = useUser();
   const { openSignIn } = useClerk();
@@ -117,13 +120,15 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
             courseSlug: displayCourse.slug, 
             currency: activePricing.currencyCode, 
             couponCode: appliedCoupon?.code, 
-            userId: user?.id 
+            userId: user?.id,
+            userEmail: user?.primaryEmailAddress?.emailAddress,
+            userName: user?.fullName || user?.firstName || "Student",
           })
         });
         const data = await res.json();
         if (data.success) {
-          alert("🎉 100% Discount Applied! You are now enrolled.");
-          router.push('/learning');
+          // 🚨 THE FIX: Trigger the beautiful success modal instead of an alert!
+          setPaymentSuccessData({ show: true, whatsappLink: displayCourse.whatsappLink || "#" });
         } else {
           alert(data.error || "Failed to process free enrollment.");
         }
@@ -182,8 +187,8 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
             });
             const verifyData = await verifyRes.json();
             if (verifyData.success) {
-              alert("🎉 Payment Verified! You are now enrolled.");
-              router.push('/learning');
+              // 🚨 THE FIX: Trigger the beautiful success modal instead of an alert!
+              setPaymentSuccessData({ show: true, whatsappLink: displayCourse.whatsappLink || "#" });
             }
           } catch (err) { alert("Error verifying enrollment."); }
         },
@@ -204,6 +209,49 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
 
   return (
     <section className="w-full relative z-10 py-12" id="live-sessions">
+      
+      {/* 🚨 NEW: THE SUCCESS MODAL OVERLAY */}
+      <AnimatePresence>
+        {paymentSuccessData.show && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }} 
+              animate={{ scale: 1, opacity: 1, y: 0 }} 
+              className="bg-[#121212] border border-white/10 rounded-3xl p-8 max-w-md w-full text-center shadow-2xl relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-48 h-48 bg-green-500/10 blur-[60px] pointer-events-none" />
+              
+              <div className="w-20 h-20 bg-green-500/10 border border-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
+                <PartyPopper size={36} className="text-green-400" />
+              </div>
+              
+              <h3 className="text-3xl font-black text-white mb-3 relative z-10">Welcome Aboard!</h3>
+              <p className="text-stone-400 mb-8 relative z-10 leading-relaxed">
+                Your payment is verified. To ensure you don't miss any live class links, please join the official WhatsApp group right now.
+              </p>
+
+              <div className="space-y-4 relative z-10">
+                <a 
+                  href={paymentSuccessData.whatsappLink} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="w-full py-4 rounded-xl bg-[#25D366] text-white font-black text-lg flex items-center justify-center gap-2 hover:bg-[#20bd5a] transition-all shadow-lg shadow-[#25D366]/20"
+                >
+                  Join WhatsApp Group <ExternalLink size={20} />
+                </a>
+                
+                <button 
+                  onClick={() => router.push('/learning')} 
+                  className="w-full py-4 rounded-xl bg-white text-black font-black text-lg flex items-center justify-center gap-2 hover:bg-stone-200 transition-all shadow-xl"
+                >
+                  Go to Dashboard
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <div className="text-center mb-12">
         <h2 className="text-4xl font-display font-black text-white mb-4 drop-shadow-lg">Course Breakdown</h2>
         <p className="text-stone-400">Everything included in this program.</p>
@@ -212,7 +260,6 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
       <div className="flex flex-col gap-12 max-w-6xl mx-auto">
         <SpotlightCard className="p-6 md:p-10 relative overflow-hidden bg-gradient-to-br from-[#0a0a0a] to-[#121212]">
           
-          {/* 🚨 THE FIX: Added this Grid container to force the side-by-side layout! */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 relative z-10 w-full">
             
             {/* Left Column */}
@@ -316,26 +363,26 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
               </div>
             </div>
 
-            {/* Right Column: Accordion */}
+            {/* Right Column: Highlights & Accordion */}
             <div className="flex flex-col z-10">
-            
-            {/* 🚨 NEW: COHORT HIGHLIGHTS (Only shows if data exists) */}
-            {displayCourse.cohortHighlights && (
-              <div className="mb-10 p-8 rounded-3xl bg-amber-500/5 border border-amber-500/20 shadow-[0_0_30px_rgba(245,158,11,0.1)] relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-[40px] pointer-events-none" />
-                <h4 className="font-display font-black text-2xl text-amber-500 mb-6 relative z-10 uppercase tracking-wide">
-                  Cohort Highlights
-                </h4>
-                <ul className="space-y-4 relative z-10">
-                  {displayCourse.cohortHighlights.map((highlight: string, idx: number) => (
-                    <li key={idx} className="flex gap-3 text-stone-300 text-[15px] font-medium leading-relaxed">
-                      <CheckCircle2 size={20} className="text-amber-500 flex-shrink-0 mt-0.5" /> 
-                      {highlight}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+              
+              {displayCourse.cohortHighlights && (
+                <div className="mb-10 p-8 rounded-3xl bg-amber-500/5 border border-amber-500/20 shadow-[0_0_30px_rgba(245,158,11,0.1)] relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-[40px] pointer-events-none" />
+                  <h4 className="font-display font-black text-2xl text-amber-500 mb-6 relative z-10 uppercase tracking-wide">
+                    Cohort Highlights
+                  </h4>
+                  <ul className="space-y-4 relative z-10">
+                    {displayCourse.cohortHighlights.map((highlight: string, idx: number) => (
+                      <li key={idx} className="flex gap-3 text-stone-300 text-[15px] font-medium leading-relaxed">
+                        <CheckCircle2 size={20} className="text-amber-500 flex-shrink-0 mt-0.5" /> 
+                        {highlight}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               <h4 className="font-display font-black text-2xl text-white mb-6 border-b border-white/10 pb-4">Program Curriculum</h4>
               <div className="flex flex-col gap-3">
                 {displayCourse.modules?.map((mod: any, i: number) => {
@@ -343,8 +390,15 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
                   return (
                     <div key={i} className={`rounded-2xl overflow-hidden transition-all border bg-[#0a0a0a] ${isActive ? 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.15)]' : 'border-white/10 hover:border-amber-500/50'}`}>
                       <button onClick={() => setOpenModule(isActive ? null : i)} className="w-full p-4 md:p-5 flex items-center justify-between text-left">
-                        <h5 className={`font-bold ${isActive ? 'text-amber-500' : 'text-stone-300'}`}>{mod.title}</h5>
-                        <motion.div animate={{ rotate: isActive ? 180 : 0 }}><ChevronDown className="text-stone-500"/></motion.div>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                          {mod.week && (
+                            <span className="text-[10px] font-black uppercase tracking-widest bg-white/5 border border-white/10 text-stone-400 px-3 py-1 rounded-md w-fit">
+                              {mod.week}
+                            </span>
+                          )}
+                          <h5 className={`font-bold ${isActive ? 'text-amber-500' : 'text-stone-300'}`}>{mod.title}</h5>
+                        </div>
+                        <motion.div animate={{ rotate: isActive ? 180 : 0 }}><ChevronDown className="text-stone-500 flex-shrink-0 ml-2"/></motion.div>
                       </button>
                       <AnimatePresence>
                         {isActive && (
