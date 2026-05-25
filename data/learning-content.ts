@@ -173,8 +173,9 @@ export const courseCurriculumMap: Record<string, any[]> = {
     moduleTitle: "Module 4: Advanced Python",
     videoIds:[
       "uHRAKjaju04",// OOPS Basics: Class and Objects
-      "6FT7QQmf-CM",
-      "P4lUW1xQDG0" // OOPS: Constructor and Polymorphism
+      "6FT7QQmf-CM", // OOPS: Constructor and Polymorphism
+      "P4lUW1xQDG0", // OOPS: Inheritance
+      "ACGqQ4TIGAI", // OOPS: Access Specifier
     ],
     githubAssignments: {
       "uHRAKjaju04": {
@@ -192,7 +193,13 @@ export const courseCurriculumMap: Record<string, any[]> = {
           title: "Day 25: OOPs Concepts: Inheritance",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2026%3A%20OOPs%3A%20Inheritance/Assignment.docx",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2026%3A%20OOPs%3A%20Inheritance/Solution.py"
-        },  
+        }, 
+       "ACGqQ4TIGAI": {
+          title: "Day 25: OOPs Concepts: Inheritance",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2027%3A%20OOPs%20Access%20Specifier/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2027%3A%20OOPs%20Access%20Specifier/Solution.py"
+        
+       }  
     }
   },
   {
