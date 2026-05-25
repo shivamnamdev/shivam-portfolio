@@ -3,17 +3,14 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, Code2, TerminalSquare, Award, FileCheck, Eye, RefreshCw, X, Plus, FileText } from 'lucide-react';
+// 🚨 IMPORTED ThumbsUp and Share2
+import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, Code2, TerminalSquare, Award, FileCheck, Eye, RefreshCw, X, Plus, FileText, ThumbsUp, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { courseCurriculumMap } from '@/data/learning-content';
 import { activeCourses } from '@/data/courses';
 import { supabase } from '@/lib/supabaseClient';
 import Editor from '@monaco-editor/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import SpotlightCard from '@/components/SpotlightCard'; // 🚨 IMPORTED THE SPOTLIGHT CARD!
-import { useUISounds } from '@/hooks/useUISounds';
-
-const ADMIN_EMAIL = "shivamnamdev.corp@gmail.com";
 
 function formatYouTubeDuration(duration: string) {
   const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
@@ -25,9 +22,11 @@ function formatYouTubeDuration(duration: string) {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+const ADMIN_EMAIL = "shivamnamdev.corp@gmail.com";
+
 export default function CoursePlayerPage({ params }: { params: { slug: string } }) {
-  const { playHover, playClick } = useUISounds(); 
   const { user, isLoaded } = useUser();
+  const isAdmin = user?.primaryEmailAddress?.emailAddress === ADMIN_EMAIL;
   const [playlist, setPlaylist] = useState<any[]>([]);
   const [activeVideo, setActiveVideo] = useState<any>(null);
   
@@ -41,6 +40,11 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   const [newComment, setNewComment] = useState("");
   const [isPosting, setIsPosting] = useState(false);
 
+  // 🚨 NEW: Like & Share States
+  const [likesCount, setLikesCount] = useState(0);
+  const [hasLiked, setHasLiked] = useState(false);
+
+  // IDE & Assignment States
   const [files, setFiles] = useState<Record<string, string>>({ "main.py": "" });
   const [activeFile, setActiveFile] = useState("main.py");
   const [stepFiles, setStepFiles] = useState<Record<string, string>[]>([]); 
@@ -74,7 +78,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
           const py = await (window as any).loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/" });
           setPyodide(py);
           setIsPyodideLoading(false);
-        } catch (err) {}
+        } catch (err) { console.error("Failed to load Pyodide:", err); }
       };
       document.body.appendChild(script);
     };
@@ -191,9 +195,23 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
 
         setPlaylist(enrichedModules);
         if (enrichedModules.length > 0 && enrichedModules[0].videos.length > 0) {
-          setActiveVideo(enrichedModules[0].videos[0]);
-          if (enrichedModules[0].videos[0].githubAssignment) {
-            loadGithubAssignment(enrichedModules[0].videos[0].githubAssignment);
+          // 🚨 THE FIX: Check if the URL has a ?v= parameter!
+          const urlParams = new URLSearchParams(window.location.search);
+          const videoParam = urlParams.get('v');
+          
+          let targetVideo = null;
+          if (videoParam) {
+            for (const mod of enrichedModules) {
+              const found = mod.videos.find((v: any) => v.id === videoParam);
+              if (found) { targetVideo = found; break; }
+            }
+          }
+          
+          const initialVideo = targetVideo || enrichedModules[0].videos[0];
+          setActiveVideo(initialVideo);
+          
+          if (initialVideo.githubAssignment) {
+            loadGithubAssignment(initialVideo.githubAssignment);
           }
         }
       } catch (error) {
@@ -205,6 +223,23 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     loadCourseData();
   },[isLoaded, user?.id, params.slug]);
 
+  // 🚨 NEW: Fetch Likes & Comments whenever Video Changes
+  useEffect(() => {
+    async function fetchLikesAndComments() {
+      if (!activeVideo || !user) return;
+      
+      const { data: commentData } = await supabase.from('video_comments').select('*').eq('video_id', activeVideo.id).order('created_at', { ascending: false });
+      if (commentData) setComments(commentData);
+
+      const { data: likesData } = await supabase.from('video_likes').select('user_id').eq('video_id', activeVideo.id);
+      if (likesData) {
+        setLikesCount(likesData.length);
+        setHasLiked(likesData.some(l => l.user_id === user.id));
+      }
+    }
+    fetchLikesAndComments();
+  }, [activeVideo, user]);
+
   const handleVideoChange = (video: any) => {
     setActiveVideo(video);
     setOutput(""); 
@@ -213,6 +248,10 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     setAssignmentSteps([]);
     setCurrentStepIndex(0);
     setOfficialSolutionSteps([]);
+    
+    // Reset Likes State before fetching new ones
+    setHasLiked(false);
+    setLikesCount(0);
     
     if (video.githubAssignment) {
       setAssignmentSteps(["Loading instructions..."]);
@@ -256,15 +295,67 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     }
   };
 
-  useEffect(() => {
-    async function fetchComments() {
-      if (!activeVideo) return;
-      const { data, error } = await supabase.from('video_comments').select('*').eq('video_id', activeVideo.id).order('created_at', { ascending: false });
-      if (!error && data) setComments(data);
-    }
-    fetchComments();
-  }, [activeVideo]);
+  // 🚨 NEW: Like Button Logic
+  const toggleLike = async () => {
+    if (!user || !activeVideo) return;
+    try {
+      if (hasLiked) {
+        setHasLiked(false);
+        setLikesCount(prev => prev - 1);
+        await supabase.from('video_likes').delete().eq('video_id', activeVideo.id).eq('user_id', user.id);
+      } else {
+        setHasLiked(true);
+        setLikesCount(prev => prev + 1);
+        await supabase.from('video_likes').insert([{ video_id: activeVideo.id, user_id: user.id }]);
+      }
+    } catch (err) { console.error(err); }
+  };
 
+  // 🚨 NEW: Rich Share Button Logic (Mobile & Desktop)
+  const handleShare = async () => {
+    const shareUrl = `https://shivamnamdev.com/courses/${params.slug}`;
+    const shareText = `🚀 Ready to Master Python?\n\nCheck out this lesson: "${activeVideo?.title}" from Shivam Academy!\n\nEnroll here to unlock the full platform, interactive labs, and AI tutor:\n${shareUrl}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: activeVideo?.title || "Shivam Academy",
+          text: shareText,
+        });
+      } catch (err) {
+        console.error("Error sharing:", err);
+      }
+    } else {
+      // Fallback for Desktop browsers without Web Share API
+      navigator.clipboard.writeText(shareText);
+      alert("Branded share message copied to clipboard! Paste it into WhatsApp or LinkedIn. The course thumbnail will automatically appear!");
+    }
+  };
+
+  // 🚨 THE FIX: Direct Video Link + WhatsApp Thumbnail Hack
+  // 🚨 THE FIX: Use '0.jpg' instead of 'hqdefault.jpg' for Unlisted YouTube Videos
+  // 🚨 THE UPDATED SHARE FUNCTION
+  const handleAdminShare = async () => {
+    // 1. Point to our new Dynamic Redirector route using the YouTube ID!
+    const shareUrl = `https://shivamnamdev.com/share/${activeVideo.youtubeId}`;
+    
+    // 2. Format the message beautifully
+    const shareText = `🚀 Ready to Master Python?\n\nCheck out this exclusive lesson: *${activeVideo?.title}* from Shivam Academy!\n\n🎓 Click here to watch the video directly:\n${shareUrl}\n\n💻 Enroll here to unlock the full platform, interactive labs, and the AI code tutor:\nhttps://shivamnamdev.com/courses/${params.slug}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: activeVideo?.title || "Shivam Academy",
+          text: shareText,
+        });
+      } catch (err) {
+        console.error("Error sharing:", err);
+      }
+    } else {
+      navigator.clipboard.writeText(shareText);
+      alert("Branded share message copied to clipboard! Paste it into WhatsApp or LinkedIn.");
+    }
+  };
   const handlePostComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim() || !user || !activeVideo) return;
@@ -305,7 +396,14 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       );
       if (error) throw error;
       
-      if (!completedAssignments.includes(activeVideo.id)) setCompletedAssignments(prev => [...prev, activeVideo.id]);
+      if (!completedAssignments.includes(activeVideo.id)) {
+        setCompletedAssignments(prev => [...prev, activeVideo.id]);
+        supabase.from('admin_activity_log').insert([{
+          type: 'submission',
+          message: `New Code Submission: ${activeVideo.githubAssignment?.title || activeVideo.title}`,
+          user_email: user.primaryEmailAddress?.emailAddress
+        }]).then();
+      }
       
       setShowSuccessOverlay(true);
       setTimeout(() => setShowSuccessOverlay(false), 4000);
@@ -421,39 +519,70 @@ builtins.input = custom_input
       const { jsPDF } = await import("jspdf");
       const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
       
-      doc.setFillColor(253, 252, 248); doc.rect(0, 0, 297, 210, 'F');
-      doc.setDrawColor(217, 119, 6); doc.setLineWidth(2); doc.rect(10, 10, 277, 190);
-      doc.setLineWidth(0.5); doc.rect(12, 12, 273, 186);
+      doc.setFillColor(18, 18, 18);
+      doc.rect(0, 0, 297, 210, 'F');
+      
+      doc.setDrawColor(245, 158, 11);
+      doc.setLineWidth(1.5);
+      doc.rect(12, 12, 273, 186);
+      
+      doc.setDrawColor(251, 191, 36);
+      doc.setLineWidth(0.5);
+      doc.rect(15, 15, 267, 180);
 
-      doc.setFont("helvetica", "bold"); doc.setFontSize(36); doc.setTextColor(28, 25, 23);
-      doc.text("Certificate of Completion", 148.5, 50, { align: "center" });
+      doc.setFont("helvetica", "bold"); 
+      doc.setFontSize(38); 
+      doc.setTextColor(255, 255, 255);
+      doc.text("CERTIFICATE OF COMPLETION", 148.5, 45, { align: "center" });
 
-      doc.setFont("helvetica", "normal"); doc.setFontSize(16); doc.setTextColor(120, 113, 108);
-      doc.text("This is to certify that", 148.5, 75, { align: "center" });
+      doc.setFont("helvetica", "italic"); 
+      doc.setFontSize(14); 
+      doc.setTextColor(168, 162, 158);
+      doc.text("This prestigious credential is proudly presented to", 148.5, 70, { align: "center" });
 
       const studentName = String(user?.fullName || user?.firstName || "Dedicated Student");
-      doc.setFont("helvetica", "bold"); doc.setFontSize(32); doc.setTextColor(217, 119, 6);
+      doc.setFont("helvetica", "bold"); 
+      doc.setFontSize(42); 
+      doc.setTextColor(245, 158, 11);
       doc.text(studentName.toUpperCase(), 148.5, 95, { align: "center" });
 
-      doc.setFont("helvetica", "normal"); doc.setFontSize(16); doc.setTextColor(28, 25, 23);
-      doc.text(`has successfully completed the immersive program:`, 148.5, 115, { align: "center" });
+      doc.setFont("helvetica", "normal"); 
+      doc.setFontSize(14); 
+      doc.setTextColor(214, 211, 209);
+      doc.text(`for successfully completing the curriculum and passing all technical requirements in:`, 148.5, 120, { align: "center" });
       
       doc.setFont("helvetica", "bold");
-      doc.text(String(courseDetails?.title || "Python Programming"), 148.5, 127, { align: "center" });
+      doc.setFontSize(22);
+      doc.setTextColor(255, 255, 255);
+      doc.text(String(courseDetails?.title || "Python Foundation & Logic Building"), 148.5, 135, { align: "center" });
 
-      doc.setFont("helvetica", "italic"); doc.setFontSize(14); doc.setTextColor(120, 113, 108);
-      doc.text("demonstrating mastery in automation, coding logic, and execution.", 148.5, 140, { align: "center" });
+      doc.setFont("helvetica", "italic"); 
+      doc.setFontSize(12); 
+      doc.setTextColor(168, 162, 158);
+      doc.text("demonstrating the ability to read, understand, debug, and build Python programs independently.", 148.5, 150, { align: "center" });
 
-      const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-      const uniqueId = `SA-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      const uniqueId = `SA-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
       
-      doc.setFont("helvetica", "normal"); doc.setFontSize(12); doc.setTextColor(28, 25, 23);
-      doc.text(`Date Issued: ${today}`, 40, 170);
-      doc.text(`Certificate ID: ${uniqueId}`, 40, 180);
+      doc.setFont("courier", "bold"); 
+      doc.setFontSize(11); 
+      doc.setTextColor(251, 191, 36);
+      doc.text(`ISSUED: ${today.toUpperCase()}`, 30, 175);
+      doc.text(`VERIFICATION ID: ${uniqueId}`, 30, 182);
 
-      doc.setFont("helvetica", "bold"); doc.setFontSize(20); doc.text("Shivam Namdev", 250, 168, { align: "center" });
-      doc.setDrawColor(28, 25, 23); doc.setLineWidth(0.5); doc.line(210, 172, 290, 172);
-      doc.setFont("helvetica", "normal"); doc.setFontSize(12); doc.text("Lead QA & Instructor", 250, 180, { align: "center" });
+      doc.setFont("helvetica", "bold"); 
+      doc.setFontSize(18); 
+      doc.setTextColor(255, 255, 255);
+      doc.text("Shivam Namdev", 250, 168, { align: "center" });
+      
+      doc.setDrawColor(168, 162, 158);
+      doc.setLineWidth(0.5); 
+      doc.line(210, 172, 290, 172);
+      
+      doc.setFont("helvetica", "normal"); 
+      doc.setFontSize(10); 
+      doc.setTextColor(168, 162, 158);
+      doc.text("Python Mentor & Software Professional", 250, 182, { align: "center" });
 
       doc.save(`${studentName.replace(/\s+/g, '_')}_Certificate.pdf`);
     } catch (error) {
@@ -553,59 +682,71 @@ builtins.input = custom_input
           
           <div className="lg:col-span-2 flex flex-col gap-6">
             
-            {/* 🚨 TILE 1: SPOTLIGHT VIDEO PLAYER */}
-            <SpotlightCard interactive className="w-full shadow-xl aspect-video relative select-none !p-0">
-              {activeVideo ? (
-                <>
-                  <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${activeVideo.youtubeId}?rel=0&modestbranding=1`} title={activeVideo.title} frameBorder="0" allowFullScreen></iframe>
-                  <div className="absolute inset-0 pointer-events-none overflow-hidden z-50 flex items-center justify-center mix-blend-difference">
-                    <motion.div animate={{ x:[-150, 150, 150, -150, -150], y:[-80, -80, 80, 80, -80] }} transition={{ duration: 25, repeat: Infinity, ease: "linear" }} className="absolute text-white/30 font-mono text-sm md:text-lg font-bold tracking-widest pointer-events-none drop-shadow-md transform -rotate-12">
-                      {user?.primaryEmailAddress?.emailAddress || user?.id} <br/><span className="text-xs">DO NOT DISTRIBUTE</span>
-                    </motion.div>
-                  </div>
-                </>
-              ) : (
-                <div className="w-full h-full bg-[#0a0a0a] flex flex-col items-center justify-center text-center p-8">
-                  <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-4 border border-white/10">
-                    <Clock size={40} className="text-amber-500" />
-                  </div>
-                  <h2 className="text-3xl font-black text-white mb-4">Live Classes Starting Soon</h2>
-                  {courseDetails?.liveLink ? (
-                    <a href={courseDetails.liveLink} target="_blank" rel="noreferrer" className="px-8 py-4 rounded-full bg-amber-500 text-stone-900 font-bold text-lg flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors shadow-lg mt-4">
-                      <PlayCircle size={20} /> Enter Live Classroom
-                    </a>
-                  ) : (
-                    <p className="text-stone-400 max-w-md">Once the live sessions begin, the recordings will be automatically uploaded and unlocked here.</p>
-                  )}
+            {activeVideo ? (
+              <div className="w-full bg-[#0a0a0a] rounded-2xl overflow-hidden shadow-xl aspect-video border border-white/10 relative select-none">
+                <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${activeVideo.youtubeId}?rel=0&modestbranding=1`} title={activeVideo.title} frameBorder="0" allowFullScreen></iframe>
+                <div className="absolute inset-0 pointer-events-none overflow-hidden z-50 flex items-center justify-center mix-blend-difference">
+                  <motion.div animate={{ x:[-150, 150, 150, -150, -150], y:[-80, -80, 80, 80, -80] }} transition={{ duration: 25, repeat: Infinity, ease: "linear" }} className="absolute text-white/30 font-mono text-sm md:text-lg font-bold tracking-widest pointer-events-none drop-shadow-md transform -rotate-12">
+                    {user?.primaryEmailAddress?.emailAddress || user?.id} <br/><span className="text-xs">DO NOT DISTRIBUTE</span>
+                  </motion.div>
                 </div>
-              )}
-            </SpotlightCard>
+              </div>
+            ) : (
+              <div className="w-full bg-stone-900 rounded-2xl shadow-xl aspect-video border border-white/10 flex flex-col items-center justify-center text-center p-8">
+                <div className="w-20 h-20 bg-stone-800 rounded-full flex items-center justify-center mb-4">
+                  <Clock size={40} className="text-amber-500" />
+                </div>
+                <h2 className="text-3xl font-black text-white mb-4">Live Classes Starting Soon</h2>
+                {courseDetails?.liveLink ? (
+                  <a href={courseDetails.liveLink} target="_blank" rel="noreferrer" className="px-8 py-4 rounded-full bg-amber-500 text-stone-900 font-bold text-lg flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors shadow-lg mt-4">
+                    <PlayCircle size={20} /> Enter Live Classroom
+                  </a>
+                ) : (
+                  <p className="text-stone-400 max-w-md">Once the live sessions begin, the recordings will be automatically uploaded and unlocked here.</p>
+                )}
+              </div>
+            )}
 
-            {/* 🚨 TILE 2: SPOTLIGHT TITLE / ACTION BAR */}
             {activeVideo && (
-              <SpotlightCard interactive className="p-6 md:p-8 bg-[#121212] shadow-2xl">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6 relative z-10">
-                  <div>
+              <div className="p-6 md:p-8 rounded-2xl border border-white/10 bg-[#121212] shadow-2xl relative overflow-hidden mb-10">
+                {/* Subtle Amber Glow inside the card */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-[50px] pointer-events-none" />
+                
+                <div className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-6 relative z-10">
+                  <div className="flex-1">
                     <h2 className="text-2xl font-bold text-white mb-2 leading-snug">{activeVideo.title}</h2>
                     <p className="text-stone-400 text-sm font-medium">Instructor: Shivam Namdev</p>
                   </div>
-                  {isVideoCompleted ? (
-                    <button disabled className="px-6 py-3.5 rounded-xl bg-green-500/10 text-green-400 font-bold text-sm flex items-center justify-center gap-2 border border-green-500/20 w-full sm:w-auto shrink-0 shadow-[0_0_15px_rgba(34,197,94,0.1)]">
-                      <CheckCircle size={18} /> Video Watched
+                  
+                  {/* 🚨 THE LIKES, SHARE, AND COMPLETE BUTTONS */}
+                  <div className="flex flex-wrap items-center gap-3 shrink-0">
+                    <button onClick={toggleLike} className={`px-4 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors border ${hasLiked ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' : 'bg-[#1a1a1a] text-stone-400 border-stone-800 hover:bg-[#222]'}`}>
+                      <ThumbsUp size={18} className={hasLiked ? "fill-blue-400" : ""} /> {likesCount} Likes
                     </button>
-                  ) : (
-                    <button onClick={markAsComplete} disabled={isMarking} className="px-6 py-3.5 rounded-xl bg-amber-500 text-black font-black text-sm flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors w-full sm:w-auto shadow-[0_0_20px_rgba(245,158,11,0.2)] disabled:opacity-70 shrink-0">
-                      {isMarking ? <Loader2 size={18} className="animate-spin"/> : <CheckCircle size={18} />} Mark Video Complete
-                    </button>
-                  )}
+
+                    {isAdmin && (
+                      <button onClick={handleAdminShare} className="px-4 py-3 rounded-xl bg-purple-500/10 text-purple-400 font-bold text-sm flex items-center justify-center gap-2 border border-purple-500/20 hover:bg-purple-500/20 transition-colors">
+                        <Share2 size={18} /> Share
+                      </button>
+                    )}
+
+                    {isVideoCompleted ? (
+                      <button disabled className="px-6 py-3 rounded-xl bg-green-500/10 text-green-400 font-bold text-sm flex items-center justify-center gap-2 border border-green-500/20 shadow-sm">
+                        <CheckCircle size={18} /> Completed
+                      </button>
+                    ) : (
+                      <button onClick={markAsComplete} disabled={isMarking} className="px-6 py-3 rounded-xl bg-amber-500 text-black font-black text-sm flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors shadow-[0_0_15px_rgba(245,158,11,0.2)] disabled:opacity-70">
+                        {isMarking ? <Loader2 size={18} className="animate-spin text-black"/> : <CheckCircle size={18} />} Mark Complete
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </SpotlightCard>
+              </div>
             )}
 
-            {/* 🚨 TILE 3: SPOTLIGHT TABS & IDE */}
             {activeVideo && (
-              <SpotlightCard interactive className="mb-10 !p-0 flex flex-col shadow-2xl">
-                <div className="flex overflow-x-auto border-b border-white/10 bg-[#121212] relative z-10">
+              <div className="bg-[#0a0a0a] rounded-2xl border border-white/10 shadow-2xl overflow-hidden mb-10">
+                <div className="flex overflow-x-auto border-b border-white/10 bg-[#121212]">
                   <button onClick={() => setActiveTab('description')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'description' ? 'text-amber-500 border-b-2 border-amber-500 bg-[#0a0a0a]' : 'text-stone-400 hover:text-stone-200'}`}>
                     <AlignLeft size={18} /> Lesson Details
                   </button>
@@ -624,7 +765,7 @@ builtins.input = custom_input
                   )}
                 </div>
 
-                <div className="p-0 md:p-0 relative z-10">
+                <div className="p-0 md:p-0">
                   
                   {activeTab === 'description' && (
                     <div className="p-6 md:p-8 prose prose-invert max-w-none">
@@ -779,13 +920,12 @@ builtins.input = custom_input
                   )}
 
                 </div>
-              </SpotlightCard>
+              </div>
             )}
           </div>
 
-          {/* 🚨 TILE 4: SPOTLIGHT PLAYLIST & PROGRESS */}
-          <SpotlightCard interactive className="flex flex-col h-[600px] sticky top-32 !p-0 shadow-2xl">
-            <div className="p-5 border-b border-white/10 bg-[#121212] relative z-10">
+          <div className="bg-[#0a0a0a] rounded-2xl border border-white/10 shadow-2xl flex flex-col h-[600px] overflow-hidden sticky top-32">
+            <div className="p-5 border-b border-white/10 bg-[#121212]">
               <h3 className="font-black text-white text-lg">Course Progress</h3>
               <p className="text-stone-400 text-sm mt-1">{completedTasks}/{totalTasks} Tasks Completed ({progressPercentage}%)</p>
               <div className="w-full bg-stone-800 rounded-full h-2 mt-4 overflow-hidden mb-4">
@@ -799,7 +939,7 @@ builtins.input = custom_input
               )}
             </div>
 
-            <div className="overflow-y-auto flex-grow p-2 relative z-10">
+            <div className="overflow-y-auto flex-grow p-2">
               {playlist.map((module, mIdx) => (
                 <div key={mIdx} className="mb-4">
                   <h4 className="px-3 py-2 text-xs font-bold text-stone-500 uppercase tracking-wider">{module.moduleTitle}</h4>
@@ -810,15 +950,7 @@ builtins.input = custom_input
                       const isAssDone = completedAssignments.includes(video.id);
                       
                       return (
-                        <button 
-                            key={video.id} 
-                            onMouseEnter={playHover} // 🚨 PLAYS TICK SOUND ON HOVER
-                            onClick={() => {
-                              playClick(); // 🚨 PLAYS POP SOUND ON CLICK
-                              handleVideoChange(video);
-                            }} 
-                            className={`w-full text-left flex items-start gap-3 p-3 rounded-xl transition-all ${isActive ? 'bg-amber-500/10 border border-amber-500/30 shadow-sm' : 'hover:bg-white/5 border border-transparent'}`}
-                          >
+                        <button key={video.id} onClick={() => handleVideoChange(video)} className={`w-full text-left flex items-start gap-3 p-3 rounded-xl transition-all ${isActive ? 'bg-amber-500/10 border border-amber-500/30 shadow-sm' : 'hover:bg-white/5 border border-transparent'}`}>
                           <div className="mt-0.5 flex-shrink-0">
                             {isVidDone ? <CheckCircle size={16} className="text-green-400" /> : <PlayCircle size={16} className="text-amber-500" />}
                           </div>
@@ -837,7 +969,7 @@ builtins.input = custom_input
                 </div>
               ))}
             </div>
-          </SpotlightCard>
+          </div>
 
         </div>
       </main>

@@ -5,7 +5,7 @@ export const activeCoupons =[
     code: "BATCH002",
     discountType: "percentage", // 'percentage' or 'fixed'
     discountValue: 100, // 20% off
-    allowedUsers: ["user_3D84WbD9HLD1yoI7dv2fvoQnhSW","user_3CzHNoNIgWKBOhQwxaPDUIJHB26", "user_3DniqVaPnd6GomLOmxcee97P3ZF"] // 🚨 Leave empty[] to let ANYONE use it!
+    allowedUsers: ["user_3ChU9lMA47mP3LjIHzDKNF4v2gL","user_3D84WbD9HLD1yoI7dv2fvoQnhSW","user_3CzHNoNIgWKBOhQwxaPDUIJHB26", "user_3DniqVaPnd6GomLOmxcee97P3ZF"] // 🚨 Leave empty[] to let ANYONE use it!
   },
   {
     code: "BIRTHDAY20",

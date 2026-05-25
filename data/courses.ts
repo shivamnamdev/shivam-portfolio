@@ -11,6 +11,8 @@ export const activeCourses = [
     duration: "6-8 Weeks | Weekends Only (Sat & Sun)",
     contactPhone: "7057034840",
     enrollmentClosed: false, 
+    // 🚨 NEW: Add your private group link here!
+    whatsappLink: "https://chat.whatsapp.com/JC7u8pWcePA2o89Tu0QL9O",
 
     vsl: {
       headlinePart1: "Don't just learn Python.",
