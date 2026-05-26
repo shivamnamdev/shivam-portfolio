@@ -8,7 +8,7 @@ export default authMiddleware({
     "/about",
     "/contact",
     "/mentorship",
-    // 🚨 Explicit API Routes (No more buggy wildcards!)
+    "/share(.*)", // 🚨 THE MISSING LINE! This lets WhatsApp read the thumbnail!
     "/api/create-order",
     "/api/verify-payment",
     "/api/enroll-free",
@@ -19,13 +19,6 @@ export default authMiddleware({
   ],
   // 2. Webhooks should be completely ignored by Clerk
   ignoredRoutes: [
-    "/api/create-order",
-    "/api/verify-payment",
-    "/api/enroll-free",
-    "/api/send-email",
-    "/api/ai-tutor",
-    "/api/get-clerk-users",
-    "/api/get-all-users",
     "/api/webhooks/clerk"
   ]
 });
