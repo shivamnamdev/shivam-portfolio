@@ -335,11 +335,11 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   // 🚨 THE FIX: Direct Video Link + WhatsApp Thumbnail Hack
   // 🚨 THE FIX: Use '0.jpg' instead of 'hqdefault.jpg' for Unlisted YouTube Videos
   // 🚨 THE UPDATED SHARE FUNCTION
+  // 🚨 THE UPDATED SHARE FUNCTION
   const handleAdminShare = async () => {
-    // 1. Point to our new Dynamic Redirector route using the YouTube ID!
-    const shareUrl = `https://shivamnamdev.com/share/${activeVideo.youtubeId}`;
+    // 🚨 THE FIX: Added cache-buster so WhatsApp is forced to fetch the new image!
+    const shareUrl = `https://shivamnamdev.com/share/${activeVideo.youtubeId}?t=${Date.now()}`;
     
-    // 2. Format the message beautifully
     const shareText = `🚀 Ready to Master Python?\n\nCheck out this exclusive lesson: *${activeVideo?.title}* from Shivam Academy!\n\n🎓 Click here to watch the video directly:\n${shareUrl}\n\n💻 Enroll here to unlock the full platform, interactive labs, and the AI code tutor:\nhttps://shivamnamdev.com/courses/${params.slug}`;
 
     if (navigator.share) {
@@ -356,6 +356,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       alert("Branded share message copied to clipboard! Paste it into WhatsApp or LinkedIn.");
     }
   };
+  
   const handlePostComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim() || !user || !activeVideo) return;
