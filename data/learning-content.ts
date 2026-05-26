@@ -175,7 +175,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "uHRAKjaju04",// OOPS Basics: Class and Objects
       "6FT7QQmf-CM", // OOPS: Constructor and Polymorphism
       "P4lUW1xQDG0", // OOPS: Inheritance
-      "ACGqQ4TIGAI", // OOPS: Access Specifier
+      "ACGqQ4TIGAI",
+      "TXRqDxL0Ob0" // OOPS: Access Specifier
     ],
     githubAssignments: {
       "uHRAKjaju04": {
@@ -190,16 +191,22 @@ export const courseCurriculumMap: Record<string, any[]> = {
           starterCodeUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2025%3A%20OOPS%3A%20Constructor%20%26%20Method%20Overriding/AssignmentAddon.docx"
         },
       "P4lUW1xQDG0": {
-          title: "Day 25: OOPs Concepts: Inheritance",
+          title: "Day 26: OOPs Concepts: Inheritance",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2026%3A%20OOPs%3A%20Inheritance/Assignment.docx",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2026%3A%20OOPs%3A%20Inheritance/Solution.py"
         }, 
        "ACGqQ4TIGAI": {
-          title: "Day 25: OOPs Concepts: Inheritance",
+          title: "Day 27: OOPs Concepts: Access Specifier",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2027%3A%20OOPs%20Access%20Specifier/Assignment.docx",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2027%3A%20OOPs%20Access%20Specifier/Solution.py"
         
-       }  
+       },
+       "TXRqDxL0Ob0": {
+          title: "Virtual Environment and PIP",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2027%3A%20OOPs%20Access%20Specifier/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2027%3A%20OOPs%20Access%20Specifier/Solution.py"
+        
+       }   
     }
   },
   {
