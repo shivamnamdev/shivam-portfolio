@@ -265,15 +265,26 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   };
 
   const handleStepChange = (newIndex: number) => {
-    const newStepFiles = [...stepFiles];
-    newStepFiles[currentStepIndex] = files;
-    setStepFiles(newStepFiles);
+    // 🚨 CHECK FOR THE FLAG
+    const isCarryOver = activeVideo?.githubAssignment?.carryOverCode;
 
-    setFiles(newStepFiles[newIndex] || { "main.py": "# Write your Python code below:\n\n" });
-    setActiveFile("main.py");
-    setCurrentStepIndex(newIndex);
-    setOutput("");
-    setAiResponse(null);
+    if (isCarryOver) {
+      // PROGRESSIVE LAB: Only change the instructions! Keep the code editor untouched.
+      setCurrentStepIndex(newIndex);
+      setOutput("");
+      setAiResponse(null);
+    } else {
+      // STANDARD LAB: Save current code, wipe the editor, load the next step's code
+      const newStepFiles = [...stepFiles];
+      newStepFiles[currentStepIndex] = files;
+      setStepFiles(newStepFiles);
+
+      setFiles(newStepFiles[newIndex] || { "main.py": "# Write your Python code below:\n\n" });
+      setActiveFile("main.py");
+      setCurrentStepIndex(newIndex);
+      setOutput("");
+      setAiResponse(null);
+    }
   };
 
   const handleAddFile = () => {
@@ -356,7 +367,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       alert("Branded share message copied to clipboard! Paste it into WhatsApp or LinkedIn.");
     }
   };
-  
+
   const handlePostComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim() || !user || !activeVideo) return;
@@ -381,14 +392,23 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     if (!user || !activeVideo || isSubmittingAssignment) return;
     setIsSubmittingAssignment(true);
     try {
-      const finalStepFiles = [...stepFiles];
-      finalStepFiles[currentStepIndex] = files;
-      
-      const combinedCode = finalStepFiles.map((stepDict, idx) => {
-        const safeDict = stepDict || { "main.py": "# No code provided" };
-        const filesText = Object.entries(safeDict).map(([name, cont]) => `# --- File: ${name} ---\n${cont}`).join('\n\n');
-        return `# === Step ${idx + 1} ===\n${filesText}`;
-      }).join('\n\n');
+      const isCarryOver = activeVideo?.githubAssignment?.carryOverCode;
+      let combinedCode = "";
+
+      if (isCarryOver) {
+        // PROGRESSIVE LAB: Just submit the current workspace files directly
+        combinedCode = Object.entries(files).map(([name, cont]) => `# --- File: ${name} ---\n${cont}`).join('\n\n');
+      } else {
+        // STANDARD LAB: Stitch all the separate steps together
+        const finalStepFiles = [...stepFiles];
+        finalStepFiles[currentStepIndex] = files;
+        
+        combinedCode = finalStepFiles.map((stepDict, idx) => {
+          const safeDict = stepDict || { "main.py": "# No code provided" };
+          const filesText = Object.entries(safeDict).map(([name, cont]) => `# --- File: ${name} ---\n${cont}`).join('\n\n');
+          return `# === Step ${idx + 1} ===\n${filesText}`;
+        }).join('\n\n');
+      }
       
       const studentName = user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || 'Student';
       const { error } = await supabase.from('assignment_progress').upsert(
