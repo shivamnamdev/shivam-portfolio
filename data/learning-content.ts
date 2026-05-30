@@ -207,10 +207,11 @@ export const courseCurriculumMap: Record<string, any[]> = {
     moduleTitle: "Module 5: Important Python Modules",
     videoIds:[
       "TXRqDxL0Ob0",
+      "AZshKqAy0Qc",
+      "WhP2F-xk3Kk"
       // "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
     ], githubAssignments: {
       "": {
-          title: "Virtual Env and pip Package"
         },
       }
     }
@@ -378,6 +379,7 @@ export const courseCurriculumMap: Record<string, any[]> = {
   {
     moduleTitle: "Module 5: Important Python Modules",
     videoIds:[
+
        // 4. Lists & Advanced Operations
       // "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
     ]
