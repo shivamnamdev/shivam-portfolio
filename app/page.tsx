@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Terminal, Shield, Music, Code2, Award, Briefcase, Mail, ChevronRight, Download, MapPin, Sparkles, Cpu, GitMerge, FileCode2, Layers } from 'lucide-react';
+import { Terminal, Shield, Music, Code2, Award, Briefcase, Mail, ChevronRight, Github, ExternalLink, Download, MapPin, Sparkles, Cpu, GitMerge, FileCode2, Layers, Cloud, Container } from 'lucide-react';
 import SpotlightCard from '@/components/SpotlightCard'; 
 
 export default function PortfolioPage() {
@@ -32,13 +32,14 @@ export default function PortfolioPage() {
       {/* FLOATING MAC-STYLE DOCK */}
       <motion.nav 
         initial={{ y: 100, opacity: 0, x: '-50%' }} animate={{ y: 0, opacity: 1, x: '-50%' }} transition={{ delay: 0.5, duration: 0.8 }}
-        className="fixed bottom-8 left-1/2 z-50 flex items-center gap-2 px-3 py-2 rounded-full bg-[#121212]/90 backdrop-blur-xl border border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.8)]"
+        className="fixed bottom-8 left-1/2 z-50 flex items-center gap-2 md:gap-4 px-4 py-3 rounded-full bg-[#121212]/90 backdrop-blur-xl border border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.8)]"
       >
         <button onClick={() => scrollTo('hero')} className="p-3 rounded-full text-stone-400 hover:text-amber-500 hover:bg-white/5 transition-all group relative"><Terminal size={20}/><span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-xs font-bold px-2 py-1 rounded border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">Home</span></button>
         <button onClick={() => scrollTo('experience')} className="p-3 rounded-full text-stone-400 hover:text-amber-500 hover:bg-white/5 transition-all group relative"><Briefcase size={20}/><span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-xs font-bold px-2 py-1 rounded border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">Experience</span></button>
         <button onClick={() => scrollTo('contact')} className="p-3 rounded-full text-stone-400 hover:text-amber-500 hover:bg-white/5 transition-all group relative"><Mail size={20}/><span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-xs font-bold px-2 py-1 rounded border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">Contact</span></button>
         <div className="w-px h-6 bg-white/10 mx-2"></div>
-        <button onClick={() => window.open('/python-syllabus.pdf', '_blank')} className="px-5 py-2.5 rounded-full bg-amber-500 text-black font-black text-sm hover:scale-105 transition-transform flex items-center gap-2">Resume <Download size={14}/></button>
+        {/* 🚨 THE FIX: Changed to download the actual resume! */}
+        <a href="/shivam-namdev-resume.pdf" download className="px-5 py-2.5 rounded-full bg-amber-500 text-black font-black text-sm hover:scale-105 transition-transform flex items-center gap-2">Resume <Download size={14}/></a>
       </motion.nav>
 
       {/* 🚨 THE MASSIVE, DENSE BENTO GRID */}
@@ -46,7 +47,7 @@ export default function PortfolioPage() {
         
         <div id="hero" className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-5 auto-rows-[180px] md:auto-rows-[220px]">
           
-          {/* BENTO 1: Main Intro (Spans 4 columns) */}
+          {/* BENTO 1: Main Intro */}
           <SpotlightCard className="col-span-1 md:col-span-4 row-span-2 p-8 md:p-12 flex flex-col justify-between bg-gradient-to-br from-[#111] to-black">
             <div className="flex justify-between items-start">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-amber-500/20 bg-amber-500/10 text-xs text-amber-500 font-bold uppercase tracking-widest">
@@ -61,17 +62,18 @@ export default function PortfolioPage() {
                 Shivam <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">Namdev.</span>
               </h1>
               <p className="text-lg md:text-xl text-stone-400 font-medium max-w-2xl leading-relaxed">
-                QA Lead & Agentic AI Specialist. I design scalable, reliable Test Automation Frameworks and eliminate fragile testing pipelines.
+                Lead QA Engineer with 6.5+ years of experience in backend, microservices, and cloud-native applications. I build automated testing suites for REST APIs and containerized environments.
               </p>
             </div>
           </SpotlightCard>
 
-          {/* BENTO 2: Profile Picture / Vibe (Spans 2 columns) */}
+          {/* BENTO 2: Profile Picture */}
           <SpotlightCard className="col-span-1 md:col-span-2 row-span-2 p-0 relative group">
             <img src="/shivam.png" alt="Shivam" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500 grayscale hover:grayscale-0" onError={(e) => e.currentTarget.style.display='none'} />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-            <div className="absolute bottom-6 left-6 right-6">
-              <div className="flex items-center gap-2 text-white font-bold text-lg"><Briefcase className="text-amber-500" size={18}/> 7+ Years Exp.</div>
+            <div className="absolute bottom-6 left-6 right-6 flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-white font-bold text-lg"><Briefcase className="text-amber-500" size={18}/> 6.5+ Years Exp.</div>
+              <div className="flex items-center gap-2 text-stone-300 font-medium text-sm"><Award className="text-amber-500" size={16}/> ISTQB Certified QA</div>
             </div>
           </SpotlightCard>
 
@@ -88,25 +90,25 @@ export default function PortfolioPage() {
             </div>
           </SpotlightCard>
 
-          {/* BENTO 4: The Unique Story (Martial Arts -> Music -> Code) */}
+          {/* BENTO 4: The Tech Architect */}
           <SpotlightCard className="col-span-1 md:col-span-2 row-span-1 p-6 flex flex-col justify-between bg-gradient-to-r from-stone-900 to-[#0a0a0a]">
             <div className="flex justify-between items-center">
-              <p className="text-xs text-stone-500 font-bold uppercase tracking-widest">The Journey</p>
+              <p className="text-xs text-stone-500 font-bold uppercase tracking-widest">Core Philosophy</p>
               <div className="flex gap-2">
-                <Shield size={16} className="text-stone-400" />
-                <Music size={16} className="text-stone-400" />
+                <Cloud size={16} className="text-stone-400" />
+                <Terminal size={16} className="text-stone-400" />
               </div>
             </div>
             <p className="text-stone-300 text-sm font-medium leading-relaxed">
-              From the World Karate Championships to Berklee Music Production, and now Enterprise Tech. <strong className="text-white">Excellence is a habit, not a one-time act.</strong>
+              Proven expertise in API-driven systems, networking concepts (TCP/IP, DNS), and CI/CD pipelines across <strong className="text-white">AWS, Azure, and GCP.</strong>
             </p>
           </SpotlightCard>
 
-          {/* BENTO 5: Tech Stack Wall */}
+          {/* BENTO 5: Containerization & Cloud */}
           <SpotlightCard className="col-span-1 md:col-span-2 row-span-1 p-6 overflow-hidden flex flex-col justify-center bg-[#0a0a0a]">
-             <p className="text-xs text-stone-500 font-bold uppercase tracking-widest mb-4">Tech Arsenal</p>
+             <p className="text-xs text-stone-500 font-bold uppercase tracking-widest mb-4">Infrastructure & Scale</p>
              <div className="flex flex-wrap gap-2">
-               {['Python', 'Pytest', 'Playwright', 'Selenium', 'Terraform', 'Copilot', 'CI/CD'].map((skill, i) => (
+               {['Docker', 'Kubernetes', 'Jenkins', 'GitHub Actions', 'GitLab CI/CD'].map((skill, i) => (
                  <span key={i} className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs font-mono text-stone-300">
                    {skill}
                  </span>
@@ -114,17 +116,16 @@ export default function PortfolioPage() {
              </div>
           </SpotlightCard>
 
-          {/* BENTO 6: Measurable Impact / Metrics (Spans Full Width) */}
+          {/* BENTO 6: Measurable Impact / Metrics (Updated with Real Resume Numbers!) */}
           <SpotlightCard className="col-span-1 md:col-span-4 lg:col-span-6 row-span-1 p-0 flex flex-col justify-center bg-amber-500/5 border-amber-500/20">
             <div className="flex overflow-hidden py-4">
-              {/* Marquee Animation (Ensure animate-marquee is in tailwind.config) */}
               <div className="flex animate-marquee whitespace-nowrap min-w-full">
                 {[...Array(3)].map((_, i) => (
                   <div key={i} className="flex items-center gap-12 px-6">
-                    <div className="flex items-center gap-3"><Cpu size={32} className="text-amber-500"/><span className="text-2xl font-black text-white">-30% Dev Time <span className="text-stone-500 text-lg font-medium">via Copilot AI</span></span></div>
-                    <div className="flex items-center gap-3"><Layers size={32} className="text-amber-500"/><span className="text-2xl font-black text-white">-40% Manual <span className="text-stone-500 text-lg font-medium">Testing Effort</span></span></div>
-                    <div className="flex items-center gap-3"><GitMerge size={32} className="text-amber-500"/><span className="text-2xl font-black text-white">+50% Speed <span className="text-stone-500 text-lg font-medium">in Regression</span></span></div>
-                    <div className="flex items-center gap-3"><FileCode2 size={32} className="text-amber-500"/><span className="text-2xl font-black text-white">>85% Coverage <span className="text-stone-500 text-lg font-medium">API & UI</span></span></div>
+                    <div className="flex items-center gap-3"><Layers size={32} className="text-amber-500"/><span className="text-2xl font-black text-white">+35% Test <span className="text-stone-500 text-lg font-medium">Coverage</span></span></div>
+                    <div className="flex items-center gap-3"><Cpu size={32} className="text-amber-500"/><span className="text-2xl font-black text-white">-60% Manual <span className="text-stone-500 text-lg font-medium">Regression Efforts</span></span></div>
+                    <div className="flex items-center gap-3"><Shield size={32} className="text-amber-500"/><span className="text-2xl font-black text-white">100+ Critical <span className="text-stone-500 text-lg font-medium">Issues Triaged</span></span></div>
+                    <div className="flex items-center gap-3"><FileCode2 size={32} className="text-amber-500"/><span className="text-2xl font-black text-white">AWS & GCP <span className="text-stone-500 text-lg font-medium">Cloud Deployments</span></span></div>
                   </div>
                 ))}
               </div>
@@ -142,90 +143,131 @@ export default function PortfolioPage() {
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
-            {/* Job 1 */}
             <SpotlightCard className="p-8 bg-[#0a0a0a]">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="text-xl font-bold text-white">Technical Lead</h3>
+                  <h3 className="text-xl font-bold text-white">Lead QA Engineer</h3>
                   <p className="text-amber-500 font-bold text-sm">Neurealm</p>
                 </div>
                 <span className="text-xs font-mono text-stone-500 bg-white/5 px-2 py-1 rounded">Aug 2025 - Present</span>
               </div>
               <ul className="space-y-2 text-stone-400 text-sm">
-                <li className="flex gap-2"><span>▹</span> Leading a cross-functional QA automation team for enterprise apps.</li>
-                <li className="flex gap-2"><span>▹</span> Driving adoption of GitHub Copilot and agentic AI-assisted coding.</li>
-                <li className="flex gap-2"><span>▹</span> Setting QA strategy and mentoring engineers to improve defect detection.</li>
+                <li className="flex gap-2"><span>▹</span> Defined QA strategy, led cross-team quality initiatives, and ensured consistent quality governance.</li>
+                <li className="flex gap-2"><span>▹</span> Conducted technical interviews and drove onboarding plans for new hires.</li>
+                <li className="flex gap-2"><span>▹</span> Mentored engineers to maintain high standards of test automation.</li>
               </ul>
             </SpotlightCard>
 
-            {/* Job 2 */}
             <SpotlightCard className="p-8 bg-[#0a0a0a]">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="text-xl font-bold text-white">Senior Software Eng.</h3>
+                  <h3 className="text-xl font-bold text-white">Senior QA Engineer</h3>
                   <p className="text-amber-500 font-bold text-sm">Neurealm</p>
                 </div>
                 <span className="text-xs font-mono text-stone-500 bg-white/5 px-2 py-1 rounded">Jul 2021 - Aug 2025</span>
               </div>
               <ul className="space-y-2 text-stone-400 text-sm">
-                <li className="flex gap-2"><span>▹</span> Designed Python + Pytest frameworks, reducing manual testing by 40%.</li>
-                <li className="flex gap-2"><span>▹</span> Led migration of existing Selenium suites to modular architecture.</li>
-                <li className="flex gap-2"><span>▹</span> Introduced Terraform-based test infrastructure for cloud environments.</li>
+                <li className="flex gap-2"><span>▹</span> Maintained automation framework ownership and CI/CD integration across multiple projects.</li>
+                <li className="flex gap-2"><span>▹</span> Held release-level quality accountability for backend and cloud-native applications.</li>
+                <li className="flex gap-2"><span>▹</span> Enhanced test data management within Docker/Kubernetes environments.</li>
               </ul>
             </SpotlightCard>
 
-            {/* Job 3 */}
             <SpotlightCard className="p-8 bg-[#0a0a0a]">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="text-xl font-bold text-white">Software Engineer</h3>
+                  <h3 className="text-xl font-bold text-white">QA Engineer</h3>
                   <p className="text-stone-400 font-bold text-sm">Neurealm</p>
                 </div>
-                <span className="text-xs font-mono text-stone-500 bg-white/5 px-2 py-1 rounded">Dec 2018 - Jun 2021</span>
+                <span className="text-xs font-mono text-stone-500 bg-white/5 px-2 py-1 rounded">May 2019 - Jun 2021</span>
               </div>
-              <p className="text-stone-400 text-sm">Developed Selenium, Protractor, and Pytest automation suites for mission-critical applications. Implemented parallel test execution pipelines, improving speed by 50%.</p>
+              <ul className="space-y-2 text-stone-400 text-sm">
+                <li className="flex gap-2"><span>▹</span> Executed UI and API testing, owned test execution cycles, and managed defect lifecycles from discovery to closure.</li>
+                <li className="flex gap-2"><span>▹</span> Performed extensive backend and API testing covering DNS, DHCP, and networking-level validation.</li>
+                <li className="flex gap-2"><span>▹</span> Debugged complex issues using logs, curl, and service-level traces.</li>
+              </ul>
+            </SpotlightCard>
+            
+            {/* The "Core Responsibilities" Highlights Block */}
+            <SpotlightCard className="p-8 bg-gradient-to-br from-[#111] to-[#050505] border-amber-500/20">
+              <h3 className="text-xl font-bold text-white mb-4">Core Automation Achievements</h3>
+              <ul className="space-y-3 text-stone-300 text-sm leading-relaxed">
+                <li className="flex items-start gap-2"><ChevronRight size={16} className="text-amber-500 shrink-0 mt-0.5"/> Designed automated testing suites for REST APIs using Python (Pytest + Requests), validating DHCP/DNS services.</li>
+                <li className="flex items-start gap-2"><ChevronRight size={16} className="text-amber-500 shrink-0 mt-0.5"/> Integrated automated tests into Jenkins CI/CD pipelines in containerized environments.</li>
+                <li className="flex items-start gap-2"><ChevronRight size={16} className="text-amber-500 shrink-0 mt-0.5"/> Validated deployments across AWS (EC2, S3, Lambda), Azure, and GCP ensuring absolute reliability.</li>
+              </ul>
             </SpotlightCard>
 
-            {/* Job 4 */}
-            <SpotlightCard className="p-8 bg-[#0a0a0a]">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-bold text-white">Intern</h3>
-                  <p className="text-stone-400 font-bold text-sm">Veritas Technologies</p>
+          </div>
+        </section>
+
+        {/* 5. SKILLS RADAR & CERTIFICATIONS */}
+        <section className="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 mt-24">
+          <SpotlightCard className="col-span-1 lg:col-span-2 p-8 bg-[#0a0a0a]">
+            <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-2"><Code2 className="text-amber-500" /> Technical Arsenal</h3>
+            
+            <div className="space-y-6">
+              <div>
+                <p className="text-xs text-stone-500 font-bold uppercase tracking-widest mb-3">Automation & Scripting</p>
+                <div className="flex flex-wrap gap-2">
+                  {['PyTest', 'Selenium', 'Protractor', 'Jenkins', 'Python', 'Shell Scripting'].map((skill, i) => (
+                    <span key={i} className="px-3 py-1.5 rounded-lg border border-white/10 bg-[#121212] text-stone-300 font-mono text-xs">{skill}</span>
+                  ))}
                 </div>
-                <span className="text-xs font-mono text-stone-500 bg-white/5 px-2 py-1 rounded">Jan 2018 - Jun 2018</span>
               </div>
-              <p className="text-stone-400 text-sm">Automated 3 major manual deployment tasks using Shell scripting, reducing deployment time by ~40% and minimizing human error.</p>
+              <div>
+                <p className="text-xs text-stone-500 font-bold uppercase tracking-widest mb-3">Cloud & Containerization</p>
+                <div className="flex flex-wrap gap-2">
+                  {['Docker', 'Kubernetes', 'AWS (EC2, S3, Lambda)', 'Azure', 'GCP', 'Terraform', 'ARM'].map((skill, i) => (
+                    <span key={i} className="px-3 py-1.5 rounded-lg border border-white/10 bg-[#121212] text-stone-300 font-mono text-xs">{skill}</span>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-stone-500 font-bold uppercase tracking-widest mb-3">Networking & Management</p>
+                <div className="flex flex-wrap gap-2">
+                  {['TCP/IP', 'UDP', 'DNS', 'DHCP', 'SSL/TLS', 'JIRA', 'Azure Devops', 'TestRails'].map((skill, i) => (
+                    <span key={i} className="px-3 py-1.5 rounded-lg border border-white/10 bg-[#121212] text-stone-300 font-mono text-xs">{skill}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </SpotlightCard>
+
+          <div className="col-span-1 lg:col-span-1 flex flex-col gap-6">
+            <SpotlightCard className="p-8 bg-[#0a0a0a] flex-grow">
+              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><Award className="text-amber-500" /> Certifications</h3>
+              <div className="space-y-4">
+                {[
+                  { name: "ISTQB Foundation Level", org: "ITB" },
+                  { name: "Azure Solution Architect Expert", org: "Microsoft (2021-22)" },
+                  { name: "GCP Professional Cloud Architect", org: "Google (2024-26)" },
+                  { name: "Associate Data Center Virtualization", org: "VMware" }
+                ].map((cert, i) => (
+                  <div key={i} className="pb-3 border-b border-white/5 last:border-0 last:pb-0">
+                    <h4 className="text-stone-200 font-bold text-sm leading-tight">{cert.name}</h4>
+                    <p className="text-stone-500 text-xs font-mono mt-1">{cert.org}</p>
+                  </div>
+                ))}
+              </div>
+            </SpotlightCard>
+            
+            <SpotlightCard className="p-6 bg-gradient-to-r from-amber-500/10 to-[#0a0a0a] border-amber-500/20">
+              <h4 className="text-sm font-bold text-amber-500 uppercase tracking-widest mb-2">Honors</h4>
+              <p className="text-white font-bold text-lg">Star Performer of the Quarter</p>
+              <p className="text-stone-400 text-sm font-mono mt-1">2024</p>
             </SpotlightCard>
           </div>
         </section>
 
-        {/* 🚨 CONTACT / CERTIFICATIONS */}
-        <section id="contact" className="w-full mt-24 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 6. CONTACT TERMINAL */}
+        <section id="contact" className="w-full max-w-2xl mx-auto text-center pt-24">
+          <h2 className="text-4xl font-display font-black text-white mb-4">Ready to <span className="text-amber-500">Collaborate?</span></h2>
+          <p className="text-stone-400 mb-8">Whether you need enterprise automation architecture or a private consultation, my inbox is open.</p>
           
-          <SpotlightCard className="col-span-1 lg:col-span-1 p-8 bg-[#0a0a0a]">
-            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><Award className="text-amber-500" /> Certifications</h3>
-            <div className="space-y-4">
-              {[
-                { name: "Certified Tester Foundation Level (CTFL)", org: "ISTQB" },
-                { name: "VMware Certified Technical Associate - DCV", org: "VMware (2023)" },
-                { name: "Qualified DDI Associate (DDIA)", org: "Infoblox" },
-                { name: "Complete Guide to GitHub Copilot", org: "Microsoft Press" }
-              ].map((cert, i) => (
-                <div key={i} className="pb-4 border-b border-white/5 last:border-0 last:pb-0">
-                  <h4 className="text-stone-200 font-bold text-sm">{cert.name}</h4>
-                  <p className="text-stone-500 text-xs font-mono mt-1">{cert.org}</p>
-                </div>
-              ))}
-            </div>
-          </SpotlightCard>
-
-          <SpotlightCard className="col-span-1 lg:col-span-2 p-8 md:p-12 bg-gradient-to-br from-[#121212] to-black">
-            <h2 className="text-3xl md:text-4xl font-display font-black text-white mb-2">Ready to <span className="text-amber-500">Collaborate?</span></h2>
-            <p className="text-stone-400 mb-8">Whether you need enterprise automation architecture or a private consultation, my inbox is open.</p>
-            
-            {/* Form posts to your custom email API! */}
-            <form action="https://shivamnamdev.com/api/send-email" method="POST" className="flex flex-col gap-4 relative z-10">
+          <SpotlightCard className="p-8 bg-[#0a0a0a]">
+            {/* Sending them to the main domain's API bypasses CORS limitations and triggers your email securely! */}
+            <form action="https://shivamnamdev.com/api/send-email" method="POST" className="flex flex-col gap-4 text-left relative z-10">
               <input type="hidden" name="subject" value="New Inquiry from Portfolio Website!" />
               <div className="flex flex-col sm:flex-row gap-4">
                 <input type="text" name="name" required placeholder="Your Name" className="w-full px-5 py-4 rounded-xl border border-white/10 bg-black text-white focus:outline-none focus:border-amber-500 transition-all font-sans" />
@@ -237,7 +279,6 @@ export default function PortfolioPage() {
               </button>
             </form>
           </SpotlightCard>
-
         </section>
 
       </main>
