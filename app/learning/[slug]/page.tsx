@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useUser, UserButton } from '@clerk/nextjs';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, Code2, TerminalSquare, Award, FileCheck, Eye, RefreshCw, X, Plus, FileText, ThumbsUp, Share2, ShieldAlert } from 'lucide-react';
+import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, Code2, TerminalSquare, Award, FileCheck, Eye, RefreshCw, X, Plus, FileText, ThumbsUp, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { courseCurriculumMap } from '@/data/learning-content';
 import { activeCourses } from '@/data/courses';
@@ -35,10 +35,6 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   const [isLoading, setIsLoading] = useState(true);
   const [isMarking, setIsMarking] = useState(false);
   
-  // 🚨 EXAM & TOAST STATES
-  const [examStatus, setExamStatus] = useState({ is_passed: false, attempts_used: 0 });
-  const [toastConfig, setToastConfig] = useState<{show: boolean, title: string, desc: string, type: 'success'|'error'}>({ show: false, title: "", desc: "", type: "success" });
-
   const [activeTab, setActiveTab] = useState<'description' | 'qa' | 'practice' | 'visualize'>('description');
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -57,7 +53,10 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   const [isSubmittingAssignment, setIsSubmittingAssignment] = useState(false);
   const [isAskingAI, setIsAskingAI] = useState(false);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
-  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
+  
+  // 🚨 Exam & Toast States
+  const [examStatus, setExamStatus] = useState({ is_passed: false, attempts_used: 0 });
+  const [toastConfig, setToastConfig] = useState<{show: boolean, title: string, desc: string, type: 'success'|'error'}>({ show: false, title: "", desc: "", type: "success" });
   
   const [officialSolutionSteps, setOfficialSolutionSteps] = useState<string[]>([]);
   const [showSolutionModal, setShowSolutionModal] = useState(false);
@@ -70,6 +69,11 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
 
   const courseDetails = activeCourses.find(c => c.slug === params.slug);
 
+  const showToast = (title: string, desc: string, type: 'success' | 'error' = 'success') => {
+    setToastConfig({ show: true, title, desc, type });
+    setTimeout(() => setToastConfig(prev => ({ ...prev, show: false })), 5000);
+  };
+
   useEffect(() => {
     const loadPyodideScript = async () => {
       if ((window as any).loadPyodide) return;
@@ -80,18 +84,12 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
           const py = await (window as any).loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/" });
           setPyodide(py);
           setIsPyodideLoading(false);
-        } catch (err) {}
+        } catch (err) { console.error("Failed to load Pyodide:", err); }
       };
       document.body.appendChild(script);
     };
     loadPyodideScript();
   },[]);
-
-  // 🚨 TOAST HELPER FUNCTION
-  const showToast = (title: string, desc: string, type: 'success' | 'error' = 'success') => {
-    setToastConfig({ show: true, title, desc, type });
-    setTimeout(() => setToastConfig(prev => ({ ...prev, show: false })), 5000);
-  };
 
   const loadGithubAssignment = async (assignmentObj: any) => {
     setIsFetchingCode(true);
@@ -169,7 +167,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
         const [vidRes, assRes, examRes] = await Promise.all([
           supabase.from('video_progress').select('video_id').eq('user_id', user.id).eq('course_slug', params.slug),
           supabase.from('assignment_progress').select('video_id').eq('user_id', user.id).eq('course_slug', params.slug),
-          supabase.from('exam_progress').select('*').eq('user_id', user.id).eq('course_slug', params.slug).maybeSingle()
+          supabase.from('exam_progress').select('*').eq('user_id', user.id).eq('course_slug', params.slug).single()
         ]);
 
         setCompletedVideos(vidRes.data ? vidRes.data.map(p => p.video_id) :[]);
@@ -217,6 +215,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
               if (found) { targetVideo = found; break; }
             }
           }
+          
           const initialVideo = targetVideo || enrichedModules[0].videos[0];
           setActiveVideo(initialVideo);
           
@@ -249,10 +248,9 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   }, [activeVideo, user]);
 
   const handleVideoChange = (video: any) => {
-    // 🚨 GATED CONTENT CHECK
     const isLockedAdvanced = video.githubAssignment?.isAdvanced && !examStatus.is_passed && !isAdmin;
     if (isLockedAdvanced) {
-      showToast("🔒 Locked Video", "You must pass the Final Exam with 80% to unlock advanced concepts!", "error");
+      alert("🔒 This advanced lesson is locked! You must pass the Final Exam with 80% or higher to unlock it.");
       return;
     }
 
@@ -330,10 +328,10 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     } catch (err) {}
   };
 
-  const handleAdminShare = () => {
+  const handleAdminShare = async () => {
     const shareUrl = `https://shivamnamdev.com/share/${activeVideo.youtubeId}?t=${Date.now()}`;
-    const shareText = `🚀 Ready to Master Python?\n\nCheck out this lesson: "${activeVideo?.title}" from Shivam Academy!\n\n🎓 Watch directly here:\n${shareUrl}\n\n💻 Enroll here:\nhttps://shivamnamdev.com/courses/${params.slug}`;
-    if (navigator.share) { try { navigator.share({ title: activeVideo?.title || "Shivam Academy", text: shareText }); } catch (err) {} } 
+    const shareText = `🚀 Ready to Master Python?\n\nCheck out this exclusive lesson: *${activeVideo?.title}* from Shivam Academy!\n\n🎓 Click here to watch the video directly:\n${shareUrl}\n\n💻 Enroll here to unlock the full platform, interactive labs, and the AI code tutor:\nhttps://shivamnamdev.com/courses/${params.slug}`;
+    if (navigator.share) { try { await navigator.share({ title: activeVideo?.title || "Shivam Academy", text: shareText }); } catch (err) {} } 
     else { navigator.clipboard.writeText(shareText); alert("Branded share message copied!"); }
   };
 
@@ -357,36 +355,25 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     } finally { setIsMarking(false); }
   };
 
-  // 🚨 THE EXAM & ASSIGNMENT SUBMISSION ENGINE
   const submitAssignment = async () => {
     if (!user || !activeVideo || isSubmittingAssignment) return;
     
     const isExam = activeVideo.githubAssignment?.isExam;
     
-    // EXAM LOGIC
     if (isExam) {
       if (examStatus.attempts_used >= 5 && !examStatus.is_passed) {
         showToast("Maximum Attempts Reached", "You have used all 5 attempts for this exam.", "error");
         return;
       }
       setIsSubmittingAssignment(true);
+      setOutput("Running Full Exam Auto-Grader...");
+      
       try {
         await pyodide.runPythonAsync(`
 import sys
 import io
-import builtins
-from js import prompt
 sys.stdout = io.StringIO()
 sys.stderr = io.StringIO()
-def custom_input(p=""):
-    sys.stdout.write(str(p))
-    val = prompt(str(p))
-    if val is None:
-        sys.stdout.write("\\n")
-        raise EOFError("EOF when reading a line")
-    sys.stdout.write(val + "\\n")
-    return val
-builtins.input = custom_input
         `);
         
         const finalStepFiles = [...stepFiles];
@@ -403,6 +390,8 @@ builtins.input = custom_input
         const stdout = pyodide.runPython("sys.stdout.getvalue()");
         const match = stdout.match(/EXAM_SCORE:\s*(\d+)/);
         const score = match ? parseInt(match[1]) : 0;
+
+        setOutput(stdout || "Failed to generate exam report.");
 
         const isPassed = score >= 80;
         const newAttempts = examStatus.attempts_used + 1;
@@ -432,7 +421,7 @@ builtins.input = custom_input
       return; 
     }
 
-    // NORMAL ASSIGNMENT LOGIC
+    // Normal Assignment
     setIsSubmittingAssignment(true);
     try {
       const isCarryOver = activeVideo?.githubAssignment?.carryOverCode;
@@ -462,13 +451,11 @@ builtins.input = custom_input
         supabase.from('admin_activity_log').insert([{ type: 'submission', message: `New Code Submission: ${activeVideo.githubAssignment?.title || activeVideo.title}`, user_email: user.primaryEmailAddress?.emailAddress }]).then();
       }
       
-      setShowSuccessOverlay(true);
-      setTimeout(() => setShowSuccessOverlay(false), 4000);
-
+      showToast("Success!", "Your code has been securely saved.", "success");
       if (officialSolutionSteps.length > 0) setShowSolutionModal(true);
 
     } catch (err) {
-      showToast("Error", "Failed to submit assignment. Please try again.", "error");
+      showToast("Error", "Failed to submit assignment.", "error");
     } finally {
       setIsSubmittingAssignment(false);
     }
@@ -517,7 +504,9 @@ builtins.input = custom_input
       const stderr = pyodide.runPython("sys.stderr.getvalue()");
       let finalOutput = stdout;
 
-      if (!stderr && activeVideo?.githubAssignment?.testCode) {
+      const isExam = activeVideo?.githubAssignment?.isExam;
+
+      if (!stderr && activeVideo?.githubAssignment?.testCode && !isExam) {
         try {
           await pyodide.runPythonAsync(activeVideo.githubAssignment.testCode);
           finalOutput += "\n\n✅ --------------------------\n✅ ALL TESTS PASSED! Great job.\n✅ --------------------------";
@@ -525,6 +514,10 @@ builtins.input = custom_input
           const errorMsg = testError.message.split('AssertionError:')[1]?.strip() || "Test Failed: Output did not match expected results.";
           finalOutput += `\n\n❌ --------------------------\n❌ ${errorMsg}\n❌ --------------------------`;
         }
+      }
+
+      if (isExam && !stderr) {
+        finalOutput += "\n\n(Note: This is an Exam. Your code will be officially graded when you click 'Submit Exam' on the final step!)";
       }
 
       try {
@@ -697,7 +690,6 @@ builtins.input = custom_input
                     const isVidDone = completedVideos.includes(video.id);
                     const isAssDone = completedAssignments.includes(video.id);
                     
-                    // 🚨 NEW: IS THIS AN ADVANCED LOCKED VIDEO?
                     const isLockedAdvanced = video.githubAssignment?.isAdvanced && !examStatus.is_passed && !isAdmin;
 
                     return (
@@ -705,7 +697,7 @@ builtins.input = custom_input
                         key={video.id} 
                         onClick={() => {
                           if (isLockedAdvanced) {
-                            showToast("🔒 Locked Video", "Pass the Final Exam with 80% to unlock advanced concepts!", "error");
+                            alert("🔒 This advanced lesson is locked! You must pass the Final Exam with 80% or higher to unlock it.");
                             return;
                           }
                           handleVideoChange(video);
@@ -763,7 +755,7 @@ builtins.input = custom_input
             )}
           </AnimatePresence>
 
-          <div className="w-full p-4 lg:p-8 flex flex-col gap-6 flex-grow">
+          <div className="max-w-[1200px] mx-auto w-full p-4 lg:p-8 flex flex-col gap-6 flex-grow">
             
             {activeVideo ? (
               <div className="w-full bg-black rounded-2xl overflow-hidden shadow-2xl aspect-video border border-white/10 relative select-none shrink-0">
@@ -801,20 +793,14 @@ builtins.input = custom_input
                   </div>
                   
                   <div className="flex flex-wrap items-center gap-3 shrink-0">
-                    <button onClick={toggleLike} className={`px-4 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors border ${hasLiked ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' : 'bg-[#1a1a1a] text-stone-400 border-stone-800 hover:bg-[#222]'}`}>
-                      <ThumbsUp size={18} className={hasLiked ? "fill-blue-400" : ""} /> {likesCount} Likes
+                    <button onClick={async () => {
+                      const shareUrl = `https://shivamnamdev.com/share/${activeVideo.youtubeId}?t=${Date.now()}`;
+                      const shareText = `🚀 Ready to Master Python?\n\nCheck out this exclusive lesson: *${activeVideo?.title}* from Shivam Academy!\n\n🎓 Click here to watch the video directly:\n${shareUrl}\n\n💻 Enroll here to unlock the full platform:\nhttps://shivamnamdev.com/courses/${params.slug}`;
+                      if (navigator.share) { try { await navigator.share({ title: activeVideo?.title || "Shivam Academy", text: shareText }); } catch (err) {} } 
+                      else { navigator.clipboard.writeText(shareText); alert("Branded share message copied!"); }
+                    }} className="px-4 py-3 rounded-xl bg-purple-500/10 text-purple-400 font-bold text-sm flex items-center justify-center gap-2 border border-purple-500/20 hover:bg-purple-500/20 transition-colors">
+                      <Share2 size={18} /> Share
                     </button>
-
-                    {isAdmin && (
-                      <button onClick={async () => {
-                        const shareUrl = `https://shivamnamdev.com/share/${activeVideo.youtubeId}?t=${Date.now()}`;
-                        const shareText = `🚀 Ready to Master Python?\n\nCheck out this exclusive lesson: *${activeVideo?.title}* from Shivam Academy!\n\n🎓 Click here to watch the video directly:\n${shareUrl}\n\n💻 Enroll here to unlock the full platform:\nhttps://shivamnamdev.com/courses/${params.slug}`;
-                        if (navigator.share) { try { await navigator.share({ title: activeVideo?.title || "Shivam Academy", text: shareText }); } catch (err) {} } 
-                        else { navigator.clipboard.writeText(shareText); alert("Branded share message copied!"); }
-                      }} className="px-4 py-3 rounded-xl bg-purple-500/10 text-purple-400 font-bold text-sm flex items-center justify-center gap-2 border border-purple-500/20 hover:bg-purple-500/20 transition-colors">
-                        <Share2 size={18} /> Share
-                      </button>
-                    )}
 
                     {isVideoCompleted ? (
                       <button disabled className="px-6 py-3.5 rounded-xl bg-green-500/10 text-green-400 font-bold text-sm flex items-center justify-center gap-2 border border-green-500/20 shadow-sm">
@@ -837,7 +823,7 @@ builtins.input = custom_input
                   <button onClick={() => setActiveTab('qa')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'qa' ? 'text-amber-500 border-b-2 border-amber-500 bg-[#0a0a0a]' : 'text-stone-400 hover:text-stone-200'}`}><MessageCircle size={18} /> Q&A ({comments.length})</button>
                   {activeVideo.githubAssignment && (
                     <>
-                      <button onClick={() => setActiveTab('practice')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'practice' ? 'text-amber-500 border-b-2 border-amber-500 bg-[#0a0a0a]' : 'text-stone-400 hover:text-stone-200'}`}><Code size={18} /> {activeVideo.githubAssignment.isExam ? "Final Exam 🏆" : "Practice"} {isAssignmentCompleted && "✅"}</button>
+                      <button onClick={() => setActiveTab('practice')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'practice' ? 'text-amber-500 border-b-2 border-amber-500 bg-[#0a0a0a]' : 'text-stone-400 hover:text-stone-200'}`}><Code size={18} /> Practice {isAssignmentCompleted && "✅"}</button>
                       <button onClick={() => setActiveTab('visualize')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'visualize' ? 'text-amber-500 border-b-2 border-amber-500 bg-[#0a0a0a]' : 'text-stone-400 hover:text-stone-200'}`}><Eye size={18} /> Visualize</button>
                     </>
                   )}
@@ -854,7 +840,7 @@ builtins.input = custom_input
                         <div className="flex justify-end"><button type="submit" disabled={isPosting} className="px-6 py-2.5 rounded-xl bg-amber-500 text-black font-bold text-sm flex items-center gap-2 hover:bg-amber-400 transition-colors disabled:opacity-70 shadow-md">{isPosting ? <Loader2 size={16} className="animate-spin"/> : <Send size={16} />} Post Question</button></div>
                       </form>
                       <div className="space-y-6 pt-6 border-t border-white/10">
-                        {comments.length === 0 ? <p className="text-center text-stone-400 text-sm italic py-4">No questions yet. Start the discussion!</p> : comments.map((comment) => (
+                        {comments.length === 0 ? <p className="text-center text-stone-500 text-sm italic py-4">No questions yet. Start the discussion!</p> : comments.map((comment) => (
                           <div key={comment.id} className="flex gap-4">
                             <img src={comment.user_image || "https://www.gravatar.com/avatar/?d=mp"} alt="User" className="w-10 h-10 rounded-full border border-white/10 shadow-sm" />
                             <div className="flex-grow bg-[#121212] p-4 rounded-2xl rounded-tl-none border border-white/5">
@@ -870,7 +856,7 @@ builtins.input = custom_input
                   {activeTab === 'practice' && activeVideo.githubAssignment && (
                     <div className="flex flex-col lg:flex-row flex-grow bg-[#0d1117]">
                       
-                      <div className="w-full lg:w-1/3 flex flex-col border-b xl:border-b-0 xl:border-r border-stone-800 bg-[#161b22] shrink-0">
+                      <div className="w-full lg:w-1/3 flex flex-col border-r border-stone-800 bg-[#161b22] shrink-0">
                         <div className="flex flex-col items-center p-4 border-b border-stone-800 bg-[#0d1117]">
                           <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3">Question {currentStepIndex + 1} of {assignmentSteps.length}</span>
                           <div className="flex gap-1.5 w-full justify-center">
@@ -901,7 +887,7 @@ builtins.input = custom_input
                           </button>
 
                           <div className="flex items-center gap-2">
-                            {officialSolutionSteps.length > 0 && !activeVideo.githubAssignment.isExam && (
+                            {officialSolutionSteps.length > 0 && (
                               <button onClick={() => setShowSolutionModal(true)} className="px-3 py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg text-xs font-bold transition-colors border border-stone-700">Solution</button>
                             )}
                             {currentStepIndex < assignmentSteps.length - 1 ? (
@@ -909,9 +895,9 @@ builtins.input = custom_input
                                 Next <ChevronRight size={16} />
                               </button>
                             ) : (
-                              <button onClick={submitAssignment} disabled={isSubmittingAssignment} className={`px-4 py-2 rounded-lg text-xs font-bold flex justify-center items-center gap-2 transition-colors shadow-md ${activeVideo.githubAssignment.isExam && !examStatus.is_passed ? 'bg-purple-600 hover:bg-purple-500 text-white' : isAssignmentCompleted ? 'bg-green-600 text-white' : 'bg-amber-500 hover:bg-amber-400 text-stone-900'}`}>
-                                {isSubmittingAssignment ? <Loader2 size={14} className="animate-spin"/> : activeVideo.githubAssignment.isExam ? <Award size={14}/> : <CheckCircle2 size={14}/>} 
-                                {activeVideo.githubAssignment.isExam ? `Submit Exam (${examStatus.attempts_used}/5)` : isAssignmentCompleted ? "Update" : "Submit"}
+                              <button onClick={submitAssignment} disabled={isSubmittingAssignment} className={`px-4 py-2 rounded-lg text-xs font-bold flex justify-center items-center gap-2 transition-colors shadow-md ${activeVideo.githubAssignment?.isExam && !examStatus.is_passed ? 'bg-purple-600 hover:bg-purple-500 text-white' : isAssignmentCompleted ? 'bg-green-600 text-white' : 'bg-amber-500 hover:bg-amber-400 text-stone-900'}`}>
+                                {isSubmittingAssignment ? <Loader2 size={14} className="animate-spin"/> : activeVideo.githubAssignment?.isExam ? <Award size={14}/> : <CheckCircle2 size={14}/>} 
+                                {activeVideo.githubAssignment?.isExam ? `Submit Exam (${examStatus.attempts_used}/5)` : isAssignmentCompleted ? "Update" : "Submit"}
                               </button>
                             )}
                           </div>
@@ -940,7 +926,7 @@ builtins.input = custom_input
                           </div>
                         </div>
 
-                        <div className="flex-grow relative">
+                        <div className="flex-grow relative min-h-[300px]">
                           <Editor height="100%" defaultLanguage={getLanguage(activeFile)} theme="vs-dark" value={files[activeFile] || ""} onChange={(value) => { setFiles(prev => ({ ...prev, [activeFile]: value || "" })); setAiResponse(null); }} options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} />
                         </div>
 
@@ -960,7 +946,6 @@ builtins.input = custom_input
                     </div>
                   )}
 
-                  {/* VISUALIZER TAB */}
                   {activeTab === 'visualize' && activeVideo.githubAssignment && (
                     <div className="p-6 md:p-8 flex flex-col flex-grow">
                       <div className="bg-[#121212] border border-white/10 p-4 rounded-xl flex justify-between items-center mb-6">
@@ -976,7 +961,7 @@ builtins.input = custom_input
                           <div className="w-3 h-3 rounded-full bg-green-400"></div>
                           <span className="text-xs font-mono font-bold text-stone-500 ml-4">shivam-academy-visualizer.exe</span>
                         </div>
-                        <div className="flex-grow bg-white relative overflow-hidden">
+                        <div className="flex-grow relative overflow-hidden">
                           <iframe className="absolute top-0 left-0 w-full h-full invert hue-rotate-180 contrast-125 brightness-110" style={{ backgroundColor: "transparent" }} frameBorder="0" src={`https://pythontutor.com/iframe-embed.html#code=${encodeURIComponent(files['main.py'] || "")}&cumulative=false&heapPrimitives=nevernest&mode=display&origin=opt-frontend.js&py=3&rawInputLstJSON=%5B%5D&textReferences=false`}></iframe>
                         </div>
                       </div>
@@ -990,22 +975,24 @@ builtins.input = custom_input
         </main>
       </div>
 
+      {/* GLOBAL TOAST NOTIFICATION */}
       <AnimatePresence>
         {toastConfig.show && (
           <motion.div 
             initial={{ opacity: 0, y: 50, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-            className={`fixed bottom-10 right-10 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 z-[9999] border ${toastConfig.type === 'error' ? 'bg-red-600 border-red-400' : 'bg-green-600 border-green-400'}`}
+            className={`fixed bottom-10 right-10 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 z-[9999] border text-white ${toastConfig.type === 'error' ? 'bg-red-600 border-red-400' : 'bg-green-600 border-green-400'}`}
           >
-            <div className="bg-black/20 p-2 rounded-full">
-              {toastConfig.type === 'error' ? <ShieldAlert size={24} className="text-white" /> : <Award size={24} className="text-white" />}
+            <div className="bg-white/20 p-2 rounded-full">
+              {toastConfig.type === 'error' ? <X size={24} className="text-white" /> : <Award size={24} className="text-white" />}
             </div>
             <div>
               <h4 className="font-black text-sm uppercase tracking-widest">{toastConfig.title}</h4>
-              <p className="text-xs font-bold opacity-90">{toastConfig.desc}</p>
+              <p className="text-xs font-bold">{toastConfig.desc}</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
     </div>
   );
 }
