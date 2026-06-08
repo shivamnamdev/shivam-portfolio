@@ -21,6 +21,11 @@ export const metadata: Metadata = {
     locale: "en_IN",
     type: "website",
   },
+  icons: {
+    icon: [
+      { url: '/icon.png', type: 'image/png' },
+    ],
+  },
   twitter: {
     card: "summary_large_image",
     title: "Shivam Academy | Empowering Tech Mastery",
