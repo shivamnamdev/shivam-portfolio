@@ -216,7 +216,7 @@ export const courseCurriculumMap: Record<string, any[]> = {
     rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Assignments/refs/heads/main/python-basics/v1.docx",
     starterCodeUrl: "https://raw.githubusercontent.com/shivamnamdev/Assignments/refs/heads/main/python-basics/v1_addon.docx",
     isExam: true, // 🚨 Marks this as the test!
-    
+    expectedOutcomeUrl: "https://raw.githubusercontent.com/shivamnamdev/Assignments/refs/heads/main/python-basics/v1_expected_result.py",
     // The Python test script that grades all 5 steps!
     testCode: `
           # ---------------------------------------------------------

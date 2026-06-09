@@ -26,7 +26,7 @@ function formatYouTubeDuration(duration: string) {
 export default function CoursePlayerPage({ params }: { params: { slug: string } }) {
   const { user, isLoaded } = useUser();
   const isAdmin = user?.primaryEmailAddress?.emailAddress === ADMIN_EMAIL;
-
+  
   const [playlist, setPlaylist] = useState<any[]>([]);
   const [activeVideo, setActiveVideo] = useState<any>(null);
   
@@ -54,12 +54,15 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   const [isAskingAI, setIsAskingAI] = useState(false);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   
-  // 🚨 Exam & Toast States
   const [examStatus, setExamStatus] = useState({ is_passed: false, attempts_used: 0 });
   const [toastConfig, setToastConfig] = useState<{show: boolean, title: string, desc: string, type: 'success'|'error'}>({ show: false, title: "", desc: "", type: "success" });
   
   const [officialSolutionSteps, setOfficialSolutionSteps] = useState<string[]>([]);
   const [showSolutionModal, setShowSolutionModal] = useState(false);
+
+  // 🚨 THE FIX: Changed from a single string to an Array of strings!
+  const [expectedOutcomeSteps, setExpectedOutcomeSteps] = useState<string[]>([]);
+  const [showOutcomeModal, setShowOutcomeModal] = useState(false);
   
   const [assignmentSteps, setAssignmentSteps] = useState<string[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -147,11 +150,28 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       } else {
         setOfficialSolutionSteps([]);
       }
+
+      // 🚨 THE FIX: Fetch Expected Outcome and SPLIT IT into steps!
+      if (assignmentObj.expectedOutcomeUrl) {
+        const outRes = await fetch(`${assignmentObj.expectedOutcomeUrl}?t=${Date.now()}`);
+        if (outRes.ok) {
+          const rawOut = await outRes.text();
+          // Split using the exact same logic as your solutions/assignments
+          const outSteps = rawOut.split(/^#\s*-{10,}\s*$/gm).map(s => s.trim()).filter(s => s.length > 0);
+          setExpectedOutcomeSteps(outSteps.length > 0 ? outSteps : [rawOut]);
+        } else {
+          setExpectedOutcomeSteps(["# Expected outcome file could not be loaded."]);
+        }
+      } else {
+        setExpectedOutcomeSteps([]);
+      }
+
     } catch (error) {
       setAssignmentSteps(["Error loading assignment instructions from GitHub."]);
       setStepFiles([{ "main.py": "" }]);
       setFiles({ "main.py": "" });
       setOfficialSolutionSteps([]);
+      setExpectedOutcomeSteps([]);
     } finally {
       setIsFetchingCode(false);
     }
@@ -261,6 +281,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     setAssignmentSteps([]);
     setCurrentStepIndex(0);
     setOfficialSolutionSteps([]);
+    setExpectedOutcomeSteps([]); // 🚨 Reset on video change
     setHasLiked(false);
     setLikesCount(0);
     
@@ -332,7 +353,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     const shareUrl = `https://shivamnamdev.com/share/${activeVideo.youtubeId}?t=${Date.now()}`;
     const shareText = `🚀 Ready to Master Python?\n\nCheck out this exclusive lesson: *${activeVideo?.title}* from Shivam Academy!\n\n🎓 Click here to watch the video directly:\n${shareUrl}\n\n💻 Enroll here to unlock the full platform, interactive labs, and the AI code tutor:\nhttps://shivamnamdev.com/courses/${params.slug}`;
     if (navigator.share) { try { await navigator.share({ title: activeVideo?.title || "Shivam Academy", text: shareText }); } catch (err) {} } 
-    else { navigator.clipboard.writeText(shareText); alert("Branded share message copied!"); }
+    else { navigator.clipboard.writeText(shareText); alert("Branded share message copied! Paste it in WhatsApp and wait 3 seconds for your thumbnail to appear!"); }
   };
 
   const handlePostComment = async (e: React.FormEvent) => {
@@ -361,7 +382,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     const isExam = activeVideo.githubAssignment?.isExam;
     
     if (isExam) {
-      if (examStatus.attempts_used >= 5 && !examStatus.is_passed) {
+      if (examStatus.attempts_used >= 5 && !examStatus.is_passed && !isAdmin) {
         showToast("Maximum Attempts Reached", "You have used all 5 attempts for this exam.", "error");
         return;
       }
@@ -421,7 +442,6 @@ sys.stderr = io.StringIO()
       return; 
     }
 
-    // Normal Assignment
     setIsSubmittingAssignment(true);
     try {
       const isCarryOver = activeVideo?.githubAssignment?.carryOverCode;
@@ -455,7 +475,7 @@ sys.stderr = io.StringIO()
       if (officialSolutionSteps.length > 0) setShowSolutionModal(true);
 
     } catch (err) {
-      showToast("Error", "Failed to submit assignment.", "error");
+      showToast("Error", "Failed to submit assignment. Please try again.", "error");
     } finally {
       setIsSubmittingAssignment(false);
     }
@@ -640,6 +660,7 @@ builtins.input = custom_input
   return (
     <div className="h-screen w-screen flex flex-col bg-[#0d1117] overflow-hidden text-white font-sans">
       
+      {/* PRO LMS TOP BAR */}
       <header className="h-16 bg-[#161b22] border-b border-white/10 flex items-center justify-between px-4 shrink-0 z-50">
         <div className="flex items-center gap-4">
           <Link href="/learning" className="flex items-center gap-2 text-stone-400 hover:text-amber-500 transition-colors font-bold text-sm">
@@ -667,8 +688,10 @@ builtins.input = custom_input
         </div>
       </header>
 
+      {/* PRO LMS BODY */}
       <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
         
+        {/* LEFT SIDEBAR (PLAYLIST) */}
         <aside className="w-full md:w-80 lg:w-96 bg-[#0a0c10] border-r border-white/10 flex flex-col shrink-0 order-2 md:order-1 overflow-y-auto">
           <div className="p-5 border-b border-white/5 sticky top-0 bg-[#0a0c10] z-10">
             <h3 className="font-black text-white text-lg">Course Content</h3>
@@ -689,7 +712,6 @@ builtins.input = custom_input
                     const isActive = activeVideo?.id === video.id;
                     const isVidDone = completedVideos.includes(video.id);
                     const isAssDone = completedAssignments.includes(video.id);
-                    
                     const isLockedAdvanced = video.githubAssignment?.isAdvanced && !examStatus.is_passed && !isAdmin;
 
                     return (
@@ -697,7 +719,7 @@ builtins.input = custom_input
                         key={video.id} 
                         onClick={() => {
                           if (isLockedAdvanced) {
-                            alert("🔒 This advanced lesson is locked! You must pass the Final Exam with 80% or higher to unlock it.");
+                            showToast("🔒 Advanced Content Locked", "Pass the Final Exam with 80% to unlock this lesson.", "error");
                             return;
                           }
                           handleVideoChange(video);
@@ -727,8 +749,33 @@ builtins.input = custom_input
           </div>
         </aside>
 
+        {/* MAIN CONTENT AREA */}
         <main className="flex-1 overflow-y-auto bg-[#0d1117] relative order-1 md:order-2 flex flex-col">
           
+          {/* 🚨 NEW MODAL: Expected Outcome Viewer */}
+          <AnimatePresence>
+            {showOutcomeModal && (
+              <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 md:p-8">
+                <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-[#0d1117] w-full max-w-4xl rounded-3xl border border-stone-700 shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
+                  <div className="px-6 py-4 border-b border-stone-800 flex justify-between items-center bg-[#161b22]">
+                    <h3 className="text-xl font-bold text-white flex items-center gap-2"><TerminalSquare className="text-amber-500" /> Expected Outcome</h3>
+                    <button onClick={() => setShowOutcomeModal(false)} className="text-stone-400 hover:text-white transition-colors"><X size={24} /></button>
+                  </div>
+                  {/* 🚨 THE FIX: Rendering the specific step's outcome instead of the whole file! */}
+                  <div className="flex-grow p-6 overflow-y-auto bg-[#0a0c10]">
+                     <pre className="text-sm font-mono text-green-400 whitespace-pre-wrap leading-relaxed">
+                       {expectedOutcomeSteps[currentStepIndex] || "No expected outcome provided for this step."}
+                     </pre>
+                  </div>
+                  <div className="p-4 border-t border-stone-800 bg-[#161b22] flex justify-end">
+                    <button onClick={() => setShowOutcomeModal(false)} className="px-8 py-3 bg-stone-700 hover:bg-stone-600 text-white rounded-xl font-bold transition-colors">Close</button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
+
+          {/* Solution Modal */}
           <AnimatePresence>
             {showSolutionModal && (
               <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 md:p-8">
@@ -757,6 +804,7 @@ builtins.input = custom_input
 
           <div className="max-w-[1200px] mx-auto w-full p-4 lg:p-8 flex flex-col gap-6 flex-grow">
             
+            {/* The Cinematic Video Player */}
             {activeVideo ? (
               <div className="w-full bg-black rounded-2xl overflow-hidden shadow-2xl aspect-video border border-white/10 relative select-none shrink-0">
                 <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${activeVideo.youtubeId}?rel=0&modestbranding=1`} title={activeVideo.title} frameBorder="0" allowFullScreen></iframe>
@@ -782,6 +830,7 @@ builtins.input = custom_input
               </div>
             )}
 
+            {/* Video Action Header */}
             {activeVideo && (
               <div className="p-6 md:p-8 rounded-2xl border border-white/10 bg-[#121212] shadow-xl relative overflow-hidden shrink-0">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-[50px] pointer-events-none" />
@@ -793,14 +842,16 @@ builtins.input = custom_input
                   </div>
                   
                   <div className="flex flex-wrap items-center gap-3 shrink-0">
-                    <button onClick={async () => {
-                      const shareUrl = `https://shivamnamdev.com/share/${activeVideo.youtubeId}?t=${Date.now()}`;
-                      const shareText = `🚀 Ready to Master Python?\n\nCheck out this exclusive lesson: *${activeVideo?.title}* from Shivam Academy!\n\n🎓 Click here to watch the video directly:\n${shareUrl}\n\n💻 Enroll here to unlock the full platform:\nhttps://shivamnamdev.com/courses/${params.slug}`;
-                      if (navigator.share) { try { await navigator.share({ title: activeVideo?.title || "Shivam Academy", text: shareText }); } catch (err) {} } 
-                      else { navigator.clipboard.writeText(shareText); alert("Branded share message copied!"); }
-                    }} className="px-4 py-3 rounded-xl bg-purple-500/10 text-purple-400 font-bold text-sm flex items-center justify-center gap-2 border border-purple-500/20 hover:bg-purple-500/20 transition-colors">
-                      <Share2 size={18} /> Share
-                    </button>
+                    {isAdmin && (
+                      <button onClick={async () => {
+                        const shareUrl = `https://shivamnamdev.com/share/${activeVideo.youtubeId}?t=${Date.now()}`;
+                        const shareText = `🚀 Ready to Master Python?\n\nCheck out this exclusive lesson: *${activeVideo?.title}* from Shivam Academy!\n\n🎓 Click here to watch the video directly:\n${shareUrl}\n\n💻 Enroll here to unlock the full platform:\nhttps://shivamnamdev.com/courses/${params.slug}`;
+                        if (navigator.share) { try { await navigator.share({ title: activeVideo?.title || "Shivam Academy", text: shareText }); } catch (err) {} } 
+                        else { navigator.clipboard.writeText(shareText); alert("Branded share message copied!"); }
+                      }} className="px-4 py-3 rounded-xl bg-purple-500/10 text-purple-400 font-bold text-sm flex items-center justify-center gap-2 border border-purple-500/20 hover:bg-purple-500/20 transition-colors">
+                        <Share2 size={18} /> Share
+                      </button>
+                    )}
 
                     {isVideoCompleted ? (
                       <button disabled className="px-6 py-3.5 rounded-xl bg-green-500/10 text-green-400 font-bold text-sm flex items-center justify-center gap-2 border border-green-500/20 shadow-sm">
@@ -816,9 +867,10 @@ builtins.input = custom_input
               </div>
             )}
 
+            {/* The Tabbed Content Area */}
             {activeVideo && (
-              <div className="bg-[#0a0a0a] rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col flex-grow min-h-[500px]">
-                <div className="flex overflow-x-auto border-b border-white/10 bg-[#121212] shrink-0">
+              <div className="bg-[#0a0a0a] rounded-2xl border border-white/10 shadow-2xl overflow-hidden mb-10 shrink-0">
+                <div className="flex overflow-x-auto border-b border-white/10 bg-[#121212]">
                   <button onClick={() => setActiveTab('description')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'description' ? 'text-amber-500 border-b-2 border-amber-500 bg-[#0a0a0a]' : 'text-stone-400 hover:text-stone-200'}`}><AlignLeft size={18} /> Details</button>
                   <button onClick={() => setActiveTab('qa')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'qa' ? 'text-amber-500 border-b-2 border-amber-500 bg-[#0a0a0a]' : 'text-stone-400 hover:text-stone-200'}`}><MessageCircle size={18} /> Q&A ({comments.length})</button>
                   {activeVideo.githubAssignment && (
@@ -854,7 +906,7 @@ builtins.input = custom_input
                   )}
 
                   {activeTab === 'practice' && activeVideo.githubAssignment && (
-                    <div className="flex flex-col lg:flex-row flex-grow bg-[#0d1117]">
+                    <div className="flex flex-col lg:flex-row h-[700px] bg-[#0d1117] overflow-hidden border-t border-white/10 shadow-inner">
                       
                       <div className="w-full lg:w-1/3 flex flex-col border-r border-stone-800 bg-[#161b22] shrink-0">
                         <div className="flex flex-col items-center p-4 border-b border-stone-800 bg-[#0d1117]">
@@ -887,9 +939,17 @@ builtins.input = custom_input
                           </button>
 
                           <div className="flex items-center gap-2">
-                            {officialSolutionSteps.length > 0 && (
-                              <button onClick={() => setShowSolutionModal(true)} className="px-3 py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg text-xs font-bold transition-colors border border-stone-700">Solution</button>
+                            {/* 🚨 NEW: Added Expected Outcome Button */}
+                            {expectedOutcomeSteps.length > 0 && (
+                              <button onClick={() => setShowOutcomeModal(true)} className="px-3 py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg text-xs font-bold transition-colors border border-stone-700">
+                                Expected Outcome
+                              </button>
                             )}
+
+                            {officialSolutionSteps.length > 0 && (
+                              <button onClick={() => setShowSolutionModal(true)} className="px-3 py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg text-xs font-bold transition-colors border border-stone-700">View Solution</button>
+                            )}
+                            
                             {currentStepIndex < assignmentSteps.length - 1 ? (
                               <button onClick={() => handleStepChange(currentStepIndex + 1)} className="flex items-center gap-1 px-4 py-2 bg-stone-800 rounded-lg text-sm font-bold text-amber-500 hover:bg-stone-700 hover:text-amber-400 transition-colors border border-stone-700 shadow-sm">
                                 Next <ChevronRight size={16} />
@@ -904,7 +964,7 @@ builtins.input = custom_input
                         </div>
                       </div>
 
-                      <div className="w-full lg:w-2/3 flex flex-col bg-[#0d1117]">
+                      <div className="flex-1 flex flex-col bg-[#0d1117] min-h-[500px]">
                         <div className="flex bg-[#161b22] border-b border-stone-800 justify-between items-center pr-4 overflow-x-auto">
                           <div className="flex">
                             {Object.keys(files).map(filename => (
@@ -946,6 +1006,7 @@ builtins.input = custom_input
                     </div>
                   )}
 
+                  {/* VISUALIZER TAB */}
                   {activeTab === 'visualize' && activeVideo.githubAssignment && (
                     <div className="p-6 md:p-8 flex flex-col flex-grow">
                       <div className="bg-[#121212] border border-white/10 p-4 rounded-xl flex justify-between items-center mb-6">
@@ -972,9 +1033,8 @@ builtins.input = custom_input
               </div>
             )}
           </div>
-        </main>
-      </div>
-
+         </main>
+       </div>        
       {/* GLOBAL TOAST NOTIFICATION */}
       <AnimatePresence>
         {toastConfig.show && (
@@ -982,17 +1042,16 @@ builtins.input = custom_input
             initial={{ opacity: 0, y: 50, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
             className={`fixed bottom-10 right-10 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 z-[9999] border text-white ${toastConfig.type === 'error' ? 'bg-red-600 border-red-400' : 'bg-green-600 border-green-400'}`}
           >
-            <div className="bg-white/20 p-2 rounded-full">
+            <div className="bg-black/20 p-2 rounded-full">
               {toastConfig.type === 'error' ? <X size={24} className="text-white" /> : <Award size={24} className="text-white" />}
             </div>
             <div>
               <h4 className="font-black text-sm uppercase tracking-widest">{toastConfig.title}</h4>
-              <p className="text-xs font-bold">{toastConfig.desc}</p>
+              <p className="text-xs font-bold opacity-90">{toastConfig.desc}</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-
     </div>
   );
 }
