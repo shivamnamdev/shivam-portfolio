@@ -1,6 +1,138 @@
 // data/courses.ts
 
 export const activeCourses = [
+
+  {
+id: "git-beginner-batch-1",
+slug: "git-beginner-batch-1",
+title: "Git Beginner Live Session",
+statusText: "🚀 Enrollment Open",
+demoOffer: "Limited Seats Open",
+duration: "2-3 Weeks | Weekdays Only (Mon-Fri)",
+contactPhone: "7057034840",
+enrollmentClosed: false,
+
+
+whatsappLink: "https://chat.whatsapp.com/EjE3pU7synO9jMFpOPuHZp",
+
+vsl: {
+  headlinePart1: "Don't just learn Git.",
+  headlineHighlight: "UNDERSTAND VERSION CONTROL",
+  subheadline: "Learn Git from scratch with real-life analogies and practical scenarios. Perfect for beginners, students, aspiring developers & career transitioners.",
+  videoCoverUrl: "https://images.unsplash.com/photo-1556075798-4825dfaaf498?q=80&w=2000&auto=format&fit=crop",
+  flyerUrl: "/git-batch1-flyer.jpeg"
+},
+
+painPoints: {
+  oldWay: [
+    "Struggling to understand version control concepts",
+    "Lost in Git command syntax and documentation",
+    "Confused about branches and merge conflicts",
+    "Unable to collaborate on GitHub workflows"
+  ],
+  newWay: [
+    "Understanding why Git exists with clear analogies",
+    "Mastering Git through practical hands-on work",
+    "Handling branches and merges with confidence",
+    "Collaborating using real industry workflows"
+  ]
+},
+
+pricing: {
+  inr: { 
+    currentPrice: "₹399", 
+    originalPrice: "₹799", 
+    savingsText: "Early Bird Offer Valid Till 16th June", 
+    currencyCode: "INR" 
+  },
+  usd: { 
+    currentPrice: "$9.99", 
+    originalPrice: "$19.99", 
+    savingsText: "Early Bird Access (Global)", 
+    currencyCode: "USD" 
+  }
+},
+
+differentiators: [
+  { icon: "analogy", title: "ANALOGY BASED LEARNING", description: "Learn Git with relatable real-life examples instead of memorizing commands" },
+  { icon: "scenarios", title: "SCENARIO DRIVEN", description: "Understand why Git exists before learning how it works" },
+  { icon: "practical", title: "PRACTICAL EXECUTION", description: "Work locally on Git to build actual understanding" },
+  { icon: "support", title: "DOUBT SUPPORT", description: "Dedicated live doubt solving during sessions" },
+  { icon: "recordings", title: "SESSION RECORDINGS", description: "Access recordings anytime for revision" },
+  { icon: "workflow", title: "INDUSTRY WORKFLOW", description: "Learn real team collaboration flow used in companies" }
+],
+
+cohortHighlights: [
+  "Live Classes: 1 Hour Every Weekday",
+  "Beginner Friendly (No Pre-Requisite)",
+  "Hands-on Practice on Local Git",
+  "Learn Git Before GitHub",
+  "Real Collaboration Simulation",
+  "Certificate for Serious Learners"
+],
+
+outcomes: [
+  "Understands why Git exists", 
+  "Uses Git confidently in projects", 
+  "Handles branches and merges", 
+  "Collaborates using GitHub workflow"
+],
+
+bonuses: [
+  "Complete Industry Workflow Understanding:",
+  "Branch → Commit → Push → Pull Request → Review → Merge"
+],
+
+modules: [
+  { 
+    week: "MODULE 1", 
+    title: "Why Git Exists", 
+    topics: [
+      "Life Before Git (Version Chaos)", 
+      "Version Control Basics", 
+      "Git as a Time Machine"
+    ] 
+  },
+  { 
+    week: "MODULE 2", 
+    title: "Core Git Workflow", 
+    topics: [
+      "Repository Concept", 
+      "Working Directory, Staging Area, Commits", 
+      "Tracking Changes"
+    ] 
+  },
+  { 
+    week: "MODULE 3", 
+    title: "Branches & Safe Development", 
+    topics: [
+      "Branching Concept", 
+      "Parallel Development", 
+      "Merge & Merge Conflicts"
+    ] 
+  },
+  { 
+    week: "MODULE 4", 
+    title: "Remote Repositories & GitHub", 
+    topics: [
+      "Why GitHub Exists", 
+      "Push, Pull, Clone", 
+      "Remote Collaboration"
+    ] 
+  },
+  { 
+    week: "MODULE 5", 
+    title: "Industry Workflow", 
+    topics: [
+      "Pull Requests", 
+      "Code Review Flow", 
+      "Real Team Collaboration Simulation"
+    ] 
+  }
+]
+
+
+},
   // 🚀 BRAND NEW: BATCH 3 (Active Pricing & New VSL Data)
   {
     id: "python-beginners-batch-2",
@@ -22,6 +154,20 @@ export const activeCourses = [
       flyerUrl: "/batch3-flyer.jpg" // 🚨 Make sure to save your new image as this in the 'public' folder!
     },
     
+    painPoints: {
+  oldWay: [
+    "Watching tutorials but unable to write code from scratch",
+    "Struggling to build strong programming logic",
+    "Feeling overwhelmed by complex coding jargon",
+    "Learning syntax but failing to solve real problems"
+  ],
+  newWay: [
+    "Building strong coding logic step-by-step from scratch",
+    "Writing Python programs confidently and independently",
+    "Working on real-world capstone projects, not just theory",
+    "Becoming job-ready for entry-level roles"
+    ] 
+  },
     pricing: {
       inr: { currentPrice: "₹1,999", originalPrice: "₹2,499", savingsText: "Early Bird Offer Valid Till 31st May", currencyCode: "INR" },
       usd: { currentPrice: "$25", originalPrice: "$35", savingsText: "Early Bird Access (Global)", currencyCode: "USD" }
@@ -65,11 +211,11 @@ export const activeCourses = [
     ],
     
     modules: [
-      { week: "WEEK 1", title: "Think Like a Programmer", topics: ["Setup, Basics, Variables, Inputs", "Operators, Conditions & Loops"] },
-      { week: "WEEK 2", title: "Build Logic Confidence", topics: ["Functions, String Handling", "Lists, Tuples, Dictionaries"] },
-      { week: "WEEK 3", title: "Write Real Programs", topics: ["File Handling", "Exception Handling, Modular Coding"] },
-      { week: "WEEK 4", title: "Beginner Developer Mindset", topics: ["Debugging Techniques, Reading Code", "Writing Independent Solutions"] },
-      { week: "WEEK 5-6", title: "OOPs & Mini Project", topics: ["Object-Oriented Programming", "Virtual Environments", "Build & Deploy a Mini Project"] }
+      { week: "MODULE 1", title: "Think Like a Programmer", topics: ["Setup, Basics, Variables, Inputs", "Operators, Conditions & Loops"] },
+      { week: "MODULE 2", title: "Build Logic Confidence", topics: ["Functions, String Handling", "Lists, Tuples, Dictionaries"] },
+      { week: "MODULE 3", title: "Write Real Programs", topics: ["File Handling", "Exception Handling, Modular Coding"] },
+      { week: "MODULE 4", title: "Beginner Developer Mindset", topics: ["Debugging Techniques, Reading Code", "Writing Independent Solutions"] },
+      { week: "MODULE 5-6", title: "OOPs & Mini Project", topics: ["Object-Oriented Programming", "Virtual Environments", "Build & Deploy a Mini Project"] }
     ]
   },
 
@@ -93,7 +239,20 @@ export const activeCourses = [
       videoCoverUrl: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?q=80&w=2000&auto=format&fit=crop",
       flyerUrl: "/course-flyer.jpg"
     },
-    
+    painPoints: {
+  oldWay: [
+    "Random tutorial watching without direction",
+    "No accountability or consistent follow-up",
+    "Isolated learning without peer community",
+    "Unable to verify if your logic is actually correct"
+  ],
+  newWay: [
+    "Structured curriculum from beginner to advanced",
+    "Live mentorship with daily assignments and follow-ups",
+    "Learning alongside peers in a cohort",
+    "Real-time feedback from an experienced instructor"
+    ]
+  },
     pricing: {
       inr: { currentPrice: "₹599", originalPrice: "₹899", savingsText: "Closed", currencyCode: "INR" },
       usd: { currentPrice: "$150", originalPrice: "$250", savingsText: "Closed", currencyCode: "USD" }

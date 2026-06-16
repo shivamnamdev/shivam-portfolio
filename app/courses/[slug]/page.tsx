@@ -27,7 +27,7 @@ export default function CourseSalesPage({ params }: { params: { slug: string } }
       <main className="flex flex-col items-center max-w-7xl mx-auto px-6 sm:px-12 pb-10 space-y-20 md:space-y-32 relative z-10">
         
         <HeroVSL course={course} /> 
-        <PainPoints />
+        <PainPoints painPoints={course.painPoints} />
         <Differentiators course={course} />
         <ActiveCohorts course={course} /> 
         
