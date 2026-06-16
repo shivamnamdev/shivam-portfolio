@@ -38,6 +38,12 @@ painPoints: {
   ]
 },
 
+resources: {
+syllabusPdf: "/syllabus/Git_Foundation_Cohort_Syllabus_No_Pricing.pdf",
+syllabusLabel: "Download Full Syllabus (PDF)"
+},
+
+
 pricing: {
   inr: { 
     currentPrice: "₹399", 
@@ -168,6 +174,12 @@ modules: [
     "Becoming job-ready for entry-level roles"
     ] 
   },
+
+  resources: {
+    syllabusPdf: "/syllabus/Python_Foundation_Cohort_Syllabus_Updated_Fixed.pdf",
+    syllabusLabel: "Download Full Syllabus (PDF)"
+  }, 
+
     pricing: {
       inr: { currentPrice: "₹1,999", originalPrice: "₹2,499", savingsText: "Early Bird Offer Valid Till 31st May", currencyCode: "INR" },
       usd: { currentPrice: "$25", originalPrice: "$35", savingsText: "Early Bird Access (Global)", currencyCode: "USD" }
@@ -252,6 +264,11 @@ modules: [
     "Learning alongside peers in a cohort",
     "Real-time feedback from an experienced instructor"
     ]
+  },
+
+  resources: {
+    syllabusPdf: "/syllabus/Python_Foundation_Cohort_Syllabus_Updated_Fixed.pdf",
+    syllabusLabel: "Download Full Syllabus (PDF)"
   },
     pricing: {
       inr: { currentPrice: "₹599", originalPrice: "₹899", savingsText: "Closed", currencyCode: "INR" },
