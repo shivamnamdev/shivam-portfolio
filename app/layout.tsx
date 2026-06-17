@@ -25,14 +25,11 @@ export default function RootLayout({
       <body className="font-sans relative antialiased bg-black text-white min-h-screen flex flex-col" suppressHydrationWarning>
           <div className="fixed inset-0 bg-grid-pattern z-[-1] opacity-40 pointer-events-none" />
           <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-amber-500/10 blur-[150px] rounded-full pointer-events-none z-[-1]" />
-          
-          <ScrollProgress />
-          
+                    
           {/* 🚨 INJECT THE GRAIN HERE */}
           <div className="bg-noise"></div>
           <CustomCursor /> {/* 🚨 THE NEW CURSOR */}
           <ScrollProgress />
-          {children}
           {children}
         </body>
     </html>
