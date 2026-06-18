@@ -206,8 +206,6 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
       setIsProcessing(false);
     }
   };
-  const syllabusPdf = displayCourse?.resources?.syllabusPdf;
-  const syllabusLabel = displayCourse?.resources?.syllabusLabel || "Download Full Syllabus (PDF)";
 
   return (
     <section className="w-full relative z-10 py-12" id="live-sessions">
@@ -339,15 +337,11 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
                           {isProcessing ? "Processing..." : displayPriceNumeric === 0 ? "Enroll for Free" : `Buy Now (${activePricing.currencyCode})`}
                         </button>
                       )}
-
-                      {syllabusPdf ? (
-                      <a
-                      href={syllabusPdf}
-                      download
-                      className="w-full py-4 rounded-xl border border-white/20 bg-[#0a0a0a] text-stone-300 font-bold text-lg flex items-center justify-center gap-2 hover:bg-white/10 hover:border-amber-500 hover:text-amber-400 transition-all">
-                      <Download size={20} /> {syllabusLabel}
-                      </a> ) : null}
-                      </div>
+                      
+                      <a href="/python-syllabus.pdf" download className="w-full py-4 rounded-xl border border-white/20 bg-[#0a0a0a] text-stone-300 font-bold text-lg flex items-center justify-center gap-2 hover:bg-white/10 hover:border-amber-500 hover:text-amber-400 transition-all">
+                        <Download size={20} /> Download Full Syllabus (PDF)
+                      </a>
+                    </div>
                   </div>
                 )}
               </div>
