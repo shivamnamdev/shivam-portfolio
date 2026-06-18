@@ -1,7 +1,16 @@
 // data/coupons.ts
 
 export const activeCoupons =[
-    {
+  {
+    code: "GITFIRSTTIME26",
+    discountType: "fixed", // 'percentage' or 'fixed'
+    discountValue: {
+      inr: 799, // ₹200 off for India
+      usd: 50   // $50 off for International
+    }, // 20% off
+    allowedUsers: [] // 🚨 Leave empty[] to let ANYONE use it!
+  },
+  {
     code: "BATCH002",
     discountType: "percentage", // 'percentage' or 'fixed'
     discountValue: 100, // 20% off
