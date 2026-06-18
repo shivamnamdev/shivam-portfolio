@@ -38,6 +38,11 @@ painPoints: {
   ]
 },
 
+resources: {
+syllabusPdf: "/syllabus/Git_Foundation_Cohort_Syllabus_No_Pricing.pdf",
+syllabusLabel: "Download Full Syllabus (PDF)"
+},
+
 pricing: {
   inr: { 
     currentPrice: "₹399", 
@@ -173,6 +178,11 @@ modules: [
       usd: { currentPrice: "$25", originalPrice: "$35", savingsText: "Early Bird Access (Global)", currencyCode: "USD" }
     },
     
+    resources: {
+    syllabusPdf: "/syllabus/Python_Foundation_Cohort_Syllabus_Updated_Fixed.pdf",
+    syllabusLabel: "Download Full Syllabus (PDF)"
+  },
+
     // 🚨 NEW: Specific Data from your Flyer!
     differentiators: [
       { icon: "mentorship", title: "LIVE MENTORSHIP", description: "Interactive sessions with personal guidance" },
@@ -257,6 +267,12 @@ modules: [
       inr: { currentPrice: "₹599", originalPrice: "₹899", savingsText: "Closed", currencyCode: "INR" },
       usd: { currentPrice: "$150", originalPrice: "$250", savingsText: "Closed", currencyCode: "USD" }
     },
+
+    resources: {
+    syllabusPdf: "/syllabus/Python_Foundation_Cohort_Syllabus_Updated_Fixed.pdf",
+    syllabusLabel: "Download Full Syllabus (PDF)"
+  },
+  
     outcomes: ["Build strong coding logic from scratch"],
     bonuses: ["Hands-on Capstone Mini Project"],
     modules: [{ title: "Python Fundamentals", topics: ["Python Basics & Setup", "Variables & Operators", "Conditional Statements & Loops"] },
