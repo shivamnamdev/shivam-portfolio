@@ -11,6 +11,7 @@ demoOffer: "Limited Seats Open",
 duration: "2-3 Weeks | Weekdays Only (Mon-Fri)",
 contactPhone: "7057034840",
 enrollmentClosed: false,
+liveLink: "https://meet.google.com/web-uzkz-ghr",
 
 
 whatsappLink: "https://chat.whatsapp.com/EjE3pU7synO9jMFpOPuHZp",
@@ -272,7 +273,7 @@ modules: [
     syllabusPdf: "/syllabus/Python_Foundation_Cohort_Syllabus_Updated_Fixed.pdf",
     syllabusLabel: "Download Full Syllabus (PDF)"
   },
-  
+
     outcomes: ["Build strong coding logic from scratch"],
     bonuses: ["Hands-on Capstone Mini Project"],
     modules: [{ title: "Python Fundamentals", topics: ["Python Basics & Setup", "Variables & Operators", "Conditional Statements & Loops"] },
