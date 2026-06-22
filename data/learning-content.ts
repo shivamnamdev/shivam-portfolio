@@ -540,7 +540,7 @@ export const courseCurriculumMap: Record<string, any[]> = {
   {
     moduleTitle: "Module 1: Why Git Exists",
     videoIds:[
-      ""],
+      "LNmtD68zih0"],
     githubAssignments: {
         // Video 2 gets an assignment
         "OkK3E7ApZ4Q": {
