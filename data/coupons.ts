@@ -2,7 +2,7 @@
 
 export const activeCoupons =[
   {
-    code: "LASTCHANCE26",
+    code: "pppprrr55416239217649238749",
     discountType: "fixed", // 'percentage' or 'fixed'
     discountValue: {
       inr: 799, // ₹200 off for India
