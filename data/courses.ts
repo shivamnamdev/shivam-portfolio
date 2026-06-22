@@ -11,7 +11,7 @@ demoOffer: "Limited Seats Open",
 duration: "2-3 Weeks | Weekdays Only (Mon-Fri)",
 contactPhone: "7057034840",
 enrollmentClosed: false,
-
+liveLink: "https://meet.google.com/web-uzkz-ghr",
 
 whatsappLink: "https://chat.whatsapp.com/EjE3pU7synO9jMFpOPuHZp",
 
