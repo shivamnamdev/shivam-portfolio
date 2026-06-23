@@ -540,13 +540,15 @@ export const courseCurriculumMap: Record<string, any[]> = {
   {
     moduleTitle: "Module 1: Why Git Exists",
     videoIds:[
-      "LNmtD68zih0"],
+      "LNmtD68zih0",
+      "xKhjGmOxmSQ"],
     githubAssignments: {
         // Video 2 gets an assignment
         "OkK3E7ApZ4Q": {
           title: "Day 01: Introduction and print function",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2001%3A%20Introduction%20and%20print%20function/Assignment",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2001%3A%20Introduction%20and%20print%20function/Solution.py"
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2001%3A%20Introduction%20and%20print%20function/Solution.py",
+          labType: "git"
         },
         // Video 3 gets an assignment
         "bpjcslHyYEA": {
