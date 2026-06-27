@@ -156,7 +156,7 @@ modules: [
       headlineHighlight: "THINK IN PYTHON",
       subheadline: "Build logic. Solve problems. Write code with confidence. A Foundation level Python cohort for Beginners, Students, Professionals & Career Transitioners.",
       videoCoverUrl: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?q=80&w=2000&auto=format&fit=crop",
-      flyerUrl: "/batch3-flyer.jpg" // 🚨 Make sure to save your new image as this in the 'public' folder!
+      flyerUrl: "/batch3-flyer.png" // 🚨 Make sure to save your new image as this in the 'public' folder!
     },
     
     painPoints: {
