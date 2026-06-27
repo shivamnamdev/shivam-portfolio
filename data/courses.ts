@@ -174,7 +174,7 @@ modules: [
     ] 
   },
     pricing: {
-      inr: { currentPrice: "₹1,999", originalPrice: "₹2,499", savingsText: "Early Bird Offer Valid Till 31st May", currencyCode: "INR" },
+      inr: { currentPrice: "₹1,999", originalPrice: "₹2,499", savingsText: "Early Bird Offer Valid Till 5th July", currencyCode: "INR" },
       usd: { currentPrice: "$25", originalPrice: "$35", savingsText: "Early Bird Access (Global)", currencyCode: "USD" }
     },
     
