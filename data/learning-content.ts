@@ -540,9 +540,7 @@ export const courseCurriculumMap: Record<string, any[]> = {
   {
     moduleTitle: "Module 1: Why Git Exists",
     videoIds:[
-      "LNmtD68zih0",
-      "xKhjGmOxmSQ",
-      "UmrdGzO3HLE"],
+      "LNmtD68zih0"],
     githubAssignments: {
         // Video 2 gets an assignment
         "LNmtD68zih0": {
@@ -553,75 +551,14 @@ export const courseCurriculumMap: Record<string, any[]> = {
           expectedStateUrl: "https://raw.githubusercontent.com/.../git/day-01/expected-state.json",
           validatorUrl: "https://raw.githubusercontent.com/.../git/day-01/validator.json",
           solutionUrl: "https://raw.githubusercontent.com/.../git/day-01/solution.md"
-          },
-        // Video 3 gets an assignment
-        "bpjcslHyYEA": {
-          title: "Day 02: Operator",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2002%3A%20Operator/Assignment",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2002%3A%20Operator/Solution.py"
-        },
-        "HDBVcmufHlg": {
-          title: "Day 03: Built-in Functions",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2003%3A%20Built-in%20Functions/Assignment",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2003%3A%20Built-in%20Functions/Solution.py"
-        },
-        "kF0wuiDRxHQ": {
-          title: "Day 04: Conditional Statement",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2004%3A%20Conditional%20Statement/Assignment",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2004%3A%20Conditional%20Statement/Solution.py"
-        },
-        "_IqLtwGJRss": {
-          title: "Day 05: Conditional Statement | Hands On",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2004%3A%20Conditional%20Statement/Assignment2.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2004%3A%20Conditional%20Statement/Solution2.py"
-        },
-        "eehv_5rg238": {
-          title: "Day 06: Looping (While Loop)",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2006%3A%20Looping/Assignment",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2006%3A%20Looping/Solution.py"
-        },
-        "KY6nWfEeQoY": {
-          title: "Day 07: Jump Statements",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2007%3A%20Jump%20Statements/Assignment",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2007%3A%20Jump%20Statements/Solution.py"
-        },
-        "FSsqe5-2Ni0": {
-          title: "Day 09: For Loop",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2009%3A%20For%20Loop/Assignment.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2009%3A%20For%20Loop/Solution.py"
-        },
-        "xTktQsnpBmQ": {
-          title: "Day 09: For Loop",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2010%3A%20For%20Loop%20Hands%20On/Practice%20Questions",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2010%3A%20For%20Loop%20Hands%20On/Solution.py"
-        },
-        "0D9Y_2mLi7Q": {
-          title: "Day 10: For Loop Hands On",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2010%3A%20For%20Loop%20Hands%20On/Assignment2",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2010%3A%20For%20Loop%20Hands%20On/Solution2.py"
-        },
-        "ln_gWzCl8Xk": {
-          title: "Day 12: Loop-Pattern",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2011%3A%20Loop-Pattern/Assignment",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2011%3A%20Loop-Pattern/Solution.py"
-        },
-        "8uwC1ldWPZc": {
-          title: "Day 11: String",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2012%3A%20String/Assignment.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2012%3A%20String/Solutions.py"
-        },
-        "t8pYAstFTfg": {
-          title: "Day 13: String Hands On",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2012%3A%20String/Assignment2.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2012%3A%20String/Solutions2.py"
-        }
-        // Notice we left Video 1 ("OkK3E7ApZ4Q") out entirely. The Practice tab will hide itself automatically!
+          }
       }
   },
   {
     moduleTitle: "Module 2: Core Git Workflow",
     videoIds:[
-     ""
+     "xKhjGmOxmSQ",
+      "UmrdGzO3HLE"
     ],
     githubAssignments: {
         // Video 2 gets an assignment
@@ -650,10 +587,10 @@ export const courseCurriculumMap: Record<string, any[]> = {
   {
     moduleTitle: "Module 3: Branches and Safe Deployment",
     videoIds:[
-      ""
+      "EGyjbM4rAVQ"
     ],
     githubAssignments: {
-        "A-HB_9s1KtU": {
+        "": {
           title: "Day 18: File Handling",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day-18%3A%20File%20Handling/Assignment",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day-18%3A%20File%20Handling/Solution.py"
