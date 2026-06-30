@@ -546,11 +546,11 @@ export const courseCurriculumMap: Record<string, any[]> = {
         "LNmtD68zih0": {
           title: "Git Day 01: Init, Add, Commit",
           labType: "git",
-          instructionsUrl: "https://raw.githubusercontent.com/.../git/day-01/instructions.md",
-          starterRepoUrl: "https://raw.githubusercontent.com/.../git/day-01/repo-seed.json",
-          expectedStateUrl: "https://raw.githubusercontent.com/.../git/day-01/expected-state.json",
-          validatorUrl: "https://raw.githubusercontent.com/.../git/day-01/validator.json",
-          solutionUrl: "https://raw.githubusercontent.com/.../git/day-01/solution.md"
+          instructionsUrl: "https://raw.githubusercontent.com/shivamnamdev/git_practicals/refs/heads/main/Day_01/instructions.md",
+          starterRepoUrl: "https://raw.githubusercontent.com/shivamnamdev/git_practicals/refs/heads/main/Day_01/repo-seed.json",
+          expectedStateUrl: "https://raw.githubusercontent.com/shivamnamdev/git_practicals/refs/heads/main/Day_01/expected-state.json",
+          validatorUrl: "https://raw.githubusercontent.com/shivamnamdev/git_practicals/refs/heads/main/Day_01/validator.json",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/git_practicals/refs/heads/main/Day_01/solution.md"
           }
       }
   },
@@ -587,7 +587,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
   {
     moduleTitle: "Module 3: Branches and Safe Deployment",
     videoIds:[
-      "EGyjbM4rAVQ"
+      "EGyjbM4rAVQ",
+      "xCQdkzcI7Fs"
     ],
     githubAssignments: {
         "": {
