@@ -10,6 +10,7 @@ import { activeCourses } from '@/data/courses';
 import { supabase } from '@/lib/supabaseClient';
 import Editor from '@monaco-editor/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import GitGraphVisualizer from '@/components/GitGraphVisualizer';
 
 const ADMIN_EMAIL = "shivamnamdev.corp@gmail.com";
 
@@ -71,6 +72,29 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   const [isPyodideLoading, setIsPyodideLoading] = useState(true);
 
   const courseDetails = activeCourses.find(c => c.slug === params.slug);
+  const activeAssignment = activeVideo?.githubAssignment;
+  const activeLabType = activeAssignment?.labType === "git" ? "git" : "python";
+  const isGitLab = activeLabType === "git";
+  const isPythonLab = activeLabType === "python";
+  const [gitCommandInput, setGitCommandInput] = useState("");
+  const [gitCommandHistory, setGitCommandHistory] = useState<string[]>([]);
+  const [gitRepoState, setGitRepoState] = useState<Record<string, any>>({
+    branch: "main",
+    staged: [],
+    modified: [],
+    commits: []
+  });
+
+  const resetGitLabState = () => {
+    setGitCommandInput("");
+    setGitCommandHistory([]);
+    setGitRepoState({
+    branch: "main",
+    staged: [],
+    modified: [],
+    commits: []
+    });
+    };
 
   const showToast = (title: string, desc: string, type: 'success' | 'error' = 'success') => {
     setToastConfig({ show: true, title, desc, type });
@@ -78,6 +102,10 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   };
 
   useEffect(() => {
+    if (isGitLab) {
+      setIsPyodideLoading(false);
+      return;
+    }
     const loadPyodideScript = async () => {
       if ((window as any).loadPyodide) return;
       const script = document.createElement("script");
@@ -92,7 +120,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       document.body.appendChild(script);
     };
     loadPyodideScript();
-  },[]);
+  },[isGitLab]);
 
   const loadGithubAssignment = async (assignmentObj: any) => {
     setIsFetchingCode(true);
@@ -177,6 +205,34 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     }
   };
 
+  const loadGitLabAssignment = async (assignmentObj: any) => {
+  setIsFetchingCode(true);
+  console.log("🔍 Attempting to load Git assignment:", assignmentObj);
+  try {
+    // Fetch instructions
+    if (assignmentObj.instructionsUrl) {
+      console.log("📥 Fetching instructions from:", assignmentObj.instructionsUrl);
+      const instructRes = await fetch(`${assignmentObj.instructionsUrl}?t=${Date.now()}`);
+      console.log("📦 Response status:", instructRes.status);
+      if (instructRes.ok) {
+        const rawInstructions = await instructRes.text();
+        console.log("✅ Raw instructions fetched:", rawInstructions.substring(0, 100));
+        const steps = rawInstructions.split(/^---+$/gm).map(s => s.trim()).filter(s => s.length > 0);
+        setAssignmentSteps(steps.length > 0 ? steps : [rawInstructions]);
+      } else {
+        console.error("❌ Failed to fetch instructions, status:", instructRes.status);
+        setAssignmentSteps(["Error loading Git lab instructions."]);
+      }
+    }
+    // ... rest of function
+  } catch (error) {
+    console.error("💥 Error in loadGitLabAssignment:", error);
+    setAssignmentSteps(["Error loading Git lab assignment."]);
+  } finally {
+    setIsFetchingCode(false);
+  }
+};
+
   useEffect(() => {
     async function loadCourseData() {
       if (!isLoaded || !user?.id) return;
@@ -240,7 +296,13 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
           setActiveVideo(initialVideo);
           
           if (initialVideo.githubAssignment) {
-            loadGithubAssignment(initialVideo.githubAssignment);
+            if (initialVideo.githubAssignment.labType === "git") {
+              resetGitLabState();
+              setAssignmentSteps(["Git lab ready. Start with a command below."]);
+              loadGitLabAssignment(initialVideo.githubAssignment);
+            } else {
+              loadGithubAssignment(initialVideo.githubAssignment);
+            }
           }
         }
       } catch (error) {
@@ -268,6 +330,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   }, [activeVideo, user]);
 
   const handleVideoChange = (video: any) => {
+    if (activeVideo?.id === video.id) return;
     const isLockedAdvanced = video.githubAssignment?.isAdvanced && !examStatus.is_passed && !isAdmin;
     if (isLockedAdvanced) {
       alert("🔒 This advanced lesson is locked! You must pass the Final Exam with 80% or higher to unlock it.");
@@ -286,13 +349,20 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     setLikesCount(0);
     
     if (video.githubAssignment) {
-      setAssignmentSteps(["Loading instructions..."]);
-      setFiles({ "main.py": "# Loading workspace..." });
-      setActiveFile("main.py");
-      loadGithubAssignment(video.githubAssignment);
+      if (video.githubAssignment.labType === "git") {
+        resetGitLabState();
+        setAssignmentSteps(["Loading instructions..."]);
+        loadGitLabAssignment(video.githubAssignment);
+      } else {
+        setAssignmentSteps(["Loading instructions..."]);
+        setFiles({ "main.py": "# Loading workspace..." });
+        setActiveFile("main.py");
+        loadGithubAssignment(video.githubAssignment);
+      }
     } else {
       setStepFiles([]);
       setFiles({ "main.py": "" });
+      resetGitLabState();
     }
   };
 
@@ -378,7 +448,57 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
 
   const submitAssignment = async () => {
     if (!user || !activeVideo || isSubmittingAssignment) return;
-    
+    if (isGitLab) {
+      setIsSubmittingAssignment(true);
+      try {
+        const studentName =
+          user.fullName ||
+          user.firstName ||
+          user.primaryEmailAddress?.emailAddress ||
+          "Student";
+
+        const gitSubmission = {
+          labType: "git",
+          commandHistory: gitCommandHistory,
+          repoState: gitRepoState,
+          currentStepIndex,
+          assignmentTitle: activeVideo.githubAssignment?.title || activeVideo.title,
+          submittedAt: new Date().toISOString()
+        };
+
+        const { error } = await supabase.from("assignment_progress").upsert(
+          {
+            user_id: user.id,
+            course_slug: params.slug,
+            video_id: activeVideo.id,
+            submitted_code: JSON.stringify(gitSubmission, null, 2),
+            user_name: studentName,
+            completed_at: new Date().toISOString()
+          },
+          { onConflict: "user_id,course_slug,video_id" }
+        );
+
+        if (error) throw error;
+
+        if (!completedAssignments.includes(activeVideo.id)) {
+          setCompletedAssignments(prev => [...prev, activeVideo.id]);
+          supabase.from("admin_activity_log").insert([
+            {
+              type: "submission",
+              message: "New Git Lab Submission: " + (activeVideo.githubAssignment?.title || activeVideo.title),
+              user_email: user.primaryEmailAddress?.emailAddress
+            }
+          ]).then();
+        }
+
+        showToast("Success!", "Your Git lab state has been saved.", "success");
+      } catch (err) {
+        showToast("Error", "Failed to submit Git lab. Please try again.", "error");
+      } finally {
+        setIsSubmittingAssignment(false);
+      }
+      return;
+    }
     const isExam = activeVideo.githubAssignment?.isExam;
     
     if (isExam) {
@@ -563,16 +683,195 @@ builtins.input = custom_input
       setIsRunningCode(false);
     }
   };
+  const runGitCommand = async () => {
+  const cmd = gitCommandInput.trim();
+  if (!cmd) return;
 
+  // Handle clear separately — reset terminal
+  if (cmd === "clear") {
+    setGitCommandHistory([]);
+    setOutput("");
+    setGitCommandInput("");
+    return;
+  }
+
+  const nextHistory = [...gitCommandHistory, "$ " + cmd];
+  const nextState = { ...gitRepoState };
+  nextState.files = nextState.files || {};
+  nextState.branches = nextState.branches || ["main"];
+  let response = "";
+
+  if (cmd === "git init") {
+    response = "Initialized empty Git repository in .git/";
+  }
+  else if (cmd === "git status") {
+    const staged = nextState.staged || [];
+    const modified = nextState.modified || [];
+    let out = "On branch " + nextState.branch + "\n";
+    if (!staged.length && !modified.length) {
+      out += "nothing to commit, working tree clean";
+    } else {
+      if (staged.length) out += "Changes to be committed:\n  " + staged.map((f: string) => "new file: " + f).join("\n  ");
+      if (modified.length) out += "\nChanges not staged for commit:\n  " + modified.map((f: string) => "modified: " + f).join("\n  ");
+    }
+    response = out;
+  }
+  else if (cmd.startsWith("git add ")) {
+    const target = cmd.replace("git add ", "").trim();
+    const toStage = target === "." ? [...(nextState.modified || []), ...(Object.keys(nextState.files || {}))] : [target];
+    nextState.staged = Array.from(new Set([...(nextState.staged || []), ...toStage]));
+    nextState.modified = (nextState.modified || []).filter((f: string) => !toStage.includes(f));
+    response = toStage.length ? "staged: " + toStage.join(", ") : "nothing to stage";
+  }
+  else if (cmd.startsWith("git commit -m ")) {
+    const msg = cmd.replace("git commit -m ", "").replace(/^["']|["']$/g, "");
+    const staged = nextState.staged || [];
+    if (!staged.length) {
+      response = "nothing to commit, working tree clean";
+    } else {
+      const hash = Math.random().toString(36).substring(2, 9);
+      nextState.commits = [...(nextState.commits || []), { hash, message: msg || "commit", files: staged, branch: nextState.branch, ts: Date.now() }];
+      nextState.staged = [];
+      response = "[" + nextState.branch + " " + hash + "] " + (msg || "commit") + "\n " + staged.length + " file" + (staged.length > 1 ? "s" : "") + " changed";
+    }
+  }
+  else if (cmd === "git log" || cmd === "git log --oneline") {
+    const commits = [...(nextState.commits || [])].reverse();
+    if (!commits.length) { response = "no commits yet"; }
+    else if (cmd === "git log --oneline") {
+      response = commits.map((c: any) => (c.hash || "abc1234") + " " + c.message).join("\n");
+    } else {
+      response = commits.map((c: any) =>
+        "commit " + (c.hash || "abc1234") + "\nDate: " + new Date(c.ts).toLocaleString() + "\n\n    " + c.message
+      ).join("\n\n");
+    }
+  }
+  else if (cmd === "git branch") {
+    const branches = nextState.branches || ["main"];
+    response = branches.map((b: string) => (b === nextState.branch ? "* " : "  ") + b).join("\n");
+  }
+  else if (cmd.startsWith("git checkout -b ")) {
+    const newBranch = cmd.replace("git checkout -b ", "").trim();
+    if (!newBranch) { response = "branch name required"; }
+    else if ((nextState.branches || []).includes(newBranch)) { response = "fatal: A branch named '" + newBranch + "' already exists."; }
+    else {
+      nextState.branches = [...(nextState.branches || ["main"]), newBranch];
+      nextState.branch = newBranch;
+      response = "Switched to a new branch '" + newBranch + "'";
+    }
+  }
+  else if (cmd.startsWith("git checkout ")) {
+    const target = cmd.replace("git checkout ", "").trim();
+    if (!(nextState.branches || ["main"]).includes(target)) { response = "error: pathspec '" + target + "' did not match any known branch"; }
+    else {
+      nextState.branch = target;
+      response = "Switched to branch '" + target + "'";
+    }
+  }
+  else if (cmd.startsWith("git merge ")) {
+    const target = cmd.replace("git merge ", "").trim();
+    if (!(nextState.branches || []).includes(target)) { response = "fatal: branch '" + target + "' not found"; }
+    else if (target === nextState.branch) { response = "Already up to date."; }
+    else { response = "Merge made by the 'ort' strategy.\n Fast-forward"; }
+  }
+  else if (cmd.startsWith("git diff")) {
+    const staged = nextState.staged || [];
+    const modified = nextState.modified || [];
+    if (!staged.length && !modified.length) response = "(no changes to diff)";
+    else response = "diff --git a/file b/file\n--- a/file\n+++ b/file\n@@ -1 +1 @@\n+your changes here";
+  }
+  else if (cmd.startsWith("git remote add ")) {
+    const parts = cmd.replace("git remote add ", "").trim().split(" ");
+    nextState.remotes = nextState.remotes || {};
+    nextState.remotes[parts[0]] = parts[1] || "";
+    response = "";
+  }
+  else if (cmd === "git remote -v") {
+    const remotes = nextState.remotes || {};
+    response = Object.keys(remotes).length
+      ? Object.entries(remotes).map(([n, u]) => n + "\t" + u + " (fetch)\n" + n + "\t" + u + " (push)").join("\n")
+      : "(no remotes configured)";
+  }
+  else if (cmd === "git push" || cmd.startsWith("git push ")) {
+    const remotes = nextState.remotes || {};
+    if (!Object.keys(remotes).length) response = "fatal: No remote repository configured.\nUse: git remote add origin <url>";
+    else response = "Enumerating objects: " + (nextState.commits || []).length + ", done.\nTo " + Object.values(remotes)[0] + "\n * [new branch] " + nextState.branch + " -> " + nextState.branch;
+  }
+  else if (cmd.startsWith("git pull")) {
+    response = "Already up to date.";
+  }
+  else if (cmd.startsWith("git stash")) {
+    if (cmd === "git stash") {
+      const staged = nextState.staged || [];
+      nextState.stash = nextState.stash || [];
+      if (!staged.length) response = "No local changes to save";
+      else {
+        nextState.stash.push(staged);
+        nextState.staged = [];
+        response = "Saved working directory and index state WIP on " + nextState.branch + ": stash@{0}";
+      }
+    } else if (cmd === "git stash pop") {
+      if (!(nextState.stash || []).length) response = "No stash entries found.";
+      else {
+        const top = nextState.stash.pop();
+        nextState.staged = [...(nextState.staged || []), ...top];
+        response = "Restored stash@{0}";
+      }
+    }
+  }
+  else if (cmd.startsWith("touch ") || cmd.startsWith("echo ")) {
+    const filename = cmd.startsWith("touch ") ? cmd.replace("touch ", "").trim() : cmd.split(">").pop()?.trim() || "file.txt";
+    nextState.files = { ...(nextState.files || {}), [filename]: "" };
+    nextState.modified = Array.from(new Set([...(nextState.modified || []), filename]));
+    response = "";
+  }
+  else if (cmd.startsWith("ls")) {
+    const fileList = Object.keys(nextState.files || {});
+    response = fileList.length ? fileList.join("  ") : "(empty directory)";
+  }
+  else if (cmd.startsWith("mkdir ")) {
+    response = "";
+  }
+  else if (cmd === "pwd") {
+    response = "/home/student/my-project";
+  }
+  else {
+    response = "command not found: " + cmd + "\n(Supported: git init, git status, git add, git commit -m, git log, git branch, git checkout, git merge, git diff, git remote, git push, git pull, git stash, touch, ls, clear)";
+  }
+
+  setGitRepoState(nextState);
+  const newHistory = response ? [...nextHistory, response] : nextHistory;
+  setGitCommandHistory(newHistory);
+  setOutput(newHistory.join("\n"));
+  setGitCommandInput("");
+};
+    const runActiveLab = async () => {
+    if (isGitLab) {
+      await runGitCommand();
+      return;
+    }
+  await runPythonCode();
+  };
   const askAITutor = async () => {
-    if (!files['main.py'].trim() || isAskingAI) return;
+  if (isAskingAI) return;
+  if (!isGitLab && !files['main.py'].trim()) return;
     setIsAskingAI(true);
     setAiResponse(null);
     try {
       const response = await fetch('/api/ai-tutor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: files['main.py'], assignment: activeVideo.githubAssignment?.title || "Python exercise", output: output || "No output yet." })
+        body: JSON.stringify({
+        labType: activeLabType,
+        assignment: activeVideo.githubAssignment?.title || "Exercise",
+        code: files["main.py"] || "",
+        output: output || "No output yet.",
+        gitContext: {
+        commandInput: gitCommandInput,
+        commandHistory: gitCommandHistory,
+        repoState: gitRepoState
+        }
+        })      
       });
       const data = await response.json();
       if (data.success) setAiResponse(data.message);
@@ -876,7 +1175,8 @@ builtins.input = custom_input
                   {activeVideo.githubAssignment && (
                     <>
                       <button onClick={() => setActiveTab('practice')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'practice' ? 'text-amber-500 border-b-2 border-amber-500 bg-[#0a0a0a]' : 'text-stone-400 hover:text-stone-200'}`}><Code size={18} /> Practice {isAssignmentCompleted && "✅"}</button>
-                      <button onClick={() => setActiveTab('visualize')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'visualize' ? 'text-amber-500 border-b-2 border-amber-500 bg-[#0a0a0a]' : 'text-stone-400 hover:text-stone-200'}`}><Eye size={18} /> Visualize</button>
+                      <button onClick={() => setActiveTab('visualize')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'visualize' ? 'text-amber-500 border-b-2 border-amber-500 bg-[#0a0a0a]' : 'text-stone-400 hover:text-stone-200'}`}><Eye size={18} /> 
+                      {isGitLab ? 'Git Graph' : 'Visualize'} </button>
                     </>
                   )}
                 </div>
@@ -966,41 +1266,74 @@ builtins.input = custom_input
 
                       <div className="flex-1 flex flex-col bg-[#0d1117] min-h-[500px]">
                         <div className="flex bg-[#161b22] border-b border-stone-800 justify-between items-center pr-4 overflow-x-auto">
-                          <div className="flex">
-                            {Object.keys(files).map(filename => (
-                              <div key={filename} onClick={() => setActiveFile(filename)} className={`px-4 py-2.5 text-xs font-mono flex items-center gap-2 cursor-pointer border-r border-stone-800 ${activeFile === filename ? 'bg-[#0d1117] text-amber-400 border-t-2 border-t-amber-500' : 'bg-[#161b22] text-stone-500 hover:text-stone-300 border-t-2 border-t-transparent'}`}>
-                                <FileText size={14} /> {filename}
-                                {filename !== 'main.py' && <X size={12} className="hover:text-red-400 ml-2" onClick={(e) => { e.stopPropagation(); handleDeleteFile(filename); }}/>}
-                              </div>
-                            ))}
-                            <button onClick={handleAddFile} className="px-3 py-2 text-stone-500 hover:text-white transition-colors"><Plus size={16} /></button>
-                          </div>
-                          
+                          {isGitLab ? (
+                            <div className="flex items-center gap-3 px-4 py-2.5">
+                              <span className="text-xs font-mono text-stone-500">branch:</span>
+                              <span className="text-xs font-mono font-bold text-amber-400">{gitRepoState.branch}</span>
+                              {gitRepoState.staged.length > 0 && (
+                                <span className="text-xs font-mono text-green-400">{gitRepoState.staged.length} staged</span>
+                              )}
+                              {gitRepoState.commits.length > 0 && (
+                                <span className="text-xs font-mono text-blue-400">{gitRepoState.commits.length} commits</span>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex">
+                              {Object.keys(files).map(filename => (
+                                <div key={filename} onClick={() => setActiveFile(filename)} className={`px-4 py-2.5 text-xs font-mono flex items-center gap-2 cursor-pointer border-r border-stone-800 ${activeFile === filename ? 'bg-[#0d1117] text-amber-400 border-t-2 border-t-amber-500' : 'bg-[#161b22] text-stone-500 hover:text-stone-300 border-t-2 border-t-transparent'}`}>
+                                  <FileText size={14} /> {filename}
+                                  {filename !== 'main.py' && <X size={12} className="hover:text-red-400 ml-2" onClick={(e) => { e.stopPropagation(); handleDeleteFile(filename); }}/>}
+                                </div>
+                              ))}
+                              <button onClick={handleAddFile} className="px-3 py-2 text-stone-500 hover:text-white transition-colors"><Plus size={16} /></button>
+                            </div>
+                          )}
                           <div className="flex gap-2 shrink-0 py-1.5 ml-4">
-                            <button onClick={askAITutor} disabled={!files['main.py']?.trim() || isAskingAI} className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-purple-400 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-colors border border-stone-700 disabled:opacity-50">
+                            <button onClick={askAITutor} disabled={(!isGitLab && !files['main.py']?.trim()) || isAskingAI} className="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-purple-400 rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-colors border border-stone-700 disabled:opacity-50">
                               {isAskingAI ? <Loader2 size={12} className="animate-spin"/> : <MessageCircle size={12}/>} Ask AI
                             </button>
-                            <button onClick={runPythonCode} disabled={isRunningCode || isPyodideLoading || isFetchingCode} className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-colors disabled:opacity-50">
+                            {!isGitLab && (
+                            <button onClick={runActiveLab} disabled={isRunningCode || isPyodideLoading || isFetchingCode} className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs font-bold flex items-center justify-center gap-1 transition-colors disabled:opacity-50">
                               {isPyodideLoading || isFetchingCode ? <Loader2 size={12} className="animate-spin"/> : isRunningCode ? <Loader2 size={12} className="animate-spin"/> : <PlayCircle size={12}/>} Run
                             </button>
+                          )}
                           </div>
                         </div>
-
+                        {!isGitLab && (
                         <div className="flex-grow relative min-h-[300px]">
                           <Editor height="100%" defaultLanguage={getLanguage(activeFile)} theme="vs-dark" value={files[activeFile] || ""} onChange={(value) => { setFiles(prev => ({ ...prev, [activeFile]: value || "" })); setAiResponse(null); }} options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} />
                         </div>
-
-                        <div className="h-[200px] border-t border-stone-800 flex flex-col bg-[#0d1117] shrink-0">
+                        )}
+                        <div className={`${isGitLab ? 'flex-grow' : 'h-[200px]'} border-t border-stone-800 flex flex-col bg-[#0d1117] shrink-0`}>
                           <div className="flex items-center justify-between px-4 py-2 bg-[#161b22] border-b border-stone-800">
                             <div className="flex gap-4">
                               <span className="text-xs font-mono text-white border-b border-blue-500 pb-1">TERMINAL</span>
-                              <span className="text-xs font-mono text-stone-600">OUTPUT</span>
                             </div>
                             <button onClick={() => setOutput("")} className="text-stone-500 hover:text-stone-300 text-xs flex items-center gap-1"><RefreshCw size={12}/> Clear</button>
                           </div>
                           <div className="flex-grow p-4 overflow-y-auto bg-[#0d1117]">
                             <pre className={`text-sm font-mono whitespace-pre-wrap ${output.startsWith('Error') || output.startsWith('Syntax') || output.includes('❌') ? 'text-red-400' : 'text-green-400'}`}>{output || "shivam@academy:~$ _"}</pre>
                           </div>
+                          {isGitLab && (
+                            <form
+                              onSubmit={(e) => { e.preventDefault(); runGitCommand(); }}
+                              className="flex items-center gap-2 px-4 py-3 bg-[#0a0c10] border-t border-stone-800 shrink-0"
+                            >
+                              <span className="text-green-400 font-mono text-sm shrink-0">$</span>
+                              <input
+                                type="text"
+                                value={gitCommandInput}
+                                onChange={(e) => setGitCommandInput(e.target.value)}
+                                placeholder="git status"
+                                className="flex-1 bg-transparent text-green-400 font-mono text-sm focus:outline-none placeholder:text-stone-600"
+                                autoComplete="off"
+                                spellCheck={false}
+                              />
+                              <button type="submit" className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs font-bold transition-colors shrink-0">
+                                Run
+                              </button>
+                            </form>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1008,6 +1341,8 @@ builtins.input = custom_input
 
                   {/* VISUALIZER TAB */}
                   {activeTab === 'visualize' && activeVideo.githubAssignment && (
+                    isGitLab ? <GitGraphVisualizer commits={gitRepoState.commits} branch={gitRepoState.branch} />: (
+                      // existing Python Tutor iframe block stays here unchanged
                     <div className="p-6 md:p-8 flex flex-col flex-grow">
                       <div className="bg-[#121212] border border-white/10 p-4 rounded-xl flex justify-between items-center mb-6">
                         <div>
@@ -1027,7 +1362,7 @@ builtins.input = custom_input
                         </div>
                       </div>
                     </div>
-                  )}
+                  ))}
 
                 </div>
               </div>

@@ -542,7 +542,7 @@ export const courseCurriculumMap: Record<string, any[]> = {
     videoIds:[
       "LNmtD68zih0"],
     githubAssignments: {
-        // Video 2 gets an assignment
+        // Video 1 gets an assignment
         "LNmtD68zih0": {
           title: "Git Day 01: Init, Add, Commit",
           labType: "git",
@@ -588,7 +588,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
     moduleTitle: "Module 3: Branches and Safe Deployment",
     videoIds:[
       "EGyjbM4rAVQ",
-      "xCQdkzcI7Fs"
+      "xCQdkzcI7Fs",
+      "O1Es9VVaJFY"
     ],
     githubAssignments: {
         "": {
