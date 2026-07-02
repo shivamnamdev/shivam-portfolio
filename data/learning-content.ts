@@ -561,11 +561,14 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "UmrdGzO3HLE"
     ],
     githubAssignments: {
-        // Video 2 gets an assignment
-        "TtsqgKlLzlg": {
-          title: "Day 14: List Data Type",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2014%3A%20List%20Data%20Type/Assignment.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2014%3A%20List%20Data%20Type/Solution.py"
+        "xKhjGmOxmSQ": {
+          title: "Git Day 02: diff, show, log",
+          labType: "git",
+          instructionsUrl: "https://raw.githubusercontent.com/shivamnamdev/git_practicals/refs/heads/main/Day_02/instructions.md",
+          starterRepoUrl: "https://raw.githubusercontent.com/shivamnamdev/git_practicals/refs/heads/main/Day_02/reposeed.json",
+          expectedStateUrl: "https://raw.githubusercontent.com/shivamnamdev/git_practicals/refs/heads/main/Day_02/expected-seed.json",
+          validatorUrl: "https://raw.githubusercontent.com/shivamnamdev/git_practicals/refs/heads/main/Day_02/validator.json",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/git_practicals/refs/heads/main/Day_02/solutions.md"
         },
         "rikgL_Oj5Ds": {
           title: "Day 15: List Hands On Practice",
