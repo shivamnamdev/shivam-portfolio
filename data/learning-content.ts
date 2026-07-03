@@ -593,7 +593,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "EGyjbM4rAVQ",
       "xCQdkzcI7Fs",
       "O1Es9VVaJFY", 
-      "KSlo8Xfqlrs"
+      "KSlo8Xfqlrs",
+      "Tz8Ii_01Xj8"
     ],
     githubAssignments: {
         "": {
