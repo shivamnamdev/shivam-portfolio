@@ -27,6 +27,9 @@ function formatYouTubeDuration(duration: string) {
 export default function CoursePlayerPage({ params }: { params: { slug: string } }) {
   const { user, isLoaded } = useUser();
   const isAdmin = user?.primaryEmailAddress?.emailAddress === ADMIN_EMAIL;
+  const siteOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://shivamnamdev.com';
+  const [hasAccess, setHasAccess] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(true);
   
   const [playlist, setPlaylist] = useState<any[]>([]);
   const [activeVideo, setActiveVideo] = useState<any>(null);
@@ -121,6 +124,42 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     };
     loadPyodideScript();
   },[isGitLab]);
+
+  useEffect(() => {
+    async function verifyAccess() {
+      if (!isLoaded) return;
+
+      if (!user?.id) {
+        setHasAccess(false);
+        setIsVerifying(false);
+        return;
+      }
+
+      if (isAdmin) {
+        setHasAccess(true);
+        setIsVerifying(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('user_enrollments')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('course_slug', params.slug)
+          .limit(1);
+
+        setHasAccess(!error && !!data && data.length > 0);
+      } catch (err) {
+        setHasAccess(false);
+      } finally {
+        setIsVerifying(false);
+      }
+    }
+
+    setIsVerifying(true);
+    verifyAccess();
+  }, [isLoaded, isAdmin, params.slug, user?.id]);
 
   const loadGithubAssignment = async (assignmentObj: any) => {
     setIsFetchingCode(true);
@@ -235,7 +274,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
 
   useEffect(() => {
     async function loadCourseData() {
-      if (!isLoaded || !user?.id) return;
+      if (!isLoaded || !user?.id || isVerifying || !hasAccess) return;
       try {
         const courseModules = courseCurriculumMap[params.slug] ||[];
         const allVideoIds = courseModules.flatMap(m => m.videoIds ||[]);
@@ -269,7 +308,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
 
         const enrichedModules = courseModules.map((module) => ({
           moduleTitle: module.moduleTitle,
-          videos: module.videoIds.map((id, index) => ({
+          videos: module.videoIds.map((id: string, index: number) => ({
             id: id,
             title: ytDataMap[id]?.title || `Lesson ${index + 1}`,
             duration: ytDataMap[id]?.duration || "--:--",
@@ -312,11 +351,11 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       }
     }
     loadCourseData();
-  },[isLoaded, user?.id, params.slug]);
+  },[hasAccess, isLoaded, isVerifying, params.slug, user?.id]);
 
   useEffect(() => {
     async function fetchLikesAndComments() {
-      if (!activeVideo || !user) return;
+      if (!activeVideo || !user || !hasAccess) return;
       const { data: commentData } = await supabase.from('video_comments').select('*').eq('video_id', activeVideo.id).order('created_at', { ascending: false });
       if (commentData) setComments(commentData);
 
@@ -327,7 +366,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       }
     }
     fetchLikesAndComments();
-  }, [activeVideo, user]);
+  }, [activeVideo, hasAccess, user]);
 
   const handleVideoChange = (video: any) => {
     if (activeVideo?.id === video.id) return;
@@ -420,8 +459,8 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   };
 
   const handleAdminShare = async () => {
-    const shareUrl = `https://shivamnamdev.com/share/${activeVideo.youtubeId}?t=${Date.now()}`;
-    const shareText = `🚀 Ready to Master Python?\n\nCheck out this exclusive lesson: *${activeVideo?.title}* from Shivam Academy!\n\n🎓 Click here to watch the video directly:\n${shareUrl}\n\n💻 Enroll here to unlock the full platform, interactive labs, and the AI code tutor:\nhttps://shivamnamdev.com/courses/${params.slug}`;
+    const shareUrl = `${siteOrigin}/share/${activeVideo.youtubeId}?t=${Date.now()}`;
+    const shareText = `🚀 Ready to Master Python?\n\nCheck out this exclusive lesson: *${activeVideo?.title}* from Shivam Academy!\n\n🎓 Click here to watch the video directly:\n${shareUrl}\n\n💻 Enroll here to unlock the full platform, interactive labs, and the AI code tutor:\n${siteOrigin}/courses/${params.slug}`;
     if (navigator.share) { try { await navigator.share({ title: activeVideo?.title || "Shivam Academy", text: shareText }); } catch (err) {} } 
     else { navigator.clipboard.writeText(shareText); alert("Branded share message copied! Paste it in WhatsApp and wait 3 seconds for your thumbnail to appear!"); }
   };
@@ -438,7 +477,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   };
 
   const markAsComplete = async () => {
-    if (!user || !activeVideo || isMarking) return;
+    if (!user || !activeVideo || isMarking || !hasAccess) return;
     setIsMarking(true);
     try {
       await supabase.from('video_progress').insert([{ user_id: user.id, course_slug: params.slug, video_id: activeVideo.id }]);
@@ -447,7 +486,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   };
 
   const submitAssignment = async () => {
-    if (!user || !activeVideo || isSubmittingAssignment) return;
+    if (!user || !activeVideo || isSubmittingAssignment || !hasAccess) return;
     if (isGitLab) {
       setIsSubmittingAssignment(true);
       try {
@@ -936,6 +975,40 @@ builtins.input = custom_input
     return 'plaintext';
   };
 
+  if (!isLoaded || isVerifying) {
+    return (
+      <div className="h-screen w-screen flex flex-col bg-[#0d1117]">
+        <div className="flex-grow flex items-center justify-center flex-col gap-4">
+          <Loader2 className="animate-spin text-amber-500" size={48} />
+          <p className="text-stone-400 font-medium">Verifying your course access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen flex flex-col bg-black">
+        <Navbar />
+        <div className="flex-grow flex items-center justify-center px-6">
+          <div className="w-full max-w-xl text-center border border-white/10 bg-[#0d1117] rounded-2xl p-8">
+            <h1 className="text-3xl font-black text-white mb-3">Access Denied</h1>
+            <p className="text-stone-400 mb-8">You are not enrolled in this course yet. Enroll first to unlock recordings, labs, and assignments.</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link href={`/courses/${params.slug}`} className="px-6 py-3 rounded-xl bg-amber-500 text-black font-bold hover:bg-amber-400 transition-colors">
+                Enroll In Course
+              </Link>
+              <Link href="/learning" className="px-6 py-3 rounded-xl bg-stone-800 text-stone-100 font-bold hover:bg-stone-700 transition-colors">
+                Back To Dashboard
+              </Link>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="h-screen w-screen flex flex-col bg-[#0d1117]">
@@ -1143,8 +1216,8 @@ builtins.input = custom_input
                   <div className="flex flex-wrap items-center gap-3 shrink-0">
                     {isAdmin && (
                       <button onClick={async () => {
-                        const shareUrl = `https://shivamnamdev.com/share/${activeVideo.youtubeId}?t=${Date.now()}`;
-                        const shareText = `🚀 Ready to Master Python?\n\nCheck out this exclusive lesson: *${activeVideo?.title}* from Shivam Academy!\n\n🎓 Click here to watch the video directly:\n${shareUrl}\n\n💻 Enroll here to unlock the full platform:\nhttps://shivamnamdev.com/courses/${params.slug}`;
+                        const shareUrl = `${siteOrigin}/share/${activeVideo.youtubeId}?t=${Date.now()}`;
+                        const shareText = `🚀 Ready to Master Python?\n\nCheck out this exclusive lesson: *${activeVideo?.title}* from Shivam Academy!\n\n🎓 Click here to watch the video directly:\n${shareUrl}\n\n💻 Enroll here to unlock the full platform:\n${siteOrigin}/courses/${params.slug}`;
                         if (navigator.share) { try { await navigator.share({ title: activeVideo?.title || "Shivam Academy", text: shareText }); } catch (err) {} } 
                         else { navigator.clipboard.writeText(shareText); alert("Branded share message copied!"); }
                       }} className="px-4 py-3 rounded-xl bg-purple-500/10 text-purple-400 font-bold text-sm flex items-center justify-center gap-2 border border-purple-500/20 hover:bg-purple-500/20 transition-colors">
