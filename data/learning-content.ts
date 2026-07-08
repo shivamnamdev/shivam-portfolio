@@ -633,7 +633,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
   {
     moduleTitle: "Module 4: Remote Repositories and Github",
     videoIds:[
-      "12cB5HfjZOw"
+      "12cB5HfjZOw",
+      "YSoPLYPc1I4"
     ],
     githubAssignments: {
       "uHRAKjaju04": {
