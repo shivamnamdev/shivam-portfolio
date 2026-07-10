@@ -1,7 +1,15 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUser, UserButton } from '@clerk/nextjs';
 import Navbar from '@/components/Navbar';
+
+declare global {
+  interface Window {
+    YT?: any;
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
+
 import Footer from '@/components/Footer';
 import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, Code2, TerminalSquare, Award, FileCheck, Eye, RefreshCw, X, Plus, FileText, ThumbsUp, Share2 } from 'lucide-react';
 import Link from 'next/link';
@@ -33,6 +41,30 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   
   const [playlist, setPlaylist] = useState<any[]>([]);
   const [activeVideo, setActiveVideo] = useState<any>(null);
+  const [lastPlaybackTime, setLastPlaybackTime] = useState(0);
+  const savedPlaybackTimeRef = useRef<number>(0);
+  const playerRef = useRef<any>(null);
+  const timeUpdateIntervalRef = useRef<number | null>(null);
+  const STORAGE_KEY = `course-player-${params.slug}`;
+
+  const getSavedPlayerState = () => {
+    if (typeof window === 'undefined') return null;
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as { videoId?: string; timestamp?: number } | null;
+    } catch {
+      return null;
+    }
+  };
+
+  const savePlayerState = (videoId: string, timestamp: number) => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ videoId, timestamp })
+    );
+  };
   
   const [completedVideos, setCompletedVideos] = useState<string[]>([]);
   const [completedAssignments, setCompletedAssignments] = useState<string[]>([]);
@@ -123,7 +155,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       document.body.appendChild(script);
     };
     loadPyodideScript();
-  },[isGitLab]);
+  }, [isGitLab]);
 
   useEffect(() => {
     async function verifyAccess() {
@@ -273,6 +305,100 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
 };
 
   useEffect(() => {
+    if (!activeVideo) return;
+    const savedState = getSavedPlayerState();
+    if (savedState && savedState.videoId === activeVideo.id && typeof savedState.timestamp === 'number') {
+      savedPlaybackTimeRef.current = savedState.timestamp;
+      setLastPlaybackTime(savedState.timestamp);
+    } else {
+      savedPlaybackTimeRef.current = 0;
+      setLastPlaybackTime(0);
+    }
+  }, [activeVideo]);
+
+  useEffect(() => {
+    if (!activeVideo) return;
+    savePlayerState(activeVideo.id, lastPlaybackTime);
+  }, [activeVideo, lastPlaybackTime]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !activeVideo) return;
+
+    const clearTimeInterval = () => {
+      if (timeUpdateIntervalRef.current !== null) {
+        window.clearInterval(timeUpdateIntervalRef.current);
+        timeUpdateIntervalRef.current = null;
+      }
+    };
+
+    const onPlayerStateChange = (event: any) => {
+      const player = event.target;
+      if (!player) return;
+      const state = window.YT?.PlayerState;
+      if (event.data === state?.PLAYING) {
+        clearTimeInterval();
+        timeUpdateIntervalRef.current = window.setInterval(() => {
+          const time = player.getCurrentTime();
+          setLastPlaybackTime(Math.max(0, time));
+        }, 5000);
+      } else if (
+        event.data === state?.PAUSED ||
+        event.data === state?.ENDED ||
+        event.data === state?.CUED
+      ) {
+        clearTimeInterval();
+        const time = player.getCurrentTime();
+        setLastPlaybackTime(Math.max(0, time));
+      }
+    };
+
+    const createPlayer = () => {
+      if (!window.YT?.Player) return;
+      if (playerRef.current) {
+        playerRef.current.loadVideoById({
+          videoId: activeVideo.youtubeId,
+          startSeconds: savedPlaybackTimeRef.current || 0,
+        });
+        return;
+      }
+
+      playerRef.current = new window.YT.Player('course-player-iframe', {
+        videoId: activeVideo.youtubeId,
+        playerVars: {
+          rel: 0,
+          modestbranding: 1,
+          origin: siteOrigin,
+          start: savedPlaybackTimeRef.current || 0,
+        },
+        events: {
+          onReady: (event: any) => {
+            const time = savedPlaybackTimeRef.current || 0;
+            if (time > 0) {
+              event.target.seekTo(time, true);
+            }
+          },
+          onStateChange: onPlayerStateChange,
+        },
+      });
+    };
+
+    const existingScript = document.getElementById('youtube-iframe-api');
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.id = 'youtube-iframe-api';
+      script.src = 'https://www.youtube.com/iframe_api';
+      document.body.appendChild(script);
+      (window as any).onYouTubeIframeAPIReady = createPlayer;
+    } else if (window.YT?.Player) {
+      createPlayer();
+    }
+
+    return () => {
+      clearTimeInterval();
+    };
+  }, [activeVideo, siteOrigin]);
+
+  useEffect(() => {
     async function loadCourseData() {
       if (!isLoaded || !user?.id || isVerifying || !hasAccess) return;
       try {
@@ -322,11 +448,19 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
         if (enrichedModules.length > 0 && enrichedModules[0].videos.length > 0) {
           const urlParams = new URLSearchParams(window.location.search);
           const videoParam = urlParams.get('v');
+          const savedState = getSavedPlayerState();
           
           let targetVideo = null;
           if (videoParam) {
             for (const mod of enrichedModules) {
               const found = mod.videos.find((v: any) => v.id === videoParam);
+              if (found) { targetVideo = found; break; }
+            }
+          }
+
+          if (!targetVideo && savedState?.videoId) {
+            for (const mod of enrichedModules) {
+              const found = mod.videos.find((v: any) => v.id === savedState.videoId);
               if (found) { targetVideo = found; break; }
             }
           }
@@ -1179,7 +1313,7 @@ builtins.input = custom_input
             {/* The Cinematic Video Player */}
             {activeVideo ? (
               <div className="w-full bg-black rounded-2xl overflow-hidden shadow-2xl aspect-video border border-white/10 relative select-none shrink-0">
-                <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${activeVideo.youtubeId}?rel=0&modestbranding=1`} title={activeVideo.title} frameBorder="0" allowFullScreen></iframe>
+                <div id="course-player-iframe" className="w-full h-full" />
                 <div className="absolute inset-0 pointer-events-none overflow-hidden z-50 flex items-center justify-center mix-blend-difference">
                   <motion.div animate={{ x:[-150, 150, 150, -150, -150], y:[-80, -80, 80, 80, -80] }} transition={{ duration: 25, repeat: Infinity, ease: "linear" }} className="absolute text-white/30 font-mono text-sm md:text-lg font-bold tracking-widest pointer-events-none drop-shadow-md transform -rotate-12">
                     {user?.primaryEmailAddress?.emailAddress || user?.id} <br/><span className="text-xs">DO NOT DISTRIBUTE</span>
@@ -1231,7 +1365,7 @@ builtins.input = custom_input
                       </button>
                     ) : (
                       <button onClick={markAsComplete} disabled={isMarking} className="px-6 py-3.5 rounded-xl bg-amber-500 text-black font-black text-sm flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors shadow-[0_0_20px_rgba(245,158,11,0.2)] disabled:opacity-70">
-                        {isMarking ? <Loader2 size={18} className="animate-spin text-black"/> : <CheckCircle size={18} />} Mark Complete
+                        {isMarking ? <Loader2 size={18} className="animate-spin"/> : <CheckCircle size={18} />} Mark Complete
                       </button>
                     )}
                   </div>
