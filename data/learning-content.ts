@@ -371,10 +371,10 @@ export const courseCurriculumMap: Record<string, any[]> = {
     {
     moduleTitle: "Module 1: Python Fundamentals",
     videoIds:[
-      ],
+      "a9nrrH5XkG0"],
     githubAssignments: {
         // Video 2 gets an assignment
-        "": {
+        "a9nrrH5XkG0": {
           title: "Day 01: Introduction and print function",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2001%3A%20Introduction%20and%20print%20function/Assignment",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2001%3A%20Introduction%20and%20print%20function/Solution.py"
