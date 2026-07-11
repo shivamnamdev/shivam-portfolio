@@ -2,10 +2,10 @@
 
 export const activeCoupons =[
   {
-    code: "LASTCHANCE26",
+    code: "EXISTINGSTUDENT_BATCH03",
     discountType: "fixed", // 'percentage' or 'fixed'
     discountValue: {
-      inr: 799, // ₹200 off for India
+      inr: 1999, // ₹200 off for India
       usd: 50   // $50 off for International
     }, // 20% off
     allowedUsers: [] // 🚨 Leave empty[] to let ANYONE use it!
