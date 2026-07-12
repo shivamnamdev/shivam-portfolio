@@ -149,7 +149,7 @@ modules: [
     contactPhone: "7057034840",
     enrollmentClosed: false, 
     // 🚨 NEW: Add your private group link here!
-    whatsappLink: "https://chat.whatsapp.com/JC7u8pWcePA2o89Tu0QL9O",
+    whatsappLink: "https://chat.whatsapp.com/COiL4vkIxEBAKy4WtH5Fyp",
 
     vsl: {
       headlinePart1: "Don't just learn Python.",
