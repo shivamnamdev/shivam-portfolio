@@ -371,24 +371,21 @@ export const courseCurriculumMap: Record<string, any[]> = {
     {
     moduleTitle: "Module 1: Python Fundamentals",
     videoIds:[
-      "a9nrrH5XkG0"],
+      "a9nrrH5XkG0",
+      "5G3VcAR2P_E"
+  ],
     githubAssignments: {
-        // Video 2 gets an assignment
+        // Video 1 gets an assignment
         "a9nrrH5XkG0": {
           title: "Day 01: Introduction and print function",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2001%3A%20Introduction%20and%20print%20function/Assignment",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2001%3A%20Introduction%20and%20print%20function/Solution.py"
         },
-        // Video 3 gets an assignment
-        "": {
-          title: "Day 02: Operator",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2002%3A%20Operator/Assignment",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2002%3A%20Operator/Solution.py"
-        },
-        "": {
-          title: "Day 03: Built-in Functions",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2003%3A%20Built-in%20Functions/Assignment",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2003%3A%20Built-in%20Functions/Solution.py"
+        // Video 2 gets an assignment
+        "5G3VcAR2P_E": {
+          title: "Day 02: Operator and Built-in Functions",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-2/Assignment",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-2/Solution.py"
         },
         "": {
           title: "Day 04: Conditional Statement",
