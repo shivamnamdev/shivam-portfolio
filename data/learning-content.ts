@@ -632,7 +632,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
     videoIds:[
       "12cB5HfjZOw",
       "YSoPLYPc1I4",
-      "Z_q3lV9ADi4"
+      "Z_q3lV9ADi4",
+      "1hb12RrnTgo"
     ],
     githubAssignments: {
       "uHRAKjaju04": {
