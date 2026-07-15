@@ -46,6 +46,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   const playerRef = useRef<any>(null);
   const timeUpdateIntervalRef = useRef<number | null>(null);
   const STORAGE_KEY = `course-player-${params.slug}`;
+  const assignmentSubmissionsRef = useRef<Record<string, string>>({});
 
   const getSavedPlayerState = () => {
     if (typeof window === 'undefined') return null;
@@ -64,6 +65,63 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       STORAGE_KEY,
       JSON.stringify({ videoId, timestamp })
     );
+  };
+
+  const getAssignmentDraftKey = (videoId: string) => `${STORAGE_KEY}-assignment-${videoId}`;
+
+  const hasMeaningfulDraft = (candidate: Record<string, string>[] | undefined) => {
+    if (!Array.isArray(candidate)) return false;
+    return candidate.some(step => {
+      if (!step) return false;
+      return Object.keys(step).some(key => (step[key] || '').trim().length > 0);
+    });
+  };
+
+  const syncCurrentStepFiles = (nextFiles: Record<string, string>, stepIndex = currentStepIndex) => {
+    setStepFiles(prev => {
+      const updated = [...prev];
+      while (updated.length <= stepIndex) updated.push({ "main.py": "" });
+      updated[stepIndex] = nextFiles;
+      return updated;
+    });
+  };
+
+  const parseSubmittedCode = (submitted: string) => {
+    // Attempt to parse the submitted plain-text payload back into an array of step file maps
+    try {
+      // If it's the multi-step format with step headers
+      if (/^# === Step \d+ ===/m.test(submitted)) {
+        const parts = submitted.split(/# === Step \d+ ===\n/g).map(s => s.trim()).filter(Boolean);
+        const out: Record<string,string>[] = parts.map(part => {
+          const obj: Record<string,string> = {};
+          const fileRegex = /# --- File: (.+?) ---\n([\s\S]*?)(?=(# --- File:|$))/g;
+          let m: RegExpExecArray | null;
+          while ((m = fileRegex.exec(part)) !== null) {
+            const name = m[1].trim();
+            const content = m[2] || '';
+            obj[name] = content;
+          }
+          // fallback: if no file markers, put whole part into main.py
+          if (Object.keys(obj).length === 0) obj['main.py'] = part;
+          return obj;
+        });
+        return out;
+      }
+
+      // carryOver or single-step format: parse files across the whole string
+      const singleObj: Record<string,string> = {};
+      const fileRegex = /# --- File: (.+?) ---\n([\s\S]*?)(?=(# --- File:|$))/g;
+      let m2: RegExpExecArray | null;
+      while ((m2 = fileRegex.exec(submitted)) !== null) {
+        singleObj[m2[1].trim()] = m2[2] || '';
+      }
+      if (Object.keys(singleObj).length > 0) return [singleObj];
+
+      // otherwise return as single main.py
+      return [{ 'main.py': submitted }];
+    } catch (e) {
+      return [{ 'main.py': submitted }];
+    }
   };
   
   const [completedVideos, setCompletedVideos] = useState<string[]>([]);
@@ -102,6 +160,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   
   const [assignmentSteps, setAssignmentSteps] = useState<string[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [assignmentSubmissions, setAssignmentSubmissions] = useState<Record<string, string>>({});
 
   const [pyodide, setPyodide] = useState<any>(null);
   const [isPyodideLoading, setIsPyodideLoading] = useState(true);
@@ -193,7 +252,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     verifyAccess();
   }, [isLoaded, isAdmin, params.slug, user?.id]);
 
-  const loadGithubAssignment = async (assignmentObj: any) => {
+  const loadGithubAssignment = async (assignmentObj: any, fallbackSubmission?: string) => {
     setIsFetchingCode(true);
     try {
       const response = await fetch(`${assignmentObj.rawUrl}?t=${Date.now()}`);
@@ -228,13 +287,49 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
         }
       }
       
-      const initialFilesArray = Array.from({ length: finalSteps.length }, (_, idx) => ({ 
+      const initialFilesArray: Record<string, string>[] = Array.from({ length: finalSteps.length }, (_, idx) => ({ 
         ...supportingWorkspace,
         "main.py": starterCodeSteps[idx] || starterCodeSteps[0] || "# Write your Python code below:\n\n"
       }));
 
-      setStepFiles(initialFilesArray);
-      setFiles(initialFilesArray[0]);
+      // Prefer local draft (from localStorage) if available, otherwise restore from DB submission if present
+      let finalFilesArray = initialFilesArray;
+      let restoredStepIndex = 0;
+      try {
+        if (typeof window !== 'undefined' && activeVideo?.id) {
+          const draftKey = getAssignmentDraftKey(activeVideo.id);
+          const rawDraft = window.localStorage.getItem(draftKey);
+          if (rawDraft) {
+            const parsed = JSON.parse(rawDraft);
+            if (hasMeaningfulDraft(parsed?.stepFiles)) {
+              finalFilesArray = parsed.stepFiles;
+              restoredStepIndex = typeof parsed.currentStepIndex === 'number' ? parsed.currentStepIndex : 0;
+            } else {
+              const savedSubmission = fallbackSubmission ?? (activeVideo.id ? assignmentSubmissionsRef.current[activeVideo.id] : null);
+              if (savedSubmission) {
+                const parsedFromDb = parseSubmittedCode(savedSubmission);
+                if (Array.isArray(parsedFromDb) && parsedFromDb.length > 0) {
+                  finalFilesArray = parsedFromDb.length === initialFilesArray.length ? parsedFromDb : parsedFromDb.slice(0, initialFilesArray.length).concat(initialFilesArray.slice(parsedFromDb.length));
+                }
+              }
+            }
+          } else {
+            const savedSubmission = fallbackSubmission ?? (activeVideo.id ? assignmentSubmissionsRef.current[activeVideo.id] : null);
+            if (savedSubmission) {
+              const parsedFromDb = parseSubmittedCode(savedSubmission);
+              if (Array.isArray(parsedFromDb) && parsedFromDb.length > 0) {
+                finalFilesArray = parsedFromDb.length === initialFilesArray.length ? parsedFromDb : parsedFromDb.slice(0, initialFilesArray.length).concat(initialFilesArray.slice(parsedFromDb.length));
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // ignore draft parse errors
+      }
+
+      setStepFiles(finalFilesArray);
+      setCurrentStepIndex(restoredStepIndex);
+      setFiles(finalFilesArray[Math.max(0, restoredStepIndex)] || finalFilesArray[0] || initialFilesArray[0]);
       setActiveFile("main.py");
 
       if (assignmentObj.solutionUrl) {
@@ -305,6 +400,10 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
 };
 
   useEffect(() => {
+    assignmentSubmissionsRef.current = assignmentSubmissions;
+  }, [assignmentSubmissions]);
+
+  useEffect(() => {
     if (!activeVideo) return;
     const savedState = getSavedPlayerState();
     if (savedState && savedState.videoId === activeVideo.id && typeof savedState.timestamp === 'number') {
@@ -315,6 +414,18 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       setLastPlaybackTime(0);
     }
   }, [activeVideo]);
+
+  // Autosave assignment drafts to localStorage per video
+  useEffect(() => {
+    if (typeof window === 'undefined' || !activeVideo || !activeVideo.githubAssignment || assignmentSteps.length === 0) return;
+    const hasMeaningfulContent = stepFiles.some(step => Object.keys(step || {}).some(key => (step[key] || '').trim().length > 0));
+    if (!hasMeaningfulContent && !files['main.py']?.trim()) return;
+    try {
+      const draftKey = getAssignmentDraftKey(activeVideo.id);
+      const payload = { stepFiles, currentStepIndex };
+      window.localStorage.setItem(draftKey, JSON.stringify(payload));
+    } catch (e) {}
+  }, [stepFiles, currentStepIndex, activeVideo, assignmentSteps.length, files]);
 
   useEffect(() => {
     if (!activeVideo) return;
@@ -407,12 +518,20 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
 
         const [vidRes, assRes, examRes] = await Promise.all([
           supabase.from('video_progress').select('video_id').eq('user_id', user.id).eq('course_slug', params.slug),
-          supabase.from('assignment_progress').select('video_id').eq('user_id', user.id).eq('course_slug', params.slug),
+          // Also fetch submitted_code so we can restore previous submissions
+          supabase.from('assignment_progress').select('video_id, submitted_code').eq('user_id', user.id).eq('course_slug', params.slug),
           supabase.from('exam_progress').select('*').eq('user_id', user.id).eq('course_slug', params.slug).single()
         ]);
 
         setCompletedVideos(vidRes.data ? vidRes.data.map(p => p.video_id) :[]);
         setCompletedAssignments(assRes.data ? assRes.data.map(p => p.video_id) :[]);
+        // Build a quick map of submitted_code by video id for fast restore
+        const submissionMap: Record<string, string> = {};
+        if (assRes.data) {
+          assRes.data.forEach((r: any) => { if (r.video_id && r.submitted_code) submissionMap[r.video_id] = r.submitted_code; });
+        }
+        assignmentSubmissionsRef.current = submissionMap;
+        setAssignmentSubmissions(submissionMap);
         if (examRes.data) setExamStatus({ is_passed: examRes.data.is_passed, attempts_used: examRes.data.attempts_used });
 
         if (allVideoIds.length === 0) {
@@ -474,7 +593,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
               setAssignmentSteps(["Git lab ready. Start with a command below."]);
               loadGitLabAssignment(initialVideo.githubAssignment);
             } else {
-              loadGithubAssignment(initialVideo.githubAssignment);
+              loadGithubAssignment(initialVideo.githubAssignment, submissionMap[initialVideo.id]);
             }
           }
         }
@@ -530,7 +649,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
         setAssignmentSteps(["Loading instructions..."]);
         setFiles({ "main.py": "# Loading workspace..." });
         setActiveFile("main.py");
-        loadGithubAssignment(video.githubAssignment);
+        loadGithubAssignment(video.githubAssignment, assignmentSubmissionsRef.current[video.id]);
       }
     } else {
       setStepFiles([]);
@@ -545,17 +664,23 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       setCurrentStepIndex(newIndex);
       setOutput("");
       setAiResponse(null);
-    } else {
-      const newStepFiles = [...stepFiles];
-      newStepFiles[currentStepIndex] = files;
-      setStepFiles(newStepFiles);
-
-      setFiles(newStepFiles[newIndex] || { "main.py": "# Write your Python code below:\n\n" });
-      setActiveFile("main.py");
-      setCurrentStepIndex(newIndex);
-      setOutput("");
-      setAiResponse(null);
+      return;
     }
+
+    const persistedFiles = { ...files };
+    setStepFiles(prev => {
+      const updated = [...prev];
+      while (updated.length <= currentStepIndex) updated.push({ "main.py": "" });
+      updated[currentStepIndex] = persistedFiles;
+      return updated;
+    });
+
+    const targetFiles = stepFiles[newIndex] || { "main.py": "# Write your Python code below:\n\n" };
+    setFiles(targetFiles);
+    setActiveFile("main.py");
+    setCurrentStepIndex(newIndex);
+    setOutput("");
+    setAiResponse(null);
   };
 
   const handleAddFile = () => {
@@ -621,14 +746,22 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
 
   const submitAssignment = async () => {
     if (!user || !activeVideo || isSubmittingAssignment || !hasAccess) return;
+
+    const saveCurrentStepFiles = () => {
+      const currentFiles = { ...files };
+      setStepFiles(prev => {
+        const updated = [...prev];
+        while (updated.length <= currentStepIndex) updated.push({ "main.py": "" });
+        updated[currentStepIndex] = currentFiles;
+        return updated;
+      });
+      return currentFiles;
+    };
+
     if (isGitLab) {
       setIsSubmittingAssignment(true);
       try {
-        const studentName =
-          user.fullName ||
-          user.firstName ||
-          user.primaryEmailAddress?.emailAddress ||
-          "Student";
+        const studentName = user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || "Student";
 
         const gitSubmission = {
           labType: "git",
@@ -653,6 +786,8 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
 
         if (error) throw error;
 
+        setAssignmentSubmissions(prev => ({ ...prev, [activeVideo.id]: JSON.stringify(gitSubmission, null, 2) }));
+
         if (!completedAssignments.includes(activeVideo.id)) {
           setCompletedAssignments(prev => [...prev, activeVideo.id]);
           supabase.from("admin_activity_log").insert([
@@ -672,8 +807,9 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       }
       return;
     }
+
     const isExam = activeVideo.githubAssignment?.isExam;
-    
+
     if (isExam) {
       if (examStatus.attempts_used >= 5 && !examStatus.is_passed && !isAdmin) {
         showToast("Maximum Attempts Reached", "You have used all 5 attempts for this exam.", "error");
@@ -681,7 +817,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       }
       setIsSubmittingAssignment(true);
       setOutput("Running Full Exam Auto-Grader...");
-      
+
       try {
         await pyodide.runPythonAsync(`
 import sys
@@ -689,18 +825,19 @@ import io
 sys.stdout = io.StringIO()
 sys.stderr = io.StringIO()
         `);
-        
+
+        const currentFiles = saveCurrentStepFiles();
         const finalStepFiles = [...stepFiles];
-        finalStepFiles[currentStepIndex] = files;
+        finalStepFiles[currentStepIndex] = currentFiles;
         const combinedCode = finalStepFiles.map(stepDict => Object.values(stepDict).join('\n\n')).join('\n\n');
-        
+
         try {
           await pyodide.runPythonAsync(combinedCode);
           if (activeVideo.githubAssignment.testCode) {
             await pyodide.runPythonAsync(activeVideo.githubAssignment.testCode);
           }
-        } catch(e) {}
-        
+        } catch (e) {}
+
         const stdout = pyodide.runPython("sys.stdout.getvalue()");
         const match = stdout.match(/EXAM_SCORE:\s*(\d+)/);
         const score = match ? parseInt(match[1]) : 0;
@@ -732,7 +869,7 @@ sys.stderr = io.StringIO()
       } finally {
         setIsSubmittingAssignment(false);
       }
-      return; 
+      return;
     }
 
     setIsSubmittingAssignment(true);
@@ -740,33 +877,35 @@ sys.stderr = io.StringIO()
       const isCarryOver = activeVideo?.githubAssignment?.carryOverCode;
       let combinedCode = "";
 
+      const currentFiles = saveCurrentStepFiles();
       if (isCarryOver) {
-        combinedCode = Object.entries(files).map(([name, cont]) => `# --- File: ${name} ---\n${cont}`).join('\n\n');
+        combinedCode = Object.entries(currentFiles).map(([name, cont]) => `# --- File: ${name} ---\n${cont}`).join('\n\n');
       } else {
         const finalStepFiles = [...stepFiles];
-        finalStepFiles[currentStepIndex] = files;
+        finalStepFiles[currentStepIndex] = currentFiles;
         combinedCode = finalStepFiles.map((stepDict, idx) => {
           const safeDict = stepDict || { "main.py": "# No code provided" };
           const filesText = Object.entries(safeDict).map(([name, cont]) => `# --- File: ${name} ---\n${cont}`).join('\n\n');
           return `# === Step ${idx + 1} ===\n${filesText}`;
         }).join('\n\n');
       }
-      
+
       const studentName = user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || 'Student';
       const { error } = await supabase.from('assignment_progress').upsert(
         { user_id: user.id, course_slug: params.slug, video_id: activeVideo.id, submitted_code: combinedCode, user_name: studentName, completed_at: new Date().toISOString() },
         { onConflict: 'user_id, course_slug, video_id' }
       );
       if (error) throw error;
-      
+
+      setAssignmentSubmissions(prev => ({ ...prev, [activeVideo.id]: combinedCode }));
+
       if (!completedAssignments.includes(activeVideo.id)) {
         setCompletedAssignments(prev => [...prev, activeVideo.id]);
         supabase.from('admin_activity_log').insert([{ type: 'submission', message: `New Code Submission: ${activeVideo.githubAssignment?.title || activeVideo.title}`, user_email: user.primaryEmailAddress?.emailAddress }]).then();
       }
-      
+
       showToast("Success!", "Your code has been securely saved.", "success");
       if (officialSolutionSteps.length > 0) setShowSolutionModal(true);
-
     } catch (err) {
       showToast("Error", "Failed to submit assignment. Please try again.", "error");
     } finally {
@@ -1508,7 +1647,12 @@ builtins.input = custom_input
                         </div>
                         {!isGitLab && (
                         <div className="flex-grow relative min-h-[300px]">
-                          <Editor height="100%" defaultLanguage={getLanguage(activeFile)} theme="vs-dark" value={files[activeFile] || ""} onChange={(value) => { setFiles(prev => ({ ...prev, [activeFile]: value || "" })); setAiResponse(null); }} options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} />
+                          <Editor height="100%" defaultLanguage={getLanguage(activeFile)} theme="vs-dark" value={files[activeFile] || ""} onChange={(value) => {
+                            const updatedFiles = { ...files, [activeFile]: value || "" };
+                            setFiles(updatedFiles);
+                            syncCurrentStepFiles(updatedFiles);
+                            setAiResponse(null);
+                          }} options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} />
                         </div>
                         )}
                         <div className={`${isGitLab ? 'flex-grow' : 'h-[200px]'} border-t border-stone-800 flex flex-col bg-[#0d1117] shrink-0`}>
