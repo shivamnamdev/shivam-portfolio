@@ -665,7 +665,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
     moduleTitle: "Module 5: Industry Workflow",
     videoIds:[
       "iU9ZGojVVgU",
-      "FjndEmsNTEU"
+      "FjndEmsNTEU",
+      "RRbfKrZgEGc"
     ], 
     githubAssignments: {
     "WhP2F-xk3Kk": {
