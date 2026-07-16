@@ -553,13 +553,15 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
 
         const enrichedModules = courseModules.map((module) => ({
           moduleTitle: module.moduleTitle,
-          videos: module.videoIds.map((id: string, index: number) => ({
+          isAdvancedModule: module.isAdvancedModule || false, // 🚨 Capture the flag
+          videos: module.videoIds.map((id, index) => ({
             id: id,
             title: ytDataMap[id]?.title || `Lesson ${index + 1}`,
             duration: ytDataMap[id]?.duration || "--:--",
             description: ytDataMap[id]?.description || "No description available.",
             youtubeId: id,
-            githubAssignment: module.githubAssignments ? module.githubAssignments[id] : null 
+            githubAssignment: module.githubAssignments ? module.githubAssignments[id] : null,
+            isAdvanced: module.isAdvancedModule || false // 🚨 Pass it down to every video in the module
           }))
         }));
 
@@ -622,8 +624,10 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   }, [activeVideo, hasAccess, user]);
 
   const handleVideoChange = (video: any) => {
-    if (activeVideo?.id === video.id) return;
-    const isLockedAdvanced = video.githubAssignment?.isAdvanced && !examStatus.is_passed && !isAdmin;
+    if (activeVideo?.id === video.id) 
+      return;
+    const isLockedAdvanced = video.isAdvanced && !examStatus.is_passed && !isAdmin;
+    
     if (isLockedAdvanced) {
       alert("🔒 This advanced lesson is locked! You must pass the Final Exam with 80% or higher to unlock it.");
       return;
@@ -1357,7 +1361,7 @@ builtins.input = custom_input
                     const isActive = activeVideo?.id === video.id;
                     const isVidDone = completedVideos.includes(video.id);
                     const isAssDone = completedAssignments.includes(video.id);
-                    const isLockedAdvanced = video.githubAssignment?.isAdvanced && !examStatus.is_passed && !isAdmin;
+                    const isLockedAdvanced = video.isAdvanced && !examStatus.is_passed && !isAdmin;
 
                     return (
                       <button 

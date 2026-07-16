@@ -211,7 +211,7 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "WhP2F-xk3Kk"
       // "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
     ], githubAssignments: {
-  "WhP2F-xk3Kk": {
+        "WhP2F-xk3Kk": {
     title: "Final Foundation Certification Exam",
     rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Assignments/refs/heads/main/python-basics/v1.docx",
     starterCodeUrl: "https://raw.githubusercontent.com/shivamnamdev/Assignments/refs/heads/main/python-basics/v1_addon.docx",
@@ -358,14 +358,23 @@ export const courseCurriculumMap: Record<string, any[]> = {
           print(f"EXAM_SCORE:{score}")
           print("="*50)
           `
-        },
-        "ADVANCED_VIDEO_ID": {
-          title: "Advanced Decorators",
-          rawUrl: "...",
-          isAdvanced: true // 🚨 This locks the video until the exam is passed!
         }
       }
-    }
+    },
+  {
+    moduleTitle: "Advance Videos",
+    isAdvancedModule: true, // 🚨 Put the flag here!
+    videoIds:[
+      "Q8vLb-kmFYs"
+    ], 
+    githubAssignments: {
+        // Now you only need to put assignments here if they actually have code exercises!
+        "Q8vLb-kmFYs": {
+          title: "Iterator",
+          rawUrl: "..."
+        }
+    }  
+  }
   ],
   "python-beginners-batch-2": [
     {
