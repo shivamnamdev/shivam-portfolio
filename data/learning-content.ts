@@ -381,7 +381,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
     moduleTitle: "Module 1: Python Fundamentals",
     videoIds:[
       "a9nrrH5XkG0",
-      "5G3VcAR2P_E"
+      "5G3VcAR2P_E",
+      "rAtMuWP2xb4"
   ],
     githubAssignments: {
         // Video 1 gets an assignment
@@ -396,10 +397,10 @@ export const courseCurriculumMap: Record<string, any[]> = {
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-2/Assignment",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-2/Solution.py"
         },
-        "": {
-          title: "Day 04: Conditional Statement",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2004%3A%20Conditional%20Statement/Assignment",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2004%3A%20Conditional%20Statement/Solution.py"
+        "rAtMuWP2xb4": {
+          title: "Day 03: Conditional Statement Basics",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-3/Assignment",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-3/Solution.py"
         },
         "": {
           title: "Day 05: Conditional Statement | Hands On",
