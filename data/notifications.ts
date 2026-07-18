@@ -1,6 +1,14 @@
 // data/notifications.ts
 
 export const platformNotifications =[
+  {
+    id: "notif-p3-Conditionalstatement-video",
+    title: "📽️ Python Session: Recording Update",
+    message: "Python Session Condtional Statement Live Recording as uploaded.",
+    date: "Just now",
+    type: "alert", // Can be 'alert', 'feature', or 'event'
+    link: "/learning/python-beginners-batch-2"
+  },
     {
     id: "notif-dict-video",
     title: "📽️ Python Session: Recording Update",
