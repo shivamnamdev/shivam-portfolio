@@ -382,7 +382,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
     videoIds:[
       "a9nrrH5XkG0",
       "5G3VcAR2P_E",
-      "rAtMuWP2xb4"
+      "rAtMuWP2xb4",
+      "cWVEzNPGim8"
   ],
     githubAssignments: {
         // Video 1 gets an assignment
@@ -402,10 +403,10 @@ export const courseCurriculumMap: Record<string, any[]> = {
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-3/Assignment",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-3/Solution.py"
         },
-        "": {
-          title: "Day 05: Conditional Statement | Hands On",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2004%3A%20Conditional%20Statement/Assignment2.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2004%3A%20Conditional%20Statement/Solution2.py"
+        "cWVEzNPGim8": {
+          title: "Day 04: Conditional Statement | Hands On",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-4/Assignment",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-4/Solution.py"
         },
         "": {
           title: "Day 06: Looping (While Loop)",
