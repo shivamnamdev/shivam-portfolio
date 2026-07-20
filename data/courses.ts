@@ -6,12 +6,12 @@ export const activeCourses = [
 id: "git-beginner-batch-1",
 slug: "git-beginner-batch-1",
 title: "Git Beginner Live Session",
-statusText: "🚀 Enrollment Open",
-demoOffer: "Limited Seats Open",
+statusText: "🔒 Cohort Completed",
+demoOffer: "Enrollment Closed",
 duration: "2-3 Weeks | Weekdays Only (Mon-Fri)",
 contactPhone: "7057034840",
-enrollmentClosed: false,
-liveLink: "https://meet.google.com/web-uzkz-ghr",
+enrollmentClosed: true,
+// liveLink: "https://meet.google.com/web-uzkz-ghr",
 
 whatsappLink: "https://chat.whatsapp.com/EjE3pU7synO9jMFpOPuHZp",
 
