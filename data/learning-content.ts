@@ -383,7 +383,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "a9nrrH5XkG0",
       "5G3VcAR2P_E",
       "rAtMuWP2xb4",
-      "cWVEzNPGim8"
+      "cWVEzNPGim8",
+      "yK_VtRPE8-A"
   ],
     githubAssignments: {
         // Video 1 gets an assignment
@@ -408,7 +409,7 @@ export const courseCurriculumMap: Record<string, any[]> = {
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-4/Assignment",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-4/Solution.py"
         },
-        "": {
+        "yK_VtRPE8-A": {
           title: "Day 06: Looping (While Loop)",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2006%3A%20Looping/Assignment",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2006%3A%20Looping/Solution.py"
