@@ -384,7 +384,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "5G3VcAR2P_E",
       "rAtMuWP2xb4",
       "cWVEzNPGim8",
-      "yK_VtRPE8-A"
+      "yK_VtRPE8-A",
+      "lgG6aXB0Ftk"
   ],
     githubAssignments: {
         // Video 1 gets an assignment
@@ -414,7 +415,7 @@ export const courseCurriculumMap: Record<string, any[]> = {
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2006%3A%20Looping/Assignment",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2006%3A%20Looping/Solution.py"
         },
-        "": {
+        "lgG6aXB0Ftk": {
           title: "Day 07: Jump Statements",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2007%3A%20Jump%20Statements/Assignment",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2007%3A%20Jump%20Statements/Solution.py"
