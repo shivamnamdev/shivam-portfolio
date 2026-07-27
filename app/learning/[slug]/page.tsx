@@ -917,7 +917,7 @@ sys.stderr = io.StringIO()
     }
   };
 
-  const runPythonCode = async () => {
+const runPythonCode = async () => {
     if (!files['main.py'].trim() || !pyodide) return;
     setIsRunningCode(true);
     setOutput("Running script...");
@@ -926,18 +926,45 @@ sys.stderr = io.StringIO()
 import sys
 import io
 import builtins
+import time
 from js import prompt
+
 sys.stdout = io.StringIO()
 sys.stderr = io.StringIO()
+
+_start_time = time.time()
+
+# 1. Define the Watchdog
+def _trace_calls(frame, event, arg):
+    if time.time() - _start_time > 3.0: # 3 Second Timeout
+        sys.settrace(None)
+        raise TimeoutError("Infinite Loop Detected")
+    return _trace_calls
+
+# 2. Custom Input Handler
 def custom_input(p=""):
+    global _start_time
     sys.stdout.write(str(p))
+    
+    # 🚨 PAUSE THE WATCHDOG: Stop tracking time while waiting for the user!
+    sys.settrace(None)
+    
     val = prompt(str(p))
+    
+    # 🚨 RESET THE CLOCK & RESUME WATCHDOG
+    _start_time = time.time()
+    sys.settrace(_trace_calls)
+    
     if val is None:
         sys.stdout.write("\\n")
         raise EOFError("EOF when reading a line")
     sys.stdout.write(val + "\\n")
     return val
+
 builtins.input = custom_input
+
+# 3. Start the Watchdog right before student code runs!
+sys.settrace(_trace_calls)
       `);
       
       try {
@@ -956,13 +983,14 @@ builtins.input = custom_input
 
       await pyodide.runPythonAsync(files['main.py']);
       
+      // Turn off watchdog after successful run
+      await pyodide.runPythonAsync(`sys.settrace(None)`);
+      
       const stdout = pyodide.runPython("sys.stdout.getvalue()");
       const stderr = pyodide.runPython("sys.stderr.getvalue()");
       let finalOutput = stdout;
 
-      const isExam = activeVideo?.githubAssignment?.isExam;
-
-      if (!stderr && activeVideo?.githubAssignment?.testCode && !isExam) {
+      if (!stderr && activeVideo?.githubAssignment?.testCode) {
         try {
           await pyodide.runPythonAsync(activeVideo.githubAssignment.testCode);
           finalOutput += "\n\n✅ --------------------------\n✅ ALL TESTS PASSED! Great job.\n✅ --------------------------";
@@ -970,10 +998,6 @@ builtins.input = custom_input
           const errorMsg = testError.message.split('AssertionError:')[1]?.strip() || "Test Failed: Output did not match expected results.";
           finalOutput += `\n\n❌ --------------------------\n❌ ${errorMsg}\n❌ --------------------------`;
         }
-      }
-
-      if (isExam && !stderr) {
-        finalOutput += "\n\n(Note: This is an Exam. Your code will be officially graded when you click 'Submit Exam' on the final step!)";
       }
 
       try {
@@ -993,12 +1017,20 @@ builtins.input = custom_input
 
       if (stderr) setOutput(`Error:\n${stderr}`);
       else setOutput(finalOutput || "Script executed successfully. (No output)");
+      
     } catch (error: any) {
-      setOutput(`Syntax Error:\n${error.message.split('File "<exec>"')[1] || error.message}`);
+      try { await pyodide.runPythonAsync(`sys.settrace(None)`); } catch(e) {}
+      let errorMessage = error.message;
+      if (errorMessage.includes("TimeoutError")) {
+        setOutput(`❌ Execution Error:\nInfinite Loop Detected! Your code ran for over 3 seconds.\nPlease check your 'while' loop and ensure it has a way to stop.`);
+      } else {
+        setOutput(`Syntax Error:\n${errorMessage.split('File "<exec>"')[1] || errorMessage}`);
+      }
     } finally {
       setIsRunningCode(false);
     }
   };
+
   const runGitCommand = async () => {
   const cmd = gitCommandInput.trim();
   if (!cmd) return;
