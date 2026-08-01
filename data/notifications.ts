@@ -2,6 +2,14 @@
 
 export const platformNotifications =[
   {
+    id: "notif-p3-ForLoop-video",
+    title: "📽️ Python Batch-03 Session: Recording Update",
+    message: "Python Session Day-07: For Loop Live Recording as uploaded.",
+    date: "1-Aug 11:20 AM",
+    type: "alert", // Can be 'alert', 'feature', or 'event'
+    link: "/learning/python-beginners-batch-2"
+  },
+  {
     id: "notif-p3-Conditionalstatement-video",
     title: "📽️ Python Session: Recording Update",
     message: "Python Session Condtional Statement Live Recording as uploaded.",

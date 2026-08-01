@@ -385,7 +385,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "rAtMuWP2xb4",
       "cWVEzNPGim8",
       "yK_VtRPE8-A",
-      "lgG6aXB0Ftk"
+      "lgG6aXB0Ftk",
+      "IILdaThXVbE"
   ],
     githubAssignments: {
         // Video 1 gets an assignment
@@ -425,9 +426,11 @@ export const courseCurriculumMap: Record<string, any[]> = {
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2008%3A%20Thinking%20Method/Assignment",
           solutionUrl: "https://github.com/shivamnamdev/learn-python-step-by-step/blob/main/Day%2008%3A%20Thinking%20Method/Solution.py"
         },
-        "": {
+        "IILdaThXVbE": {
           title: "Day 09: For Loop",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2009%3A%20For%20Loop/Assignment"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-7/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-7/Solution.py"
+
         },
         "": {
           title: "Day 10: For Loop Hands On",
