@@ -11,7 +11,7 @@ declare global {
 }
 
 import Footer from '@/components/Footer';
-import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, Code2, TerminalSquare, Award, FileCheck, Eye, RefreshCw, X, Plus, FileText, ThumbsUp, Share2 } from 'lucide-react';
+import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, Code2, BookOpen, Download, TerminalSquare, Award, FileCheck, Eye, RefreshCw, X, Plus, FileText, ThumbsUp, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { courseCurriculumMap } from '@/data/learning-content';
 import { activeCourses } from '@/data/courses';
@@ -129,7 +129,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   const [isLoading, setIsLoading] = useState(true);
   const [isMarking, setIsMarking] = useState(false);
   
-  const [activeTab, setActiveTab] = useState<'description' | 'qa' | 'practice' | 'visualize'>('description');
+  const [activeTab, setActiveTab] = useState<'description' | 'qa' | 'practice' | 'visualize' | 'materials'>('description');
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
   const [isPosting, setIsPosting] = useState(false);
@@ -153,6 +153,8 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   
   const [officialSolutionSteps, setOfficialSolutionSteps] = useState<string[]>([]);
   const [showSolutionModal, setShowSolutionModal] = useState(false);
+ 
+  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
 
   // 🚨 THE FIX: Changed from a single string to an Array of strings!
   const [expectedOutcomeSteps, setExpectedOutcomeSteps] = useState<string[]>([]);
@@ -465,7 +467,9 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
 
     const createPlayer = () => {
       if (!window.YT?.Player) return;
-      if (playerRef.current) {
+      
+      // 🚨 THE FIX: Make sure playerRef exists AND the function has been attached by YouTube!
+      if (playerRef.current && typeof playerRef.current.loadVideoById === 'function') {
         playerRef.current.loadVideoById({
           videoId: activeVideo.youtubeId,
           startSeconds: savedPlaybackTimeRef.current || 0,
@@ -515,12 +519,16 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       try {
         const courseModules = courseCurriculumMap[params.slug] ||[];
         const allVideoIds = courseModules.flatMap(m => m.videoIds ||[]);
+        const allItemIds = courseModules.flatMap(m => m.videoIds ||[]);
+        
+        // 🚨 NEW: Filter out Standalone Document IDs so we don't crash YouTube!
+        const ytVideoIds = allItemIds.filter(id => !id.startsWith('doc-'));
 
         const [vidRes, assRes, examRes] = await Promise.all([
           supabase.from('video_progress').select('video_id').eq('user_id', user.id).eq('course_slug', params.slug),
           // Also fetch submitted_code so we can restore previous submissions
           supabase.from('assignment_progress').select('video_id, submitted_code').eq('user_id', user.id).eq('course_slug', params.slug),
-          supabase.from('exam_progress').select('*').eq('user_id', user.id).eq('course_slug', params.slug).single()
+          supabase.from('exam_progress').select('*').eq('user_id', user.id).eq('course_slug', params.slug).maybeSingle()
         ]);
 
         setCompletedVideos(vidRes.data ? vidRes.data.map(p => p.video_id) :[]);
@@ -534,35 +542,54 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
         setAssignmentSubmissions(submissionMap);
         if (examRes.data) setExamStatus({ is_passed: examRes.data.is_passed, attempts_used: examRes.data.attempts_used });
 
-        if (allVideoIds.length === 0) {
+        if (allItemIds.length === 0) {
           setPlaylist(courseModules.map(m => ({ moduleTitle: m.moduleTitle, videos:[] })));
           setIsLoading(false);
           return;
         }
-
-        const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
-        const ytRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${allVideoIds.join(',')}&key=${apiKey}`);
-        const ytData = await ytRes.json();
-
+         // Fetch YouTube Data only for YT videos
         const ytDataMap: Record<string, any> = {};
-        if (ytData.items) {
-          ytData.items.forEach((item: any) => {
-            ytDataMap[item.id] = { title: item.snippet.title, duration: formatYouTubeDuration(item.contentDetails.duration), description: item.snippet.description };
-          });
+        if (ytVideoIds.length > 0) {
+          const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
+          const ytRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${ytVideoIds.join(',')}&key=${apiKey}`);
+          const ytData = await ytRes.json();
+
+          
+          if (ytData.items) {
+            ytData.items.forEach((item: any) => {
+              ytDataMap[item.id] = { title: item.snippet.title, duration: formatYouTubeDuration(item.contentDetails.duration), description: item.snippet.description };
+            });
+          }
         }
+
+        // 🚨 ENRICH BOTH YOUTUBE AND STANDALONE DOCUMENTS
 
         const enrichedModules = courseModules.map((module) => ({
           moduleTitle: module.moduleTitle,
           isAdvancedModule: module.isAdvancedModule || false, // 🚨 Capture the flag
-          videos: module.videoIds.map((id, index) => ({
+          videos: module.videoIds.map((id: string, index:  number) => {
+            const isDoc = id.startsWith('doc-');
+            const docData = isDoc && module.resources ? module.resources[id] : null;
+
+            return {
+
             id: id,
-            title: ytDataMap[id]?.title || `Lesson ${index + 1}`,
-            duration: ytDataMap[id]?.duration || "--:--",
-            description: ytDataMap[id]?.description || "No description available.",
-            youtubeId: id,
+            type: isDoc ? 'document' : 'video', // New type flag
+            title: isDoc ? (docData?.title || `Document ${index + 1}`) : (ytDataMap[id]?.title || `Lesson ${index + 1}`),
+            duration: isDoc ? (docData?.duration || "Read") : (ytDataMap[id]?.duration || "--:--"),
+            description: isDoc ? (docData?.description || "Document resource.") : (ytDataMap[id]?.description || "No description available."),
+            youtubeId: isDoc ? null : id,
+            docUrl: isDoc ? docData?.url : null,
             githubAssignment: module.githubAssignments ? module.githubAssignments[id] : null,
+            attachedMaterials: !isDoc && module.resources ? module.resources[id] : null, // Option 1 Attached Materials  
+            // title: ytDataMap[id]?.title || `Lesson ${index + 1}`,
+            // duration: ytDataMap[id]?.duration || "--:--",
+            // description: ytDataMap[id]?.description || "No description available.",
+            // youtubeId: id,
+            // githubAssignment: module.githubAssignments ? module.githubAssignments[id] : null,
             isAdvanced: module.isAdvancedModule || false // 🚨 Pass it down to every video in the module
-          }))
+            };
+          })
         }));
 
         setPlaylist(enrichedModules);
@@ -1394,7 +1421,8 @@ sys.settrace(_trace_calls)
                     const isVidDone = completedVideos.includes(video.id);
                     const isAssDone = completedAssignments.includes(video.id);
                     const isLockedAdvanced = video.isAdvanced && !examStatus.is_passed && !isAdmin;
-
+                    // 🚨 NEW: Shows File Icon if it's a standalone document!
+                    const isDoc = video.type === 'document';
                     return (
                       <button 
                         key={video.id} 
@@ -1408,7 +1436,7 @@ sys.settrace(_trace_calls)
                         className={`w-full text-left flex items-start gap-3 p-3 rounded-xl transition-all ${isLockedAdvanced ? 'opacity-50 cursor-not-allowed bg-stone-900/50' : isActive ? 'bg-[#161b22] border border-amber-500/30 shadow-sm' : 'hover:bg-white/5 border border-transparent'}`}
                       >
                         <div className="mt-0.5 flex-shrink-0">
-                          {isLockedAdvanced ? <Lock size={16} className="text-stone-600" /> : isVidDone ? <CheckCircle size={16} className="text-green-500" /> : <PlayCircle size={16} className={isActive ? 'text-amber-500' : 'text-stone-500'} />}
+                          {isLockedAdvanced ? <Lock size={16} className="text-stone-600" /> : isVidDone ? <CheckCircle size={16} className="text-green-500" /> :  isDoc ? <FileText size={16} className={isActive ? 'text-amber-500' : 'text-stone-500'} /> : <PlayCircle size={16} className={isActive ? 'text-amber-500' : 'text-stone-500'} />}
                         </div>
                         <div className="flex-grow pr-2">
                           <p className={`text-sm font-bold line-clamp-2 ${isActive ? 'text-amber-400' : 'text-stone-300'} ${(isVidDone || isLockedAdvanced) && !isActive ? 'opacity-50' : ''}`}>{video.title}</p>
@@ -1485,10 +1513,27 @@ sys.settrace(_trace_calls)
 
           <div className="max-w-[1200px] mx-auto w-full p-4 lg:p-8 flex flex-col gap-6 flex-grow">
             
-            {/* The Cinematic Video Player */}
-            {activeVideo ? (
+            {/* 🚨 DYNAMIC MEDIA PLAYER (Shows Video OR Document Viewer) */}
+            {activeVideo?.type === 'document' ? (
+              <div className="w-full bg-[#121212] rounded-2xl overflow-hidden shadow-2xl aspect-video border border-white/10 relative flex flex-col">
+                <div className="bg-[#161b22] px-4 py-3 border-b border-white/10 flex justify-between items-center z-10">
+                  <span className="font-bold text-white flex items-center gap-2"><FileText size={18} className="text-amber-500"/> Document Viewer</span>
+                  <a href={activeVideo.docUrl} download target="_blank" rel="noreferrer" className="text-xs bg-amber-500 text-black font-bold px-3 py-1.5 rounded-lg hover:bg-amber-400 transition-colors flex items-center gap-1">
+                    Download <Download size={12}/>
+                  </a>
+                </div>
+                <div className="flex-grow relative bg-white">
+                  {/* We use iframe for PDF, or Google Docs viewer for PPTX/DOCX */}
+                  <iframe 
+                    src={activeVideo.docUrl.endsWith('.pdf') ? activeVideo.docUrl : `https://docs.google.com/gview?url=${encodeURIComponent(window.location.origin + activeVideo.docUrl)}&embedded=true`} 
+                    className="w-full h-full border-none"
+                    title={activeVideo.title}
+                  />
+                </div>
+              </div>
+            ) : activeVideo ? (
               <div className="w-full bg-black rounded-2xl overflow-hidden shadow-2xl aspect-video border border-white/10 relative select-none shrink-0">
-                <div id="course-player-iframe" className="w-full h-full" />
+               <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${activeVideo.youtubeId}?rel=0&modestbranding=1`} title={activeVideo.title} frameBorder="0" allowFullScreen></iframe>
                 <div className="absolute inset-0 pointer-events-none overflow-hidden z-50 flex items-center justify-center mix-blend-difference">
                   <motion.div animate={{ x:[-150, 150, 150, -150, -150], y:[-80, -80, 80, 80, -80] }} transition={{ duration: 25, repeat: Infinity, ease: "linear" }} className="absolute text-white/30 font-mono text-sm md:text-lg font-bold tracking-widest pointer-events-none drop-shadow-md transform -rotate-12">
                     {user?.primaryEmailAddress?.emailAddress || user?.id} <br/><span className="text-xs">DO NOT DISTRIBUTE</span>
@@ -1523,7 +1568,8 @@ sys.settrace(_trace_calls)
                   </div>
                   
                   <div className="flex flex-wrap items-center gap-3 shrink-0">
-                    {isAdmin && (
+                    {/* Share Button omitted for document types to avoid thumbnail confusion */}
+                    {isAdmin && activeVideo.type !== 'document' && (
                       <button onClick={async () => {
                         const shareUrl = `${siteOrigin}/share/${activeVideo.youtubeId}?t=${Date.now()}`;
                         const shareText = `🚀 Ready to Master Python?\n\nCheck out this exclusive lesson: *${activeVideo?.title}* from Shivam Academy!\n\n🎓 Click here to watch the video directly:\n${shareUrl}\n\n💻 Enroll here to unlock the full platform:\n${siteOrigin}/courses/${params.slug}`;
@@ -1536,12 +1582,11 @@ sys.settrace(_trace_calls)
 
                     {isVideoCompleted ? (
                       <button disabled className="px-6 py-3.5 rounded-xl bg-green-500/10 text-green-400 font-bold text-sm flex items-center justify-center gap-2 border border-green-500/20 shadow-sm">
-                        <CheckCircle size={18} /> Video Watched
+                        <CheckCircle size={18} /> {activeVideo.type === 'document' ? 'Read Complete' : 'Video Watched'}
                       </button>
                     ) : (
                       <button onClick={markAsComplete} disabled={isMarking} className="px-6 py-3.5 rounded-xl bg-amber-500 text-black font-black text-sm flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors shadow-[0_0_20px_rgba(245,158,11,0.2)] disabled:opacity-70">
-                        {isMarking ? <Loader2 size={18} className="animate-spin"/> : <CheckCircle size={18} />} Mark Complete
-                      </button>
+                      {isMarking ? <Loader2 size={18} className="animate-spin text-black"/> : <CheckCircle size={18} />} {activeVideo.type === 'document' ? 'Mark as Read' : 'Mark Complete'}                      </button>
                     )}
                   </div>
                 </div>
@@ -1550,15 +1595,24 @@ sys.settrace(_trace_calls)
 
             {/* The Tabbed Content Area */}
             {activeVideo && (
-              <div className="bg-[#0a0a0a] rounded-2xl border border-white/10 shadow-2xl overflow-hidden mb-10 shrink-0">
-                <div className="flex overflow-x-auto border-b border-white/10 bg-[#121212]">
+               <div className="bg-[#0a0a0a] rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col flex-grow min-h-[500px]">
+                <div className="flex overflow-x-auto border-b border-white/10 bg-[#121212] shrink-0">
                   <button onClick={() => setActiveTab('description')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'description' ? 'text-amber-500 border-b-2 border-amber-500 bg-[#0a0a0a]' : 'text-stone-400 hover:text-stone-200'}`}><AlignLeft size={18} /> Details</button>
                   <button onClick={() => setActiveTab('qa')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'qa' ? 'text-amber-500 border-b-2 border-amber-500 bg-[#0a0a0a]' : 'text-stone-400 hover:text-stone-200'}`}><MessageCircle size={18} /> Q&A ({comments.length})</button>
+                  {/* 🚨 NEW: MATERIALS TAB FOR ATTACHED DOCUMENTS */}
+                  {activeVideo.attachedMaterials && (
+                    <button onClick={() => setActiveTab('materials')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'materials' ? 'text-amber-500 border-b-2 border-amber-500 bg-[#0a0a0a]' : 'text-stone-400 hover:text-stone-200'}`}>
+                      <BookOpen size={18} /> Materials
+                    </button>
+                  )}
                   {activeVideo.githubAssignment && (
                     <>
                       <button onClick={() => setActiveTab('practice')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'practice' ? 'text-amber-500 border-b-2 border-amber-500 bg-[#0a0a0a]' : 'text-stone-400 hover:text-stone-200'}`}><Code size={18} /> Practice {isAssignmentCompleted && "✅"}</button>
+                       {/* Hide visualizer for exams */}
+                       {!activeVideo.githubAssignment.isExam && (
                       <button onClick={() => setActiveTab('visualize')} className={`flex-1 py-4 font-bold text-sm flex justify-center items-center gap-2 transition-all min-w-[150px] ${activeTab === 'visualize' ? 'text-amber-500 border-b-2 border-amber-500 bg-[#0a0a0a]' : 'text-stone-400 hover:text-stone-200'}`}><Eye size={18} /> 
                       {isGitLab ? 'Git Graph' : 'Visualize'} </button>
+                       )}
                     </>
                   )}
                 </div>
@@ -1566,7 +1620,22 @@ sys.settrace(_trace_calls)
                 <div className="flex-grow flex flex-col relative overflow-y-auto">
                   
                   {activeTab === 'description' && (<div className="p-6 md:p-8 prose prose-invert max-w-none"><p className="text-stone-300 whitespace-pre-wrap leading-relaxed text-sm md:text-base">{activeVideo.description}</p></div>)}
-                  
+                  {/* 🚨 THE NEW MATERIALS TAB PANEL */}
+                  {activeTab === 'materials' && activeVideo.attachedMaterials && (
+                    <div className="p-6 md:p-8 flex flex-col gap-4">
+                      <h3 className="font-bold text-white mb-2">Lesson Materials</h3>
+                      {activeVideo.attachedMaterials.map((mat: any, idx: number) => (
+                        <a key={idx} href={mat.url} download target="_blank" rel="noreferrer" className="flex items-center gap-4 p-4 bg-[#121212] border border-white/10 rounded-2xl hover:bg-white/5 transition-colors group">
+                           <div className="p-3 bg-amber-500/10 rounded-xl text-amber-500 group-hover:scale-110 transition-transform"><FileText size={20} /></div>
+                           <div className="flex-grow">
+                             <p className="font-bold text-stone-200 text-sm group-hover:text-amber-400 transition-colors">{mat.title}</p>
+                             <p className="text-xs text-stone-500 mt-1 uppercase tracking-wider">{mat.type || 'Document'}</p>
+                           </div>
+                           <Download size={18} className="text-stone-500 group-hover:text-amber-500" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
                   {activeTab === 'qa' && (
                     <div className="p-6 md:p-8 flex flex-col gap-6">
                       <form onSubmit={handlePostComment} className="flex flex-col gap-3">
@@ -1588,9 +1657,10 @@ sys.settrace(_trace_calls)
                   )}
 
                   {activeTab === 'practice' && activeVideo.githubAssignment && (
-                    <div className="flex flex-col lg:flex-row h-[700px] bg-[#0d1117] overflow-hidden border-t border-white/10 shadow-inner">
-                      
-                      <div className="w-full lg:w-1/3 flex flex-col border-r border-stone-800 bg-[#161b22] shrink-0">
+                    //<div className="flex flex-col lg:flex-row h-[700px] bg-[#0d1117] overflow-hidden border-t border-white/10 shadow-inner">
+                    <div className="flex flex-col lg:flex-row flex-grow bg-[#0d1117]">  
+                      {/* <div className="w-full lg:w-1/3 flex flex-col border-r border-stone-800 bg-[#161b22] shrink-0"> */}
+                      <div className="w-full lg:w-1/3 flex flex-col border-b xl:border-b-0 xl:border-r border-stone-800 bg-[#161b22] shrink-0">  
                         <div className="flex flex-col items-center p-4 border-b border-stone-800 bg-[#0d1117]">
                           <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3">Question {currentStepIndex + 1} of {assignmentSteps.length}</span>
                           <div className="flex gap-1.5 w-full justify-center">
