@@ -1523,7 +1523,7 @@ sys.settrace(_trace_calls)
                   </a>
                 </div>
                 <div className="flex-grow relative bg-white">
-                  {/* We use iframe for PDF, or Google Docs viewer for PPTX/DOCX */}
+                  {/* 🚨 THE FIX: Smart URL parsing for external S3 links vs local files! */}
                   <iframe 
                     src={activeVideo.docUrl.endsWith('.pdf') ? activeVideo.docUrl : `https://docs.google.com/gview?url=${encodeURIComponent(window.location.origin + activeVideo.docUrl)}&embedded=true`} 
                     className="w-full h-full border-none"

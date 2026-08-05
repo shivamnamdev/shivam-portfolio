@@ -386,7 +386,9 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "cWVEzNPGim8",
       "yK_VtRPE8-A",
       "lgG6aXB0Ftk",
-      "IILdaThXVbE"
+      "IILdaThXVbE",
+      "cuVzn9346-I",
+      "doc-thinking-pattern"
   ],
     githubAssignments: {
         // Video 1 gets an assignment
@@ -412,25 +414,24 @@ export const courseCurriculumMap: Record<string, any[]> = {
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-4/Solution.py"
         },
         "yK_VtRPE8-A": {
-          title: "Day 06: Looping (While Loop)",
+          title: "Day 05: Looping (While Loop)",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2006%3A%20Looping/Assignment",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2006%3A%20Looping/Solution.py"
         },
         "lgG6aXB0Ftk": {
-          title: "Day 07: Jump Statements",
+          title: "Day 06: Jump Statements",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2007%3A%20Jump%20Statements/Assignment",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2007%3A%20Jump%20Statements/Solution.py"
         },
-        "": {
-          title: "Day 08: Thinking Method",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2008%3A%20Thinking%20Method/Assignment",
-          solutionUrl: "https://github.com/shivamnamdev/learn-python-step-by-step/blob/main/Day%2008%3A%20Thinking%20Method/Solution.py"
-        },
         "IILdaThXVbE": {
-          title: "Day 09: For Loop",
+          title: "Day 07: For Loop",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-7/Assignment.docx",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-7/Solution.py"
-
+        },
+        "cuVzn9346-I": {
+          title: "Day 08: Thinking Method",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Bonus%20Session/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Bonus%20Session/Solution.py"
         },
         "": {
           title: "Day 10: For Loop Hands On",
@@ -451,7 +452,25 @@ export const courseCurriculumMap: Record<string, any[]> = {
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2012%3A%20String/Solutions2.py"
         }
         // Notice we left Video 1 ("OkK3E7ApZ4Q") out entirely. The Practice tab will hide itself automatically!
-      }
+      },
+    resources: {
+        // Video 2 gets 1 PPTX
+        "": [
+          { title: "Module 1 Slides", url: "/slides.pptx", type: "PowerPoint" }
+        ],
+        // Standalone DOCX details
+        "doc-thinking-pattern": {
+          title: "Right Thinking Pattern for Coding",
+          description: "Follow these steps to solve Python Programs.",
+          url: "https://s3.ap-south-1.amazonaws.com/python-course.shivamnamdev.com/4_Step_Thinking_Method_CheatSheet.pdf",
+          type: "Document"
+        },
+        // Video 4 gets 2 PDFs
+        "": [
+          { title: "Cheat Sheet 1", url: "/sheet1.pdf", type: "PDF" },
+          { title: "Cheat Sheet 2", url: "/sheet2.pdf", type: "PDF" }
+        ]
+      }  
   },
   {
     moduleTitle: "Module 2: Data Structures",
@@ -553,7 +572,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
   {
     moduleTitle: "Module 1: Why Git Exists",
     videoIds:[
-      "LNmtD68zih0"],
+      "LNmtD68zih0"
+  ],
     githubAssignments: {
         // Video 1 gets an assignment
         "LNmtD68zih0": {
@@ -565,7 +585,9 @@ export const courseCurriculumMap: Record<string, any[]> = {
           validatorUrl: "https://raw.githubusercontent.com/shivamnamdev/git_practicals/refs/heads/main/Day_01/validator.json",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/git_practicals/refs/heads/main/Day_01/solution.md"
           }
-      }
+      },
+    resources: {
+      }  
   },
   {
     moduleTitle: "Module 2: Core Git Workflow",
@@ -583,22 +605,18 @@ export const courseCurriculumMap: Record<string, any[]> = {
           validatorUrl: "https://raw.githubusercontent.com/shivamnamdev/git_practicals/refs/heads/main/Day_02/validator.json",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/git_practicals/refs/heads/main/Day_02/solutions.md"
         },
-        "rikgL_Oj5Ds": {
-          title: "Day 15: List Hands On Practice",
-          rawUrl: "",
-          solutionUrl: ""
-        },
-        "aMKAALJISv4": {
-          title: "Day 16: Tuple and Set Data Type",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2015%3A%20Tuple%20and%20Set/Assignment.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2015%3A%20Tuple%20and%20Set/Solution.py"
-        },
-        "ri_osXAdVNs":{
+        "":{
           title: "Day 17: Dictionary",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2016%3A%20Dictionary/Assignment.docx",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2016%3A%20Dictionary/Solutions.py"
         }
-    }  
+    },
+    resources: {
+        
+        "xKhjGmOxmSQ": [
+          { title: "Git Day 01 Cheatsheet", url: "https://s3.ap-south-1.amazonaws.com/git-course-content.shivamnamdev.com/git_cheatsheet_part1.pdf", type: "PDF" }
+        ]
+      }    
   },
   {
     moduleTitle: "Module 3: Branches and Safe Deployment",
@@ -611,36 +629,6 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "7IvCY9PzWjk"
     ],
     githubAssignments: {
-        "": {
-          title: "Day 18: File Handling",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day-18%3A%20File%20Handling/Assignment",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day-18%3A%20File%20Handling/Solution.py"
-        },
-        "bIXouqD29z0":{
-          title: "Day 19: File Handling Day 2",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day-18%3A%20File%20Handling/Assigment3",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day-18%3A%20File%20Handling/Solution3.py"
-        },
-        "eyNMM-GXtyI":{
-          title: "Day 20: Exceptional Handling",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2020%3A%20Exceptional%20Handling/Assignment",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2020%3A%20Exceptional%20Handling/Solutions.py"
-        },
-        "ZUym9YQfNwI": {
-          title: "Day 21: Functions",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Assignment",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Solution.py"
-        },
-        "lkETxENiTEA": {
-          title: "Day 22: Functions Day 2: Global Variables",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Assignment2",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Solution2.py"
-        },
-        "3A0ZXNh3rbA" :{
-          title: "Day 23: Functions Day 3: Dunders | Import",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Assignment3",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Solution3.py"
-        }
     }
   },
   {
@@ -652,29 +640,6 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "1hb12RrnTgo"
     ],
     githubAssignments: {
-      "uHRAKjaju04": {
-          title: "Day 24: OOPs Concepts: Class & Objects",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2024%3A%20OOPS%3A%20Class/Assignment.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2024%3A%20OOPS%3A%20Class/Solutions.py"
-        },
-      "6FT7QQmf-CM": {
-          title: "Day 25: OOPs Concepts: Constructor & Polymorphism",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2025%3A%20OOPS%3A%20Constructor%20%26%20Method%20Overriding/Assignment.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2025%3A%20OOPS%3A%20Constructor%20%26%20Method%20Overriding/Solutions.py",
-          starterCodeUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2025%3A%20OOPS%3A%20Constructor%20%26%20Method%20Overriding/AssignmentAddon.docx"
-        },
-      "P4lUW1xQDG0": {
-          title: "Day 26: OOPs Concepts: Inheritance",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2026%3A%20OOPs%3A%20Inheritance/Assignment.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2026%3A%20OOPs%3A%20Inheritance/Solution.py",
-          carryOverCode: true
-        }, 
-       "ACGqQ4TIGAI": {
-          title: "Day 27: OOPs Concepts: Access Specifier",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2027%3A%20OOPs%20Access%20Specifier/Assignment.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2027%3A%20OOPs%20Access%20Specifier/Solution.py",
-          carryOverCode: true
-       }  
     }
   },
   {
@@ -682,24 +647,21 @@ export const courseCurriculumMap: Record<string, any[]> = {
     videoIds:[
       "iU9ZGojVVgU",
       "FjndEmsNTEU",
-      "RRbfKrZgEGc"
+      "RRbfKrZgEGc",
+      "doc-Git-Cheatsheet"
     ], 
     githubAssignments: {
-    "WhP2F-xk3Kk": {
-    title: "Final Foundation Certification Exam",
-    rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Assignments/refs/heads/main/python-basics/v1.docx",
-    starterCodeUrl: "https://raw.githubusercontent.com/shivamnamdev/Assignments/refs/heads/main/python-basics/v1_addon.docx",
-    isExam: true, // 🚨 Marks this as the test!
-    expectedOutcomeUrl: "https://raw.githubusercontent.com/shivamnamdev/Assignments/refs/heads/main/python-basics/v1_expected_result.py",
-    // The Python test script that grades all 5 steps!
-
-        },
-        "ADVANCED_VIDEO_ID": {
-          title: "Advanced Decorators",
-          rawUrl: "...",
-          isAdvanced: true // 🚨 This locks the video until the exam is passed!
+   
+      },
+    resources: {
+        // Standalone DOCX details
+        "doc-Git-Cheatsheet": {
+          title: "Git Cheatsheet",
+          description: "Git Complete Course Cheatsheet",
+          url: "https://s3.ap-south-1.amazonaws.com/git-course-content.shivamnamdev.com/Git+Cheatsheet.pdf",
+          type: "Document"
         }
-      }
+      } 
     }
   ]
 };
