@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { ShieldAlert, CheckCircle2, UserPlus, Loader2, FileCode2, Users, BarChart, Code2, Eye, X, BookOpen } from 'lucide-react';
+import { ShieldAlert, CheckCircle2, UserPlus, Loader2, FileCode2, Users, BarChart, Code2, Eye, X, BookOpen, Clock, Flame } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { activeCourses } from '@/data/courses';
 import { courseCurriculumMap } from '@/data/learning-content';
@@ -17,10 +17,30 @@ function getVideoTitle(videoId: string) {
   for (const courseSlug in courseCurriculumMap) {
     for (const module of courseCurriculumMap[courseSlug]) {
       const videoIndex = module.videoIds.indexOf(videoId);
-      if (videoIndex !== -1) return module.githubAssignments?.[videoId]?.title || `${module.moduleTitle} (Lesson ${videoIndex + 1})`;
-    }
+      if (videoIndex !== -1) {
+        if (module.githubAssignments && module.githubAssignments[videoId]) {
+          return module.githubAssignments[videoId].title;
+        }
+        return `${module.moduleTitle} (Lesson ${videoIndex + 1})`;
+      }    }
   }
   return `Unknown Video`;
+}
+
+function getCourseTotals(slug: string) {
+  const courseModules = courseCurriculumMap[slug] ||[];
+  const totalVideos = courseModules.flatMap(m => m.videoIds).length;
+  const totalAssignments = courseModules.flatMap(m => m.videoIds.filter((v: string) => m.githubAssignments?.[v])).length;
+  return { totalVideos, totalAssignments, totalTasks: totalVideos + totalAssignments };
+}
+
+// Helper to format seconds into a beautiful "12h 45m" string
+function formatTime(totalSeconds: number) {
+  if (!totalSeconds) return "0m";
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
 }
 
 export default function AdminDashboard() {
@@ -36,12 +56,13 @@ export default function AdminDashboard() {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [videoProgress, setVideoProgress] = useState<any[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]); // 🚨 NEW: CRM Users state
+  const [userStats, setUserStats] = useState<any[]>([]); // 🚨 NEW: Store gamification/time data; 
   
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [analytics, setAnalytics] = useState({ totalStudents: 0, couponUsage: {} as Record<string, number> });
 
-  // 🚨 NEW TAB ADDED: directory
-  const [activeTab, setActiveTab] = useState<'directory' | 'enrollments' | 'assignments'>('directory');
+  // 🚨 NEW TAB ADDED: engagement
+  const [activeTab, setActiveTab] = useState<'directory' | 'enrollments' | 'progress' | 'assignments' | 'engagement'>('directory');
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [activeCodeView, setActiveCodeView] = useState<{name: string, title: string, code: string} | null>(null);
 
@@ -56,9 +77,11 @@ export default function AdminDashboard() {
     async function fetchAdminData() {
       if (!isLoaded || !isSignedIn || user.primaryEmailAddress?.emailAddress !== ADMIN_EMAIL) return;
       try {
-        const[enrRes, assRes, usersRes] = await Promise.all([
+        const[enrRes, assRes, vidRes, statsRes, usersRes] = await Promise.all([
           supabase.from('user_enrollments').select('*').order('enrolled_at', { ascending: false }),
           supabase.from('assignment_progress').select('*').order('completed_at', { ascending: false }),
+          supabase.from('video_progress').select('*'),
+          supabase.from('user_stats').select('*').order('total_time_seconds', { ascending: false }), // 🚨 Fetch User Stats
           fetch('/api/get-all-users').then(res => res.json()) // 🚨 Fetch CRM Data
         ]);
 
@@ -72,6 +95,8 @@ export default function AdminDashboard() {
         }
         
         if (assRes.data) setSubmissions(assRes.data);
+        if (vidRes.data) setVideoProgress(vidRes.data);
+        if (statsRes.data) setUserStats(statsRes.data);
         if (usersRes.success) setAllUsers(usersRes.users);
 
       } catch (err) {
@@ -184,7 +209,10 @@ export default function AdminDashboard() {
             {/* 🚨 NEW TAB: CRM DIRECTORY */}
             <button onClick={() => setActiveTab('directory')} className={`px-6 py-4 font-bold text-sm flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'directory' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-800'}`}><Users size={16} /> User Directory (CRM)</button>
             <button onClick={() => setActiveTab('enrollments')} className={`px-6 py-4 font-bold text-sm flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'enrollments' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-800'}`}><BookOpen size={16} /> Enrollments</button>
+            <button onClick={() => setActiveTab('progress')} className={`px-6 py-4 font-bold text-sm flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'progress' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-800'}`}><BarChart size={16} /> Student Progress</button>
             <button onClick={() => setActiveTab('assignments')} className={`px-6 py-4 font-bold text-sm flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'assignments' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-800'}`}><FileCode2 size={16} /> Code Submissions</button>
+            {/* 🚨 THE NEW ENGAGEMENT TAB */}
+            <button onClick={() => setActiveTab('engagement')} className={`px-6 py-4 font-bold text-sm flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'engagement' ? 'text-amber-600 border-b-2 border-amber-500 bg-white' : 'text-stone-500 hover:text-stone-800'}`}><Clock size={16} /> Engagement ⏱️</button>
           </div>
 
           <div className="p-0 overflow-x-auto h-[400px] overflow-y-auto">
@@ -192,10 +220,13 @@ export default function AdminDashboard() {
               <div className="flex justify-center py-20"><Loader2 className="animate-spin text-amber-500" size={32} /></div>
             ) : (
               <table className="w-full text-left text-sm text-stone-600 min-w-[800px]">
-                <thead className="bg-stone-50 border-b border-stone-200 text-stone-800 font-bold uppercase tracking-wider text-xs sticky top-0 z-10">
+                <thead className="bg-stone-50 border-b border-stone-200 text-stone-800 font-bold uppercase tracking-wider text-xs sticky top-0 z-10 shadow-sm">
                   {activeTab === 'directory' && <tr><th className="p-4">User</th><th className="p-4">Clerk ID</th><th className="p-4">Joined Date</th><th className="p-4">Status</th></tr>}
                   {activeTab === 'enrollments' && <tr><th className="p-4">Student Identity</th><th className="p-4">Course</th><th className="p-4">Coupon</th><th className="p-4">Date Enrolled</th></tr>}
+                  {activeTab === 'progress' && <tr><th className="p-4">Student Identity</th><th className="p-4">Course</th><th className="p-4">Videos</th><th className="p-4">Assignments</th><th className="p-4">Completion</th></tr>}
                   {activeTab === 'assignments' && <tr><th className="p-4">Student Identity</th><th className="p-4">Assignment Task</th><th className="p-4">Date Submitted</th><th className="p-4 text-right">Action</th></tr>}
+                  {/* 🚨 HEADERS FOR NEW ENGAGEMENT TAB */}
+                  {activeTab === 'engagement' && <tr><th className="p-4">Student Identity</th><th className="p-4">Total Time Spent</th><th className="p-4">Current Streak</th><th className="p-4">Last Login</th></tr>}
                 </thead>
                 <tbody className="divide-y divide-stone-100">
                   
@@ -305,7 +336,7 @@ export default function AdminDashboard() {
                           )}
                           <div>
                             <div className="font-bold text-stone-800">{displayName}</div>
-                            <div className="text-xs text-stone-400 font-mono font-normal mt-0.5">{crmUser?.email || sub.user_id}</div>
+                            <div className="text-xs text-stone-400 font-mono font-normal mt-0.5">{crmUser?.email || sub.user_email || sub.user_id}</div>
                           </div>
                         </td>
                         <td className="p-4 text-sm text-stone-600 line-clamp-1">{getVideoTitle(sub.video_id)}</td>
@@ -318,11 +349,46 @@ export default function AdminDashboard() {
                       </tr>
                     )
                   })}
+                  {/* 🚨 RENDER THE NEW ENGAGEMENT TAB */}
+                  {activeTab === 'engagement' && userStats.map((stat, i) => {
+                    const crmUser = allUsers.find(u => u.id === stat.user_id);
+                    const displayName = crmUser?.name || stat.user_name || "Unknown Student";
+                    
+                    return (
+                      <tr key={i} className="hover:bg-stone-50 transition-colors">
+                        <td className="p-4 flex items-center gap-3">
+                          {crmUser?.image ? (
+                            <img src={crmUser.image} alt="User" className="w-8 h-8 rounded-full border border-stone-200" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 text-xs font-bold">
+                              {displayName.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div>
+                            <div className="font-bold text-stone-800">{displayName}</div>
+                            <div className="text-xs text-stone-400 font-mono font-normal mt-0.5">{crmUser?.email || stat.user_email}</div>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                           <span className="font-bold text-stone-900 bg-stone-200 px-3 py-1 rounded-full text-sm">
+                             {formatTime(stat.total_time_seconds)}
+                           </span>
+                        </td>
+                        <td className="p-4">
+                           <span className="font-bold text-orange-600 flex items-center gap-1">
+                             {stat.current_streak} <Flame size={14} className="fill-orange-500" />
+                           </span>
+                        </td>
+                        <td className="p-4 text-sm">{stat.last_active_date}</td>
+                      </tr>
+                    )
+                  })}
+
 
                   {/* Empty States */}
                   {activeTab === 'enrollments' && enrollments.length === 0 && <tr><td colSpan={4} className="p-8 text-center text-stone-400">No enrollments found.</td></tr>}
                   {activeTab === 'assignments' && submissions.length === 0 && <tr><td colSpan={4} className="p-8 text-center text-stone-400">No assignments submitted yet.</td></tr>}
-                  
+                  {activeTab === 'engagement' && userStats.length === 0 && <tr><td colSpan={4} className="p-8 text-center text-stone-400">No engagement data found.</td></tr>}
                 </tbody>
               </table>
             )}

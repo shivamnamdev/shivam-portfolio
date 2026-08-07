@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { ClerkProvider } from '@clerk/nextjs';
 import "./globals.css";
 import ScrollProgress from "@/components/ScrollProgress";
+import TimeTracker from "@/components/TimeTracker";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const space = Space_Grotesk({ subsets: ["latin"], variable: "--font-space" });
@@ -46,6 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-amber-500/10 blur-[150px] rounded-full pointer-events-none z-[-1]" />
           
           <ScrollProgress />
+          <TimeTracker /> {/* 🚨 ADD THE INVISIBLE TRACKER HERE */}
           {children}
         </body>
       </html>
