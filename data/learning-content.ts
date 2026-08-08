@@ -388,7 +388,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "lgG6aXB0Ftk",
       "IILdaThXVbE",
       "cuVzn9346-I",
-      "doc-thinking-pattern"
+      "doc-thinking-pattern",
+      "4qwG1f3FL_M"
   ],
     githubAssignments: {
         // Video 1 gets an assignment
@@ -433,13 +434,10 @@ export const courseCurriculumMap: Record<string, any[]> = {
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Bonus%20Session/Assignment.docx",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Bonus%20Session/Solution.py"
         },
-        "": {
-          title: "Day 10: For Loop Hands On",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2010%3A%20For%20Loop%20Hands%20On/Practice%20Questions"
-        },
-        "": {
+        "4qwG1f3FL_M": {
           title: "Day 12: Loop-Pattern",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2011%3A%20Loop-Pattern/Patterns.py"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-8/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-8/Solution.py"
         },
         "": {
           title: "Day 11: String",
