@@ -440,11 +440,6 @@ export const courseCurriculumMap: Record<string, any[]> = {
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-8/Solution.py"
         },
         "": {
-          title: "Day 11: String",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2012%3A%20String/Assignment.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2012%3A%20String/Solutions.py"
-        },
-        "": {
           title: "Day 13: String Hands On",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2012%3A%20String/Assignment2.docx",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2012%3A%20String/Solutions2.py"
@@ -473,11 +468,15 @@ export const courseCurriculumMap: Record<string, any[]> = {
   {
     moduleTitle: "Module 2: Data Structures",
     videoIds:[
-      
+      "vw3UmzifSPY"
       // "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
     ],
     githubAssignments: {
-        // Video 2 gets an assignment
+        "vw3UmzifSPY": {
+          title: "Day 9: String",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-9/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-9/Solution.py"
+        },
         "": {
           title: "Day 14: List Data Type",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2014%3A%20List%20Data%20Type/Assignment.docx",
