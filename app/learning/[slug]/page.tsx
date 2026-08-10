@@ -209,9 +209,28 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       script.onload = async () => {
         try {
           const py = await (window as any).loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/" });
+          // 🚨 THE FIX: Install Jedi and create our secret autocomplete function!
+          await py.loadPackage("micropip");
+          const micropip = py.pyimport("micropip");
+          await micropip.install("jedi");
+          
+          await py.runPythonAsync(`
+          import jedi
+          import json
+
+          def get_completions(code, line, column):
+              try:
+                  script = jedi.Script(code)
+                  completions = script.complete(line, column)
+                  # Convert Jedi completions into a JSON array for our React frontend
+                  results = [{"label": c.name, "type": c.type, "doc": c.docstring()} for c in completions]
+                  return json.dumps(results)
+              except Exception as e:
+                  return "[]"
+                    `);
           setPyodide(py);
           setIsPyodideLoading(false);
-        } catch (err) { console.error("Failed to load Pyodide:", err); }
+        } catch (err) { console.error("Failed to load Pyodide or Jedi:", err); }
       };
       document.body.appendChild(script);
     };
@@ -1345,6 +1364,57 @@ sys.settrace(_trace_calls)
     );
   }
 
+  // 🚨 NEW: DYNAMIC INTELLISENSE USING JEDI
+  const handleEditorMount = (editor: any, monaco: any) => {
+    if (!monaco.languages.getLanguages().some((l: any) => l.id === 'python_custom')) {
+      
+      monaco.languages.registerCompletionItemProvider('python', {
+        triggerCharacters: ['.'],
+        provideCompletionItems: async (model: any, position: any) => {
+          
+          if (!pyodide) return { suggestions: [] };
+
+          const codeContent = model.getValue();
+          const line = position.lineNumber;
+          const column = position.column - 1; 
+
+          try {
+            // Ask the Python engine to read the code!
+            const completionsJson = pyodide.runPython(`get_completions("""${codeContent.replace(/"/g, '\\"')}""", ${line}, ${column})`);
+            const completions = JSON.parse(completionsJson);
+
+            const suggestions = completions.map((c: any) => {
+              let kind = monaco.languages.CompletionItemKind.Variable;
+              if (c.type === 'function') kind = monaco.languages.CompletionItemKind.Function;
+              if (c.type === 'class') kind = monaco.languages.CompletionItemKind.Class;
+              if (c.type === 'module') kind = monaco.languages.CompletionItemKind.Module;
+              if (c.type === 'keyword') kind = monaco.languages.CompletionItemKind.Keyword;
+
+              return {
+                label: c.label,
+                kind: kind,
+                insertText: c.label,
+                detail: c.type,
+                documentation: c.doc || `Python ${c.type}`,
+                range: {
+                  startLineNumber: position.lineNumber,
+                  endLineNumber: position.lineNumber,
+                  startColumn: position.column,
+                  endColumn: position.column,
+                }
+              };
+            });
+
+            return { suggestions };
+
+          } catch (error) {
+            return { suggestions: [] };
+          }
+        }
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="h-screen w-screen flex flex-col bg-[#0d1117]">
@@ -1758,7 +1828,9 @@ sys.settrace(_trace_calls)
                             setFiles(updatedFiles);
                             syncCurrentStepFiles(updatedFiles);
                             setAiResponse(null);
-                          }} options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} />
+                          }} options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} 
+                          onMount={handleEditorMount} 
+                          />
                         </div>
                         )}
                         <div className={`${isGitLab ? 'flex-grow' : 'h-[200px]'} border-t border-stone-800 flex flex-col bg-[#0d1117] shrink-0`}>
