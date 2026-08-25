@@ -389,7 +389,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "IILdaThXVbE",
       "cuVzn9346-I",
       "doc-thinking-pattern",
-      "4qwG1f3FL_M"
+      "4qwG1f3FL_M",
+      "QQiKhBIv60U"
   ],
     githubAssignments: {
         // Video 1 gets an assignment
@@ -468,7 +469,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
   {
     moduleTitle: "Module 2: Data Structures",
     videoIds:[
-      "vw3UmzifSPY"
+      "vw3UmzifSPY",
+      "xSKiJQSPs5Q"
       // "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
     ],
     githubAssignments: {
