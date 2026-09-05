@@ -6,7 +6,7 @@ export const activeCourses = [
 id: "git-beginner-batch-1",
 slug: "git-beginner-batch-1",
 title: "Git Beginner Live Session",
-statusText: "🚀 Enrollment Open",
+statusText: "🚀 Teacher's Day Offer Valid only on 5th Sept",
 demoOffer: "Teacher's Day Offer",
 duration: "2-3 Weeks | Weekdays Only (Mon-Fri)",
 contactPhone: "7057034840",
