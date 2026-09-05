@@ -47,13 +47,13 @@ pricing: {
   inr: { 
     currentPrice: "₹399", 
     originalPrice: "₹799", 
-    savingsText: "Early Bird Offer Valid Till 16th June", 
+    savingsText: "Teacher's Day Offer Valid only on 5th Sept", 
     currencyCode: "INR" 
   },
   usd: { 
     currentPrice: "$9.99", 
-    originalPrice: "$19.99", 
-    savingsText: "Early Bird Access (Global)", 
+    originalPrice: "$9.99", 
+    savingsText: "Teacher's Day Offer Valid only on 5th Sept (Global)", 
     currencyCode: "USD" 
   }
 },
