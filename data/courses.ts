@@ -6,14 +6,14 @@ export const activeCourses = [
 id: "git-beginner-batch-1",
 slug: "git-beginner-batch-1",
 title: "Git Beginner Live Session",
-statusText: "🚀 Teacher's Day Offer Valid only on 5th Sept",
-demoOffer: "Teacher's Day Offer",
+statusText: "🔒 Cohort Completed",
+demoOffer: "Enrollment Closed",
 duration: "2-3 Weeks | Weekdays Only (Mon-Fri)",
 contactPhone: "7057034840",
-// enrollmentClosed: true,
+enrollmentClosed: true,
 // liveLink: "https://meet.google.com/web-uzkz-ghr",
 
-// whatsappLink: "https://chat.whatsapp.com/EjE3pU7synO9jMFpOPuHZp",
+whatsappLink: "https://chat.whatsapp.com/EjE3pU7synO9jMFpOPuHZp",
 
 vsl: {
   headlinePart1: "Don't just learn Git.",
@@ -47,13 +47,13 @@ pricing: {
   inr: { 
     currentPrice: "₹399", 
     originalPrice: "₹799", 
-    savingsText: "Teacher's Day Offer Valid only on 5th Sept", 
+    savingsText: "Early Bird Offer Valid Till 16th June", 
     currencyCode: "INR" 
   },
   usd: { 
     currentPrice: "$9.99", 
-    originalPrice: "$9.99", 
-    savingsText: "Teacher's Day Offer Valid only on 5th Sept (Global)", 
+    originalPrice: "$19.99", 
+    savingsText: "Early Bird Access (Global)", 
     currencyCode: "USD" 
   }
 },

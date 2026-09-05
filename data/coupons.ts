@@ -2,15 +2,6 @@
 
 export const activeCoupons =[
   {
-    code: "TEACHER_DAY_GIFT",
-    discountType: "fixed", // 'percentage' or 'fixed'
-    discountValue: {
-      inr: 399, // ₹200 off for India
-      usd: 9.99   // $50 off for International
-    }, // 20% off
-    allowedUsers: [] // 🚨 Leave empty[] to let ANYONE use it!
-  },
-  {
     code: "EXISTINGSTUDENT_BATCH03",
     discountType: "fixed", // 'percentage' or 'fixed'
     discountValue: {
