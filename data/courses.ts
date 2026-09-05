@@ -6,14 +6,14 @@ export const activeCourses = [
 id: "git-beginner-batch-1",
 slug: "git-beginner-batch-1",
 title: "Git Beginner Live Session",
-statusText: "🔒 Cohort Completed",
-demoOffer: "Enrollment Closed",
+statusText: "🚀 Enrollment Open",
+demoOffer: "Teacher's Day Offer",
 duration: "2-3 Weeks | Weekdays Only (Mon-Fri)",
 contactPhone: "7057034840",
-enrollmentClosed: true,
+// enrollmentClosed: true,
 // liveLink: "https://meet.google.com/web-uzkz-ghr",
 
-whatsappLink: "https://chat.whatsapp.com/EjE3pU7synO9jMFpOPuHZp",
+// whatsappLink: "https://chat.whatsapp.com/EjE3pU7synO9jMFpOPuHZp",
 
 vsl: {
   headlinePart1: "Don't just learn Git.",
@@ -75,6 +75,11 @@ cohortHighlights: [
   "Real Collaboration Simulation",
   "Certificate for Serious Learners"
 ],
+courseTestimonials: [
+      { name: "Shirish", text: "Best part is asking Random questions kept everyone engaged, while in-depth discussions of fundamentals and behind-the-scenes concepts made Git easier to understand." },
+      { name: "Nishchal", text: "The course took me from zero Git/GitHub knowledge to confident hands-on practice, improving screen-sharing confidence and teaching real-world industry workflows." },
+      { name: "Harshit", text: "The sessions were highly interactive and practical, covering topics from the basics to advanced concepts. Hands-on learning made the concepts easier to understand and apply confidently." }
+    ],
 
 outcomes: [
   "Understands why Git exists", 
