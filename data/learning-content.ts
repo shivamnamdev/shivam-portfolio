@@ -471,7 +471,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
     videoIds:[
       "vw3UmzifSPY",
       "xSKiJQSPs5Q",
-      "9bvIiIq7WJc"
+      "9bvIiIq7WJc",
+      "mquup0fAopA"
       // "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
     ],
     githubAssignments: {
@@ -490,10 +491,10 @@ export const courseCurriculumMap: Record<string, any[]> = {
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-11/Assignment.docx",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-11/Solution.py"
         },
-        "": {
-          title: "Day 15: List Hands On Practice",
-          rawUrl: "",
-          solutionUrl: ""
+        "mquup0fAopA": {
+          title: "Day 12: List Hands On Practice",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-12/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-12/Solution.py"
         },
         "": {
           title: "Day 16: Tuple and Set Data Type",
