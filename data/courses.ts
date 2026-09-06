@@ -148,11 +148,11 @@ modules: [
     id: "python-beginners-batch-2",
     slug: "python-beginners-batch-2",
     title: "Python Live Session (Batch 2)",
-    statusText: "🚀 Enrollment Open",
-    demoOffer: "Early Bird Offer",
+    statusText: "🔒 Cohort Completed",
+    demoOffer: "Enrollment Closed",
     duration: "6-8 Weeks | Weekends Only (Sat & Sun)",
     contactPhone: "7057034840",
-    enrollmentClosed: false, 
+    enrollmentClosed: true, 
     // 🚨 NEW: Add your private group link here!
     whatsappLink: "https://chat.whatsapp.com/COiL4vkIxEBAKy4WtH5Fyp",
 
