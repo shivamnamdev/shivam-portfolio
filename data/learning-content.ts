@@ -472,7 +472,9 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "vw3UmzifSPY",
       "xSKiJQSPs5Q",
       "9bvIiIq7WJc",
-      "mquup0fAopA"
+      "mquup0fAopA",
+      "cCb1IJHW43w",
+      "Rkbi7PdCoNw"
       // "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
     ],
     githubAssignments: {
