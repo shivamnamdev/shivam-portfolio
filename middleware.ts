@@ -6,6 +6,9 @@ export default authMiddleware({
     "/",
     "/courses(.*)",
     "/about",
+    "/privacy",
+    "/terms",
+    "/refund",
     "/contact",
     "/mentorship",
     "/share(.*)", // 🚨 THE MISSING LINE! This lets WhatsApp read the thumbnail!
