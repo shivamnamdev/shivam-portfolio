@@ -474,7 +474,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "9bvIiIq7WJc",
       "mquup0fAopA",
       "cCb1IJHW43w",
-      "Rkbi7PdCoNw"
+      "Rkbi7PdCoNw",
+      "jAMZlOaZTpY"
       // "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
     ],
     githubAssignments: {
@@ -498,10 +499,10 @@ export const courseCurriculumMap: Record<string, any[]> = {
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-12/Assignment.docx",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-12/Solution.py"
         },
-        "": {
+        "jAMZlOaZTpY": {
           title: "Day 16: Tuple and Set Data Type",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2015%3A%20Tuple%20and%20Set/Assignment.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2015%3A%20Tuple%20and%20Set/Solution.py"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-13/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-13/Solution.py"
         },
         "":{
           title: "Day 17: Dictionary",
