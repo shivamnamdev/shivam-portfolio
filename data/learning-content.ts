@@ -402,18 +402,18 @@ export const courseCurriculumMap: Record<string, any[]> = {
         // Video 2 gets an assignment
         "5G3VcAR2P_E": {
           title: "Day 02: Operator and Built-in Functions",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-2/Assignment",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-2/Solution.py"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-2%3A%20Basic%20Building%20Blocks/Assignment",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-2%3A%20Basic%20Building%20Blocks/Solution.py"
         },
         "rAtMuWP2xb4": {
           title: "Day 03: Conditional Statement Basics",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-3/Assignment",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-3/Solution.py"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-3%3A%20Conditional%20Statement%201/Assignment",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-3%3A%20Conditional%20Statement%201/Assignment"
         },
         "cWVEzNPGim8": {
           title: "Day 04: Conditional Statement | Hands On",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-4/Assignment",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-4/Solution.py"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-4%3A%20Conditional%20Statement%202/Assignment",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-4%3A%20Conditional%20Statement%202/Solution.py"
         },
         "yK_VtRPE8-A": {
           title: "Day 05: Looping (While Loop)",
@@ -427,23 +427,18 @@ export const courseCurriculumMap: Record<string, any[]> = {
         },
         "IILdaThXVbE": {
           title: "Day 07: For Loop",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-7/Assignment.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-7/Solution.py"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-7%3A%20For%20Loop/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-7%3A%20For%20Loop/Solution.py"
         },
         "cuVzn9346-I": {
-          title: "Day 08: Thinking Method",
+          title: "Bonus: Thinking Method",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Bonus%20Session/Assignment.docx",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Bonus%20Session/Solution.py"
         },
         "4qwG1f3FL_M": {
-          title: "Day 12: Loop-Pattern",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-8/Assignment.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-8/Solution.py"
-        },
-        "": {
-          title: "Day 13: String Hands On",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2012%3A%20String/Assignment2.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2012%3A%20String/Solutions2.py"
+          title: "Day 8: Loop-Pattern",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-8%3A%20Pattern/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-8%3A%20Pattern/Solution.py"
         }
         // Notice we left Video 1 ("OkK3E7ApZ4Q") out entirely. The Practice tab will hide itself automatically!
       },
@@ -475,39 +470,40 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "mquup0fAopA",
       "cCb1IJHW43w",
       "Rkbi7PdCoNw",
-      "jAMZlOaZTpY"
+      "jAMZlOaZTpY",
+      "zWv9EvBcVbw"
       // "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
     ],
     githubAssignments: {
         "vw3UmzifSPY": {
           title: "Day 9: String",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-9/Assignment.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-9/Solution.py"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-9%3A%20String%20Data%20Type/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-9%3A%20String%20Data%20Type/Solution.py"
         },
         "xSKiJQSPs5Q": {
           title: "Day 10: Strings Hands On",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-10/Assignment.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-10/Solution.py"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-10%3A%20String%20Hands%20On/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-9%3A%20String%20Data%20Type/Solution.py"
         },
       "9bvIiIq7WJc": {
           title: "Day 11: List Data Type",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-11/Assignment.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-11/Solution.py"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-11%3A%20List%20Data%20Type/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-11%3A%20List%20Data%20Type/Solution.py"
         },
         "mquup0fAopA": {
           title: "Day 12: List Hands On Practice",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-12/Assignment.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-12/Solution.py"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-12%3A%20List%20Hands%20On/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-12%3A%20List%20Hands%20On/Solution.py"
         },
         "jAMZlOaZTpY": {
-          title: "Day 16: Tuple and Set Data Type",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-13/Assignment.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-13/Solution.py"
+          title: "Day 13: Tuple and Set Data Type",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-13%3A%20Tuple%20and%20Set/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-13%3A%20Tuple%20and%20Set/Solution.py"
         },
-        "":{
-          title: "Day 17: Dictionary",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2016%3A%20Dictionary/Assignment.docx",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2016%3A%20Dictionary/Solutions.py"
+        "zWv9EvBcVbw":{
+          title: "Day 14: Dictionary",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-14%3A%20Dictionary%20Data%20Type/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-14%3A%20Dictionary%20Data%20Type/Solution.py"
         }
     }  
   },
