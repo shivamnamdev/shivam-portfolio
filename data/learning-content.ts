@@ -471,7 +471,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "cCb1IJHW43w",
       "Rkbi7PdCoNw",
       "jAMZlOaZTpY",
-      "zWv9EvBcVbw"
+      "zWv9EvBcVbw",
+      "v8xKKfyY1do"
       // "daefaLgNkw0"  // 5. Dictionaries & Real-world Usage
     ],
     githubAssignments: {
@@ -504,6 +505,11 @@ export const courseCurriculumMap: Record<string, any[]> = {
           title: "Day 14: Dictionary",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-14%3A%20Dictionary%20Data%20Type/Assignment.docx",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-14%3A%20Dictionary%20Data%20Type/Solution.py"
+        },
+        "v8xKKfyY1do":{
+          title: "Mini Project",
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Mini-Project-1/Expected.docx",
+          starterCodeUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Mini-Project-1/mini-project.py"
         }
     }  
   },
