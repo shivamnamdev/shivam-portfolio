@@ -654,20 +654,43 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     loadCourseData();
   },[hasAccess, isLoaded, isVerifying, params.slug, user?.id]);
 
-  useEffect(() => {
-    async function fetchLikesAndComments() {
-      if (!activeVideo || !user || !hasAccess) return;
-      const { data: commentData } = await supabase.from('video_comments').select('*').eq('video_id', activeVideo.id).order('created_at', { ascending: false });
-      if (commentData) setComments(commentData);
-
-      const { data: likesData } = await supabase.from('video_likes').select('user_id').eq('video_id', activeVideo.id);
-      if (likesData) {
-        setLikesCount(likesData.length);
-        setHasLiked(likesData.some(l => l.user_id === user.id));
-      }
+  const refreshCommentsAndLikes = async (videoId?: string) => {
+    const targetVideoId = videoId ?? activeVideo?.id;
+    if (!targetVideoId || activeVideo?.type === 'document') {
+      setComments([]);
+      setLikesCount(0);
+      setHasLiked(false);
+      return;
     }
-    fetchLikesAndComments();
-  }, [activeVideo, hasAccess, user]);
+
+    try {
+      const [{ data: commentData }, { data: likesData }] = await Promise.all([
+        supabase.from('video_comments').select('*').eq('video_id', targetVideoId).order('created_at', { ascending: false }),
+        supabase.from('video_likes').select('user_id').eq('video_id', targetVideoId)
+      ]);
+
+      setComments(commentData ?? []);
+      const nextLikes = likesData ?? [];
+      setLikesCount(nextLikes.length);
+      setHasLiked(Boolean(user?.id && nextLikes.some((l: any) => l.user_id === user.id)));
+    } catch (error) {
+      console.error('Failed to load Q&A data:', error);
+      setComments([]);
+      setLikesCount(0);
+      setHasLiked(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!activeVideo) {
+      setComments([]);
+      setLikesCount(0);
+      setHasLiked(false);
+      return;
+    }
+
+    refreshCommentsAndLikes(activeVideo.id);
+  }, [activeVideo, user?.id]);
 
   const handleVideoChange = (video: any) => {
     if (activeVideo?.id === video.id) 
@@ -776,13 +799,32 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
 
   const handlePostComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || !user || !activeVideo) return;
+    if (!newComment.trim() || !user || !activeVideo || activeVideo.type === 'document') return;
+
     setIsPosting(true);
-    const newEntry = { video_id: activeVideo.id, user_id: user.id, user_name: user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || 'Student', user_image: user.imageUrl, content: newComment.trim() };
+    const trimmedComment = newComment.trim();
+    const newEntry = {
+      video_id: activeVideo.id,
+      user_id: user.id,
+      user_name: user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || 'Student',
+      user_image: user.imageUrl,
+      content: trimmedComment,
+    };
+
     try {
       const { data, error } = await supabase.from('video_comments').insert([newEntry]).select();
-      if (!error && data) { setComments([data[0], ...comments]); setNewComment(""); }
-    } finally { setIsPosting(false); }
+      if (error) throw error;
+
+      const insertedComment = data?.[0] ?? { ...newEntry, id: `temp-${Date.now()}`, created_at: new Date().toISOString() };
+      setComments((prev) => [insertedComment, ...prev.filter(item => item.id !== insertedComment.id)]);
+      setNewComment('');
+      await refreshCommentsAndLikes(activeVideo.id);
+    } catch (error) {
+      console.error('Failed to post question:', error);
+      showToast('Error', 'Your question could not be posted. Please try again.', 'error');
+    } finally {
+      setIsPosting(false);
+    }
   };
 
   const markAsComplete = async () => {
@@ -1364,55 +1406,61 @@ sys.settrace(_trace_calls)
     );
   }
 
-  // 🚨 NEW: DYNAMIC INTELLISENSE USING JEDI
   const handleEditorMount = (editor: any, monaco: any) => {
-    if (!monaco.languages.getLanguages().some((l: any) => l.id === 'python_custom')) {
-      
-      monaco.languages.registerCompletionItemProvider('python', {
-        triggerCharacters: ['.'],
-        provideCompletionItems: async (model: any, position: any) => {
-          
-          if (!pyodide) return { suggestions: [] };
+    if (!editor || !monaco) return;
 
-          const codeContent = model.getValue();
-          const line = position.lineNumber;
-          const column = position.column - 1; 
+    const editorKey = '__shivam_python_autocomplete_registered__';
+    if ((monaco as any)[editorKey]) return;
+    (monaco as any)[editorKey] = true;
 
-          try {
-            // Ask the Python engine to read the code!
-            const completionsJson = pyodide.runPython(`get_completions("""${codeContent.replace(/"/g, '\\"')}""", ${line}, ${column})`);
-            const completions = JSON.parse(completionsJson);
-
-            const suggestions = completions.map((c: any) => {
-              let kind = monaco.languages.CompletionItemKind.Variable;
-              if (c.type === 'function') kind = monaco.languages.CompletionItemKind.Function;
-              if (c.type === 'class') kind = monaco.languages.CompletionItemKind.Class;
-              if (c.type === 'module') kind = monaco.languages.CompletionItemKind.Module;
-              if (c.type === 'keyword') kind = monaco.languages.CompletionItemKind.Keyword;
-
-              return {
-                label: c.label,
-                kind: kind,
-                insertText: c.label,
-                detail: c.type,
-                documentation: c.doc || `Python ${c.type}`,
-                range: {
-                  startLineNumber: position.lineNumber,
-                  endLineNumber: position.lineNumber,
-                  startColumn: position.column,
-                  endColumn: position.column,
-                }
-              };
-            });
-
-            return { suggestions };
-
-          } catch (error) {
-            return { suggestions: [] };
-          }
-        }
-      });
+    const model = editor.getModel();
+    if (model) {
+      model.updateOptions({ tabSize: 4, insertSpaces: true });
     }
+
+    monaco.languages.registerCompletionItemProvider('python', {
+      triggerCharacters: ['.'],
+      provideCompletionItems: async (model: any, position: any) => {
+        if (!pyodide) return { suggestions: [] };
+
+        const codeContent = model.getValue();
+        const line = position.lineNumber;
+        const column = position.column - 1;
+
+        try {
+          const completionsJson = pyodide.runPython(`get_completions("""${codeContent.replace(/"/g, '\\"')}""", ${line}, ${column})`);
+          const completions = JSON.parse(completionsJson);
+
+          const suggestions = completions.map((c: any) => {
+            let kind = monaco.languages.CompletionItemKind.Variable;
+            if (c.type === 'function') kind = monaco.languages.CompletionItemKind.Function;
+            if (c.type === 'class') kind = monaco.languages.CompletionItemKind.Class;
+            if (c.type === 'module') kind = monaco.languages.CompletionItemKind.Module;
+            if (c.type === 'keyword') kind = monaco.languages.CompletionItemKind.Keyword;
+
+            return {
+              label: c.label,
+              kind,
+              insertText: c.label,
+              detail: c.type,
+              documentation: c.doc || `Python ${c.type}`,
+              range: {
+                startLineNumber: position.lineNumber,
+                endLineNumber: position.lineNumber,
+                startColumn: position.column,
+                endColumn: position.column,
+              },
+            };
+          });
+
+          return { suggestions };
+        } catch (error) {
+          return { suggestions: [] };
+        }
+      },
+    });
+
+    editor.focus();
   };
 
   if (isLoading) {
@@ -1436,29 +1484,28 @@ sys.settrace(_trace_calls)
   const isAssignmentCompleted = activeVideo ? completedAssignments.includes(activeVideo.id) : false;
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#0d1117] overflow-hidden text-white font-sans">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#0d1117] text-white font-sans">
       
-      {/* PRO LMS TOP BAR */}
-      <header className="h-16 bg-[#161b22] border-b border-white/10 flex items-center justify-between px-4 shrink-0 z-50">
-        <div className="flex items-center gap-4">
-          <Link href="/learning" className="flex items-center gap-2 text-stone-400 hover:text-amber-500 transition-colors font-bold text-sm">
-            <ChevronLeft size={16} /> Back
+      <header className="z-50 flex h-16 shrink-0 items-center justify-between border-b border-white/10 bg-[#161b22] px-3 md:px-4">
+        <div className="flex items-center gap-3">
+          <Link href="/learning" className="flex items-center gap-2 text-sm font-bold text-stone-400 transition-colors hover:text-amber-500">
+            <ChevronLeft size={16} /> <span className="hidden sm:inline">Back</span>
           </Link>
-          <div className="h-6 w-px bg-white/10 hidden md:block"></div>
-          <h1 className="font-display font-black text-lg text-white truncate max-w-[200px] md:max-w-md hidden sm:block">
+          <div className="hidden h-6 w-px bg-white/10 md:block"></div>
+          <h1 className="hidden max-w-[200px] truncate font-display text-lg font-black text-white sm:block md:max-w-md">
             {courseDetails?.title || "Python Live Session"}
           </h1>
         </div>
 
-        <div className="flex items-center gap-4 md:gap-6">
+        <div className="flex items-center gap-2 md:gap-6">
           <div className="hidden md:flex items-center gap-3">
              <span className="text-xs font-bold text-stone-400">{completedTasks}/{totalTasks} Completed</span>
-             <div className="w-32 bg-[#0a0c10] border border-white/5 rounded-full h-2 overflow-hidden">
-               <div className="bg-green-500 h-full rounded-full transition-all duration-1000" style={{ width: `${progressPercentage}%` }}></div>
+             <div className="h-2 w-32 overflow-hidden rounded-full border border-white/5 bg-[#0a0c10]">
+               <div className="h-full rounded-full bg-green-500 transition-all duration-1000" style={{ width: `${progressPercentage}%` }}></div>
              </div>
           </div>
           {(progressPercentage === 100 || isAdmin) && (
-            <button onClick={handleGenerateCertificate} className="px-4 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 text-black font-bold rounded-lg text-xs flex items-center gap-1 shadow-lg hover:scale-105 transition-transform">
+            <button onClick={handleGenerateCertificate} className="flex items-center gap-1 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-3 py-1.5 text-[10px] font-bold text-black shadow-lg transition-transform hover:scale-105 md:text-xs">
               <Award size={14} /> Certificate
             </button>
           )}
@@ -1466,11 +1513,10 @@ sys.settrace(_trace_calls)
         </div>
       </header>
 
-      {/* PRO LMS BODY */}
-      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+      <div className="flex flex-col md:flex-row md:flex-1">
         
         {/* LEFT SIDEBAR (PLAYLIST) */}
-        <aside className="w-full md:w-80 lg:w-96 bg-[#0a0c10] border-r border-white/10 flex flex-col shrink-0 order-2 md:order-1 overflow-y-auto">
+        <aside className="order-2 w-full shrink-0 border-r-0 border-b border-white/10 bg-[#0a0c10] md:order-1 md:w-80 md:border-r md:border-b-0 lg:w-96">
           <div className="p-5 border-b border-white/5 sticky top-0 bg-[#0a0c10] z-10">
             <h3 className="font-black text-white text-lg">Course Content</h3>
             <div className="md:hidden mt-3">
@@ -1529,7 +1575,7 @@ sys.settrace(_trace_calls)
         </aside>
 
         {/* MAIN CONTENT AREA */}
-        <main className="flex-1 overflow-y-auto bg-[#0d1117] relative order-1 md:order-2 flex flex-col">
+        <main className="order-1 flex-1 overflow-y-auto bg-[#0d1117] md:order-2">
           
           {/* 🚨 NEW MODAL: Expected Outcome Viewer */}
           <AnimatePresence>
@@ -1602,13 +1648,15 @@ sys.settrace(_trace_calls)
                 </div>
               </div>
             ) : activeVideo ? (
-              <div className="w-full bg-black rounded-2xl overflow-hidden shadow-2xl aspect-video border border-white/10 relative select-none shrink-0">
+              <div className="w-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl">
+               <div className="relative aspect-video w-full"> 
                <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${activeVideo.youtubeId}?rel=0&modestbranding=1`} title={activeVideo.title} frameBorder="0" allowFullScreen></iframe>
                 <div className="absolute inset-0 pointer-events-none overflow-hidden z-50 flex items-center justify-center mix-blend-difference">
                   <motion.div animate={{ x:[-150, 150, 150, -150, -150], y:[-80, -80, 80, 80, -80] }} transition={{ duration: 25, repeat: Infinity, ease: "linear" }} className="absolute text-white/30 font-mono text-sm md:text-lg font-bold tracking-widest pointer-events-none drop-shadow-md transform -rotate-12">
                     {user?.primaryEmailAddress?.emailAddress || user?.id} <br/><span className="text-xs">DO NOT DISTRIBUTE</span>
                   </motion.div>
                 </div>
+               </div> 
               </div>
             ) : (
               <div className="w-full bg-[#0a0c10] rounded-2xl shadow-2xl aspect-video border border-white/10 flex flex-col items-center justify-center text-center p-8 shrink-0">
@@ -1631,13 +1679,13 @@ sys.settrace(_trace_calls)
               <div className="p-6 md:p-8 rounded-2xl border border-white/10 bg-[#121212] shadow-xl relative overflow-hidden shrink-0">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-[50px] pointer-events-none" />
                 
-                <div className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-6 relative z-10">
+                <div className="relative z-10 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                   <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-white mb-2 leading-snug">{activeVideo.title}</h2>
-                    <p className="text-stone-400 text-sm font-medium">Instructor: Shivam Namdev</p>
+                    <h2 className="mb-2 text-xl font-bold leading-snug text-white md:text-2xl">{activeVideo.title}</h2>
+                    <p className="text-sm font-medium text-stone-400">Instructor: Shivam Namdev</p>
                   </div>
                   
-                  <div className="flex flex-wrap items-center gap-3 shrink-0">
+                  <div className="flex flex-wrap items-center gap-3">
                     {/* Share Button omitted for document types to avoid thumbnail confusion */}
                     {isAdmin && activeVideo.type !== 'document' && (
                       <button onClick={async () => {
@@ -1728,9 +1776,8 @@ sys.settrace(_trace_calls)
 
                   {activeTab === 'practice' && activeVideo.githubAssignment && (
                     //<div className="flex flex-col lg:flex-row h-[700px] bg-[#0d1117] overflow-hidden border-t border-white/10 shadow-inner">
-                    <div className="flex flex-col lg:flex-row flex-grow bg-[#0d1117]">  
-                      {/* <div className="w-full lg:w-1/3 flex flex-col border-r border-stone-800 bg-[#161b22] shrink-0"> */}
-                      <div className="w-full lg:w-1/3 flex flex-col border-b xl:border-b-0 xl:border-r border-stone-800 bg-[#161b22] shrink-0">  
+                    <div className="flex flex-col bg-[#0d1117] lg:flex-row lg:flex-grow">  
+                      <div className="w-full border-b border-stone-800 bg-[#161b22] lg:w-1/3 lg:border-b-0 lg:border-r">
                         <div className="flex flex-col items-center p-4 border-b border-stone-800 bg-[#0d1117]">
                           <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3">Question {currentStepIndex + 1} of {assignmentSteps.length}</span>
                           <div className="flex gap-1.5 w-full justify-center">
@@ -1786,7 +1833,7 @@ sys.settrace(_trace_calls)
                         </div>
                       </div>
 
-                      <div className="flex-1 flex flex-col bg-[#0d1117] min-h-[500px]">
+                      <div className="min-h-[500px] flex-1 flex-col bg-[#0d1117] min-w-0 lg:flex">
                         <div className="flex bg-[#161b22] border-b border-stone-800 justify-between items-center pr-4 overflow-x-auto">
                           {isGitLab ? (
                             <div className="flex items-center gap-3 px-4 py-2.5">
@@ -1823,13 +1870,26 @@ sys.settrace(_trace_calls)
                         </div>
                         {!isGitLab && (
                         <div className="flex-grow relative min-h-[300px]">
-                          <Editor height="100%" defaultLanguage={getLanguage(activeFile)} theme="vs-dark" value={files[activeFile] || ""} onChange={(value) => {
-                            const updatedFiles = { ...files, [activeFile]: value || "" };
-                            setFiles(updatedFiles);
-                            syncCurrentStepFiles(updatedFiles);
-                            setAiResponse(null);
-                          }} options={{ minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} 
-                          onMount={handleEditorMount} 
+                          <Editor
+                            height="100%"
+                            defaultLanguage={getLanguage(activeFile)}
+                            theme="vs-dark"
+                            value={files[activeFile] || ""}
+                            onChange={(value) => {
+                              const updatedFiles = { ...files, [activeFile]: value || "" };
+                              setFiles(updatedFiles);
+                              syncCurrentStepFiles(updatedFiles);
+                              setAiResponse(null);
+                            }}
+                            options={{
+                              minimap: { enabled: false },
+                              fontSize: 14,
+                              padding: { top: 16 },
+                              readOnly: false,
+                              smoothScrolling: true,
+                              automaticLayout: true,
+                            }}
+                            onMount={handleEditorMount}
                           />
                         </div>
                         )}
