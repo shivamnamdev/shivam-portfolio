@@ -516,13 +516,14 @@ export const courseCurriculumMap: Record<string, any[]> = {
   {
     moduleTitle: "Module 3: Core Programming Concepts",
     videoIds:[
-       
+      "gic-kTnrPtA"   
+    
     ],
     githubAssignments: {
-        "": {
+        "gic-kTnrPtA": {
           title: "Day 18: File Handling",
-          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day-18%3A%20File%20Handling/Assignment",
-          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day-18%3A%20File%20Handling/Solution.py"
+          rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-15%3A%20File%20Handling/Assignment.docx",
+          solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-15%3A%20File%20Handling/Solution.py"
         },
         "":{
           title: "Day 19: File Handling Day 2",
