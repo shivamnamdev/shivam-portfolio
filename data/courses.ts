@@ -178,10 +178,37 @@ modules: [
     "Becoming job-ready for entry-level roles"
     ] 
   },
-    pricing: {
-      inr: { currentPrice: "₹1,999", originalPrice: "₹2,499", savingsText: "Early Bird Offer Valid Till 5th July", currencyCode: "INR" },
-      usd: { currentPrice: "$25", originalPrice: "$35", savingsText: "Early Bird Access (Global)", currencyCode: "USD" }
-    },
+    pricingPlans: [
+      {
+        id: "community",
+        name: "Community Plan",
+        subtitle: "For aspiring engineers ready to start the journey.",
+        price: "₹1999",
+        originalPrice: "₹2499",
+        features: [
+          "Live interactive classes (Sat & Sun)", 
+          "Course completion certificate", 
+          "Discord community access", 
+          "Daily assignments with solutions"
+        ],
+        isPopular: false
+      },
+      {
+        id: "personal",
+        name: "Personal Plan",
+        subtitle: "For serious learners who want direct mentorship.",
+        price: "₹2999",
+        originalPrice: "₹4999",
+        features: [
+          "Everything in Community Plan", 
+          "1-on-1 Video Call (Architecture Review)", 
+          "1-on-1 Video Call (Resume & Interview Prep)", 
+          "Bonus: Advanced Python Recordings", 
+          "Direct WhatsApp access to Shivam"
+        ],
+        isPopular: true
+      }
+    ],
     
     resources: {
     syllabusPdf: "/syllabus/Python_Foundation_Cohort_Syllabus_Updated_Fixed.pdf",

@@ -1,20 +1,22 @@
 // app/api/create-order/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import Razorpay from "razorpay";
-import { activeCourses } from "@/data/courses";
-import { activeCoupons } from "@/data/coupons";
+import { auth } from "@clerk/nextjs"; 
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { courseId, currency, couponCode, userId } = body;
-    
+    // 1. SECURITY CHECK (Clerk Session OR API Key)
+    let clerkUserId: string | null = null;
+    try {
+      const authResult = auth();
+      clerkUserId = authResult.userId;
+    } catch {
+      clerkUserId = null;
+    }
     const apiKey = req.headers.get("x-api-key");
 
-    // 1. SECURITY CHECK: Require either a userId from the frontend, OR the Playwright API Key!
-    if (!userId && apiKey !== process.env.ADMIN_API_KEY) {
-      console.error("Blocked: No User ID and No API Key provided.");
-      return NextResponse.json({ success: false, error: "401 Unauthorized: Invalid Request" }, { status: 401 });
+    if (!clerkUserId && apiKey !== process.env.ADMIN_API_KEY) {
+      return NextResponse.json({ success: false, error: "401 Unauthorized: Invalid API Key or Session" }, { status: 401 });
     }
 
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
@@ -26,33 +28,16 @@ export async function POST(req: NextRequest) {
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
 
-    const course = activeCourses.find(c => c.id === courseId);
-    if (!course) return NextResponse.json({ success: false, error: "Course not found" }, { status: 400 });
+    // 2. 🚨 THE FIX: Just grab the final calculated amount from the frontend!
+    const { amount, currency } = await req.json();
 
-    const activePricing = currency === "USD" ? course.pricing.usd : course.pricing.inr;
-    let baseAmount = parseInt(activePricing.currentPrice.replace(/[^0-9]/g, ''));
-    let finalAmount = baseAmount;
+    // Ensure amount is at least 1 (Razorpay requirement)
+    let finalAmount = Math.max(Math.round(amount), 1);
 
-    if (couponCode) {
-      const coupon = activeCoupons.find(c => c.code.toUpperCase() === couponCode.toUpperCase());
-      if (!coupon) return NextResponse.json({ success: false, error: "Invalid coupon code" }, { status: 400 });
-
-      if (coupon.allowedUsers && coupon.allowedUsers.length > 0 && !coupon.allowedUsers.includes(userId)) {
-        return NextResponse.json({ success: false, error: "This coupon is not valid for your account." }, { status: 403 });
-      }
-
-      if (coupon.discountType === 'percentage') {
-        finalAmount = baseAmount - (baseAmount * (coupon.discountValue as number / 100));
-      } else if (coupon.discountType === 'fixed') {
-        const fixedDiscounts = coupon.discountValue as Record<string, number>;
-        finalAmount = baseAmount - (fixedDiscounts[currency.toLowerCase()] || 0);
-      }
-      finalAmount = Math.max(Math.round(finalAmount), 1);
-    }
-
+    // 3. Create the Order
     const shortReceiptId = `rcpt_${Date.now().toString().slice(-8)}`;
     const order = await razorpay.orders.create({
-      amount: finalAmount * 100, 
+      amount: finalAmount * 100, // Convert to paise/cents
       currency: currency || "INR", 
       receipt: shortReceiptId,
     });
