@@ -147,7 +147,7 @@ modules: [
   {
     id: "python-beginners-batch-2",
     slug: "python-beginners-batch-2",
-    title: "Python Live Session (Batch 2)",
+    title: "Python Live Session",
     statusText: "🔒 Cohort Completed",
     demoOffer: "Enrollment Closed",
     duration: "6-8 Weeks | Weekends Only (Sat & Sun)",
@@ -159,7 +159,7 @@ modules: [
     vsl: {
       headlinePart1: "Don't just learn Python.",
       headlineHighlight: "THINK IN PYTHON",
-      subheadline: "Build logic. Solve problems. Write code with confidence. A Foundation level Python cohort for Beginners, Students, Professionals & Career Transitioners.",
+      subheadline: "By the end, you won't just know Python syntax — you'll start from print(\"Hello World\") to building your own modules while handling exceptions, and parsing JSON like a pro with OOPs Concepts. Built the way production code actually gets written.",
       videoCoverUrl: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?q=80&w=2000&auto=format&fit=crop",
       flyerUrl: "/batch3-flyer.png" // 🚨 Make sure to save your new image as this in the 'public' folder!
     },
@@ -236,53 +236,53 @@ modules: [
 
 
   // 🔒 EXISTING: BATCH 1 (Closed)
-  {
-    id: "python-beginners",
-    slug: "python-beginners", 
-    title: "Python Live Session (Batch 1)",
-    statusText: "🔒 Cohort Completed",
-    demoOffer: "Enrollment Closed",
-    duration: "30 Sessions | Complete in 45 Days",
-    contactPhone: "7057034840",
-    enrollmentClosed: true, 
-    // liveLink: "https://meet.google.com/eso-nykg-qgi", 
+//   {
+//     id: "python-beginners",
+//     slug: "python-beginners", 
+//     title: "Python Live Session (Batch 1)",
+//     statusText: "🔒 Cohort Completed",
+//     demoOffer: "Enrollment Closed",
+//     duration: "30 Sessions | Complete in 45 Days",
+//     contactPhone: "7057034840",
+//     enrollmentClosed: true, 
+//     // liveLink: "https://meet.google.com/eso-nykg-qgi", 
     
-    vsl: {
-      headlinePart1: "Master Python Programming &",
-      headlineHighlight: "Logic Building",
-      subheadline: "This cohort has concluded. Recordings are available to enrolled students.",
-      videoCoverUrl: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?q=80&w=2000&auto=format&fit=crop",
-      flyerUrl: "/course-flyer.jpg"
-    },
-    painPoints: {
-  oldWay: [
-    "Random tutorial watching without direction",
-    "No accountability or consistent follow-up",
-    "Isolated learning without peer community",
-    "Unable to verify if your logic is actually correct"
-  ],
-  newWay: [
-    "Structured curriculum from beginner to advanced",
-    "Live mentorship with daily assignments and follow-ups",
-    "Learning alongside peers in a cohort",
-    "Real-time feedback from an experienced instructor"
-    ]
-  },
-    pricing: {
-      inr: { currentPrice: "₹599", originalPrice: "₹899", savingsText: "Closed", currencyCode: "INR" },
-      usd: { currentPrice: "$150", originalPrice: "$250", savingsText: "Closed", currencyCode: "USD" }
-    },
+//     vsl: {
+//       headlinePart1: "Master Python Programming &",
+//       headlineHighlight: "Logic Building",
+//       subheadline: "This cohort has concluded. Recordings are available to enrolled students.",
+//       videoCoverUrl: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?q=80&w=2000&auto=format&fit=crop",
+//       flyerUrl: "/course-flyer.jpg"
+//     },
+//     painPoints: {
+//   oldWay: [
+//     "Random tutorial watching without direction",
+//     "No accountability or consistent follow-up",
+//     "Isolated learning without peer community",
+//     "Unable to verify if your logic is actually correct"
+//   ],
+//   newWay: [
+//     "Structured curriculum from beginner to advanced",
+//     "Live mentorship with daily assignments and follow-ups",
+//     "Learning alongside peers in a cohort",
+//     "Real-time feedback from an experienced instructor"
+//     ]
+//   },
+//     pricing: {
+//       inr: { currentPrice: "₹599", originalPrice: "₹899", savingsText: "Closed", currencyCode: "INR" },
+//       usd: { currentPrice: "$150", originalPrice: "$250", savingsText: "Closed", currencyCode: "USD" }
+//     },
 
-    resources: {
-    syllabusPdf: "/syllabus/Python_Foundation_Cohort_Syllabus_Updated_Fixed.pdf",
-    syllabusLabel: "Download Full Syllabus (PDF)"
-  },
+//     resources: {
+//     syllabusPdf: "/syllabus/Python_Foundation_Cohort_Syllabus_Updated_Fixed.pdf",
+//     syllabusLabel: "Download Full Syllabus (PDF)"
+//   },
   
-    outcomes: ["Build strong coding logic from scratch"],
-    bonuses: ["Hands-on Capstone Mini Project"],
-    modules: [{ title: "Python Fundamentals", topics: ["Python Basics & Setup", "Variables & Operators", "Conditional Statements & Loops"] },
-      { title: "Data Structures in Python", topics: ["Lists & Advanced Operations", "Tuples & Sets", "Dictionaries"] },
-      { title: "Core Programming Concepts", topics: ["Writing Custom Functions", "Exception Handling", "File Handling"] },
-      { title: "Advanced Python", topics: ["Object-Oriented Programming", "Virtual Environments"] }]
-  }
+//     outcomes: ["Build strong coding logic from scratch"],
+//     bonuses: ["Hands-on Capstone Mini Project"],
+//     modules: [{ title: "Python Fundamentals", topics: ["Python Basics & Setup", "Variables & Operators", "Conditional Statements & Loops"] },
+//       { title: "Data Structures in Python", topics: ["Lists & Advanced Operations", "Tuples & Sets", "Dictionaries"] },
+//       { title: "Core Programming Concepts", topics: ["Writing Custom Functions", "Exception Handling", "File Handling"] },
+//       { title: "Advanced Python", topics: ["Object-Oriented Programming", "Virtual Environments"] }]
+//   }
 ];
