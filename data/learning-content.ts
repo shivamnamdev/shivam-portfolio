@@ -517,7 +517,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
     moduleTitle: "Module 3: Core Programming Concepts",
     videoIds:[
       "gic-kTnrPtA",
-      "oNngPt69WPA"   
+      "oNngPt69WPA",
+      "hoRT-tbM4PE"   
     
     ],
     githubAssignments: {
@@ -531,8 +532,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-16%3A%20File%20Handling%20Advance/Assignment.docx",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/Python-batch-3/refs/heads/main/Day-16%3A%20File%20Handling%20Advance/Solution.py"
         },
-        "":{
-          title: "Day 20: Exceptional Handling",
+        "hoRT-tbM4PE":{
+          title: "Day 17: Exceptional Handling",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2020%3A%20Exceptional%20Handling/Assignment",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2020%3A%20Exceptional%20Handling/Solutions.py"
         },
