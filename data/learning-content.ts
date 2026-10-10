@@ -519,7 +519,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "gic-kTnrPtA",
       "oNngPt69WPA",
       "hoRT-tbM4PE",
-      "AYxS1MuDFuQ"   
+      "AYxS1MuDFuQ",
+      "INbWj48QVwg"   
     
     ],
     githubAssignments: {
@@ -539,12 +540,12 @@ export const courseCurriculumMap: Record<string, any[]> = {
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2020%3A%20Exceptional%20Handling/Solutions.py"
         },
         "AYxS1MuDFuQ": {
-          title: "Day 21: Functions",
+          title: "Day 18: Functions",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Assignment",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Solution.py"
         },
-        "": {
-          title: "Day 22: Functions Day 2: Global Variables",
+        "INbWj48QVwg": {
+          title: "Day 19: Functions Day 2: Import | Arbitrary Functions",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Assignment2",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Solution2.py"
         },
