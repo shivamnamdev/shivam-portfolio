@@ -520,8 +520,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
       "oNngPt69WPA",
       "hoRT-tbM4PE",
       "AYxS1MuDFuQ",
-      "INbWj48QVwg"   
-    
+      "INbWj48QVwg",
+      "__cGPd3mJYw"   
     ],
     githubAssignments: {
         "gic-kTnrPtA": {
@@ -549,8 +549,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Assignment2",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Solution2.py"
         },
-        "" :{
-          title: "Day 23: Functions Day 3: Dunders | Import",
+        "__cGPd3mJYw" :{
+          title: "Mini Project 2",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Assignment3",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2021%3A%20Functions/Solution3.py"
         }
