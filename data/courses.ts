@@ -11,6 +11,7 @@ demoOffer: "Enrollment Closed",
 duration: "2-3 Weeks | Weekdays Only (Mon-Fri)",
 contactPhone: "7057034840",
 enrollmentClosed: true,
+liveLink: "", // Google Meet URL for /live/[slug]; set while the cohort is running
 // liveLink: "https://meet.google.com/web-uzkz-ghr",
 
 whatsappLink: "https://chat.whatsapp.com/EjE3pU7synO9jMFpOPuHZp",
@@ -153,6 +154,7 @@ modules: [
     duration: "6-8 Weeks | Weekends Only (Sat & Sun)",
     contactPhone: "7057034840",
     enrollmentClosed: true, 
+    liveLink: "", // Google Meet URL for /live/[slug]; set while the cohort is running
     // 🚨 NEW: Add your private group link here!
     whatsappLink: "https://chat.whatsapp.com/COiL4vkIxEBAKy4WtH5Fyp",
 
@@ -245,6 +247,7 @@ modules: [
     duration: "30 Sessions | Complete in 45 Days",
     contactPhone: "7057034840",
     enrollmentClosed: true, 
+    liveLink: "", // Google Meet URL for /live/[slug]; set while the cohort is running
     // liveLink: "https://meet.google.com/eso-nykg-qgi", 
     
     vsl: {

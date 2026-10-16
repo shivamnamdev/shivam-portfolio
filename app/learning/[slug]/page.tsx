@@ -19,8 +19,10 @@ import { supabase } from '@/lib/supabaseClient';
 import Editor from '@monaco-editor/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GitGraphVisualizer from '@/components/GitGraphVisualizer';
+import { ADMIN_EMAIL } from '@/lib/admin';
 
-const ADMIN_EMAIL = "shivamnamdev.corp@gmail.com";
+// XP is recomputed server-side from progress rows; fire-and-forget after progress changes.
+const syncXp = () => fetch('/api/xp/sync', { method: 'POST' }).catch(() => {});
 
 function formatYouTubeDuration(duration: string) {
   const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
@@ -831,8 +833,12 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     if (!user || !activeVideo || isMarking || !hasAccess) return;
     setIsMarking(true);
     try {
-      await supabase.from('video_progress').insert([{ user_id: user.id, course_slug: params.slug, video_id: activeVideo.id }]);
+      const { error } = await supabase.from('video_progress').insert([{ user_id: user.id, course_slug: params.slug, video_id: activeVideo.id }]);
+      if (error) throw error;
       setCompletedVideos(prev =>[...prev, activeVideo.id]);
+      syncXp();
+    } catch (err) {
+      showToast("Error", "Could not mark this lesson as complete. Please try again.", "error");
     } finally { setIsMarking(false); }
   };
 
@@ -882,6 +888,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
 
         if (!completedAssignments.includes(activeVideo.id)) {
           setCompletedAssignments(prev => [...prev, activeVideo.id]);
+          syncXp();
           supabase.from("admin_activity_log").insert([
             {
               type: "submission",
@@ -993,6 +1000,7 @@ sys.stderr = io.StringIO()
 
       if (!completedAssignments.includes(activeVideo.id)) {
         setCompletedAssignments(prev => [...prev, activeVideo.id]);
+        syncXp();
         supabase.from('admin_activity_log').insert([{ type: 'submission', message: `New Code Submission: ${activeVideo.githubAssignment?.title || activeVideo.title}`, user_email: user.primaryEmailAddress?.emailAddress }]).then();
       }
 

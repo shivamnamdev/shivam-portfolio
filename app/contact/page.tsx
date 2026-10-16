@@ -18,7 +18,7 @@ export default function ContactPage() {
     try {
       const response = await fetch("/api/send-email", {
         method: "POST", headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: formData.get("name"), email: formData.get("email"), message: formData.get("message"), subject: "New General Inquiry from Contact Page" }),
+        body: JSON.stringify({ name: formData.get("name"), email: formData.get("email"), message: formData.get("message"), website: formData.get("website"), subject: "New General Inquiry from Contact Page" }),
       });
       const data = await response.json();
       if (data.success) { setIsSuccess(true); (e.target as HTMLFormElement).reset(); } 
@@ -45,6 +45,8 @@ export default function ContactPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-5 text-left relative z-10">
+              {/* Honeypot: hidden from people, filled in by spam bots */}
+              <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
               <div><label className="block text-sm font-bold text-stone-400 mb-2">Full Name</label><input type="text" name="name" required className="w-full px-5 py-4 rounded-xl border border-white/10 bg-black/50 text-white focus:outline-none focus:border-amber-500 transition-all" placeholder="John Doe" /></div>
               <div><label className="block text-sm font-bold text-stone-400 mb-2">Email Address</label><input type="email" name="email" required className="w-full px-5 py-4 rounded-xl border border-white/10 bg-black/50 text-white focus:outline-none focus:border-amber-500 transition-all" placeholder="john@example.com" /></div>
               <div><label className="block text-sm font-bold text-stone-400 mb-2">Message</label><textarea name="message" required rows={5} className="w-full px-5 py-4 rounded-xl border border-white/10 bg-black/50 text-white focus:outline-none focus:border-amber-500 transition-all resize-none" placeholder="I have a question about..." /></div>

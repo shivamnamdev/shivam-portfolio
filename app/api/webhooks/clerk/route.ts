@@ -4,7 +4,8 @@ import { headers } from 'next/headers';
 import { WebhookEvent } from '@clerk/nextjs/server';
 import nodemailer from 'nodemailer';
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient'; // 🚨 NEW: Imported Supabase
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { escapeHtml } from '@/lib/escapeHtml';
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
 
     // 🚨 NEW: Log the signup to Supabase so it appears in your Admin Bell!
     try {
-      await supabase.from('admin_activity_log').insert([{
+      await supabaseAdmin.from('admin_activity_log').insert([{
         type: 'signup',
         message: `New Account Created: ${fullName}`,
         user_email: email || "No email"
@@ -75,7 +76,7 @@ export async function POST(req: Request) {
                 <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 900;">Welcome to the Academy!</h1>
               </div>
               <div style="padding: 40px 30px; background-color: #fdfcf8;">
-                <p style="font-size: 18px; margin-bottom: 20px;">Hi <strong>${firstName}</strong>,</p>
+                <p style="font-size: 18px; margin-bottom: 20px;">Hi <strong>${escapeHtml(firstName)}</strong>,</p>
                 <p style="font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
                   I am thrilled to see you join the platform. My goal is to help you achieve absolute Tech Mastery, step-by-step.
                 </p>
@@ -93,13 +94,13 @@ export async function POST(req: Request) {
         const adminMailOptions = {
           from: `Academy Bot <${process.env.GMAIL_USER}>`,
           to: process.env.GMAIL_USER,
-          subject: `🚨 NEW USER SIGNUP: ${fullName}`,
+          subject: `🚨 NEW USER SIGNUP: ${fullName.replace(/[\r\n]+/g, ' ')}`,
           html: `
             <div style="font-family: Arial, sans-serif; padding: 20px;">
               <h2 style="color: #059669;">New Student Joined!</h2>
-              <p><strong>Name:</strong> ${fullName}</p>
-              <p><strong>Email:</strong> ${email}</p>
-              <p><strong>Clerk ID:</strong> ${id}</p>
+              <p><strong>Name:</strong> ${escapeHtml(fullName)}</p>
+              <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+              <p><strong>Clerk ID:</strong> ${escapeHtml(id)}</p>
             </div>
           `,
         };

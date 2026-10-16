@@ -18,7 +18,7 @@ export default function MentorshipPage() {
     try {
       const response = await fetch("/api/send-email", {
         method: "POST", headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: formData.get("name"), email: formData.get("email"), message: formData.get("message"), subject: "🚨 NEW LEAD: 1-on-1 Mentorship Request!" }),
+        body: JSON.stringify({ name: formData.get("name"), email: formData.get("email"), message: formData.get("message"), website: formData.get("website"), subject: "🚨 NEW LEAD: 1-on-1 Mentorship Request!" }),
       });
       const data = await response.json();
       if (data.success) { setIsSuccess(true); (e.target as HTMLFormElement).reset(); } 
@@ -45,6 +45,8 @@ export default function MentorshipPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-5 text-left relative z-10">
+              {/* Honeypot: hidden from people, filled in by spam bots */}
+              <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
               <div><label className="block text-sm font-bold text-stone-400 mb-2">Full Name</label><input type="text" name="name" required className="w-full px-5 py-4 rounded-xl border border-white/10 bg-black/50 text-white focus:outline-none focus:border-amber-500 transition-all" placeholder="John Doe" /></div>
               <div><label className="block text-sm font-bold text-stone-400 mb-2">Email Address</label><input type="email" name="email" required className="w-full px-5 py-4 rounded-xl border border-white/10 bg-black/50 text-white focus:outline-none focus:border-amber-500 transition-all" placeholder="john@example.com" /></div>
               <div><label className="block text-sm font-bold text-stone-400 mb-2">What do you need help with?</label><textarea name="message" required rows={5} defaultValue="Hi Shivam, I am interested in 1-on-1 mentorship regarding..." className="w-full px-5 py-4 rounded-xl border border-white/10 bg-black/50 text-white focus:outline-none focus:border-amber-500 transition-all resize-none" /></div>

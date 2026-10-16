@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { CheckCircle2, ChevronDown, Gift, Calendar, Code2, Download, CreditCard, Loader2, Globe, Tag, PartyPopper, ExternalLink } from 'lucide-react';
 import { activeCourses } from '@/data/courses';
-import { activeCoupons } from '@/data/coupons';
+import { applyCoupon, formatPrice, parsePrice, resolveCoupon, toCurrencyCode, type Coupon } from '@/lib/pricing';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
@@ -30,7 +30,7 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
   const [region, setRegion] = useState<'inr' | 'usd'>('inr');
   
   const [couponInput, setCouponInput] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponMessage, setCouponMessage] = useState({ text: "", type: "" });
 
   // 🚨 NEW: State to control the Post-Checkout WhatsApp Modal
@@ -62,17 +62,9 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
 
   const activePricing = displayCourse.pricing[region];
 
-  let displayPriceNumeric = parseInt(activePricing.currentPrice.replace(/[^0-9]/g, ''));
-  const originalPriceNumeric = displayPriceNumeric;
-
-  if (appliedCoupon) {
-    if (appliedCoupon.discountType === 'percentage') {
-      displayPriceNumeric = displayPriceNumeric - (displayPriceNumeric * (appliedCoupon.discountValue / 100));
-    } else if (appliedCoupon.discountType === 'fixed') {
-      displayPriceNumeric = displayPriceNumeric - (appliedCoupon.discountValue[region] || 0);
-    }
-    displayPriceNumeric = Math.max(Math.round(displayPriceNumeric), 0);
-  }
+  const currencyCode = toCurrencyCode(activePricing.currencyCode);
+  // Same rules the server re-applies in /api/create-order and /api/enroll-free.
+  const displayPriceNumeric = applyCoupon(parsePrice(activePricing.currentPrice), appliedCoupon, currencyCode);
 
   const handleApplyCoupon = () => {
     if (!isSignedIn) {
@@ -82,23 +74,16 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
     }
     
     setCouponMessage({ text: "", type: "" });
-    const coupon = activeCoupons.find(c => c.code.toUpperCase() === couponInput.toUpperCase());
-    
-    if (!coupon) {
-      setCouponMessage({ text: "Invalid coupon code.", type: "error" });
+    const result = resolveCoupon(couponInput, user?.id);
+
+    if (!result.ok || !result.coupon) {
+      const text = result.ok ? "Invalid coupon code." : result.status === 403 ? "This coupon is restricted to specific accounts." : "Invalid coupon code.";
+      setCouponMessage({ text, type: "error" });
       setAppliedCoupon(null);
       return;
     }
-    
-    if (coupon.allowedUsers && coupon.allowedUsers.length > 0) {
-      if (!user?.id || !coupon.allowedUsers.includes(user.id)) {
-        setCouponMessage({ text: "This coupon is restricted to specific accounts.", type: "error" });
-        setAppliedCoupon(null);
-        return;
-      }
-    }
 
-    setAppliedCoupon(coupon);
+    setAppliedCoupon(result.coupon);
     setCouponMessage({ text: "Coupon applied successfully!", type: "success" });
   };
 
@@ -117,12 +102,8 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             courseId: displayCourse.id, 
-            courseSlug: displayCourse.slug, 
-            currency: activePricing.currencyCode, 
+            currency: currencyCode, 
             couponCode: appliedCoupon?.code, 
-            userId: user?.id,
-            userEmail: user?.primaryEmailAddress?.emailAddress,
-            userName: user?.fullName || user?.firstName || "Student",
           })
         });
         const data = await res.json();
@@ -147,11 +128,9 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          amount: displayPriceNumeric, 
           courseId: displayCourse.id, 
-          currency: activePricing.currencyCode, 
+          currency: currencyCode, 
           couponCode: appliedCoupon?.code, 
-          userId: user?.id 
         })
       });
       const data = await orderResponse.json();
@@ -176,19 +155,14 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                userId: user?.id,
-                courseSlug: displayCourse.slug,
-                userEmail: user?.primaryEmailAddress?.emailAddress,
-                userName: user?.fullName || user?.firstName || "Student",
-                courseTitle: displayCourse.title,
-                amountPaid: `${activePricing.currencyCode === 'USD' ? '$' : '₹'}${displayPriceNumeric}`,
-                couponCode: appliedCoupon?.code
               })
             });
             const verifyData = await verifyRes.json();
             if (verifyData.success) {
               // 🚨 THE FIX: Trigger the beautiful success modal instead of an alert!
               setPaymentSuccessData({ show: true, whatsappLink: displayCourse.whatsappLink || "#" });
+            } else {
+              alert(verifyData.error || "Error verifying enrollment.");
             }
           } catch (err) { alert("Error verifying enrollment."); }
         },
@@ -308,7 +282,7 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
                     </div>
 
                     <div className="flex items-end gap-3 mb-2">
-                      <span className="text-5xl font-black text-white">{activePricing.currencyCode === 'USD' ? '$' : '₹'}{displayPriceNumeric}</span>
+                      <span className="text-5xl font-black text-white">{formatPrice(displayPriceNumeric, currencyCode)}</span>
                       <span className={`text-xl font-bold mb-1 ${appliedCoupon ? 'text-red-400 line-through' : 'text-stone-500 line-through'}`}>
                         {appliedCoupon ? activePricing.currentPrice : activePricing.originalPrice}
                       </span>

@@ -4,8 +4,8 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { courseCurriculumMap } from '@/data/learning-content';
 import { activeCourses } from '@/data/courses';
 import { supabase } from '@/lib/supabaseClient';
-
-const ADMIN_EMAIL = "shivamnamdev.corp@gmail.com";
+import { isAdminEmail } from '@/lib/admin';
+import { getPrimaryEmail } from '@/lib/serverAuth';
 
 // 1. Helper function to find which course this video belongs to
 function getVideoDetails(videoId: string) {
@@ -59,7 +59,8 @@ async function resolveDestination(videoId: string) {
   if (!userId) return `/courses/${details.slug}`;
 
   const clerkUser = await currentUser();
-  const isAdmin = clerkUser?.primaryEmailAddress?.emailAddress === ADMIN_EMAIL;
+  // Server-side Clerk users expose emailAddresses + primaryEmailAddressId, not primaryEmailAddress.
+  const isAdmin = isAdminEmail(getPrimaryEmail(clerkUser));
   if (isAdmin) return `/learning/${details.slug}?v=${videoId}`;
 
   try {

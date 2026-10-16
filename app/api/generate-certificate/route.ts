@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
     // 5. Serialize and Send the PDF
     const pdfBytes = await pdfDoc.save();
 
-    return new NextResponse(pdfBytes, {
+    return new NextResponse(new Uint8Array(pdfBytes), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",

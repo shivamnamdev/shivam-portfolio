@@ -437,19 +437,19 @@ Status key: ✅ Implemented · 🟡 Partial / has caveats · 🔴 Not implemente
 | FR3 | M3 | Toggle INR/USD pricing across the cohort box and CTA | Must | ✅ |
 | FR4 | M3 | Validate coupons (existence, user restriction) with clear messages | Must | ✅ |
 | FR5 | M3 | Server re-computes the final price; never trusts the client amount | Must | ✅ |
-| FR6 | M3 | Correctly handle decimal USD prices (e.g. `$9.99`) | Must | 🔴 B2 |
+| FR6 | M3 | Correctly handle decimal USD prices (e.g. `$9.99`) | Must | ✅ (fixed B2) |
 | FR7 | M3 | Free-coupon bypass skips Razorpay and enrolls instantly | Must | ✅ |
 | FR8 | M3 | Verify Razorpay signature before enrolling | Must | ✅ |
-| FR9 | M3 | Enrollment must match the course that was actually paid for | Must | 🔴 S3 |
-| FR10 | M3 | Reject purchase/enrollment for closed cohorts on the server | High | 🔴 S4 |
-| FR11 | M3 | Enrollment insert is idempotent (no duplicate rows) | High | 🟡 checked for admin path only |
+| FR9 | M3 | Enrollment must match the course that was actually paid for | Must | ✅ (fixed S3) |
+| FR10 | M3 | Reject purchase/enrollment for closed cohorts on the server | High | ✅ (fixed S4) |
+| FR11 | M3 | Enrollment insert is idempotent (no duplicate rows) | High | ✅ app-level; DB constraint in [SUPABASE_HARDENING.md](SUPABASE_HARDENING.md) |
 | FR12 | M3 | Show "Go to Dashboard" for already-enrolled users | Must | ✅ |
 | FR13 | M4 | Non-whitelisted routes require a Clerk session | Must | ✅ |
 | FR14 | M4 | Enrollment-gated access to course player and live lobby | Must | 🟡 client-side check only |
-| FR15 | M4 | Admin-only UI **and** APIs restricted to the admin identity | Must | 🔴 S1/S2 (UI only) |
+| FR15 | M4 | Admin-only UI **and** APIs restricted to the admin identity | Must | 🟡 APIs ✅; dashboard table reads still use the anon key |
 | FR16 | M4 | Clerk webhook verified via Svix; invalid payloads rejected (400) | Must | ✅ |
 | FR17 | M4 | Webhook handles user updates/deletions | Medium | 🔴 only `user.created` |
-| FR18 | M5 | Show enrolled courses, streak, XP, leaderboard | Must | 🟡 XP never awarded (B3) |
+| FR18 | M5 | Show enrolled courses, streak, XP, leaderboard | Must | ✅ (fixed B3) |
 | FR19 | M6 | Fetch lesson metadata from YouTube; support document lessons | Must | ✅ |
 | FR20 | M6 | Resume last video and timestamp | High | ✅ |
 | FR21 | M6 | Mark lesson complete; compute course progress | Must | ✅ (honour system) |
@@ -465,7 +465,7 @@ Status key: ✅ Implemented · 🟡 Partial / has caveats · 🔴 Not implemente
 | FR31 | M10 | AI tutor gives contextual hints from a real LLM | High | 🔴 mock mode |
 | FR32 | M11 | Live lobby shows Meet link only to enrolled students | Must | ✅ |
 | FR33 | M12 | Share links render rich previews and route by access | High | ✅ |
-| FR34 | M13 | Track active learning time per student | Medium | 🔴 B1 |
+| FR34 | M13 | Track active learning time per student | Medium | ✅ (fixed B1) |
 | FR35 | M13 | Platform announcements with unread count | Medium | ✅ (static data) |
 | FR36 | M14 | Admin CRM, enrollments, progress, submissions, engagement | Must | ✅ (CRM limited to 100 users) |
 | FR37 | M14 | Manual enrollment with duplicate check and audit log | Must | ✅ |
@@ -484,14 +484,14 @@ Status key: ✅ Implemented · 🟡 Partial / has caveats · 🔴 Not implemente
 | Security | All authorization decisions for paid content and admin data are enforced on the server | **Not met** — see §13 S1–S5 |
 | Security | Payment integrity: signature verification + server-side pricing | Signature ✅; order ↔ course binding ❌ |
 | Security | Secrets only in environment variables; never sent to the client except `NEXT_PUBLIC_*` | ✅ |
-| Privacy | PII (names, emails) visible only to the admin | Not met while user-list APIs are public |
+| Privacy | PII (names, emails) visible only to the admin | 🟡 user-list APIs admin-only; Supabase tables still anon-readable |
 | Reliability | Email / logging failures must never block enrollment | ✅ wrapped in try/catch |
 | Reliability | Access checks fail closed (deny on error) | ✅ in share route and player |
-| Scalability | Supports growth beyond 100 users in admin CRM | 🔴 `getUserList({ limit: 100 })`, no pagination |
+| Scalability | Supports growth beyond 100 users in admin CRM | ✅ paginated (up to 5,000) |
 | Usability | Mobile-responsive, dark theme across funnel and LMS | ✅ (admin and live lobby use a light theme) |
 | Accessibility | Role-based, labelled controls (also used by Playwright locators) | 🟡 partial |
 | Maintainability | Courses, coupons, curriculum and notifications are editable as data | ✅ |
-| Maintainability | Builds fail on type or lint errors | 🔴 `ignoreBuildErrors` / `ignoreDuringBuilds` are `true` |
+| Maintainability | Builds fail on type or lint errors | 🟡 type errors now fail the build; ESLint not installed yet |
 | Observability | Key business events are logged | 🟡 `admin_activity_log` + `console.error`; no APM |
 
 ---
@@ -571,16 +571,18 @@ flowchart LR
 
 | Method & Path | Middleware | Purpose | Server-side checks |
 |---|---|---|---|
-| `POST /api/create-order` | Public | Price the order and create a Razorpay order | `userId` present **or** `x-api-key == ADMIN_API_KEY`; course exists; coupon valid / allowed user |
-| `POST /api/verify-payment` | Public | Verify signature → enroll → log → email | HMAC-SHA256 signature |
-| `POST /api/enroll-free` | Public | 100%-coupon enrollment | Server-side price must equal 0 |
-| `POST /api/send-email` | Public | Lead / contact email to admin | SMTP credentials present |
+| `POST /api/create-order` | Public | Price the order and create a Razorpay order (buyer + course stored in order `notes`) | Clerk session (or `x-api-key` outside production); course exists and open; coupon valid / allowed user |
+| `POST /api/verify-payment` | Public | Verify signature → enroll → log → email | Clerk session; constant-time HMAC check; order re-fetched from Razorpay and its `notes.userId` must match the caller |
+| `POST /api/enroll-free` | Public | 100%-coupon enrollment | Clerk session; course open; server-side price must equal 0 |
+| `POST /api/send-email` | Public | Lead / contact email to admin | Email format, length caps, HTML escaping, honeypot |
 | `POST /api/ai-tutor` | Public | Hints for Python/Git labs | None (mock responses) |
-| `POST /api/get-clerk-users` | Public | Resolve Clerk IDs → name/email/avatar | **None** |
-| `GET /api/get-all-users` | Public | Full Clerk user list (≤ 100) | **None** |
+| `POST /api/get-clerk-users` | Protected | Resolve Clerk IDs → name/email/avatar | Admin (server-side) |
+| `GET /api/get-all-users` | Protected | Full Clerk user list (paginated) | Admin (server-side) |
+| `POST /api/admin/enroll` | Protected | Manual (offline-payment) enrollment | Admin (server-side); Clerk user must exist; idempotent |
+| `POST /api/xp/sync` | Protected | Recompute XP from progress rows | Clerk session |
 | `POST /api/generate-certificate` | Protected | Server-generated certificate PDF | Session (via middleware); unused by UI |
 | `POST /api/webhooks/clerk` | Ignored by Clerk | Signup sync | Svix signature |
-| `POST /track-time` | Protected | Add seconds to `user_stats.total_time_seconds` | `getAuth()` user |
+| `POST /api/track-time` | Protected | Add seconds to `user_stats.total_time_seconds` | `getAuth()` user; 1–60 s per ping |
 
 ### 9.5. Data Model (Supabase)
 
@@ -688,9 +690,9 @@ flowchart LR
 
 | Spec | Intent | Current Health |
 |---|---|---|
-| [tests/api/crm.spec.ts](../tests/api/crm.spec.ts) | `create-order` rejects an invalid coupon with 400 *"Invalid coupon code"* | 🔴 **Stale** — uses `courseId: "python-beginners-live-01"`, which no longer exists, so the API returns *"Course not found"* first |
-| [tests/ui/sales-funnel.spec.ts](../tests/ui/sales-funnel.spec.ts) | Price toggle on the Batch 2 sales page | 🔴 **Stale** — expects heading *"Master Python Programming"* and `$200/$250`; the data now says *"THINK IN PYTHON"* and `$25/$35`, and the cohort is closed (no Buy button) |
-| [tests/auth.setup.ts](../tests/auth.setup.ts) | Clerk login helper | Not wired as a setup project |
+| [tests/api/crm.spec.ts](../tests/api/crm.spec.ts) | `create-order` auth / unknown course / closed cohort / invalid coupon; anonymous access to 7 protected routes; `send-email` validation + honeypot | ✅ Passing (fixtures derived from `data/courses.ts`; uses a non-browser User-Agent to avoid the Clerk dev-instance interstitial) |
+| [tests/ui/sales-funnel.spec.ts](../tests/ui/sales-funnel.spec.ts) | One test per course: hero headline, closed-cohort state or INR/USD pricing; unknown slug → not-found | ✅ Passing on Chromium, Firefox, WebKit (48 passed, 3 skipped while no cohort is open) |
+| [tests/auth.setup.ts](../tests/auth.setup.ts) | Clerk login helper | Not wired as a setup project; credentials now come from `TEST_USER_EMAIL` / `TEST_USER_PASSWORD` |
 | [tests/example.spec.ts](../tests/example.spec.ts) | Playwright starter | Boilerplate |
 
 **Recommended regression matrix** (priority order): server-side pricing & coupons (incl. decimals) · free-bypass rules · payment ↔ course binding · enrollment gating of player/live/share · admin API authorization · webhook signature rejection · Python lab run/submit · exam attempt limits · certificate gating · USD/INR rendering.
@@ -700,6 +702,15 @@ flowchart LR
 ## 13. Known Issues, Risks & Mitigations
 
 All findings below were verified by reading the source. Severity: 🔴 High · 🟠 Medium · 🟡 Low.
+
+### 13.0. Remediation Status (branch `fix/prd-known-issues`, Oct 16, 2026)
+
+| Status | IDs |
+|---|---|
+| ✅ Fixed in code | S1, S3, S4, S5, S7, S9, B1, B2, B3, B4, B5 (app-level), B7, E1 (TypeScript), E2 |
+| 🟡 Partially fixed | **S2**: enrollment writes and admin user APIs are now server-side; removing anon write access needs the manual SQL in [SUPABASE_HARDENING.md](SUPABASE_HARDENING.md); other tables need Clerk ↔ Supabase auth. **S8**: one shared `lib/admin.ts` constant; role-based admin via Clerk metadata still open |
+| ⏳ Open (deferred) | S6 (server-side exam grading), B6 (atomic counters), B8 (content cleanup), E1 (ESLint not installed), E3 (Clerk v5 upgrade), E4 (split player page), E5–E6 (unused code), E7–E8 (docs) |
+| ➕ Found while fixing | Server-side admin check in `/share/[videoId]` never matched (used a client-only Clerk field), now fixed · `agents/` submodule was included in the TypeScript compile and hid all app type errors (now excluded) · a test-account password was committed in `tests/config/credentials.ts` (now read from env; **rotate it**) |
 
 ### 13.1. Security & Revenue Integrity
 
