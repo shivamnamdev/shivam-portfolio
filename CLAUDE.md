@@ -1,1 +1,2 @@
 @AGENTS.md
+@docs/AGENT_SKILLS.md
