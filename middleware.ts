@@ -16,9 +16,9 @@ export default authMiddleware({
     "/api/verify-payment",
     "/api/enroll-free",
     "/api/send-email",
-    "/api/ai-tutor",
-    "/api/get-clerk-users",
-    "/api/get-all-users"
+    "/api/ai-tutor"
+    // Admin APIs (/api/get-all-users, /api/get-clerk-users, /api/admin/*) are intentionally NOT public;
+    // their handlers also verify the admin identity server-side.
   ],
   // 2. Webhooks should be completely ignored by Clerk
   ignoredRoutes: [

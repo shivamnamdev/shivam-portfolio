@@ -10,8 +10,7 @@ import { activeCourses } from '@/data/courses';
 import { courseCurriculumMap } from '@/data/learning-content';
 import { motion, AnimatePresence } from 'framer-motion';
 import Editor from '@monaco-editor/react';
-
-const ADMIN_EMAIL = "shivamnamdev.corp@gmail.com"; 
+import { ADMIN_EMAIL } from '@/lib/admin';
 
 function getVideoTitle(videoId: string) {
   for (const courseSlug in courseCurriculumMap) {
@@ -115,25 +114,19 @@ export default function AdminDashboard() {
     if (!studentId.trim()) { setMessage({ text: "Please enter a valid Clerk User ID.", type: 'error' }); setIsSubmitting(false); return; }
 
     try {
-      const { data: existing } = await supabase.from('user_enrollments').select('id').eq('user_id', studentId.trim()).eq('course_slug', selectedCourse);
-      if (existing && existing.length > 0) { setMessage({ text: "Student is already enrolled!", type: 'error' }); return; }
-      
-      // Find the user's email from our loaded CRM data
-      const targetUser = allUsers.find(u => u.id === studentId.trim());
-      const uEmail = targetUser?.email || "Unknown Email";
-
-      const { error } = await supabase.from('user_enrollments').insert([{ 
-        user_id: studentId.trim(), course_slug: selectedCourse, user_name: targetUser?.name || "Manual Enrollment", user_email: uEmail 
-      }]);
-      if (error) throw error;
-      
-      // 🚨 LOG THE ACTIVITY TO SHOW IN YOUR BELL!
-      await supabase.from('admin_activity_log').insert([{ type: 'enrollment', message: `Backdoor access granted to ${selectedCourse}`, user_email: uEmail }]);
+      // Server route re-checks admin access, validates the Clerk ID and logs the activity.
+      const res = await fetch('/api/admin/enroll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: studentId.trim(), courseSlug: selectedCourse }),
+      });
+      const data = await res.json();
+      if (!data.success) { setMessage({ text: data.error || "Database Error.", type: 'error' }); return; }
 
       setMessage({ text: "Access Granted Successfully!", type: 'success' });
       setStudentId(""); 
       setAnalytics(prev => ({ ...prev, totalStudents: prev.totalStudents + 1 }));
-      setEnrollments([{ user_id: studentId.trim(), course_slug: selectedCourse, user_email: uEmail, enrolled_at: new Date().toISOString() }, ...enrollments]);
+      setEnrollments([data.enrollment, ...enrollments]);
     } catch (err) {
       setMessage({ text: "Database Error.", type: 'error' });
     } finally {
@@ -342,7 +335,7 @@ export default function AdminDashboard() {
                         <td className="p-4 text-sm text-stone-600 line-clamp-1">{getVideoTitle(sub.video_id)}</td>
                         <td className="p-4 text-sm">{new Date(sub.completed_at).toLocaleString()}</td>
                         <td className="p-4 text-right">
-                          <button onClick={() => setActiveCodeView({ name: displayName, title: getVideoTitle(sub.video_id), code: sub.submitted_code }) || setShowCodeModal(true)} className="inline-flex items-center gap-1 bg-stone-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-stone-800 transition-colors">
+                          <button onClick={() => { setActiveCodeView({ name: displayName, title: getVideoTitle(sub.video_id), code: sub.submitted_code }); setShowCodeModal(true); }} className="inline-flex items-center gap-1 bg-stone-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-stone-800 transition-colors">
                             <Eye size={14} /> View Code
                           </button>
                         </td>
