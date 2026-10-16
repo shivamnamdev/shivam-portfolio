@@ -266,7 +266,10 @@ export default function AdminDashboard() {
                             <div className="text-xs text-stone-400 font-mono mt-0.5">{displayEmail}</div>
                           </div>
                         </td>
-                        <td className="p-4 font-bold text-stone-800">{enr.course_slug}</td>
+                        <td className="p-4 font-bold text-stone-800">
+                          {enr.course_slug}
+                          {enr.plan_id && <span className="ml-2 bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold capitalize">{enr.plan_id} plan</span>}
+                        </td>
                         <td className="p-4">{enr.coupon_used ? <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-bold">{enr.coupon_used}</span> : '-'}</td>
                         <td className="p-4">{new Date(enr.enrolled_at).toLocaleDateString()}</td>
                       </tr>

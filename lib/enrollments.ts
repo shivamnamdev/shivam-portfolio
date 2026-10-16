@@ -8,6 +8,7 @@ type GrantInput = {
   userName: string;
   userEmail: string;
   couponUsed?: string | null;
+  planId?: string | null; // pricing plan for plan-based courses (needs the plan_id column, see docs/SUPABASE_PLAN_COLUMN.md)
   activityMessage: string;
 };
 
@@ -26,13 +27,21 @@ export async function isEnrolled(userId: string, courseSlug: string): Promise<bo
 export async function grantEnrollment(input: GrantInput): Promise<{ created: boolean }> {
   if (await isEnrolled(input.userId, input.courseSlug)) return { created: false };
 
-  const { error } = await supabaseAdmin.from("user_enrollments").insert([{
+  const row = {
     user_id: input.userId,
     course_slug: input.courseSlug,
     coupon_used: input.couponUsed || null,
     user_name: input.userName,
     user_email: input.userEmail,
-  }]);
+  };
+  let { error } = await supabaseAdmin.from("user_enrollments").insert([input.planId ? { ...row, plan_id: input.planId } : row]);
+
+  // Until the plan_id migration is applied, PostgREST rejects the unknown column (PGRST204).
+  // Never block a paid enrollment on that: store the row without the plan and keep the plan in the activity log.
+  if (error && input.planId && error.code === "PGRST204") {
+    console.warn("user_enrollments.plan_id is missing — run docs/SUPABASE_PLAN_COLUMN.md. Recording plan in activity log only.");
+    ({ error } = await supabaseAdmin.from("user_enrollments").insert([row]));
+  }
   if (error) throw error;
 
   try {

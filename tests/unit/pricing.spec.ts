@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { activeCourses } from '../../data/courses';
 import { activeCoupons } from '../../data/coupons';
-import { applyCoupon, formatPrice, parsePrice, resolveCoupon, roundForCurrency, toMinorUnits } from '../../lib/pricing';
+import { applyCoupon, formatPrice, getBasePrice, parsePrice, resolveCoupon, roundForCurrency, toMinorUnits } from '../../lib/pricing';
 
 // Pure logic tests for lib/pricing.ts — shared by the checkout UI and the payment APIs.
 test.describe('lib/pricing', () => {
@@ -60,6 +60,34 @@ test.describe('lib/pricing', () => {
     if (restricted) {
       expect(resolveCoupon(restricted.code, 'someone-else')).toMatchObject({ ok: false, status: 403 });
       expect(resolveCoupon(restricted.code, restricted.allowedUsers[0])).toMatchObject({ ok: true });
+    }
+  });
+
+  test('getBasePrice: plan courses require a valid plan and INR; others use pricing', () => {
+    const planCourse = {
+      pricing: { inr: { currentPrice: '₹1,999' }, usd: { currentPrice: '$25' } },
+      pricingPlans: [
+        { id: 'community', name: 'Community Plan', price: '₹1999', features: [] },
+        { id: 'personal', name: 'Personal Plan', price: '₹2999', features: [] },
+      ],
+    };
+    expect(getBasePrice(planCourse, 'INR', 'personal')).toMatchObject({ ok: true, amount: 2999, plan: { id: 'personal' } });
+    expect(getBasePrice(planCourse, 'INR', 'community')).toMatchObject({ ok: true, amount: 1999 });
+    expect(getBasePrice(planCourse, 'INR', undefined)).toEqual({ ok: false, error: 'Please choose a valid plan' });
+    expect(getBasePrice(planCourse, 'INR', 'vip')).toEqual({ ok: false, error: 'Please choose a valid plan' });
+    expect(getBasePrice(planCourse, 'USD', 'community')).toEqual({ ok: false, error: 'This course is priced in INR only' });
+
+    const singlePrice = { pricing: { inr: { currentPrice: '₹399' }, usd: { currentPrice: '$9.99' } } };
+    expect(getBasePrice(singlePrice, 'USD')).toEqual({ ok: true, amount: 9.99, plan: null });
+    expect(getBasePrice(singlePrice, 'INR', 'ignored')).toEqual({ ok: true, amount: 399, plan: null });
+  });
+
+  test('every plan in data/courses.ts has a parseable price', () => {
+    for (const course of activeCourses) {
+      for (const plan of course.pricingPlans ?? []) {
+        expect(Number.isFinite(parsePrice(plan.price)), `${course.slug}/${plan.id}`).toBe(true);
+        expect(getBasePrice(course, 'INR', plan.id).ok, `${course.slug}/${plan.id}`).toBe(true);
+      }
     }
   });
 });

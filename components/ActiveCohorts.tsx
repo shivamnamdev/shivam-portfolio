@@ -11,6 +11,7 @@ import SpotlightCard from '@/components/SpotlightCard';
 
 interface ActiveCohortsProps {
   course?: any;
+  hideCurriculum?: boolean; // the course page renders its own full-width curriculum section
 }
 
 const loadRazorpayScript = () => {
@@ -23,7 +24,7 @@ const loadRazorpayScript = () => {
   });
 };
 
-export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps) {
+export default function ActiveCohorts({ course: propCourse, hideCurriculum = false }: ActiveCohortsProps) {
   const [openModule, setOpenModule] = useState<number | null>(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAlreadyEnrolled, setIsAlreadyEnrolled] = useState(false);
@@ -363,6 +364,7 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
                 </div>
               )}
 
+              {!hideCurriculum && (<>
               <h4 className="font-display font-black text-2xl text-white mb-6 border-b border-white/10 pb-4">Program Curriculum</h4>
               <div className="flex flex-col gap-3">
                 {displayCourse.modules?.map((mod: any, i: number) => {
@@ -397,6 +399,7 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
                   )
                 })}
               </div>
+              </>)}
             </div>
 
           </div>

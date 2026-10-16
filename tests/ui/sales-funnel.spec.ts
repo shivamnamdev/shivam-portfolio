@@ -12,9 +12,29 @@ test.describe('Course Sales Page UI', () => {
 
       await expect(page.getByRole('heading', { level: 1 })).toContainText(course.vsl.headlineHighlight);
 
+      // Plan-based courses show plan cards (#pricing); others the single-price cohort box.
+      const plans = course.pricingPlans ?? [];
+
       if (course.enrollmentClosed) {
-        await expect(page.getByRole('heading', { name: 'Enrollment Closed' })).toBeVisible();
+        if (plans.length) {
+          const closedButtons = page.locator('#pricing').getByRole('button', { name: /Enrollment Closed/ });
+          await expect(closedButtons).toHaveCount(plans.length);
+          for (const button of await closedButtons.all()) await expect(button).toBeDisabled();
+          await expect(page.getByRole('button', { name: /^Enroll in/ })).toHaveCount(0);
+        } else {
+          await expect(page.getByRole('heading', { name: 'Enrollment Closed' })).toBeVisible();
+        }
         await expect(page.getByRole('button', { name: /Buy Now/i })).toHaveCount(0);
+        return;
+      }
+
+      if (plans.length) {
+        for (const plan of plans) {
+          const card = page.locator('#pricing div.rounded-3xl', { has: page.getByRole('heading', { name: plan.name }) });
+          await expect(card.getByText(formatPrice(parsePrice(plan.price), 'INR'), { exact: true })).toBeVisible();
+          await expect(card.getByText('Inclusive of all taxes')).toBeVisible();
+          await expect(card.getByRole('button', { name: `Enroll in ${plan.name} →` })).toBeVisible();
+        }
         return;
       }
 

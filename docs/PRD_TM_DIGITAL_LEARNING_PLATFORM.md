@@ -603,7 +603,7 @@ flowchart LR
 
 | File | Shape | Drives |
 |---|---|---|
-| [data/courses.ts](../data/courses.ts) | `activeCourses[]`: `id`, `slug`, `title`, `statusText`, `demoOffer`, `duration`, `enrollmentClosed`, `liveLink?`, `whatsappLink`, `vsl{}`, `painPoints{}`, `pricing{inr,usd}`, `resources{}`, `differentiators[]`, `cohortHighlights[]`, `courseTestimonials[]`, `outcomes[]`, `bonuses[]`, `modules[]` | Catalog, sales pages, checkout, live lobby, emails |
+| [data/courses.ts](../data/courses.ts) | `activeCourses[]`: `id`, `slug`, `title`, `listed?` (false = hidden from `/courses`), `statusText`, `demoOffer`, `duration`, `enrollmentClosed`, `liveLink?`, `whatsappLink`, `vsl{ …, ctaLabel?, facts? }`, `differentiatorsTagline?`, `pricingPlans?[]` (id, name, price, features, isPopular — priced server-side, recorded as `user_enrollments.plan_id`), `painPoints{}`, `pricing{inr,usd}`, `resources{}`, `differentiators[]`, `cohortHighlights[]`, `courseTestimonials[]`, `outcomes[]`, `bonuses[]`, `modules[]` | Catalog, sales pages, checkout, live lobby, emails |
 | [data/coupons.ts](../data/coupons.ts) | `activeCoupons[]`: `code`, `discountType`, `discountValue`, `allowedUsers[]` | Coupon UI + server pricing |
 | [data/learning-content.ts](../data/learning-content.ts) | `courseCurriculumMap[slug] = modules[]` with `moduleTitle`, `videoIds[]`, `isAdvancedModule?`, `githubAssignments{videoId → {title, rawUrl, solutionUrl, starterCodeUrl?, expectedOutcomeUrl?, testCode?, isExam?, carryOverCode?, labType?, instructionsUrl?, starterRepoUrl?, expectedStateUrl?, validatorUrl?}}`, `resources{}` | Player, labs, exam, admin progress totals, share titles |
 | [data/notifications.ts](../data/notifications.ts) | `platformNotifications[]`: `id`, `title`, `message`, `date`, `type`, `link?` | Navbar bell |
@@ -640,7 +640,7 @@ flowchart LR
 | Course | INR (current / original) | USD (current / original) | Status |
 |---|---|---|---|
 | Git Beginner Live Session (Batch 1) — 2–3 weeks, weekdays | ₹399 / ₹799 | $9.99 / $19.99 | Cohort completed |
-| Python Live Session (Batch 2) — 6–8 weeks, weekends, max 20 learners | ₹1,999 / ₹2,499 | $25 / $35 | Cohort completed |
+| Python Live Session (Batch 2) — 6–8 weeks, weekends, max 20 learners | **Plans (INR only, GST inclusive):** Community ₹1,999 (was ₹2,499) · Personal ₹2,999 (was ₹4,999) | — | Cohort completed |
 | Python Live Session (Batch 1) — 30 sessions / 45 days | ₹599 / ₹899 | $150 / $250 | Cohort completed |
 
 ### 10.2. Commercial Model
@@ -835,6 +835,7 @@ See also [docs/CONTENT_MANAGEMENT.md](CONTENT_MANAGEMENT.md).
 - [docs/PRD_COURSE_DISCOVERY_PRICING_TESTING.md](PRD_COURSE_DISCOVERY_PRICING_TESTING.md): feature PRD for discovery and pricing UI
 - Authentication PRD (Sept 3, 2026): feature PRD for auth and role-based access (summarised in §5.5)
 - [tests/README.md](../tests/README.md): QA automation architecture
+- [docs/SUPABASE_PLAN_COLUMN.md](SUPABASE_PLAN_COLUMN.md): adds `user_enrollments.plan_id` for plan-based courses
 - [docs/AGENT_SKILLS.md](AGENT_SKILLS.md): which `agents/` skills AI agents must consult for each area of this codebase
 - `Prod_Diagram_10_9_26.png`: production architecture diagram
 

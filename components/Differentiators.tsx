@@ -1,6 +1,6 @@
 'use client';
 import { motion } from 'framer-motion';
-import { User, ClipboardCheck, Code2, MessageCircleQuestion, PlaySquare, Award } from 'lucide-react';
+import { User, ClipboardCheck, Code2, MessageCircleQuestion, PlaySquare, Award, Lightbulb, Route, Terminal, GitBranch } from 'lucide-react';
 import SpotlightCard from '@/components/SpotlightCard';
 
 interface DifferentiatorProps {
@@ -20,6 +20,10 @@ export default function Differentiators({ course }: DifferentiatorProps) {
       case 'support': return <MessageCircleQuestion size={32} className="text-emerald-400" />;
       case 'recordings': return <PlaySquare size={32} className="text-red-400" />;
       case 'certificate': return <Award size={32} className="text-yellow-400" />;
+      case 'analogy': return <Lightbulb size={32} className="text-yellow-400" />;
+      case 'scenarios': return <Route size={32} className="text-blue-400" />;
+      case 'practical': return <Terminal size={32} className="text-emerald-400" />;
+      case 'workflow': return <GitBranch size={32} className="text-purple-400" />;
       default: return <Award size={32} className="text-amber-500" />;
     }
   };
@@ -34,9 +38,11 @@ export default function Differentiators({ course }: DifferentiatorProps) {
         <h2 className="text-3xl md:text-5xl font-display font-black text-white mb-4 uppercase tracking-wide">
           What Makes This Cohort <span className="text-amber-500">Different?</span>
         </h2>
-        <p className="text-stone-400 text-lg max-w-2xl mx-auto uppercase tracking-widest font-bold">
-          Read, Understand, Debug & Build Python Programs Independently
-        </p>
+        {course.differentiatorsTagline && (
+          <p className="text-stone-400 text-lg max-w-2xl mx-auto uppercase tracking-widest font-bold">
+            {course.differentiatorsTagline}
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

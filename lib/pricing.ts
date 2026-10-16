@@ -31,6 +31,37 @@ export function formatPrice(amount: number, currency: CurrencyCode): string {
   return `${symbol}${Number.isInteger(amount) ? amount : amount.toFixed(2)}`;
 }
 
+export type PricingPlan = {
+  id: string;
+  name: string;
+  subtitle?: string;
+  price: string;
+  originalPrice?: string;
+  features: string[];
+  isPopular?: boolean;
+};
+
+type PricedCourse = {
+  pricing: { inr: { currentPrice: string }; usd: { currentPrice: string } };
+  pricingPlans?: PricingPlan[];
+};
+
+export type BasePriceResult =
+  | { ok: true; amount: number; plan: PricingPlan | null }
+  | { ok: false; error: string };
+
+// Plan-based courses are priced from the chosen plan (INR only); other courses from `pricing`.
+export function getBasePrice(course: PricedCourse, currency: CurrencyCode, planId?: string | null): BasePriceResult {
+  if (course.pricingPlans && course.pricingPlans.length > 0) {
+    const plan = course.pricingPlans.find((p) => p.id === planId);
+    if (!plan) return { ok: false, error: "Please choose a valid plan" };
+    if (currency !== "INR") return { ok: false, error: "This course is priced in INR only" };
+    return { ok: true, amount: parsePrice(plan.price), plan };
+  }
+  const label = currency === "USD" ? course.pricing.usd.currentPrice : course.pricing.inr.currentPrice;
+  return { ok: true, amount: parsePrice(label), plan: null };
+}
+
 export type CouponResult =
   | { ok: true; coupon: Coupon | null }
   | { ok: false; status: 400 | 403; error: string };

@@ -1350,7 +1350,9 @@ sys.settrace(_trace_calls)
       doc.text(`for successfully completing the curriculum and passing all technical requirements in:`, 148.5, 120, { align: "center" });
       
       doc.setFont("helvetica", "bold");
-      doc.text(String(courseDetails?.title || "Python Foundation & Logic Building"), 148.5, 135, { align: "center" });
+      // Certificates never show the batch number, e.g. "Python Live Session (Batch 1)" -> "Python Live Session"
+      const certificateTitle = String(courseDetails?.title || "Python Foundation & Logic Building").replace(/\s*\(Batch\s*\d+\)/i, '').trim();
+      doc.text(certificateTitle, 148.5, 135, { align: "center" });
 
       doc.setFont("helvetica", "italic"); doc.setFontSize(12); doc.setTextColor(168, 162, 158);
       doc.text("demonstrating the ability to read, understand, debug, and build Python programs independently.", 148.5, 150, { align: "center" });

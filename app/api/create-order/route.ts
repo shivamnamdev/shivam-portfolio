@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { auth } from "@clerk/nextjs/server";
 import { activeCourses } from "@/data/courses";
-import { applyCoupon, parsePrice, resolveCoupon, toCurrencyCode, toMinorUnits } from "@/lib/pricing";
+import { applyCoupon, getBasePrice, resolveCoupon, toCurrencyCode, toMinorUnits } from "@/lib/pricing";
 
 // Playwright API tests authenticate with x-api-key instead of a Clerk session.
 // The bypass is disabled in production so it can never be used against live payments.
@@ -14,7 +14,7 @@ function isTestApiKey(req: NextRequest): boolean {
 
 export async function POST(req: NextRequest) {
   try {
-    const { courseId, currency: rawCurrency, couponCode } = await req.json();
+    const { courseId, planId, currency: rawCurrency, couponCode } = await req.json();
 
     // 1. SECURITY CHECK: identity comes from the Clerk session, never from the request body.
     const { userId: sessionUserId } = auth();
@@ -39,7 +39,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: couponResult.error }, { status: couponResult.status });
     }
 
-    const basePrice = parsePrice(currency === "USD" ? course.pricing.usd.currentPrice : course.pricing.inr.currentPrice);
+    const base = getBasePrice(course, currency, planId);
+    if (!base.ok) return NextResponse.json({ success: false, error: base.error }, { status: 400 });
+    const basePrice = base.amount;
     // Free (100% off) checkouts go through /api/enroll-free; a paid order is never below 1 unit.
     const finalAmount = Math.max(applyCoupon(basePrice, couponResult.coupon, currency), 1);
 
@@ -59,6 +61,7 @@ export async function POST(req: NextRequest) {
         courseId: course.id,
         courseSlug: course.slug,
         couponCode: couponResult.coupon?.code ?? "",
+        planId: base.plan?.id ?? "",
       },
     });
 
