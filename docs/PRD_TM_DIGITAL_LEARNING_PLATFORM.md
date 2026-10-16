@@ -692,6 +692,7 @@ flowchart LR
 |---|---|---|
 | [tests/api/crm.spec.ts](../tests/api/crm.spec.ts) | `create-order` auth / unknown course / closed cohort / invalid coupon; anonymous access to 7 protected routes; `send-email` validation + honeypot | ✅ Passing (fixtures derived from `data/courses.ts`; uses a non-browser User-Agent to avoid the Clerk dev-instance interstitial) |
 | [tests/ui/sales-funnel.spec.ts](../tests/ui/sales-funnel.spec.ts) | One test per course: hero headline, closed-cohort state or INR/USD pricing; unknown slug → not-found | ✅ Passing on Chromium, Firefox, WebKit (48 passed, 3 skipped while no cohort is open) |
+| [tests/unit/pricing.spec.ts](../tests/unit/pricing.spec.ts) | Pure tests for `lib/pricing.ts`: price parsing (incl. `$9.99`), rounding, formatting, coupons | ✅ Passing |
 | [tests/auth.setup.ts](../tests/auth.setup.ts) | Clerk login helper | Not wired as a setup project; credentials now come from `TEST_USER_EMAIL` / `TEST_USER_PASSWORD` |
 | [tests/example.spec.ts](../tests/example.spec.ts) | Playwright starter | Boilerplate |
 
@@ -709,7 +710,7 @@ All findings below were verified by reading the source. Severity: 🔴 High · �
 |---|---|
 | ✅ Fixed in code | S1, S3, S4, S5, S7, S9, B1, B2, B3, B4, B5 (app-level), B7, E1 (TypeScript), E2 |
 | 🟡 Partially fixed | **S2**: enrollment writes and admin user APIs are now server-side; removing anon write access needs the manual SQL in [SUPABASE_HARDENING.md](SUPABASE_HARDENING.md); other tables need Clerk ↔ Supabase auth. **S8**: one shared `lib/admin.ts` constant; role-based admin via Clerk metadata still open |
-| ⏳ Open (deferred) | S6 (server-side exam grading), B6 (atomic counters), B8 (content cleanup), E1 (ESLint not installed), E3 (Clerk v5 upgrade), E4 (split player page), E5–E6 (unused code), E7–E8 (docs) |
+| ⏳ Open (deferred) | S6 (server-side exam grading), B6 (atomic counters), B8 (content cleanup), B9 (missing `video_likes` table), E1 (ESLint not installed), E3 (Clerk v5 upgrade), E4 (split player page), E5–E6 (unused code), E7–E8 (docs) |
 | ➕ Found while fixing | Server-side admin check in `/share/[videoId]` never matched (used a client-only Clerk field), now fixed · `agents/` submodule was included in the TypeScript compile and hid all app type errors (now excluded) · a test-account password was committed in `tests/config/credentials.ts` (now read from env; **rotate it**) |
 
 ### 13.1. Security & Revenue Integrity
@@ -737,6 +738,7 @@ All findings below were verified by reading the source. Severity: 🔴 High · �
 | B5 | 🟡 | Duplicate enrollments are possible on retry or double-click (no idempotency in `verify-payment` / `enroll-free`) | — | Unique constraint on `(user_id, course_slug)` + upsert |
 | B6 | 🟡 | Streak/`track-time` updates are read-modify-write and can race | — | Use SQL increments / RPC |
 | B7 | 🟡 | Admin CRM only loads the first 100 Clerk users | [app/api/get-all-users/route.ts](../app/api/get-all-users/route.ts) | Paginate |
+| B9 | 🟠 | **Lesson likes are never saved**: the `video_likes` table does not exist in Supabase (`PGRST205`), and the player ignores the error. Affects `main` as well; found during regression testing | [app/learning/[slug]/page.tsx](../app/learning/%5Bslug%5D/page.tsx) | Create the table (`video_id`, `user_id`, unique pair) with RLS, or remove the Like button |
 | B8 | 🟡 | Some curriculum entries have empty or placeholder URLs (`rawUrl: ""`, `"..."`) and duplicate `""` keys in `resources` | [data/learning-content.ts](../data/learning-content.ts) | Clean up the content; add a schema/type check |
 
 ### 13.3. Engineering Health
