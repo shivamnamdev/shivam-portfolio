@@ -1,8 +1,12 @@
 // app/api/get-clerk-users/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { clerkClient } from "@clerk/nextjs";
+import { clerkClient } from "@clerk/nextjs/server";
+import { requireAdmin, getPrimaryEmail } from "@/lib/serverAuth";
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const { userIds } = await req.json();
     
@@ -26,7 +30,7 @@ export async function POST(req: NextRequest) {
       
       userMap[u.id] = {
         name: fullName || "Student",
-        email: u.emailAddresses[0]?.emailAddress || "No Email",
+        email: getPrimaryEmail(u) || "No Email",
         image: u.imageUrl || ""
       };
     });

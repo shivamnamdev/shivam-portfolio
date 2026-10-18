@@ -7,6 +7,7 @@ import { Loader2, ChevronLeft, ShieldAlert, Video, ExternalLink, CheckCircle2 } 
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { activeCourses } from '@/data/courses';
+import { isAdminEmail } from '@/lib/admin';
 
 export default function LiveClassLobby({ params }: { params: { slug: string } }) {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -22,7 +23,7 @@ export default function LiveClassLobby({ params }: { params: { slug: string } })
       if (!isLoaded || !isSignedIn || !user) return;
       
       // Admin backdoor access
-      if (user.primaryEmailAddress?.emailAddress === "shivamnamdev.corp@gmail.com") {
+      if (isAdminEmail(user.primaryEmailAddress?.emailAddress)) {
         setHasAccess(true);
         setIsVerifying(false);
         return;

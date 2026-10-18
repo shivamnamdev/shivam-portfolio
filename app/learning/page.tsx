@@ -57,6 +57,15 @@ export default function LearningDashboard() {
           await supabase.from('user_stats').insert([{ user_id: user.id, user_name: studentName, user_email: studentEmail, current_streak: 1, total_points: 0, last_active_date: today }]);
         }
 
+        // XP is computed server-side from progress rows (also backfills existing students).
+        try {
+          const xpRes = await fetch('/api/xp/sync', { method: 'POST' });
+          const xp = await xpRes.json();
+          if (xp.success) setStats(prev => ({ ...prev, points: xp.points }));
+        } catch (xpError) {
+          console.error("XP sync failed:", xpError);
+        }
+
         const { data: leaders } = await supabase.from('user_stats').select('user_name, total_points, user_email').order('total_points', { ascending: false }).limit(15); 
         if (leaders) {
           const blockedEmails = ["financetrail.bazar@gmail.com", "mavish.ps8@gmail.com", "shivamnamdev.edu@gmail.com", "shivamnamdev.corp@gmail.com"]; 
@@ -190,13 +199,18 @@ export default function LearningDashboard() {
             </h2>
             <SpotlightCard interactive className="p-6 bg-[#0a0a0a]">
               <div className="space-y-3">
-                <a href="/python-syllabus.pdf" download className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/10 group">
-                  <div className="p-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-500 group-hover:scale-110 transition-transform"><FileText size={16} /></div>
-                  <div>
-                    <p className="text-sm font-bold text-stone-200 group-hover:text-white transition-colors">Course Syllabus</p>
-                    <p className="text-xs text-stone-500">PDF Document</p>
-                  </div>
-                </a>
+                {enrolledCourses.filter(c => c.resources?.syllabusPdf).length === 0 && (
+                  <p className="text-sm text-stone-500">Course resources appear here once you enroll.</p>
+                )}
+                {enrolledCourses.filter(c => c.resources?.syllabusPdf).map(course => (
+                  <a key={course.id} href={course.resources.syllabusPdf} download className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/10 group">
+                    <div className="p-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-500 group-hover:scale-110 transition-transform"><FileText size={16} /></div>
+                    <div>
+                      <p className="text-sm font-bold text-stone-200 group-hover:text-white transition-colors">{course.title} Syllabus</p>
+                      <p className="text-xs text-stone-500">PDF Document</p>
+                    </div>
+                  </a>
+                ))}
               </div>
             </SpotlightCard>
           </div>

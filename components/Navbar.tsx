@@ -8,7 +8,7 @@ import { Bell, Sparkles, Calendar, AlertCircle, Menu, X, ShieldAlert, Code } fro
 import { platformNotifications } from '@/data/notifications';
 import { supabase } from '@/lib/supabaseClient';
 
-const ADMIN_EMAIL = "shivamnamdev.corp@gmail.com";
+import { ADMIN_EMAIL } from '@/lib/admin';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
