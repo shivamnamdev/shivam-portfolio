@@ -559,11 +559,11 @@ export const courseCurriculumMap: Record<string, any[]> = {
   {
     moduleTitle: "Module 4: Advanced Python",
     videoIds:[
-      // OOPS: Constructor and Polymorphism
+      "n_R3amNHuXs"// OOPS: Constructor and Polymorphism
     ],
     githubAssignments: {
-      "": {
-          title: "Day 24: OOPs Concepts: Class & Objects",
+      "n_R3amNHuXs": {
+          title: "Day 20: OOPs Concepts: Class & Objects",
           rawUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2024%3A%20OOPS%3A%20Class/Assignment.docx",
           solutionUrl: "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2024%3A%20OOPS%3A%20Class/Solutions.py"
         },
