@@ -4,7 +4,7 @@ import { activeCoupons } from '../../data/coupons';
 import { applyCoupon, formatPrice, parsePrice, resolveCoupon, roundForCurrency, toMinorUnits } from '../../lib/pricing';
 
 // Pure logic tests for lib/pricing.ts — shared by the checkout UI and the payment APIs.
-test.describe('lib/pricing', () => {
+test.describe('lib/pricing @smoke', () => {
 
   test('parsePrice handles symbols, thousands separators and decimals', () => {
     expect(parsePrice('₹1,999')).toBe(1999);

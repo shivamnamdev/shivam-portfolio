@@ -8,6 +8,9 @@ import { defineConfig, devices } from '@playwright/test';
 // import path from 'path';
 // dotenv.config({ path: path.resolve(__dirname, '.env') });
 
+// Load .env.local for local runs (tests read ADMIN_API_KEY); in CI the values come from GitHub Secrets.
+try { process.loadEnvFile('.env.local'); } catch { /* file not present, e.g. in CI */ }
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */

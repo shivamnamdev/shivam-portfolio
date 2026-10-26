@@ -13,15 +13,31 @@ We strictly follow the Separation of Concerns principle for our test suite:
 ```text
 tests/
   ├── api/                 # Machine-to-machine backend validation
-  │   └── crm.spec.ts      # Tests Razorpay order creation and coupon logic
+  │   ├── crm.spec.ts      # Razorpay order creation, coupon logic, protected endpoints
+  │   └── webhook.spec.ts  # Clerk webhook signature rejection
   ├── ui/                  # Browser-based End-to-End user journeys
-  │   └── sales-funnel.spec.ts # Tests pricing toggles and checkout UI
+  │   ├── sales-funnel.spec.ts # Tests pricing toggles and checkout UI
+  │   └── smoke.spec.ts    # Public pages, route protection, share-page Open Graph
+  ├── unit/pricing.spec.ts # Pure lib/pricing logic
   ├── config/              # Test configuration and credentials
   │   └── credentials.ts
   ├── auth.setup.ts        # Clerk login helper (kept for authenticated UI flows)
   ├── example.spec.ts      # Playwright starter smoke tests
   └── README.md            # This documentation file
 ```
+
+---
+
+## ⚡ PR Smoke Suite
+
+Tests in describe blocks tagged `@smoke` run on every pull request (Chromium only, read-only: no payments, emails or DB writes).
+
+```bash
+npm run test:smoke   # @smoke on Chromium (what PR CI runs)
+npm run test:all     # everything, all browsers (what pushes to main run)
+```
+
+Add `@smoke` to a describe title when a test guards a critical flow and runs in seconds. `.env.local` is loaded automatically for local runs.
 
 ---
 

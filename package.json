@@ -6,7 +6,9 @@
     "dev": "NODE_TLS_REJECT_UNAUTHORIZED=0 next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:smoke": "playwright test --project=chromium --grep @smoke",
+    "test:all": "playwright test"
   },
   "dependencies": {
     "@clerk/nextjs": "^4.29.9",

@@ -5,13 +5,15 @@ import subprocess, re, datetime, collections, sys
 def g(*a):
     return subprocess.check_output(['git', *a], text=True)
 
-raw = g('log', '--date=short', '--format=@@%ad|%h|%an|%p|%s', '--shortstat')
+main_set = set(g('rev-list', 'origin/main').split())
+raw = g('log', '--all', '--date=short', '--format=@@%ad|%h|%an|%p|%s|%H', '--shortstat')
 days = collections.OrderedDict()
 cur = None
 for line in raw.splitlines():
     if line.startswith('@@'):
-        d, h, a, p, s = line[2:].split('|', 4)
-        cur = {'h': h, 'a': a, 'm': len(p.split()) > 1, 's': s, 'st': ''}
+        d, h, a, p, rest = line[2:].split('|', 4)
+        s, full = rest.rsplit('|', 1)
+        cur = {'h': h, 'a': a, 'm': len(p.split()) > 1, 's': s, 'st': '', 'u': full not in main_set, 'full': full}
         days.setdefault(d, []).append(cur)
     elif 'changed' in line and cur:
         f = re.search(r'(\d+) file', line)
@@ -23,7 +25,7 @@ status = [l for l in g('status', '--short').splitlines() if 'progress.md' not in
 out = [
     "# Progress Log", "",
     "Date-wise log of changes, generated from `git log` (see [CONSTITUTION.md](../../CONSTITUTION.md) §2).",
-    "Newest first. Format: `hash` subject — author (files changed, +added/−deleted). Merge commits are tagged **[merge]**.", "",
+    "Newest first. Format: `hash` subject — author (files changed, +added/−deleted). Merge commits are tagged **[merge]**; commits on other branches but not yet in `origin/main` are tagged **[not in main]**.", "",
     f"_Last generated: {datetime.date.today()} from `{g('rev-parse', '--short', 'HEAD').strip()}` on branch `{g('rev-parse', '--abbrev-ref', 'HEAD').strip()}`._", "",
     "## Working tree (not yet committed)", "",
 ]
@@ -31,6 +33,6 @@ out += [f"- `{l}`" for l in status] + ["", "## Commit history"]
 for d, cs in days.items():
     out += ["", f"### {d}", ""]
     for c in cs:
-        out.append(f"- `{c['h']}` {c['s']}{' **[merge]**' if c['m'] else ''} — {c['a']}{c['st']}")
+        out.append(f"- `{c['h']}` {c['s']}{' **[merge]**' if c['m'] else ''}{' **[not in main]**' if c['u'] else ''} — {c['a']}{c['st']}")
 open(sys.argv[1], 'w').write("\n".join(out) + "\n")
 print(len(days), 'days', sum(map(len, days.values())), 'commits')
