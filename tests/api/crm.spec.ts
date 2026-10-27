@@ -15,7 +15,7 @@ function apiKeyHeaders() {
   return { 'Content-Type': 'application/json', 'x-api-key': adminApiKey as string };
 }
 
-test.describe('POST /api/create-order', () => {
+test.describe('POST /api/create-order @smoke', () => {
 
   test('rejects requests with no session and no API key', async ({ request }) => {
     const response = await request.post('/api/create-order', {
@@ -56,7 +56,7 @@ test.describe('POST /api/create-order', () => {
   });
 });
 
-test.describe('Protected endpoints reject anonymous callers', () => {
+test.describe('Protected endpoints reject anonymous callers @smoke', () => {
 
   for (const [method, path] of [
     ['GET', '/api/get-all-users'],
@@ -75,7 +75,7 @@ test.describe('Protected endpoints reject anonymous callers', () => {
   }
 });
 
-test.describe('POST /api/send-email', () => {
+test.describe('POST /api/send-email @smoke', () => {
 
   test('rejects an invalid email address', async ({ request }) => {
     const response = await request.post('/api/send-email', {

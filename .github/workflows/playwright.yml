@@ -16,6 +16,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       RAZORPAY_KEY_ID: ${{ secrets.RAZORPAY_KEY_ID }}
       RAZORPAY_KEY_SECRET: ${{ secrets.RAZORPAY_KEY_SECRET }}
+      CLERK_WEBHOOK_SECRET: ${{ secrets.CLERK_WEBHOOK_SECRET }}
 
     steps:
     - uses: actions/checkout@v4
@@ -25,9 +26,14 @@ jobs:
     - name: Install dependencies
       run: npm ci
     - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
-    - name: Run Playwright tests
-      run: npx playwright test
+      run: npx playwright install --with-deps ${{ github.event_name == 'pull_request' && 'chromium' || '' }}
+    # Pull requests: fast @smoke gate on Chromium only. Pushes to main: full suite on all browsers.
+    - name: Run Playwright smoke tests (PR)
+      if: github.event_name == 'pull_request'
+      run: npm run test:smoke
+    - name: Run full Playwright suite (push)
+      if: github.event_name != 'pull_request'
+      run: npm run test:all
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:

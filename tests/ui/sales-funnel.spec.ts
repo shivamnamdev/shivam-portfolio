@@ -3,7 +3,7 @@ import { activeCourses } from '../../data/courses';
 import { formatPrice, parsePrice } from '../../lib/pricing';
 
 // One test per course in data/courses.ts, so the suite follows catalog changes automatically.
-test.describe('Course Sales Page UI', () => {
+test.describe('Course Sales Page UI @smoke', () => {
 
   for (const course of activeCourses) {
     test(`${course.slug}: renders hero and the correct cohort state`, async ({ page }) => {
