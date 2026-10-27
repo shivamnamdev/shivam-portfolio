@@ -1,5 +1,14 @@
 // data/coupons.ts
 
+// QA-only coupon (testing). Present only when NEXT_PUBLIC_QA_FIXTURES=1 AND at least one Clerk id is listed in
+// NEXT_PUBLIC_QA_FREE_COUPON_USERS (comma separated). An empty allowedUsers list means "anyone" in this file,
+// so the coupon must never be created without ids (fail closed).
+const qaFreeCouponUsers = (process.env.NEXT_PUBLIC_QA_FREE_COUPON_USERS ?? "")
+  .split(",").map((id) => id.trim()).filter(Boolean);
+const qaCoupons = process.env.NEXT_PUBLIC_QA_FIXTURES === "1" && qaFreeCouponUsers.length > 0
+  ? [{ code: "QA100", discountType: "percentage", discountValue: 100, allowedUsers: qaFreeCouponUsers }]
+  : [];
+
 export const activeCoupons =[
   {
     code: "EXISTINGSTUDENT_BATCH03",
@@ -32,4 +41,6 @@ export const activeCoupons =[
     // 🚨 Add specific Clerk User IDs here to lock the coupon to them!
     allowedUsers: ["user_2aBcD1234567890"] 
   }
+  ,
+  ...qaCoupons
 ];

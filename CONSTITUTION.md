@@ -53,6 +53,7 @@ Do not duplicate schemas here; point to the source and keep them in sync:
 | Courses, pricing, coupons | `data/` (server-side pricing is authoritative) |
 | Features and flows | [docs/FEATURES.md](docs/FEATURES.md), [docs/PRD_TM_DIGITAL_LEARNING_PLATFORM.md](docs/PRD_TM_DIGITAL_LEARNING_PLATFORM.md) |
 | Content authoring | [docs/CONTENT_MANAGEMENT.md](docs/CONTENT_MANAGEMENT.md) |
+| Testing PRDs, feature registry, test history | [docs/testing/](docs/testing/README.md) |
 
 A new or changed payload shape must be updated in the relevant doc in the same change.
 
@@ -119,3 +120,4 @@ Invariants:
 Append one line per significant change to architecture, schema, or integrations: `YYYY-MM-DD — change — reason`.
 
 - 2026-10-16 — Constitution created from BLAST.md — standardize agent workflow
+- 2026-10-27 — Added `docs/testing/` (testing PRDs 01–04, registry, changelog, template) — one place for test plans and their history
