@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 import { activeCourses, isQaFixture } from '../../../data/courses';
 import { courseCurriculumMap } from '../../../data/learning-content';
 import { signInAs } from '../../support/clerk';
@@ -10,10 +10,6 @@ import { expectDeniedForVisitor, expectLearningDashboard, expectOnPath, PROTECTE
 // Legal & Informational Pages, Public Security Boundary. Titles carry the workbook case ids.
 const realCourses = activeCourses.filter(c => !isQaFixture(c.slug));
 const NAV: [string, string][] = [['Home', '/'], ['Courses', '/courses'], ['About', '/about'], ['Contact', '/contact']];
-const LEGAL: [string, string, RegExp, number][] = [ // id, path, heading, minimum words of real content
-  ['PUB-INFO-001', '/privacy', /privacy/i, 30], ['PUB-INFO-002', '/terms', /terms/i, 30], ['PUB-INFO-003', '/refund', /refund/i, 30],
-  ['PUB-INFO-004', '/contact', /connect|contact/i, 15], ['PUB-INFO-005', '/mentorship', /mentorship/i, 15],
-];
 
 test.describe('PRD02 Public landing experience @regression', () => {
   test('[PUB-LAND-001][PUB-LAND-010][PUB-LAND-011] the homepage loads and browses without sign-in', async ({ page }) => {
@@ -46,7 +42,7 @@ test.describe('PRD02 Public landing experience @regression', () => {
     await expect(page.getByRole('link', { name: 'Explore Courses' })).toHaveAttribute('href', '/courses');
   });
 
-  test('[PUB-LAND-006] testimonials / social proof are shown on the homepage', async ({ page }) => {
+  test('[PUB-LAND-006] (SCP-57) testimonials / social proof are shown on the homepage', async ({ page }) => {
     // The workbook marks this passed; the homepage has no testimonials section (they live on course pages,
     // and components/Testimonials.tsx is not used anywhere: PRD section 13 E5). Kept as written so it shows in Allure.
     await page.goto('/');
@@ -71,14 +67,15 @@ test.describe('PRD02 Public landing experience @regression', () => {
 });
 
 test.describe('PRD02 Primary navigation @regression', () => {
-  for (const [label, path] of NAV) {
-    const id = { Home: 'PUB-NAV-001', Courses: 'PUB-NAV-002', About: 'PUB-NAV-003', Contact: 'PUB-NAV-004' }[label]!;
-    test(`[${id}] ${label} navigation opens ${path}`, async ({ page }) => {
-      await page.goto(path === '/' ? '/about' : '/');
-      await page.getByRole('navigation').getByRole('link', { name: label, exact: true }).first().click();
-      await expectOnPath(page, path);
-    });
-  }
+  const navCase = (label: string, path: string) => async ({ page }: { page: Page }) => {
+    await page.goto(path === '/' ? '/about' : '/');
+    await page.getByRole('navigation').getByRole('link', { name: label, exact: true }).first().click();
+    await expectOnPath(page, path);
+  };
+  test('[PUB-NAV-001] Home navigation opens /', navCase('Home', '/'));
+  test('[PUB-NAV-002] Courses navigation opens /courses', navCase('Courses', '/courses'));
+  test('[PUB-NAV-003] About navigation opens /about', navCase('About', '/about'));
+  test('[PUB-NAV-004] Contact navigation opens /contact', navCase('Contact', '/contact'));
 
   test('[PUB-NAV-005] Log In opens the authentication flow', async ({ page }) => {
     await page.goto('/');
@@ -127,17 +124,20 @@ test.describe('PRD02 Primary navigation @regression', () => {
 });
 
 test.describe('PRD02 Legal and informational pages @regression', () => {
-  for (const [id, path, heading, minWords] of LEGAL) {
-    test(`[${id}][PUB-INFO-007][PUB-INFO-008] ${path} loads publicly, is readable and does not redirect to login`, async ({ page, request }) => {
-      const res = await request.get(path, { maxRedirects: 0, headers: { 'User-Agent': 'shivam-academy-api-tests' } });
-      expect(res.status()).toBe(200);
-      await page.goto(path);
-      await expectOnPath(page, path);
-      await expect(page.getByRole('heading', { level: 1 }).first()).toContainText(heading);
-      const words = (await page.locator('main').innerText()).split(/\s+/).length;
-      expect(words, 'page has real content').toBeGreaterThan(minWords);
-    });
-  }
+  const legalCase = (path: string, heading: RegExp, minWords: number) => async ({ page, request }: { page: Page; request: APIRequestContext }) => {
+    const res = await request.get(path, { maxRedirects: 0, headers: { 'User-Agent': 'shivam-academy-api-tests' } });
+    expect(res.status()).toBe(200);
+    await page.goto(path);
+    await expectOnPath(page, path);
+    await expect(page.getByRole('heading', { level: 1 }).first()).toContainText(heading);
+    const words = (await page.locator('main').innerText()).split(/\s+/).length;
+    expect(words, 'page has real content').toBeGreaterThan(minWords);
+  };
+  test('[PUB-INFO-001][PUB-INFO-007][PUB-INFO-008] /privacy loads publicly, is readable and does not redirect to login', legalCase('/privacy', /privacy/i, 30));
+  test('[PUB-INFO-002][PUB-INFO-007][PUB-INFO-008] /terms loads publicly, is readable and does not redirect to login', legalCase('/terms', /terms/i, 30));
+  test('[PUB-INFO-003][PUB-INFO-007][PUB-INFO-008] /refund loads publicly, is readable and does not redirect to login', legalCase('/refund', /refund/i, 30));
+  test('[PUB-INFO-004][PUB-INFO-007][PUB-INFO-008] /contact loads publicly, is readable and does not redirect to login', legalCase('/contact', /connect|contact/i, 15));
+  test('[PUB-INFO-005][PUB-INFO-007][PUB-INFO-008] /mentorship loads publicly, is readable and does not redirect to login', legalCase('/mentorship', /mentorship/i, 15));
 
   test('[PUB-INFO-006] legal pages can be found from the footer', async ({ page }) => {
     await page.goto('/');

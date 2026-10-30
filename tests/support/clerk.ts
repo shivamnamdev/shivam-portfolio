@@ -70,7 +70,8 @@ export async function signInAs(page: Page, email: string): Promise<void> {
   expect(status).toBe('complete');
   await expect.poll(async () => (await page.context().cookies()).some(c => c.name === '__session' && !!c.value),
     { timeout: 20000, message: 'Clerk __session cookie must be set after redeeming the sign-in token' }).toBe(true);
-  await page.goto('/');
+  // WebKit reports the first goto as interrupted when Clerk's own post-sign-in navigation lands at the same time: retry once.
+  await page.goto('/').catch(async () => { await page.waitForLoadState('load'); await page.goto('/'); });
   // viewport-agnostic: the Dashboard link is desktop-only, the account button shows on every viewport
   await expect(page.locator('.cl-userButtonTrigger').first()).toBeVisible({ timeout: 20000 });
 }

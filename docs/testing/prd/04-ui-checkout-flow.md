@@ -725,11 +725,11 @@ The following negative scenarios must be validated:
 
 ### **Risk R-CK-7 — Success Copy Mismatch**
 
-**Risk:** The shared success modal says *"Your payment is verified"* even for free enrollments, and the pricing PRD (03 §4.6) states the redirect target is `/learning/[slug]` while the modal routes to `/learning`.
+**Risk:** The shared success modal says *"Your payment is verified"* even for free enrollments, and the redirect target was unclear between the pricing PRD (`/learning/[slug]`) and the code (`/learning`). **Resolved 2026-10-29 (owner): `/learning` is correct**; PRD 03 §4.6 was updated.
 
 **Mitigation:**
 
-* Assert the current behaviour; log the discrepancy; confirm the intended copy and destination with the product owner.
+* Destination is settled (`/learning`). Still open: the copy for free enrollments (see PRD 05, R-FE-2).
 
 ---
 

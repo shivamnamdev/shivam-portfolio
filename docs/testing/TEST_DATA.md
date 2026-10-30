@@ -130,3 +130,54 @@ Fallbacks, not needed so far: password for `shivamnamdev.edu@gmail.com` (already
 ## Email policy (D4)
 
 Receipts and welcome emails go to the owner's inbox. The owner filters them by a subject label. Any test that can trigger an email must make its subject identifiable (for example a fixed prefix such as `[QA-AUTOMATION]`); implementing that prefix is a small server change tracked as TR-2 in PRD 04.
+
+### CHK.* (Checkout workbook, PRD 04)
+
+Personas depend on the checkout cases (decision Q7: namespaced per workbook). Personas and data in `docs/testing/workbooks/[UI] Checkout Flow Testing.xlsx` (sheet "Test User Data").
+
+| Id | Account / value | Meaning |
+| --- | --- | --- |
+| V1 | none | anonymous visitor |
+| B1 | `shivamnamdev.edu@gmail.com` | signed-in buyer, no enrolments (default buyer; may use `QA100`) |
+| B2 | `mavish.ps8@gmail.com` | buyer enrolled in Course A only (wrong user for the restricted coupon; mobile buyer) |
+| S1 | `financetrail.bazar@gmail.com` | enrolled student (Course B closed; fixture granted per test) |
+| A1 | `shivamnamdev.corp@gmail.com` | admin |
+| C1 / C2 | `/courses/qa-checkout-sandbox` / `/courses/git-beginner-batch-1` | open fixture course / closed real cohort |
+| K1 to K4 | `BIRTHDAY20` / `EXISTINGSTUDENT_BATCH03` / `SHIVAMSPECIAL` / `QA100` | percentage / fixed (bigger than the QA price) / restricted to other accounts / QA-only free coupon |
+
+### FRE.* (Free Enrollment workbook, PRD 05)
+
+| Id | Account / value | Meaning |
+| --- | --- | --- |
+| V1 | none | anonymous visitor |
+| B1 | `shivamnamdev.edu@gmail.com` | learner with no enrolments, allowed to use `QA100` (the one account the tests enrol; rows are removed afterwards) |
+| B2 | `mavish.ps8@gmail.com` | learner enrolled in Course A, allowed to use `QA100`; wrong user for `SHIVAMSPECIAL` |
+| S1 | `financetrail.bazar@gmail.com` | learner NOT on the `QA100` list (must be refused) |
+| A1 | `shivamnamdev.corp@gmail.com` | admin |
+| C1 / C2 | fixture course / closed real cohort | as in CHK.* |
+| K1 to K4 | `BIRTHDAY20` / `EXISTINGSTUDENT_BATCH03` / `SHIVAMSPECIAL` / `QA100` | as in CHK.* |
+
+## Real Razorpay test-mode run (opt-in)
+
+`tests/ui/discovery/checkout-real-gateway.spec.ts` drives the real overlay with the test keys: contact details (any valid-looking mobile such as `8123456789`), card `4111 1111 1111 1111`, expiry `12/30`, CVV `123`, name on card, "Maybe later" for saving the card, then Razorpay's demo bank page (buttons **Success** / **Failure**). It only runs with `E2E_REAL_GATEWAY=1` because a successful payment sends the receipt email (to the buyer, BCC the `GMAIL_USER` inbox) and calls Razorpay. The first test fails if either key is not `rzp_test_`.
+
+```bash
+E2E_REAL_GATEWAY=1 PORT=3100 E2E_SEED_PERSONAS=1 NEXT_PUBLIC_QA_FIXTURES=1 \
+NEXT_PUBLIC_QA_FREE_COUPON_USERS="<edu id>,<mavish id>" \
+npx playwright test --project=chromium tests/ui/discovery/checkout-real-gateway.spec.ts
+```
+
+### DSH.* (Student Dashboard workbook, PRD 06)
+
+| Id | Account / value | Meaning |
+| --- | --- | --- |
+| V1 | none | visitor |
+| U1 | `shivamnamdev.edu@gmail.com` | no enrolments (empty dashboard) |
+| S1 / S2 | `financetrail.bazar@gmail.com` / `mavish.ps8@gmail.com` | Course B only / Course A only |
+| M1 | edu plus a temporary grant of the fixture course and Course C | several courses (grant removed after each test) |
+| A1 | `shivamnamdev.corp@gmail.com` | admin |
+| CA / CB / CC / CF | Course A / Course B / Course C / fixture course | lobby and card targets; CF needs a fixture live link (PRD 06 TR-2) |
+
+### LRN.* (Learning Experience workbook, PRD 07) and ADM.* (Admin Portal workbook, PRD 08)
+
+Personas are listed on the "Test User Data" sheet of each workbook. In short: **LRN** uses S1 (bazar, Course B Git lab), S2 (mavish, Course A Python lab), E1 (S2 with the exam state prepared through the service role), A1 (admin) and U1 (not enrolled). **ADM** uses A1 (the only admin), S1 and S2 (negative access and table data) and U1 (target of manual enrollment, row removed after each test).

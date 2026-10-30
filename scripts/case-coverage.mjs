@@ -12,6 +12,11 @@ const PRDS = [
   { key: 'PRD 01 Authentication & Access Control', file: 'prd01-authentication.csv' },
   { key: 'PRD 02 Public Pages & Navigation', file: 'prd02-public-pages.csv' },
   { key: 'PRD 03 Course Discovery & Pricing', file: 'prd03-discovery-pricing.csv' },
+  { key: 'PRD 04 Checkout Flow', file: 'prd04-checkout.csv' },
+  { key: 'PRD 05 Free Enrollment Flow', file: 'prd05-free-enrollment.csv' },
+  { key: 'PRD 06 Student Dashboard & Course Access', file: 'prd06-student-dashboard.csv' },
+  { key: 'PRD 07 Learning Experience', file: 'prd07-learning-experience.csv' },
+  { key: 'PRD 08 Admin Portal', file: 'prd08-admin-portal.csv' },
 ];
 
 function parseCsv(text) {
@@ -43,7 +48,7 @@ const automated = new Set(); const blocked = new Set();
 for (const file of walk(path.join(ROOT, 'tests'))) {
   for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
     // ids appear as [ID] in a title, or as 'ID' literals in the arrays that drive table-driven tests
-    const ids = [...line.matchAll(/(?:\[|')((?:AUTH|PUB|CDP|SCP)-[A-Z0-9-]+)(?:\]|')/g)].map(m => m[1]);
+    const ids = [...line.matchAll(/(?:\[|')((?:AUTH|PUB|CDP|CHK|FRE|DSH|LRN|ADM|SCP)-[A-Z0-9-]+)(?:\]|')/g)].map(m => m[1]);
     for (const id of ids) (line.includes('test.fixme(') ? blocked : automated).add(id);
   }
 }

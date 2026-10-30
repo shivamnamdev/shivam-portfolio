@@ -6,7 +6,7 @@ Research, discoveries, and constraints. Append dated entries.
 
 - All three courses in `data/courses.ts` have `enrollmentClosed: true`, so the Buy Now UI is not reachable on any live page. Checkout UI tests need an open-cohort fixture (decision D1).
 - `components/ActiveCohorts.tsx`: `finally { setIsProcessing(false) }` runs right after `paymentObject.open()`, so the button is clickable while the Razorpay overlay is open (possible duplicate orders); no `ondismiss` handler.
-- Success modal copy says "Your payment is verified" for free enrollments too; modal routes to `/learning`, while PRD 03 §4.6 says `/learning/[slug]`.
+- Success modal copy says "Your payment is verified" for free enrollments too; modal routes to `/learning`, which is the intended destination (owner decision 2026-10-29; PRD 03 §4.6 corrected).
 - Errors and the login prompt use `window.alert`; automation must handle dialogs.
 - Coupon rules: `EXISTINGSTUDENT_BATCH03` is public (₹1,999 / $50 off) and makes the ₹399 / $9.99 and ₹1,999 courses free; no expiry or usage limits; real Clerk user ids are committed in `data/coupons.ts`.
 - No Razorpay webhook: a buyer who pays but loses connectivity before `verify-payment` is charged without enrollment.
@@ -54,3 +54,11 @@ Research, discoveries, and constraints. Append dated entries.
 - Mobile: the WhatsApp widget's bubble overlaps the footer's "Terms of Service" link (`PUB-MOB-015`). The mobile menu toggle is an icon-only `<button>` with no accessible name (`PUB-A11Y-011`).
 - Mobile menu's Dashboard entry is `a[href="/learning"]`, not a link named exactly "Dashboard".
 - Machine load (other sessions) made foreground runs time out; long Playwright runs go to the background.
+
+### 2026-10-28 — Automation batch 3 (PRD 03)
+
+- `/api/enroll-free` is not idempotent under concurrency: `grantEnrollment` does check-then-insert and `user_enrollments` has no unique (user_id, course_slug); 6 parallel calls produced 4 to 6 rows. Fix: unique constraint plus insert-or-ignore (docs/DATABASE.md must change with it).
+- Coupons live in `data/coupons.ts`, which is imported by the client page, so every code and the restricted user-id lists ship in the browser bundle; no expiry date or usage limit exists (`CDP-COUP-007/008`).
+- Success modal routes to `/learning`; the course page is not marked enrolled behind the modal.
+- Catalog cards have no instructor, rating, currency toggle or preview (PRD 03 section 4.1 expects them).
+- Test infra: Clerk sign-in under load occasionally times out (passes on retry); run with `--workers=2`. Tests sharing one persona across files race: DB-writing specs live in one file/worker.

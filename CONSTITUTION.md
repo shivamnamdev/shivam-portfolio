@@ -121,3 +121,7 @@ Append one line per significant change to architecture, schema, or integrations:
 
 - 2026-10-16 — Constitution created from BLAST.md — standardize agent workflow
 - 2026-10-27 — Added `docs/testing/` (testing PRDs 01–04, registry, changelog, template) — one place for test plans and their history
+- 2026-10-29 — Added PRD 05 (Free Enrollment Flow) to docs/testing — next topic in the owner's precedence list
+- 2026-10-30 — Added PRD 06 (Student Dashboard & Course Access) to docs/testing — next topic in the owner's precedence list
+- 2026-10-30 — Added PRD 07 (Learning Experience) and the PRD 06 workbook to docs/testing — owner's plan: all PRDs and manual cases first, automation after
+- 2026-10-30 — Added PRD 08 (Admin Portal) and workbooks for PRDs 07 and 08 to docs/testing — all UI PRDs now have manual cases

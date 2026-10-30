@@ -73,3 +73,32 @@ PR smoke suite (2026-10-26): tag existing Playwright tests `@smoke`, add public-
 - [x] tests/ui/smoke.spec.ts, tests/api/webhook.spec.ts
 - [x] `npm run test:smoke`, CI smoke job (chromium)
 - [ ] Full 3-browser run moved to push-to-main
+
+- [x] 2026-10-28 PRD 03 automation: 134/140 ids (6 fixme: no coupon expiry/limit/API). 8 genuine failures kept visible in Allure. Next: PRD 02 remaining 66, checkout CK-xx extras, Jira tickets for the PRD 03 findings (awaiting user approval).
+
+## Product-wide testing roadmap (owner's precedence list, recorded 2026-10-29)
+
+Order follows the real journey: user lands → signs in → buys/joins → learns → administers → data persists → performs under load. Layers in order: UI, API, Database, Performance.
+
+**Phase 1 — UI**
+
+| # | Feature | PRD | State (2026-10-29) |
+|---|---|---|---|
+| 1 | Authentication & role protection | 01 | Tests done (203/204) |
+| 2 | Public pages & navigation | 02 | Tests partial (95/161) |
+| 3 | Course catalog & pricing | 03 | Tests partial (134/140 automated; 7 genuine failures; redirect expectation corrected 2026-10-29; SCP-43) |
+| 4 | Checkout flow | 04 | PRD ready; mocked-gateway scenarios covered by PRD 03 specs, CK-xx still to map |
+| 5 | Free enrollment flow | 05 | **PRD draft written 2026-10-29** |
+| 6 | Student dashboard & course access | 06 | PRD ready; 82 manual cases written 2026-10-30 |
+| 7 | Learning lab flow | 07 | PRD draft; 107 manual cases written 2026-10-30 |
+| 8 | Admin flow | 08 | PRD draft; 83 manual cases written 2026-10-30 |
+
+**Phase 2 — API:** payment APIs (`create-order`, `verify-payment`), enrollment APIs (`enroll-free`, admin enroll), user lookup APIs (`get-all-users`, `get-clerk-users`), webhook APIs (Clerk), email APIs (`send-email`), AI tutor, certificate generation (PRDs 09 to 13).
+
+**Phase 3 — Database:** `user_enrollments` persistence (duplicate checks, course-to-user link), Clerk user sync, admin activity log, assignment/progress records, CRM data integrity (PRD 14).
+
+**Phase 4 — Performance:** checkout under load, login/auth under load, learning lab responsiveness, admin CRM performance, backend latency and throughput (p95/p99), peak concurrent users, fail-safe handling (PRD 15).
+
+**Production-ready execution order:** Authentication → Course access/public pages → Purchase flow → Free enrollment flow → Dashboard/student access → Learning lab → Admin portal → Payment APIs → Enrollment APIs → Clerk/webhook APIs → Data integrity in Supabase → Performance validation.
+
+Source of truth for status: [docs/testing/README.md](../testing/README.md) (registry) and [docs/testing/COVERAGE.md](../testing/COVERAGE.md).

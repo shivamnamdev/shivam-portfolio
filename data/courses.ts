@@ -310,6 +310,7 @@ const qaFixtureCourses = QA_FIXTURES_ENABLED
       demoOffer: "Testing only",
       enrollmentClosed: false,
       whatsappLink: "https://chat.whatsapp.com/qa-checkout-sandbox",
+      liveLink: "https://meet.google.com/qa-checkout-sandbox", // lets the lobby cases (PRD 06 DSH-LOB-006/007) run
       vsl: { ...qaBase.vsl, headlineHighlight: "QA CHECKOUT SANDBOX" },
       pricing: {
         inr: { currentPrice: "₹10", originalPrice: "₹20", savingsText: "QA fixture price", currencyCode: "INR" },

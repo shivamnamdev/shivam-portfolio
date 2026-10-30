@@ -36,14 +36,16 @@ test.describe('PRD02 Mobile navigation @regression', () => {
     await expect(menuLink(page, 'Courses')).toBeHidden();
   });
 
-  for (const [id, label, path] of [['PUB-MOB-004', 'Home', '/'], ['PUB-MOB-005', 'Courses', '/courses'], ['PUB-MOB-006', 'About', '/about'], ['PUB-MOB-007', 'Contact', '/contact']] as const) {
-    test(`[${id}] ${label} in the mobile menu opens ${path}`, async ({ page }) => {
-      await page.goto(path === '/' ? '/about' : '/');
-      await openMenu(page);
-      await menuLink(page, label).click();
-      await expectOnPath(page, path);
-    });
-  }
+  const mobileNav = (label: string, path: string) => async ({ page }: { page: Page }) => {
+    await page.goto(path === '/' ? '/about' : '/');
+    await openMenu(page);
+    await menuLink(page, label).click();
+    await expectOnPath(page, path);
+  };
+  test('[PUB-MOB-004] Home in the mobile menu opens /', mobileNav('Home', '/'));
+  test('[PUB-MOB-005] Courses in the mobile menu opens /courses', mobileNav('Courses', '/courses'));
+  test('[PUB-MOB-006] About in the mobile menu opens /about', mobileNav('About', '/about'));
+  test('[PUB-MOB-007] Contact in the mobile menu opens /contact', mobileNav('Contact', '/contact'));
 
   test('[PUB-MOB-008] Log In is reachable and opens the login flow on mobile', async ({ page }) => {
     await page.goto('/');
@@ -207,7 +209,11 @@ test.describe('PRD02 Keyboard accessibility @regression', () => {
     await ctx.close();
   });
 
-  test('[PUB-A11Y-011] every visible link and button on public pages has readable text or an accessible name', async ({ page }) => {
+  // Failed in the manual run (Python lab solution dialog: the close button is not reachable by keyboard). Tracked as SCP-32;
+  // the automated check belongs with the Python lab cases of PRD 07.
+  test.fixme('[PUB-A11Y-010] the Python lab solution dialog can be closed from the keyboard (SCP-32)', async () => {});
+
+  test('[PUB-A11Y-011] (SCP-58) every visible link and button on public pages has readable text or an accessible name', async ({ page }) => {
     const unnamed: string[] = [];
     for (const path of ['/', '/courses', '/about', '/contact', `/courses/${first.slug}`]) {
       await page.goto(path);

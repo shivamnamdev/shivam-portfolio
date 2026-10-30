@@ -111,3 +111,10 @@ This test suite is integrated directly into our deployment pipeline.
 
 ---
 *Maintained by the QA Engineering Team @ Shivam Academy*
+## Real Razorpay test mode (opt-in)
+
+`tests/ui/discovery/checkout-real-gateway.spec.ts` uses the real Razorpay overlay with `rzp_test_` keys and the demo bank page. It is skipped unless `E2E_REAL_GATEWAY=1` (a successful payment sends a receipt email). Steps and the command are in [docs/testing/TEST_DATA.md](../docs/testing/TEST_DATA.md).
+
+### Specs that share the `edu` account
+
+`tests/ui/dashboard/dashboard-edu-writes.spec.ts`, `tests/ui/dashboard/dashboard-stats-journeys.spec.ts`, `tests/ui/learning/learning-exam.spec.ts`, `tests/ui/discovery/checkout-real-db.spec.ts` and `tests/ui/discovery/checkout-real-flows.spec.ts` and `tests/ui/admin/admin-enroll-writes.spec.ts` all add and remove enrolments for `shivamnamdev.edu@gmail.com`. Playwright runs files in parallel, so run these together in one worker (`--workers=1` for these six files) or they can see each other's temporary enrolments.

@@ -1,0 +1,274 @@
+(node:84756) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[1A[2K[WebServer] (node:84782) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests insecure by disabling certificate verification.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+[e2e] persona enrolments seeded (snapshot of 2 rows saved)
+
+Running 144 tests using 1 worker
+
+[1A[2K(node:84794) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[1A[2K[1/144] [chromium] › tests/ui/admin/admin-enroll-writes.spec.ts:60:9 › PRD08 manual enrolment and real table data › @regression › [ADM-ENR-007][ADM-ENR-008][ADM-ENR-009][ADM-ENR-010][ADM-ENR-011][ADM-ENR-016][ADM-ENR-018][ADM-KPI-005][ADM-KPI-006][ADM-E2E-001] offline payment: copy the id from the Directory, grant the fixture, and the table, the KPI, the database, the log and the learner all agree
+[1A[2K[2/144] [chromium] › tests/ui/admin/admin-enroll-writes.spec.ts:96:9 › PRD08 manual enrolment and real table data › @regression › [ADM-E2E-006][ADM-ENR-012] a wrong id gives an error first, the right id then succeeds with one row, and a second grant is refused
+[1A[2K[3/144] [chromium] › tests/ui/admin/admin-enroll-writes.spec.ts:109:9 › PRD08 manual enrolment and real table data › @regression › [ADM-ENR-015][ADM-ENR-017] spaces around the id are trimmed and a double click on Grant Access creates one row
+[1A[2K[4/144] [chromium] › tests/ui/admin/admin-enroll-writes.spec.ts:120:9 › PRD08 manual enrolment and real table data › @regression › [ADM-ENR-019] granting a course to the admin account is allowed and does not crash
+[1A[2K[5/144] [chromium] › tests/ui/admin/admin-enroll-writes.spec.ts:127:9 › PRD08 manual enrolment and real table data › @regression › [ADM-KPI-003][ADM-KPI-004][ADM-TBL-006] the cards equal the database counts and the seeded personas show with their courses (the no-enrolment persona is absent)
+[1A[2K[6/144] [chromium] › tests/ui/admin/admin-enroll-writes.spec.ts:137:9 › PRD08 manual enrolment and real table data › @regression › [ADM-TBL-007][ADM-ASG-003][ADM-ENG-002] real rows come back newest first (enrollments, submissions) and by time spent (engagement)
+[1A[2K[7/144] [chromium] › tests/ui/admin/admin-enroll-writes.spec.ts:168:9 › PRD08 manual enrolment and real table data › @regression › [ADM-E2E-004][FRE-POS-008][FRE-E2E-008] a free enrolment with QA100 appears in the admin tables with its coupon and raises Coupons Used
+[1A[2K[8/144] [chromium] › tests/ui/admin/admin-enroll-writes.spec.ts:189:9 › PRD08 manual enrolment and real table data › @regression › [ADM-E2E-003] a paid purchase appears in the admin tables with the coupon used and raises both cards
+[1A[2K[9/144] [chromium] › tests/ui/discovery/catalog-cards.spec.ts:16:7 › PRD03 Course discovery cards @regression › [CDP-001][CDP-002][CDP-012] every course renders its own card with its own title
+[1A[2K[10/144] [chromium] › tests/ui/discovery/catalog-cards.spec.ts:23:7 › PRD03 Course discovery cards @regression › [CDP-004][CDP-007] duration and status on each card match the course data
+[1A[2K[11/144] [chromium] › tests/ui/discovery/catalog-cards.spec.ts:31:7 › PRD03 Course discovery cards @regression › [CDP-006] pricing badge: closed cohorts say "Closed", open cohorts show the INR price
+[1A[2K[12/144] [chromium] › tests/ui/discovery/catalog-cards.spec.ts:38:7 › PRD03 Course discovery cards @regression › [CDP-011] View Details opens the matching /courses/[slug] page
+[1A[2K[13/144] [chromium] › tests/ui/discovery/catalog-cards.spec.ts:45:7 › PRD03 Course discovery cards @regression › [CDP-011] each card links to its own slug
+[1A[2K[14/144] [chromium] › tests/ui/discovery/catalog-cards.spec.ts:51:7 › PRD03 Course discovery cards @regression › [CDP-003] each card shows the instructor
+[1A[2K(node:85218) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[1A[2K[15/144] (retries) [chromium] › tests/ui/discovery/catalog-cards.spec.ts:51:7 › PRD03 Course discovery cards @regression › [CDP-003] each card shows the instructor (retry #1)
+[1A[2K  1) [chromium] › tests/ui/discovery/catalog-cards.spec.ts:51:7 › PRD03 Course discovery cards @regression › [CDP-003] each card shows the instructor 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('h2').filter({ hasText: 'Git Beginner Live Session' }).locator('xpath=ancestor::div[contains(@class,"flex-col")][1]').getByText(/instructor|by shivam|taught by/i)
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2').filter({ hasText: 'Git Beginner Live Session' }).locator('xpath=ancestor::div[contains(@class,"flex-col")][1]').getByText(/instructor|by shivam|taught by/i)[22m
+
+
+      50 |
+      51 |   test('[CDP-003] each card shows the instructor', async ({ page }) => {
+    > 52 |     await expect(card(page, listed[0].title).getByText(/instructor|by shivam|taught by/i)).toBeVisible();
+         |                                                                                            ^
+      53 |   });
+      54 |
+      55 |   test('[CDP-005] each card shows a course rating', async ({ page }) => {
+        at /Users/shivamnamdev/shivam/shivam-portfolio/tests/ui/discovery/catalog-cards.spec.ts:52:92
+
+    Error Context: test-results/ui-discovery-catalog-cards-2ffae-h-card-shows-the-instructor-chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('h2').filter({ hasText: 'Git Beginner Live Session' }).locator('xpath=ancestor::div[contains(@class,"flex-col")][1]').getByText(/instructor|by shivam|taught by/i)
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2').filter({ hasText: 'Git Beginner Live Session' }).locator('xpath=ancestor::div[contains(@class,"flex-col")][1]').getByText(/instructor|by shivam|taught by/i)[22m
+
+
+      50 |
+      51 |   test('[CDP-003] each card shows the instructor', async ({ page }) => {
+    > 52 |     await expect(card(page, listed[0].title).getByText(/instructor|by shivam|taught by/i)).toBeVisible();
+         |                                                                                            ^
+      53 |   });
+      54 |
+      55 |   test('[CDP-005] each card shows a course rating', async ({ page }) => {
+        at /Users/shivamnamdev/shivam/shivam-portfolio/tests/ui/discovery/catalog-cards.spec.ts:52:92
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error Context: test-results/ui-discovery-catalog-cards-2ffae-h-card-shows-the-instructor-chromium-retry1/error-context.md
+
+
+[1A[2K(node:85308) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[1A[2K[16/144] [chromium] › tests/ui/discovery/catalog-cards.spec.ts:55:7 › PRD03 Course discovery cards @regression › [CDP-005] each card shows a course rating
+[1A[2K(node:85323) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[1A[2K[17/144] (retries) [chromium] › tests/ui/discovery/catalog-cards.spec.ts:55:7 › PRD03 Course discovery cards @regression › [CDP-005] each card shows a course rating (retry #1)
+[1A[2K  2) [chromium] › tests/ui/discovery/catalog-cards.spec.ts:55:7 › PRD03 Course discovery cards @regression › [CDP-005] each card shows a course rating 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('h2').filter({ hasText: 'Git Beginner Live Session' }).locator('xpath=ancestor::div[contains(@class,"flex-col")][1]').getByText(/★|⭐|rating|\d\.\d\s*\/\s*5/i)
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2').filter({ hasText: 'Git Beginner Live Session' }).locator('xpath=ancestor::div[contains(@class,"flex-col")][1]').getByText(/★|⭐|rating|\d\.\d\s*\/\s*5/i)[22m
+
+
+      54 |
+      55 |   test('[CDP-005] each card shows a course rating', async ({ page }) => {
+    > 56 |     await expect(card(page, listed[0].title).getByText(/★|⭐|rating|\d\.\d\s*\/\s*5/i)).toBeVisible();
+         |                                                                                        ^
+      57 |   });
+      58 |
+      59 |   test('[CDP-008] card prices follow the selected currency (a currency control exists on the catalog)', async ({ page }) => {
+        at /Users/shivamnamdev/shivam/shivam-portfolio/tests/ui/discovery/catalog-cards.spec.ts:56:88
+
+    Error Context: test-results/ui-discovery-catalog-cards-d4084--card-shows-a-course-rating-chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('h2').filter({ hasText: 'Git Beginner Live Session' }).locator('xpath=ancestor::div[contains(@class,"flex-col")][1]').getByText(/★|⭐|rating|\d\.\d\s*\/\s*5/i)
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2').filter({ hasText: 'Git Beginner Live Session' }).locator('xpath=ancestor::div[contains(@class,"flex-col")][1]').getByText(/★|⭐|rating|\d\.\d\s*\/\s*5/i)[22m
+
+
+      54 |
+      55 |   test('[CDP-005] each card shows a course rating', async ({ page }) => {
+    > 56 |     await expect(card(page, listed[0].title).getByText(/★|⭐|rating|\d\.\d\s*\/\s*5/i)).toBeVisible();
+         |                                                                                        ^
+      57 |   });
+      58 |
+      59 |   test('[CDP-008] card prices follow the selected currency (a currency control exists on the catalog)', async ({ page }) => {
+        at /Users/shivamnamdev/shivam/shivam-portfolio/tests/ui/discovery/catalog-cards.spec.ts:56:88
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error Context: test-results/ui-discovery-catalog-cards-d4084--card-shows-a-course-rating-chromium-retry1/error-context.md
+
+
+[1A[2K(node:85388) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[1A[2K[18/144] [chromium] › tests/ui/discovery/catalog-cards.spec.ts:59:7 › PRD03 Course discovery cards @regression › [CDP-008] card prices follow the selected currency (a currency control exists on the catalog)
+[1A[2K(node:85403) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[1A[2K[19/144] (retries) [chromium] › tests/ui/discovery/catalog-cards.spec.ts:59:7 › PRD03 Course discovery cards @regression › [CDP-008] card prices follow the selected currency (a currency control exists on the catalog) (retry #1)
+[1A[2K  3) [chromium] › tests/ui/discovery/catalog-cards.spec.ts:59:7 › PRD03 Course discovery cards @regression › [CDP-008] card prices follow the selected currency (a currency control exists on the catalog) 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('button', { name: /USD|International|\$/ })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for getByRole('button', { name: /USD|International|\$/ })[22m
+
+
+      58 |
+      59 |   test('[CDP-008] card prices follow the selected currency (a currency control exists on the catalog)', async ({ page }) => {
+    > 60 |     await expect(page.getByRole('button', { name: /USD|International|\$/ })).toBeVisible();
+         |                                                                              ^
+      61 |   });
+      62 |
+      63 |   test('[CDP-009][CDP-010] a quick preview shows syllabus and highlights without leaving the catalog', async ({ page }) => {
+        at /Users/shivamnamdev/shivam/shivam-portfolio/tests/ui/discovery/catalog-cards.spec.ts:60:78
+
+    Error Context: test-results/ui-discovery-catalog-cards-176e8-trol-exists-on-the-catalog--chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('button', { name: /USD|International|\$/ })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for getByRole('button', { name: /USD|International|\$/ })[22m
+
+
+      58 |
+      59 |   test('[CDP-008] card prices follow the selected currency (a currency control exists on the catalog)', async ({ page }) => {
+    > 60 |     await expect(page.getByRole('button', { name: /USD|International|\$/ })).toBeVisible();
+         |                                                                              ^
+      61 |   });
+      62 |
+      63 |   test('[CDP-009][CDP-010] a quick preview shows syllabus and highlights without leaving the catalog', async ({ page }) => {
+        at /Users/shivamnamdev/shivam/shivam-portfolio/tests/ui/discovery/catalog-cards.spec.ts:60:78
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error Context: test-results/ui-discovery-catalog-cards-176e8-trol-exists-on-the-catalog--chromium-retry1/error-context.md
+
+
+[1A[2K(node:85508) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[1A[2K[20/144] [chromium] › tests/ui/discovery/catalog-cards.spec.ts:63:7 › PRD03 Course discovery cards @regression › [CDP-009][CDP-010] a quick preview shows syllabus and highlights without leaving the catalog
+[1A[2K(node:85523) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[1A[2K[21/144] (retries) [chromium] › tests/ui/discovery/catalog-cards.spec.ts:63:7 › PRD03 Course discovery cards @regression › [CDP-009][CDP-010] a quick preview shows syllabus and highlights without leaving the catalog (retry #1)
+[1A[2K  4) [chromium] › tests/ui/discovery/catalog-cards.spec.ts:63:7 › PRD03 Course discovery cards @regression › [CDP-009][CDP-010] a quick preview shows syllabus and highlights without leaving the catalog 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText(/syllabus|highlights/i).first()
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for getByText(/syllabus|highlights/i).first()[22m
+
+
+      63 |   test('[CDP-009][CDP-010] a quick preview shows syllabus and highlights without leaving the catalog', async ({ page }) => {
+      64 |     await card(page, listed[0].title).hover();
+    > 65 |     await expect(page.getByText(/syllabus|highlights/i).first()).toBeVisible();
+         |                                                                  ^
+      66 |   });
+      67 |
+      68 |   test('[CDP-013] cards stay usable on a phone (no horizontal scroll, link tappable)', async ({ browser }) => {
+        at /Users/shivamnamdev/shivam/shivam-portfolio/tests/ui/discovery/catalog-cards.spec.ts:65:66
+
+    Error Context: test-results/ui-discovery-catalog-cards-855ee-without-leaving-the-catalog-chromium/error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText(/syllabus|highlights/i).first()
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for getByText(/syllabus|highlights/i).first()[22m
+
+
+      63 |   test('[CDP-009][CDP-010] a quick preview shows syllabus and highlights without leaving the catalog', async ({ page }) => {
+      64 |     await card(page, listed[0].title).hover();
+    > 65 |     await expect(page.getByText(/syllabus|highlights/i).first()).toBeVisible();
+         |                                                                  ^
+      66 |   });
+      67 |
+      68 |   test('[CDP-013] cards stay usable on a phone (no horizontal scroll, link tappable)', async ({ browser }) => {
+        at /Users/shivamnamdev/shivam/shivam-portfolio/tests/ui/discovery/catalog-cards.spec.ts:65:66
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error Context: test-results/ui-discovery-catalog-cards-855ee-without-leaving-the-catalog-chromium-retry1/error-context.md
+
+
+[1A[2K(node:85607) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[1A[2K[22/144] [chromium] › tests/ui/discovery/catalog-cards.spec.ts:68:7 › PRD03 Course discovery cards @regression › [CDP-013] cards stay usable on a phone (no horizontal scroll, link tappable)
+[1A[2K[23/144] [chromium] › tests/ui/discovery/checkout-flow.spec.ts:20:7 › PRD03 Paid checkout (mocked gateway) @regression › [CDP-PAY-001][CDP-PAY-002][CDP-PAY-004][CDP-E2E-002][CHK-ORDER-003][CHK-AMT-006][CHK-AMT-001][CHK-AMT-002] Buy Now creates an INR order and opens Razorpay; no coupon is sent
+[1A[2K[24/144] [chromium] › tests/ui/discovery/checkout-flow.spec.ts:31:7 › PRD03 Paid checkout (mocked gateway) @regression › [CDP-PAY-003][CDP-PAY-005][CHK-ORDER-005][CHK-AMT-006][CHK-AMT-008][CHK-AMT-007] the selected currency is what the order is created in
+[1A[2K[25/144] [chromium] › tests/ui/discovery/checkout-flow.spec.ts:42:7 › PRD03 Paid checkout (mocked gateway) @regression › [CDP-PAY-006][CDP-E2E-001][CHK-PAY-001][CHK-XB-004][CHK-XB-005][CHK-PAY-004][CHK-POST-001][CHK-ORDER-004][CHK-PAY-003][CHK-E2E-002] a successful payment is verified and the discounted order is created with the coupon
+[1A[2K[26/144] [chromium] › tests/ui/discovery/checkout-flow.spec.ts:55:7 › PRD03 Paid checkout (mocked gateway) @regression › [CDP-PAY-007][CDP-RED-001][CDP-RED-003][CDP-E2E-001][CHK-POST-004][CHK-ORDER-004][CHK-PAY-001][CHK-PAY-003][CHK-E2E-002] after payment Go to Dashboard opens the learning dashboard (/learning)

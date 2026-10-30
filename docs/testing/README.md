@@ -12,10 +12,16 @@ docs/testing/
   CHANGELOG.md     # dated history of every doc/plan/spec change (append only)
   TEMPLATE.md      # copy this to start a new PRD
   prd/             # one testing PRD per feature, numbered in execution order
+  workbooks/       # manual test-case workbooks (.xlsx) generated from the PRDs, same layout as the owner's PRD 01-03 files
+  cases/           # the same cases as CSV (used by scripts/case-coverage.mjs)
     01-ui-authentication-access-control.md
     02-ui-public-pages-navigation.md
     03-ui-course-discovery-pricing.md
     04-ui-checkout-flow.md
+    05-ui-free-enrollment-flow.md
+    06-ui-student-dashboard-course-access.md
+    07-ui-learning-experience.md
+    08-ui-admin-portal.md
 ```
 
 Related locations (not moved, linked here so the trail is complete):
@@ -47,11 +53,11 @@ Status values: `Planned` (no PRD) · `PRD draft` (written, not reviewed) · `PRD
 | 01 | Authentication & Access Control | [01](prd/01-ui-authentication-access-control.md) | PRD ready · **Tests done** (203 of 204 manual cases automated; 155 passed in the last full run) | `tests/ui/auth/route-protection.spec.ts`, `sign-in-out-session.spec.ts`, `access-control.spec.ts` (all roles, sessions, enrolment, admin, SCP-29), plus `smoke.spec.ts` | `AUTH-PROT-004` blocked (no public link to a protected route exists). |
 | 02 | Public Pages & Navigation | [02](prd/02-ui-public-pages-navigation.md) | PRD ready · **Tests partial** (95 of 161 cases; 71 tests: 68 pass, 3 fail on real findings) | `tests/ui/public/landing-navigation.spec.ts`, `catalog-reliability.spec.ts`, `mobile-accessibility.spec.ts`, plus `smoke.spec.ts` | Still to do: CTA State & Context, Course Detail & Conversion, Redirect & Access Handoff (share links), Logged-in Navigation, both end-to-end sheets, `PUB-REL-009/010`; `PUB-A11Y-010` belongs to the Learning Lab PRD. |
 | 03 | Course Discovery & Pricing | [03](prd/03-ui-course-discovery-pricing.md) | PRD ready · 140 manual cases not yet executed · Tests partial | `tests/ui/sales-funnel.spec.ts` (per-course INR/USD toggle, closed state), `tests/unit/pricing.spec.ts` | Coupon UI (needs sign-in), CTA states for enrolled users, open-cohort data. |
-| 04 | Checkout Flow | [04](prd/04-ui-checkout-flow.md) | **PRD ready** · Tests: fixture guards only | `tests/*/qa-fixture.spec.ts` (fixture, coupon, ₹10 / $1 orders) | Checkout scenarios CK-xx wait for the sign-in helper and the enrolled-student account (Q8). Fixture course is built. |
-| 05 | Free Enrollment Flow | — | Planned | none | 100% coupon, *Enroll for Free*, no Razorpay, access granted. |
-| 06 | Student Dashboard & Course Access | — | Planned | none | My Enrolled Courses, Browse Catalog, Join Live, Recordings, empty state. |
-| 07 | Learning Lab | — | Planned | none | Player, tabs, Practice (Pyodide), Git lab, AI tutor, exams. |
-| 08 | Admin Portal | — | Planned | none | KPI/CRM, manual enrollment, validation, view code. |
+| 04 | Checkout Flow | [04](prd/04-ui-checkout-flow.md) | **PRD ready** · **114 manual cases written** ([workbook](workbooks/%5BUI%5D%20Checkout%20Flow%20Testing.xlsx), 10 sheets, ids `CHK-…`) · automation: mocked-gateway cases already covered under PRD 03 ids | `tests/*/qa-fixture.spec.ts` (fixture, coupon, ₹10 / $1 orders) | Open: ~61 cases still to automate (CTA states for visitors, API error codes, idempotent verification, email, mobile/cross-browser). Real Razorpay test-mode run works (see below). |
+| 05 | Free Enrollment Flow | [05](prd/05-ui-free-enrollment-flow.md) | **PRD draft** (awaiting owner review) · **71 manual cases written** ([workbook](workbooks/%5BUI%5D%20Free%20Enrollment%20Flow%20Testing.xlsx), 8 sheets, ids `FRE-…`) · 36 scenarios FE-01…36, about 20 already covered by PRD 03 automation | `tests/ui/discovery/checkout-flow.spec.ts`, `checkout-real-db.spec.ts` | New scenarios still to write: visitor gate, forged/closed/non-zero API requests, modal copy and links, stale tab, activity log, cross-browser. Known failures: duplicate rows under concurrency, redirect, modal copy. |
+| 06 | Student Dashboard & Course Access | [06](prd/06-ui-student-dashboard-course-access.md) | **PRD ready** (reviewed 2026-10-30) · **82 manual cases written** ([workbook](workbooks/%5BUI%5D%20Student%20Dashboard%20%26%20Course%20Access%20Testing.xlsx), 9 sheets, ids `DSH-…`) · 42 scenarios SD-01…42, about 10 already covered by PRD 01 access automation | `tests/ui/auth/access-control.spec.ts` (empty dashboard, Course A/B, lobby denied/admin, enrolment changes) | New: card actions, several courses, streak/XP/leaderboard, resources, failures, mobile. Needs a fixture live link and stats snapshot (TR-2, TR-3). |
+| 07 | Learning Experience (Learning Lab) | [07](prd/07-ui-learning-experience.md) | **PRD draft** (awaiting owner review) · 60 scenarios LX-01…60 · **107 manual cases written** ([workbook](workbooks/%5BUI%5D%20Learning%20Experience%20Testing.xlsx), 10 sheets, ids `LRN-…`) | none yet (PRD 01 only opens the page) | Needs mocks for YouTube/GitHub/AI, progress snapshot/restore and exam state helpers (TR-2…TR-6). Expected failures: SCP-32/33/34, likes table. |
+| 08 | Admin Portal | [08](prd/08-ui-admin-portal.md) | **PRD draft** (awaiting owner review) · 45 scenarios AD-01…45 · **83 manual cases written** ([workbook](workbooks/%5BUI%5D%20Admin%20Portal%20Testing.xlsx), 8 sheets, ids `ADM-…`) | `tests/ui/auth/access-control.spec.ts` (admin gate: AD-01…03 covered) | New: KPIs, tabs and tables, code viewer, manual enrollment, admin-API refusals, failures. Expected failure: data readable with the anonymous key (R-AD-1, SCP-39). |
 
 ### Phase 2 — API
 
@@ -115,4 +121,4 @@ All earlier questions (Q1 to Q10) are answered; see [CHANGELOG.md](CHANGELOG.md)
 Recorded in [CHANGELOG.md](CHANGELOG.md) (2026-10-27). Two PRDs have notes the authors should confirm:
 
 * PRD 02 originally listed the product URL as `app.vwo.com` (a different product); changed to `shivamnamdev.com`.
-* PRD 03 §4.6 says purchases redirect to `/learning/[slug]`; the code routes the success modal to `/learning` (see PRD 04 R-CK-7).
+* ~~PRD 03 §4.6 says purchases redirect to `/learning/[slug]`~~ **Resolved 2026-10-29 (owner): `/learning` is correct**; PRD 03 §4.6, its cases and the tests were updated.
