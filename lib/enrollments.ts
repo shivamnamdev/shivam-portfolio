@@ -2,6 +2,9 @@
 // Server-only. All enrollment grants go through here so they are idempotent and audited.
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
+// Postgres error code for a unique constraint violation.
+const UNIQUE_VIOLATION = "23505";
+
 type GrantInput = {
   userId: string;
   courseSlug: string;
@@ -33,7 +36,12 @@ export async function grantEnrollment(input: GrantInput): Promise<{ created: boo
     user_name: input.userName,
     user_email: input.userEmail,
   }]);
-  if (error) throw error;
+  if (error) {
+    // Two requests can pass the check above together. The unique rule (user_id, course_slug) then refuses the second insert,
+    // but the learner IS enrolled, so this is the same outcome as the early return: no second row, no second log entry or e-mail.
+    if (error.code === UNIQUE_VIOLATION) return { created: false };
+    throw error;
+  }
 
   try {
     await supabaseAdmin.from("admin_activity_log").insert([{
