@@ -11,6 +11,9 @@ import { defineConfig, devices } from '@playwright/test';
 // Load .env.local for local runs (tests read ADMIN_API_KEY); in CI the values come from GitHub Secrets.
 try { process.loadEnvFile('.env.local'); } catch { /* file not present, e.g. in CI */ }
 
+// PORT lets a flagged run (e.g. NEXT_PUBLIC_QA_FIXTURES=1) use its own server instead of reusing one on 3000.
+const PORT = process.env.PORT ?? '3000';
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -25,7 +28,15 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  /* html for local browsing; allure-results feeds `npm run report:allure` (failure report, see tests/README.md). */
+  reporter: [
+    ['list'],
+    ['html', { open: 'never' }],
+    ['allure-playwright', { resultsDir: 'allure-results', detail: true, suiteTitle: false }],
+  ],
+  /* Seeds the canonical persona enrolments once per run (only when E2E_SEED_PERSONAS=1) and restores them after. */
+  globalSetup: './tests/support/global-setup.ts',
+  globalTeardown: './tests/support/global-teardown.ts',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   // use: {
   //   /* Base URL to use in actions like `await page.goto('')`. */
@@ -75,13 +86,14 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
+    command: `npm run dev -- -p ${PORT}`,
+    url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
+    env: { NEXT_DIST_DIR: PORT === '3000' ? '.next' : '.next-e2e' },
     timeout: 120 * 1000,
   },
   use: {
-    baseURL: 'http://localhost:3000', // 🚨 Sets the base URL for all tests
+    baseURL: `http://localhost:${PORT}`, // 🚨 Sets the base URL for all tests
     trace: 'on-first-retry',
   },
 });

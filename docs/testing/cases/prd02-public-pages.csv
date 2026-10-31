@@ -1,0 +1,170 @@
+id,sheet,scenario,preconditions,steps,expected,priority,manual_result
+PUB-A11Y-001,Accessibility Keyboard Navigat,Primary navigation keyboard accessible,Desktop,Use Tab to navigate,Navigation controls receive keyboard focus,P0,Passed
+PUB-A11Y-002,Accessibility Keyboard Navigat,Navigation links can be activated with keyboard,Desktop,Focus link → press Enter,Correct destination opens,P0,Passed
+PUB-A11Y-003,Accessibility Keyboard Navigat,Primary CTA keyboard accessible,Desktop,Tab to CTA → activate,CTA initiates expected flow,P0,NA
+PUB-A11Y-004,Accessibility Keyboard Navigat,Course cards/links keyboard accessible,Desktop,Navigate using keyboard,Course selection controls are accessible,P1,Passed
+PUB-A11Y-005,Accessibility Keyboard Navigat,Login CTA keyboard accessible,V1,Tab to Login → activate,Login flow opens,P0,Passed
+PUB-A11Y-006,Accessibility Keyboard Navigat,Currency control keyboard accessible,Applicable course,Tab to currency control → operate,Currency can be changed using keyboard,P1,
+PUB-A11Y-007,Accessibility Keyboard Navigat,Coupon input keyboard accessible,Applicable course,Tab to coupon input → enter value,Input can be operated using keyboard,P1,
+PUB-A11Y-008,Accessibility Keyboard Navigat,Mobile navigation controls keyboard accessible where applicable,Responsive desktop/mobile environment,Operate menu controls,Controls can be accessed/operated appropriately,P1,Passed
+PUB-A11Y-009,Accessibility Keyboard Navigat,Visible focus state exists,Desktop,Tab through interactive elements,Focused element is distinguishable,P1,Passed
+PUB-A11Y-010,Accessibility Keyboard Navigat,Course Slug keyboard accessible,Desktop,Tab to Dashboard → [Python Course] → Select any video → practice tab → View Solution → close the solution → submit the solution,Correct destination opens,P1,Failed
+PUB-A11Y-011,Accessibility Keyboard Navigat,Public page links/buttons are readable,V1,Review public pages,Text and controls are readable,P1,Passed
+PUB-CTA-001,CTA State Context,CTA visible to anonymous visitor,V1,Open course page,Buy Now on course configuration,P0,Passed
+PUB-CTA-002,CTA State Context,CTA reflects paid course context,V1,Open paid C1,Buy Now or Enroll Now,P0,Passed
+PUB-CTA-003,CTA State Context,CTA reflects free course context,V1,Open C2,Enroll for Free,P0,Passed
+PUB-CTA-004,CTA State Context,CTA reflects authenticated user state,U1,Login → open course,Buy Now / Enroll Now for a paid course; Enroll for Free for a free course,P0,Passed
+PUB-CTA-005,CTA State Context,CTA reflects enrolled user state,S1,Login → open enrolled course,You are enrolled! Go to the Dashboard,P0,Passed
+PUB-CTA-006,CTA State Context,CTA state updates after pricing change,V1,Change currency/pricing option,Buy Now,P1,Passed
+PUB-CTA-007,CTA State Context,CTA state updates after valid coupon,V1,Apply valid coupon,Buy Now,P1,Passed
+PUB-CTA-008,CTA State Context,CTA state handles invalid coupon,V1,Apply invalid coupon,Buy Now,P1,Passed
+PUB-CTA-009,CTA State Context,CTA is accessible by keyboard,V1,Navigate to CTA using keyboard,Buy Now,P0,Passed
+PUB-CTA-010,CTA State Context,CTA does not lead to broken destination,V1,Click CTA,Expected next flow begins - Join Whatsapp Group and Go to Dashboard Option,P0,Passed
+PUB-CAT-001,Course Catalog Discovery,Course catalog accessible without login,V1,Open Courses,Course catalog loads,P0,Passed
+PUB-CAT-002,Course Catalog Discovery,Course listing is displayed,V1,Open course catalog,Available courses are displayed,P0,Passed
+PUB-CAT-003,Course Catalog Discovery,Course information is easy to scan,V1,Review course listing,Course information is presented clearly enough for discovery,P1,Passed
+PUB-CAT-004,Course Catalog Discovery,Course can be selected from catalog,V1,Select a course,User is taken to corresponding course detail page,P0,Passed
+PUB-CAT-005,Course Catalog Discovery,Course detail page loads,V1,Open C1,Course detail page loads successfully,P0,Passed
+PUB-CAT-006,Course Catalog Discovery,Course pricing is displayed,V1,Open C1,Pricing information is available,P0,Passed
+PUB-CAT-007,Course Catalog Discovery,Course outcomes are displayed,V1,Open C1,Learning outcomes are available,P0,Passed
+PUB-CAT-008,Course Catalog Discovery,Course module summary is displayed,V1,Open C1,Module/learning structure information is available,P1,Passed
+PUB-CAT-009,Course Catalog Discovery,Course CTA is available,V1,Open C1,Relevant action/CTA is displayed,P0,Passed
+PUB-CAT-010,Course Catalog Discovery,Catalog → detail → action flow works,V1,Courses → C1 → CTA,User can progress through the complete discovery flow,P0,Passed
+PUB-CAT-011,Course Catalog Discovery,Paid course supports purchase flow,V1,Open paid C1 → select purchase/enroll action,User progresses into appropriate purchase/enrollment flow,P0,Passed
+PUB-CAT-012,Course Catalog Discovery,Zero-cost course supports free enrollment flow,V1,Open C2 → select enrollment action,User progresses into appropriate free enrollment flow,P0,Passed
+PUB-CAT-013,Course Catalog Discovery,Course detail remains publicly accessible,V1,Directly open course detail page,Page is accessible without login,P0,Passed
+PUB-CAT-014,Course Catalog Discovery,Course information remains consistent during navigation,V1,Catalog → C1 → return → C1,Course information remains consistent,P1,Passed
+PUB-CAT-015,Course Catalog Discovery,Course CTA matches course context,V1,Open paid and free courses,CTA/action reflects applicable course context,P0,Passed
+PUB-CONV-001,Course Detail Conversion Flow,Course detail displays pricing,V1,Open C1,Applicable price is displayed,P0,Passed
+PUB-CONV-002,Course Detail Conversion Flow,Pricing selection is available where applicable,V1,Open C1,User can select applicable pricing option,P0,Passed
+PUB-CONV-003,Course Detail Conversion Flow,Currency toggle is available where applicable,V1,Open C1,Currency toggle is displayed where supported,P1,Passed
+PUB-CONV-004,Course Detail Conversion Flow,Currency toggle changes displayed price,V1,Open C1 → change currency,Price display updates according to selected currency,P0,Passed
+PUB-CONV-005,Course Detail Conversion Flow,Currency change does not lose course context,V1,Select currency → inspect page,User remains on relevant course context,P1,Passed
+PUB-CONV-006,Course Detail Conversion Flow,Coupon input is available where applicable,V1,Open C1,Coupon input is displayed where supported,P1,Passed
+PUB-CONV-007,Course Detail Conversion Flow,Valid coupon is accepted,Valid coupon available,Enter valid coupon → apply,Coupon is accepted and resulting state/price is clearly communicated,P0,Passed
+PUB-CONV-008,Course Detail Conversion Flow,Invalid coupon is rejected gracefully,Invalid coupon,Enter invalid coupon → apply,Coupon is rejected and appropriate feedback is displayed,P0,Passed
+PUB-CONV-009,Course Detail Conversion Flow,Coupon state is clearly communicated,Coupon applied/rejected,Apply coupon,User can clearly understand resulting pricing/state,P1,Passed
+PUB-CONV-010,Course Detail Conversion Flow,CTA transitions to purchase flow,Applicable paid course,Click purchase CTA,User is transferred to appropriate purchase flow,P0,NA
+PUB-CONV-011,Course Detail Conversion Flow,CTA transitions to enrollment flow,Applicable free course,Click enrollment CTA,User is transferred to appropriate enrollment flow,P0,NA
+PUB-CONV-012,Course Detail Conversion Flow,CTA reflects user state,U1/S1,Open applicable course,CTA/prompt reflects authenticated/access context,P0,NA
+PUB-CONV-013,Course Detail Conversion Flow,Conversion CTA is visible,V1,Open course detail,Primary action is clearly visible and accessible,P0,Passed
+PUB-CONV-014,Course Detail Conversion Flow,Price update is clearly communicated,V1,Change pricing/currency/coupon state,Updated price/state is clearly communicated,P0,NA
+PUB-CONV-015,Course Detail Conversion Flow,Purchase/enrollment CTA does not produce dead end,V1,Select CTA,User proceeds to next expected step,P0,Passed
+PUB-CONV-016,Course Detail Conversion Flow,User can return from conversion flow to product context,V1/U1,Enter purchase/enrollment flow → navigate back,User can return without broken navigation,P1,Passed
+PUB-E2E-001,Full End to End Regression Scen,Anonymous visitor discovers paid course,,Homepage → Courses → paid course,"Course details, pricing and CTA are accessible",P0,Passed
+PUB-E2E-002,Full End to End Regression Scen,Anonymous visitor starts paid conversion,,Homepage → Courses → paid course → purchase CTA,Purchase flow starts correctly,P0,Passed
+PUB-E2E-003,Full End to End Regression Scen,Anonymous visitor discovers free course,,Homepage → Courses → free course,Course details and enrollment action are accessible,P0,Passed
+PUB-E2E-004,Full End to End Regression Scen,Anonymous visitor starts free enrollment,,Homepage → Courses → free course → enroll,Enrollment flow starts correctly,P0,Passed
+PUB-E2E-005,Full End to End Regression Scen,Visitor uses currency toggle before conversion,,Course → currency toggle → CTA,Price updates correctly and CTA remains functional,P0,Passed
+PUB-E2E-006,Full End to End Regression Scen,Visitor applies coupon before conversion,,Course → coupon → apply → CTA,Coupon state is correctly reflected and conversion can continue,P0,Passed
+PUB-E2E-007,Full End to End Regression Scen,Visitor reads legal information during purchase journey,,Course → Refund/Terms → return to course,User can return to conversion journey without broken navigation,P1,Passed
+PUB-E2E-008,Full End to End Regression Scen,User logs in and receives navigation,,Public page → Login → authenticated state,Navigation changes appropriately,P0,Passed
+PUB-E2E-009,Full End to End Regression Scen,Enrolled user transitions to learning,,S1 → Dashboard/Learning,Correct learning destination is accessible,P0,Passed
+PUB-E2E-010,Full End to End Regression Scen,Eligible user uses share link,,S1 → SL1,Correct target learning content opens,P0,Passed
+PUB-E2E-011,Full End to End Regression Scen,Unauthorized user uses share link,,U1/V1 → SL2,Protected target remains inaccessible,P0,Passed
+PUB-E2E-012,Full End to End Regression Scen,Mobile visitor completes discovery,,Mobile → Homepage → Courses → C1,Course detail is reached successfully,P0,Passed
+PUB-E2E-013,Full End to End Regression Scen,Mobile visitor starts conversion,,Mobile → C1 → CTA,Conversion flow starts correctly,P0,Passed
+PUB-E2E-014,Full End to End Regression Scen,Public navigation survives authentication transition,,V1 → public page → Login → authenticated navigation,Navigation changes without breaking public destinations,P0,Passed
+PUB-E2E-015,Full End to End Regression Scen,Public-to-protected handoff preserves access rules,,V1 → public course → learning/access destination,Authentication/access verification remains intact,P0,Passed
+PUB-INFO-001,Legal Informational Pages,Privacy page accessible publicly,V1,Open Privacy page,Page loads without authentication,P0,Passed
+PUB-INFO-002,Legal Informational Pages,Terms page accessible publicly,V1,Open Terms page,Page loads without authentication,P0,Passed
+PUB-INFO-003,Legal Informational Pages,Refund page accessible publicly,V1,Open Refund page,Page loads without authentication,P0,Passed
+PUB-INFO-004,Legal Informational Pages,Contact page accessible publicly,V1,Open Contact page,Page loads without authentication,P0,Passed
+PUB-INFO-005,Legal Informational Pages,Mentorship page accessible publicly,V1,Open Mentorship page,Page loads without authentication,P0,Passed
+PUB-INFO-006,Legal Informational Pages,Legal pages are easy to find,V1,Navigate through public UI/footer/navigation,User can locate legal/informational pages,P1,Passed
+PUB-INFO-007,Legal Informational Pages,Legal information is readable,V1,Open each legal page,Content is readable and appropriately presented,P1,Passed
+PUB-INFO-008,Legal Informational Pages,Legal page does not redirect to login,V1,Open each legal page,No authentication is unexpectedly required,P0,Passed
+PUB-INFO-009,Legal Informational Pages,Legal page → shopping journey,V1,Open legal page → return to course/catalog,User can return to product discovery journey,P1,Passed
+PUB-INFO-010,Legal Informational Pages,Legal page → learning journey remains coherent,S1,Open legal page → return to learning/product journey,Navigation remains consistent,P1,Passed
+PUB-AUTHNAV-001,Logged In User Navigation,Login changes navigation state,V1 + valid account,Login → inspect navigation,Navigation updates to authenticated state,P0,Passed
+PUB-AUTHNAV-002,Logged In User Navigation,Authenticated user can access dashboard,U1,Login → Dashboard,Dashboard destination opens according to access rules,P0,Passed
+PUB-AUTHNAV-003,Logged In User Navigation,Enrolled user can access learning destination,S1,Login → Learning/Dashboard,Relevant learning destination is accessible,P0,Passed
+PUB-AUTHNAV-004,Logged In User Navigation,Authenticated user navigation remains consistent after refresh,U1,Login → refresh,Authenticated navigation remains appropriate,P0,Passed
+PUB-AUTHNAV-005,Logged In User Navigation,Student navigation remains personalized,S1,Login → inspect navigation,Relevant enrolled destinations are available,P0,Passed
+PUB-AUTHNAV-006,Logged In User Navigation,Authenticated user can return to public pages,U1,Login → Home/Courses/About,Public pages remain accessible,P1,Passed
+PUB-AUTHNAV-007,Logged In User Navigation,Authenticated user can navigate from public page to dashboard,U1,Public page → Dashboard,Correct authenticated destination opens,P0,Passed
+PUB-AUTHNAV-008,Logged In User Navigation,Authenticated state does not break public navigation,U1,Navigate through Home/Courses/About/Contact,Public navigation remains functional,P1,Passed
+PUB-AUTHNAV-009,Logged In User Navigation,User navigation reflects current access level,U1/S1,Compare navigation between accounts,Appropriate destinations are presented,P0,Passed
+PUB-MOB-001,Mobile Navigation,Homepage usable on mobile viewport,Mobile viewport,Open homepage,Homepage renders and remains usable,P0,Passed
+PUB-MOB-002,Mobile Navigation,Mobile navigation opens,Mobile viewport,Open navigation/menu,Mobile navigation opens successfully,P0,Passed
+PUB-MOB-003,Mobile Navigation,Mobile navigation closes,Mobile viewport,Open menu → close menu,Menu closes successfully,P1,Passed
+PUB-MOB-004,Mobile Navigation,Home link works on mobile,Mobile viewport,Open menu → Home,Homepage opens,P0,Passed
+PUB-MOB-005,Mobile Navigation,Courses link works on mobile,Mobile viewport,Open menu → Courses,Course catalog opens,P0,Passed
+PUB-MOB-006,Mobile Navigation,About link works on mobile,Mobile viewport,Open menu → About,About page opens,P1,Passed
+PUB-MOB-007,Mobile Navigation,Contact link works on mobile,Mobile viewport,Open menu → Contact,Contact page opens,P1,Passed
+PUB-MOB-008,Mobile Navigation,Login link works on mobile,Mobile viewport,Open menu → Log In,Login flow opens,P0,Failed
+PUB-MOB-009,Mobile Navigation,Dashboard destination works on mobile,U1,Login → open mobile menu → Dashboard,Correct destination opens,P0,Passed
+PUB-MOB-010,Mobile Navigation,Student learning destination works on mobile,S1,Login → open menu → learning destination,Correct learning destination opens,P0,Passed
+PUB-MOB-011,Mobile Navigation,Mobile CTA is visible,Mobile viewport,Open course page,Primary CTA is visible without unnecessary friction,P0,Passed
+PUB-MOB-012,Mobile Navigation,Mobile CTA is usable,Mobile viewport,Tap course CTA,CTA responds and starts expected flow,P0,NA
+PUB-MOB-013,Mobile Navigation,Mobile course discovery flow works,Mobile viewport,Homepage → Courses → C1,Complete navigation path works,P0,Passed
+PUB-MOB-014,Mobile Navigation,Mobile course conversion flow works,Mobile viewport,C1 → pricing/CTA → next step,Conversion flow progresses correctly,P0,
+PUB-MOB-015,Mobile Navigation,Mobile legal navigation works,Mobile viewport,Open menu/footer → Privacy/Terms/etc.,Legal pages are accessible,P1,Passed
+PUB-MOB-016,Mobile Navigation,Mobile navigation does not obscure key CTA unnecessarily,Mobile viewport,Inspect homepage/course page,Important CTA remains accessible,P1,NA
+PUB-PERF-001,Performance Oriented UI Checks,Homepage key content renders promptly,Normal network,Open homepage,Key content renders without noticeable delay,P1,Passed
+PUB-PERF-002,Performance Oriented UI Checks,Course catalog key content renders promptly,Normal network,Open Courses,Course listings render without noticeable delay,P1,Passed
+PUB-PERF-003,Performance Oriented UI Checks,Course detail key content renders promptly,Normal network,Open C1,Pricing/outcomes/CTA render without noticeable delay,P1,Passed
+PUB-PERF-004,Performance Oriented UI Checks,Navigation transition responds promptly,Normal network,Navigate between public pages,Navigation responds within acceptable user-perceived time,P1,Passed
+PUB-PERF-005,Performance Oriented UI Checks,CTA transition responds promptly,Normal network,Click primary CTA,CTA action/transition begins without noticeable UI delay,P1,Passed
+PUB-PERF-006,Performance Oriented UI Checks,Mobile page key content renders promptly,Mobile viewport,Open homepage/course page,Key content renders without noticeable delay,P1,Passed
+PUB-NAV-001,Primary Navigation,Home navigation works,V1,Click Home,User is taken to homepage,P0,Passed
+PUB-NAV-002,Primary Navigation,Courses navigation works,V1,Click Courses,Course catalog/discovery page opens,P0,Passed
+PUB-NAV-003,Primary Navigation,About navigation works,V1,Click About,About page opens,P1,Passed
+PUB-NAV-004,Primary Navigation,Contact navigation works,V1,Click Contact,Contact page opens,P0,Passed
+PUB-NAV-005,Primary Navigation,Log In navigation works,V1,Click Log In,User is taken to login/authentication flow,P0,Passed
+PUB-NAV-006,Primary Navigation,Dashboard destination behaves correctly for anonymous visitor,V1,Click Dashboard if exposed,Dashboard link should be hidden or redirect to Sign In,P0,Passed
+PUB-NAV-008,Primary Navigation,Authenticated navigation reflects user state,U1,Sign in → inspect navigation,Navigation changes to appropriate authenticated state,P0,Passed
+PUB-NAV-009,Primary Navigation,Student navigation reflects access level,S1,Sign in → inspect navigation,Relevant dashboard/learning destinations are available,P0,Passed
+PUB-NAV-010,Primary Navigation,Navigation remains consistent across public pages,V1,Navigate Home → Courses → About → Contact,Navigation remains consistent,P1,Passed
+PUB-NAV-011,Primary Navigation,Navigation links do not lead to dead ends,V1,Open each primary navigation item,Each destination loads or initiates its expected flow,P0,Passed
+PUB-NAV-012,Primary Navigation,Navigation remains usable after returning to previous page,V1,Navigate between several public pages → use navigation,Navigation continues to function,P1,Passed
+PUB-NAV-013,Primary Navigation,Anonymous user is guided toward product discovery/login,V1,Inspect available navigation/actions,Relevant discovery/login destinations are available,P1,Passed
+PUB-NAV-014,Primary Navigation,Authenticated user sees role-appropriate destinations,U1/S1,Sign in with respective account → inspect navigation,Destinations match authentication/access state,P0,Passed
+PUB-LAND-001,Public Landing Experience,Homepage loads for anonymous visitor,V1,Open homepage,Homepage loads successfully without authentication,P0,Passed
+PUB-LAND-003,Public Landing Experience,Primary CTA is accessible without login,V1,Open homepage → locate primary CTA,CTA is visible and can be interacted with without authentication,P0,Passed
+PUB-LAND-004,Public Landing Experience,Benefits/outcomes messaging is displayed,V1,Scroll through homepage,Benefits and outcomes messaging is presented,P1,Passed
+PUB-LAND-005,Public Landing Experience,Course overview is displayed,V1,Open/scroll homepage,Course overview is available,P0,Passed
+PUB-LAND-006,Public Landing Experience,Testimonials/social proof are displayed,V1,Scroll through homepage,Testimonials/social proof section is displayed,P1,Passed
+PUB-LAND-007,Public Landing Experience,Conversion-focused actions are available,V1,Review homepage CTAs,Relevant conversion actions are available,P0,Passed
+PUB-LAND-008,Public Landing Experience,Homepage supports course discovery,V1,Open homepage → select course-related CTA/link,User can proceed toward course discovery,P0,Failed
+PUB-LAND-009,Public Landing Experience,Course Page supports purchase/enrollment journey,V1,Open homepage → Course slug → click relevant CTA,User can progress toward purchase/enrollment,P0,Passed
+PUB-LAND-010,Public Landing Experience,Homepage remains usable without authentication,V1,Browse homepage sections,No unexpected login requirement interrupts public browsing,P0,Passed
+PUB-LAND-011,Public Landing Experience,Returning visitor can access homepage,V2,Open homepage,Homepage remains publicly accessible,P1,Passed
+PUB-LAND-012,Public Landing Experience,Homepage content is readable and understandable,V1,Review key sections,Value proposition and key product information can be understood,P1,Passed
+PUB-SEC-001,Public Security Boundary,Public homepage does not expose protected content,V1,Browse homepage,Restricted content is not exposed,P0,Passed
+PUB-SEC-002,Public Security Boundary,Public course page does not expose protected learning content,V1,Open course detail,Only intended public course information is displayed,P0,Passed
+PUB-SEC-003,Public Security Boundary,Public navigation does not expose unauthorized destinations,V1,Inspect navigation,No restricted functionality is unintentionally exposed,P0,Passed
+PUB-SEC-004,Public Security Boundary,Unauthorized share-link access does not expose protected content,V1/SL2,Open protected share link,Protected content remains inaccessible,P0,Passed
+PUB-SEC-005,Public Security Boundary,Public-to-learning handoff preserves access checks,V1,Follow applicable learning link,Authentication/access verification remains intact,P0,Passed
+PUB-SEC-006,Public Security Boundary,Public-to-dashboard handoff preserves access checks,V1,Attempt dashboard transition,Appropriate authentication/access verification occurs,P0,Passed
+PUB-REDIR-001,Redirect Access Handoff,Homepage → course redirect,V1,Click course CTA/link from homepage,Correct course page opens,P0,Passed
+PUB-REDIR-002,Redirect Access Handoff,Catalog → course detail redirect,V1,Select C1,Correct course detail page opens,P0,Passed
+PUB-REDIR-003,Redirect Access Handoff,Successful enrollment redirect,Applicable enrolled flow,Complete enrollment,User is redirected to expected destination,P0,Passed
+PUB-REDIR-004,Redirect Access Handoff,Successful purchase/access redirect,Applicable purchase flow,Complete purchase/access action,User is redirected to expected dashboard/learning destination,P0,Passed
+PUB-REDIR-005,Redirect Access Handoff,Share link redirects eligible user,S1 + SL1,Open valid share link,User reaches correct target lesson/course content,P0,Passed
+PUB-REDIR-006,Redirect Access Handoff,Share link for unauthorized user,SL2,Open shared protected content link,Access checks remain intact; user is not incorrectly granted access,P0,Passed
+PUB-REDIR-007,Redirect Access Handoff,Dashboard navigation after access verification,S1,Complete/verify access → Dashboard,Correct dashboard is displayed,P0,Passed
+PUB-REDIR-008,Redirect Access Handoff,Learning navigation after access verification,S1,Complete/verify access → Learning,Correct learning destination is displayed,P0,Passed
+PUB-REDIR-009,Redirect Access Handoff,Redirect does not produce dead end,Applicable flow,Complete action triggering redirect,User reaches valid next destination,P0,Passed
+PUB-REDIR-010,Redirect Access Handoff,Redirect maintains access controls,U1/S1,Follow public → protected transition,Appropriate authorization remains enforced,P0,Passed
+PUB-REDIR-011,Redirect Access Handoff,Unauthenticated user follows share link,V1 + SL1,Open share link,Redirected to course/[slug] page,P0,Passed
+PUB-REDIR-012,Redirect Access Handoff,Authenticated eligible user follows share link,S1 + SL1,Open share link,Correct target content opens,P0,Passed
+PUB-REDIR-013,Redirect Access Handoff,Redirect preserves contextual destination where applicable,Applicable flow,Start from a contextual CTA/share link → authenticate/verify,User reaches the intended contextual destination where supported,P1,Passed
+PUB-REL-001,Reliability Navigation Consist,Navigation works repeatedly,V1,Repeatedly navigate between public pages,Navigation remains functional,P1,Passed
+PUB-REL-002,Reliability Navigation Consist,Refresh does not break public page,V1,Open page → refresh,Page remains functional,P1,Passed
+PUB-REL-003,Reliability Navigation Consist,Refresh does not break course detail,V1,Open C1 → refresh,Course page remains functional,P0,Passed
+PUB-REL-004,Reliability Navigation Consist,Back navigation works during discovery,V1,Homepage → Courses → C1 → Back,User returns to previous expected page,P1,Passed
+PUB-REL-005,Reliability Navigation Consist,Back navigation works after legal page,V1,Course → Privacy → Back,User returns appropriately,P1,Passed
+PUB-REL-006,Reliability Navigation Consist,CTA remains functional after page refresh,V1,Course page → refresh → CTA,CTA remains usable,P0,Passed
+PUB-REL-007,Reliability Navigation Consist,Currency state behaves consistently after navigation,V1,Change currency → navigate → return,Behavior matches configured application rules,P1,Passed
+PUB-REL-008,Reliability Navigation Consist,Conversion redirect remains functional after repeated attempts,V1,Initiate applicable flow multiple times,Redirect consistently reaches expected destination,P0,Passed
+PUB-REL-009,Reliability Navigation Consist,No dead-end after enrollment,Applicable enrollment,Complete enrollment,User reaches expected next destination,P0,Passed
+PUB-REL-010,Reliability Navigation Consist,No dead-end after purchase/access,Applicable purchase,Complete purchase/access,User reaches expected dashboard/learning destination,P0,Passed
+PUB-E2E-001,Visitor Journey End to End,Complete visitor discovery journey,V1,Homepage → Courses → C1,User successfully reaches course detail,P0,Passed
+PUB-E2E-002,Visitor Journey End to End,Visitor reviews course information,V1,Homepage → C1 → review pricing/outcomes,Required decision-making information is available,P0,Passed
+PUB-E2E-003,Visitor Journey End to End,Visitor reaches purchase action,V1,Homepage → Courses → C1 → purchase CTA,Purchase flow is initiated,P0,Passed
+PUB-E2E-004,Visitor Journey End to End,Visitor reaches free enrollment action,V1,Homepage → Courses → C2 → enrollment CTA,Free enrollment flow is initiated,P0,Passed
+PUB-E2E-005,Visitor Journey End to End,Visitor transitions into authentication when required,V1,Begin applicable purchase/enrollment flow,User is redirected into appropriate sign-in/enrollment flow,P0,Passed
+PUB-E2E-006,Visitor Journey End to End,Visitor does not encounter dead-end after CTA,V1,Complete discovery → click CTA,Flow continues to next expected stage,P0,NA
+PUB-E2E-007,Visitor Journey End to End,Visitor can return to discovery after reviewing course,V1,Course detail → return to catalog,Catalog remains accessible,P1,Passed
+PUB-E2E-008,Visitor Journey End to End,Visitor can navigate from legal page back to product journey,V1,Open legal page → Courses,Course discovery remains accessible,P1,Passed

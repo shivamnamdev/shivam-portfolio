@@ -101,7 +101,7 @@ CTA buttons dynamically update based on user authentication, purchase history, a
 
 ### 4.6. Post-Purchase & Inquiry Redirects
 Smooth handoffs after user interaction:
-- Successful payment or free enrollment redirects users directly to `/learning/[slug]`.
+- Successful payment or free enrollment redirects users to the learning dashboard `/learning`, which lists the new course (owner decision 2026-10-29; the original text said `/learning/[slug]`).
 - Floating WhatsApp widget provides instant sales inquiry support.
 
 ---
@@ -113,7 +113,7 @@ Smooth handoffs after user interaction:
 2. User selects currency (INR or USD).
 3. User enters a valid discount coupon (optional); prices update dynamically with success feedback.
 4. User clicks **"Buy Now"**, initializing the Razorpay checkout overlay.
-5. Upon successful payment verification (`/api/verify-payment`), user is redirected to `/learning/[slug]`.
+5. Upon successful payment verification (`/api/verify-payment`), user is redirected to `/learning` (owner decision 2026-10-29), where the new course is listed.
 
 ### 5.2. Free Coupon Bypass Flow
 1. User enters a 100% discount coupon code.
@@ -140,7 +140,7 @@ Smooth handoffs after user interaction:
 | FR5 | Free Coupon Bypass | Must | Convert "Buy Now" to "Enroll for Free" when price reaches zero and bypass payment. |
 | FR6 | CTA State Handling | Must | Render correct CTA ("Buy Now", "Enroll for Free", "Go to Dashboard", or Loading Spinner). |
 | FR7 | Already Enrolled Check | Must | Detect existing enrollments via Supabase and update CTA accordingly. |
-| FR8 | Post-Purchase Redirect | High | Automatically redirect users to `/learning/[slug]` upon successful fulfillment. |
+| FR8 | Post-Purchase Redirect | High | Automatically redirect users to `/learning` upon successful fulfillment. *(Updated 2026-10-29: destination is `/learning`, the dashboard, not `/learning/[slug]`.)* |
 | FR9 | Error State Resilience | High | Handle invalid coupons, network timeouts, and payment gateway failures gracefully. |
 
 ---

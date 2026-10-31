@@ -17,6 +17,9 @@ jobs:
       RAZORPAY_KEY_ID: ${{ secrets.RAZORPAY_KEY_ID }}
       RAZORPAY_KEY_SECRET: ${{ secrets.RAZORPAY_KEY_SECRET }}
       CLERK_WEBHOOK_SECRET: ${{ secrets.CLERK_WEBHOOK_SECRET }}
+      # Enables the persona seeding (E2E_SEED_PERSONAS=1) once the QA Supabase service key is stored as a secret:
+      # SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      # E2E_SEED_PERSONAS: 1
 
     steps:
     - uses: actions/checkout@v4
@@ -39,4 +42,14 @@ jobs:
       with:
         name: playwright-report
         path: playwright-report/
+        retention-days: 30
+    # Allure failure report (Allure 3 is a Node tool, no Java needed)
+    - name: Generate Allure report
+      if: ${{ !cancelled() }}
+      run: npm run report:allure
+    - uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: allure-report
+        path: allure-report/
         retention-days: 30

@@ -1,0 +1,167 @@
+# Test-case content for PRD 04 (Checkout Flow). Consumed by build_workbook.py.
+# Row: (suffix, scenario, preconditions, steps, expected, priority, ck, automated)
+# `ck` = PRD 04 scenario id(s) from section 10; `automated` = existing spec/case id, or "No".
+PERSONAS = [
+ ("V1", "Anonymous visitor (not signed in)", "NA"),
+ ("B1", "Signed-in buyer, not enrolled in any course (default buyer; QA100 allowed)", "shivamnamdev.edu@gmail.com"),
+ ("B2", "Signed-in buyer enrolled in Course A only (restricted-coupon 'wrong user'; mobile buyer)", "mavish.ps8@gmail.com"),
+ ("S1", "Enrolled student: Course B (closed cohort) and, when a test grants it, the open fixture course", "financetrail.bazar@gmail.com"),
+ ("A1", "Admin user (checks activity log / enrolment list)", "shivamnamdev.corp@gmail.com"),
+ ("C1", "Open paid course: QA fixture 'QA Checkout Sandbox' (qa-checkout-sandbox), INR 10 / USD 1, NEXT_PUBLIC_QA_FIXTURES=1", "/courses/qa-checkout-sandbox"),
+ ("C2", "Closed cohort: any real course, e.g. Git Beginner Live Session (git-beginner-batch-1)", "/courses/git-beginner-batch-1"),
+ ("K1", "Percentage coupon, public: BIRTHDAY20 (20% off)", "BIRTHDAY20"),
+ ("K2", "Fixed coupon, public, larger than the QA price: EXISTINGSTUDENT_BATCH03 (INR 1999 / USD 50 off): makes C1 free", "EXISTINGSTUDENT_BATCH03"),
+ ("K3", "Restricted coupon for other accounts only: SHIVAMSPECIAL", "SHIVAMSPECIAL"),
+ ("K4", "QA-only 100% coupon for B1 and B2: QA100 (exists only with the QA flag and user list)", "QA100"),
+]
+LEGEND = "Course A = python-beginners-batch-2 (closed), Course B = git-beginner-batch-1 (closed). Gateway: mocked Razorpay stub unless a case says 'real test-mode'. Never use live keys."
+
+N="No"
+SPEC="tests/ui/discovery/checkout-flow.spec.ts"
+DB="tests/ui/discovery/checkout-real-db.spec.ts"
+SHEETS = [
+# ---------------------------------------------------------------- 1
+("Buy Now Entry & CTA States","FR1, FR2, FR12, FR13, FR14 (entry)",[
+ ("ENTRY-001","Buy Now (INR) shown on an open cohort","B1 signed in; C1 open; not enrolled","1. Open /courses/qa-checkout-sandbox","Buy Now (INR) is visible and enabled; no Enrollment Closed panel","P0","CK-01","CDP-CTA-001 (pricing-currency-coupon.spec.ts)"),
+ ("ENTRY-002","Currency toggle changes the button label","B1 on C1","1. Click International","Button label becomes Buy Now (USD); price shows $1","P0","CK-02","CDP-CUR-002/005 (pricing-currency-coupon.spec.ts)"),
+ ("ENTRY-003","Switching back restores the INR label","ENTRY-002 done","1. Click India","Button label returns to Buy Now (INR); price shows INR 10","P1","CK-02","CDP-CUR-009"),
+ ("ENTRY-004","Closed cohort shows Enrollment Closed and no Buy Now","Any user; C2 closed","1. Open /courses/git-beginner-batch-1","Enrollment Closed heading and View Open Cohorts are shown; no Buy Now, no coupon box","P0","CK-03","tests/ui/sales-funnel.spec.ts (@smoke)"),
+ ("ENTRY-005","View Open Cohorts leads to the catalog","C2 closed","1. Click View Open Cohorts","User lands on /courses","P1","CK-03",N),
+ ("ENTRY-006","Visitor click on Buy Now asks to sign in","V1 on C1","1. Click Buy Now (INR)","Alert 'Please log in or create an account first to secure your spot!' appears and the Clerk sign-in opens","P0","CK-04",N),
+ ("ENTRY-007","Visitor click sends no order request","V1 on C1; network log open","1. Click Buy Now (INR) 2. Accept the alert","No request to /api/create-order is made; no Razorpay script is loaded","P0","CK-04",N),
+ ("ENTRY-008","After sign-in the buyer returns to the same course page","ENTRY-006 done","1. Sign in as B1 in the Clerk window","Buyer is back on /courses/qa-checkout-sandbox with Buy Now available","P1","CK-04",N),
+ ("ENTRY-009","Visitor coupon Apply also asks to sign in","V1 on C1","1. Type a code 2. Click Apply","Alert 'Please log in first to apply a coupon!' and Clerk sign-in; no coupon is applied","P1","CK-04",N),
+ ("ENTRY-010","Enrolled student on an open cohort sees Go to Dashboard","S1 granted C1 for the test","1. Open C1","'You are Enrolled! Go to Dashboard' is shown; no Buy Now; no coupon box","P0","CK-05","tests/ui/discovery/checkout-real-db.spec.ts (CDP-ENR-001)"),
+ ("ENTRY-011","Enrolled student on a closed cohort sees Go to Dashboard","S1 enrolled in Course B","1. Open C2","'You are Enrolled! Go to Dashboard' is shown instead of View Open Cohorts","P0","CK-05","tests/ui/auth (state S2)"),
+ ("ENTRY-012","Go to Dashboard from the sales page opens the dashboard","ENTRY-010 state","1. Click Go to Dashboard","User lands on /learning","P1","CK-05","CDP-ENR-003"),
+ ("ENTRY-013","Free-coupon price switches the CTA","B1 on C1","1. Apply QA100","Final price 0 and the button reads Enroll for Free (see PRD 05 for the flow)","P1","CK-31","CDP-CTA-002/005"),
+ ("ENTRY-014","Removing the free coupon returns Buy Now","ENTRY-013 done","1. Apply an invalid code","Button reads Buy Now (INR) again; price INR 10","P1","CK-31","CDP-CTA-006"),
+ ("ENTRY-015","Buy Now is keyboard operable","B1 on C1","1. Tab to Buy Now 2. Press Enter","Order request is sent exactly once","P1","CK-01","CDP-CTA-012"),
+]),
+# ---------------------------------------------------------------- 2
+("Order Creation & Request","FR3, FR4, FR20",[
+ ("ORDER-001","Processing state while the order is created","B1 on C1; create-order slowed to 2 s","1. Click Buy Now (INR)","Button shows Processing…, is disabled and shows a spinner","P0","CK-06","CDP-CTA-007/008"),
+ ("ORDER-002","Button recovers after the order response","ORDER-001","1. Wait for the response","Processing state ends (button enabled again or overlay opens)","P1","CK-06",SPEC),
+ ("ORDER-003","Order request carries only course, currency and coupon","B1 on C1; network log","1. Click Buy Now (INR) with no coupon","POST /api/create-order body is {courseId, currency:'INR'}; no price, user id or slug","P0","CK-07","CDP-PAY-001 (checkout-flow.spec.ts)"),
+ ("ORDER-004","Coupon code is sent when applied","B1 on C1","1. Apply K1 2. Click Buy Now","Body also contains couponCode 'BIRTHDAY20'","P0","CK-07","CDP-E2E-001"),
+ ("ORDER-005","Currency is sent as USD after the toggle","B1 on C1","1. Click International 2. Click Buy Now (USD)","Body has currency 'USD'","P0","CK-07","CDP-PAY-003/005"),
+ ("ORDER-006","Razorpay script is requested","B1 on C1","1. Click Buy Now","checkout.razorpay.com/v1/checkout.js is requested before the order call","P1","CK-08",N),
+ ("ORDER-007","create-order 401 shows the server message","B1; response forced to 401","1. Click Buy Now","Alert shows the message (401 Unauthorized); button enabled; overlay not opened","P0","CK-25",N),
+ ("ORDER-008","create-order 400 (closed cohort / unknown course) is surfaced","Response forced to 400","1. Click Buy Now","Alert with the server error; button enabled; no overlay","P0","CK-25",N),
+ ("ORDER-009","create-order 403 restricted coupon is surfaced","B2 on C1 with K3","1. Apply K3 (UI blocks) or force the request 2. Click Buy Now","Server message 'This coupon is not valid for your account.' is shown; no overlay","P0","CK-14",N),
+ ("ORDER-010","create-order 500 shows a recoverable error","Response forced to 500","1. Click Buy Now","Alert with the error; Buy Now enabled again; no overlay; no success modal","P0","CK-25","CDP-ERR-004 / CDP-PAY-010"),
+ ("ORDER-011","Network drop while creating the order","Request aborted","1. Click Buy Now","Alert 'Something went wrong connecting to the payment gateway.' (or error); button recovers; retry works","P0","CK-25","CDP-PAY-010 / CDP-ERR-009"),
+ ("ORDER-012","Order timeout ends the loading state","Request delayed beyond 30 s","1. Click Buy Now","Loading state ends with a clear error or retry; page usable","P1","CK-25",N),
+ ("ORDER-013","Closed cohort cannot be ordered even by a direct API call","B1 signed in; C2 closed","1. POST /api/create-order for the closed course","400 'Enrollment is closed for this course'; no order","P0","CK-25","tests/api/crm.spec.ts"),
+ ("ORDER-014","Order is rejected for an unauthenticated API call","No session","1. POST /api/create-order","401; no order","P0","CK-25","tests/api/crm.spec.ts"),
+]),
+# ---------------------------------------------------------------- 3
+("Razorpay Overlay & Amount Integrity","FR5, FR6, FR17, FR18",[
+ ("AMT-001","Overlay opens after the order is created","B1 on C1; gateway mocked","1. Click Buy Now (INR)","Razorpay overlay opens exactly once","P0","CK-08","CDP-PAY-002"),
+ ("AMT-002","Overlay shows the order id, name and description","AMT-001","1. Inspect the options passed to Razorpay","order_id is the created order; name 'Shivam Academy'; description 'Enrollment: QA Checkout Sandbox'","P1","CK-08","CDP-PAY-002"),
+ ("AMT-003","Overlay theme colour","AMT-001","1. Inspect options","theme.color is #f59e0b","P1","CK-08",N),
+ ("AMT-004","Overlay never exposes the secret key","AMT-001","1. Inspect options and page source","Only the public key id appears; no key secret anywhere on the client","P0","CK-08",N),
+ ("AMT-005","Overlay prefill uses the signed-in user","B1 on C1","1. Open the overlay","prefill.name and prefill.email equal B1's name and email","P1","CK-09","checkout-real-gateway.spec.ts (email shown in the real overlay)"),
+ ("AMT-006","INR order amount in paise","B1 on C1","1. Click Buy Now (INR)","Order amount 1000 paise (INR 10 x 100), currency INR","P0","CK-10","CDP-PAY-001/004; real order: CDP-PAY-003 (checkout-real-db.spec.ts)"),
+ ("AMT-007","USD order amount in cents","B1 on C1","1. Click International 2. Click Buy Now (USD)","Order amount 100 cents ($1 x 100), currency USD","P0","CK-11","CDP-PAY-005"),
+ ("AMT-008","Percentage coupon: INR amount","B1 on C1 with K1 applied","1. Click Buy Now","Displayed INR 8; order amount 800 paise","P0","CK-12","CDP-PAY-003 (real order API)"),
+ ("AMT-009","Percentage coupon: USD amount","B1 on C1 with K1, USD","1. Click Buy Now (USD)","Displayed $0.80; order amount 80 cents","P0","CK-12",N),
+ ("AMT-010","Fixed coupon larger than the price","B1 on C1 with K2","1. Check the button","Price floors at INR 0 / $0 and the CTA is Enroll for Free (no paid order; see PRD 05). Note: C1 is too cheap to show a non-zero fixed discount","P0","CK-13","CDP-PRICE-010"),
+ ("AMT-011","Restricted coupon for another user is refused","B2 on C1","1. Apply K3","Message 'This coupon is restricted to specific accounts.'; price unchanged; Buy Now unchanged","P0","CK-14","CDP-COUP-006"),
+ ("AMT-012","Restricted coupon forced to the server","B2; call create-order with K3","1. POST /api/create-order {couponCode:'SHIVAMSPECIAL'}","403 'This coupon is not valid for your account.'; no order","P0","CK-14",N),
+ ("AMT-013","Invalid coupon is refused by the server","B1; forced request","1. POST /api/create-order with an unknown code","400 'Invalid coupon code'; no order","P0","CK-14",N),
+ ("AMT-014","Currency change after a coupon recalculates before checkout","B1 on C1 with K1","1. Switch INR to USD","Price shows $0.80; the order uses the currency visible at click time","P0","CK-12","CDP-PRICE-007"),
+ ("AMT-015","Order is bound to the buyer and the course","B1; real order via API","1. Create an order 2. Read the order notes in Razorpay","Notes contain B1's user id, courseId and courseSlug","P0","CK-29",N),
+ ("AMT-016","UI price equals server amount for every open course and currency","All open courses (C1)","1. For INR and USD read the shown price 2. Create the order","Shown price x 100 equals the order amount in both currencies","P0","CK-30","CDP-PAY-003 (partial: fixture only)"),
+ ("AMT-017","Price display parsing guard ($9.99 not 999)","Unit level","1. parsePrice('$9.99')","9.99","P0","CK-30","tests/unit/pricing.spec.ts"),
+ ("AMT-018","Amounts never go below one currency unit on a paid order","K2 forced to the order API","1. POST create-order with K2 on C1","Server creates a paid order of at least 1 unit or refuses; never 0 or negative","P1","CK-13",N),
+]),
+# ---------------------------------------------------------------- 4
+("Payment Success & Verification","FR7, FR8, FR16 (verification)",[
+ ("PAY-001","Paid happy path, INR","B1 on C1; gateway mocked","1. Click Buy Now (INR) 2. Trigger payment success","Welcome Aboard! modal appears after verify-payment returns success","P0","CK-15","CDP-PAY-006 / CDP-E2E-001"),
+ ("PAY-002","Paid happy path, USD","B1 on C1, USD","1. Click Buy Now (USD) 2. Trigger success","Same as PAY-001; receipt shows $","P0","CK-16",N),
+ ("PAY-003","Paid happy path with a coupon","B1 on C1 with K1","1. Buy Now 2. Success","Order and receipt use the discounted amount (INR 8)","P0","CK-12/15","CDP-E2E-001"),
+ ("PAY-004","Verification request carries only the three Razorpay fields","PAY-001; network log","1. Inspect POST /api/verify-payment","Body has razorpay_order_id, razorpay_payment_id, razorpay_signature only: no slug, user id or price","P0","CK-17","CDP-PAY-006"),
+ ("PAY-005","Success modal only after the server confirms","Verify delayed 2 s","1. Trigger success 2. Look before the response","No modal until verify-payment returns success: true","P0","CK-15",N),
+ ("PAY-006","One enrollment row is created","PAY-001; QA database","1. Read user_enrollments for B1 and C1","Exactly one row with the right course slug","P0","CK-15",N),
+ ("PAY-007","Admin activity log entry","PAY-001; A1","1. Open the admin activity log","An enrollment entry for B1 and C1 exists","P1","CK-27",N),
+ ("PAY-008","Verification 400 (invalid signature) is surfaced","Verify forced to 400","1. Trigger success","Alert shows the message ('Invalid payment signature'); no modal; no enrollment","P0","CK-22","CDP-PAY-011 / CDP-ERR-006"),
+ ("PAY-009","Verification 500 is surfaced","Verify forced to 500","1. Trigger success","Alert 'Error verifying enrollment.' (or server text); no modal","P0","CK-22",N),
+ ("PAY-010","Verification network failure","Verify aborted","1. Trigger success","Alert 'Error verifying enrollment.'; no modal; page usable","P0","CK-22",N),
+ ("PAY-011","Order of another account is refused","Order created by B1, verified as B2","1. Verify B1's order while signed in as B2","403 'This order belongs to a different account.'; no enrollment","P0","CK-23",N),
+ ("PAY-012","Tampered signature grants nothing","B1; real verify API","1. POST verify-payment with a wrong signature","400; no row in user_enrollments","P0","CK-23","CDP-ERR-006 (checkout-real-db.spec.ts)"),
+ ("PAY-013","Order without course/user notes is refused","Order created outside the app","1. Verify it","400 'Order is missing course details…'; no enrollment","P1","CK-23",N),
+ ("PAY-014","Unauthenticated verify call","No session","1. POST /api/verify-payment","401","P0","CK-23",N),
+]),
+# ---------------------------------------------------------------- 5
+("Payment Failure & Recovery","FR9, FR10, FR11, FR20",[
+ ("FAIL-001","Payment failed message","B1 on C1; overlay open","1. Trigger payment.failed","Alert 'Payment failed or was cancelled. Please try again.'; no success modal","P0","CK-20","CDP-PAY-008 / CDP-ERR-005"),
+ ("FAIL-002","Nothing is granted after a failure","FAIL-001","1. Check the enrolment and the page","No row in user_enrollments; CTA is still Buy Now","P0","CK-20",N),
+ ("FAIL-003","Retry after a failure creates a new order","FAIL-001","1. Click Buy Now again","A second order is created and the overlay opens again without a reload","P0","CK-20","CDP-E2E-008"),
+ ("FAIL-004","Overlay dismissed without paying","Overlay open","1. Close the overlay","Page stays usable; Buy Now is usable; no modal","P1","CK-21","CDP-PAY-009"),
+ ("FAIL-005","Buy Now while the overlay is still open","Overlay open","1. Click Buy Now behind the overlay","Observe: known gap R-CK-5 (button is enabled and a second order can be created)","P1","CK-21",N),
+ ("FAIL-006","Razorpay script blocked","B1 on C1; request to checkout.js blocked","1. Click Buy Now","Alert 'Razorpay SDK failed to load. Are you online?'; button enabled; no order created","P0","CK-24",N),
+ ("FAIL-007","Script recovers after going online","FAIL-006","1. Unblock 2. Click Buy Now","Order is created and the overlay opens","P1","CK-24",N),
+ ("FAIL-008","Refresh while Processing…","Order slowed","1. Click Buy Now 2. Refresh the page","Page loads normally; no stuck state; no enrollment","P1","CK-25",N),
+ ("FAIL-009","Back navigation while the modal is open","Success modal visible","1. Press Back","Page leaves cleanly; the enrollment stays; no duplicate on return","P1","CK-27",N),
+ ("FAIL-010","Paid at the gateway but verification never arrives","Network drops after payment","1. Pay 2. Cut the network before verify","Buyer sees an error; known gap R-CK-3 (no webhook fallback): enrolment missing; report as accepted risk","P0","CK-22",N),
+ ("FAIL-011","Failure does not break coupon and currency state","FAIL-001","1. Check price, coupon and currency","Previously chosen currency and coupon are unchanged","P1","CK-20",N),
+]),
+# ---------------------------------------------------------------- 6
+("Duplicates & Idempotency","FR14, FR15, FR21",[
+ ("IDEM-001","Double-click creates one order","B1 on C1; order slowed","1. Double-click Buy Now","One create-order request; one overlay","P0","CK-26","CDP-CTA-009 / CDP-RACE-001"),
+ ("IDEM-002","Rapid repeated clicks","Same","1. Click 4 times quickly","Still one order","P0","CK-26","CDP-RACE-001"),
+ ("IDEM-003","Repeat verification creates one enrollment","PAY-001 done","1. POST verify-payment again with the same ids","Success answer; still one row for B1 and C1","P0","CK-27",N),
+ ("IDEM-004","Repeat verification sends one email","IDEM-003","1. Check the inbox (label [QA-AUTOMATION])","Exactly one welcome/receipt email","P1","CK-27",N),
+ ("IDEM-005","Repeat verification adds no second activity log row","IDEM-003","1. Open the activity log","One entry only","P1","CK-27",N),
+ ("IDEM-006","Enrolled buyer cannot start another purchase","S1 granted C1","1. Open C1","No Buy Now; Go to Dashboard shown","P0","CK-28","CDP-ENR-004"),
+ ("IDEM-007","Two tabs, second purchase attempt","B1 enrolled in tab 1; stale tab 2 shows Buy Now","1. Click Buy Now in tab 2","Server or UI handles it: no second enrollment row (report order created for an enrolled user as a finding)","P1","CK-27",N),
+ ("IDEM-008","Concurrent verification of the same payment","Two verify calls in parallel","1. Send both","One enrollment row (known race R-FE-1 in PRD 05 applies)","P0","CK-27","CDP-RACE-003 (free path)"),
+]),
+# ---------------------------------------------------------------- 7
+("Post-Purchase State & Hand-off","FR16, FR19, FR21",[
+ ("POST-001","Success modal content","PAY-001","1. Read the modal","Heading Welcome Aboard!, text about the WhatsApp group, buttons Join WhatsApp Group and Go to Dashboard","P0","CK-18","CDP-PAY-006"),
+ ("POST-002","WhatsApp link attributes","POST-001","1. Inspect Join WhatsApp Group","href is the course WhatsApp link; target _blank; rel noreferrer","P1","CK-18",N),
+ ("POST-003","WhatsApp link opens in a new tab","POST-001","1. Click Join WhatsApp Group","New tab opens; the original page remains on the modal","P1","CK-18",N),
+ ("POST-004","Go to Dashboard routes into the learning area","POST-001","1. Click Go to Dashboard","Lands on /learning (the dashboard); this is the intended destination (owner decision 2026-10-29)","P0","CK-19","CDP-PAY-007 / CDP-RED-001"),
+ ("POST-005","Dashboard lists the new course","POST-004","1. Look at My Enrolled Courses","The purchased course is listed","P0","CK-15",N),
+ ("POST-006","Course page after purchase shows enrolled","POST-001","1. Open /courses/qa-checkout-sandbox","'You are Enrolled! Go to Dashboard'; no Buy Now; no coupon box","P0","CK-28","CDP-FREE-011 / CDP-CTA-004"),
+ ("POST-007","State survives reload","POST-006","1. Reload","Same enrolled state","P1","CK-28","CDP-ENR-005"),
+ ("POST-008","Course page opens for the buyer","POST-004","1. Open /learning/qa-checkout-sandbox","Course content loads (no redirect away)","P0","CK-28","tests/ui/auth/access-control.spec.ts"),
+ ("POST-009","Modal copy says the payment is verified (paid)","POST-001","1. Read the text","'Your payment is verified…' is accurate for a paid purchase (inaccurate for free: PRD 05 R-FE-2)","P1","CK-18",N),
+ ("POST-010","One receipt email with order id and amount","PAY-001; inbox label","1. Open the email","Subject has the QA prefix; shows order id, amount and PAID; sent once","P1","CK-27",N),
+ ("POST-011","Modal buttons have discernible names","POST-001","1. Inspect the accessibility tree","Both buttons expose readable names","P1","CK-36",N),
+]),
+# ---------------------------------------------------------------- 8
+("Mobile, Browsers & Accessibility","FR22",[
+ ("XB-001","Checkout panel on a 390 px phone","B2 signed in; mobile viewport","1. Open C1","Currency toggle, coupon box and Buy Now fully visible; no horizontal scroll","P1","CK-32","CDP-UX-004/005/006"),
+ ("XB-002","Mobile paid journey","B2 on a phone","1. Apply K1 2. Tap Buy Now 3. Succeed","Overlay opens, success modal fits the screen, buttons are tappable","P1","CK-32","CDP-E2E-010"),
+ ("XB-003","Success modal on a phone","XB-002","1. Look at the modal","No clipped text; both buttons reachable without scrolling","P1","CK-32",N),
+ ("XB-004","Firefox: paid happy path","Firefox project","1. Run PAY-001","Same result as Chromium","P1","CK-33",N),
+ ("XB-005","WebKit (Safari engine): paid happy path","WebKit project","1. Run PAY-001","Same result as Chromium","P1","CK-33",N),
+ ("XB-006","Keyboard: reach and use Buy Now","B1 on C1","1. Tab through the page 2. Enter on Buy Now","Visible focus; order created","P1","CK-36","CDP-CTA-012"),
+ ("XB-007","Keyboard: success modal","Modal visible","1. Tab between the two buttons 2. Enter","Both work; focus stays inside the modal (note if it escapes)","P1","CK-36",N),
+ ("XB-008","Blocking alert() dialogs","Any error path","1. Trigger an error","Message is readable; page resumes after OK (known limitation R-CK-6)","P1","CK-36",N),
+]),
+# ---------------------------------------------------------------- 9
+("Real Gateway Sandbox (Test Mode)","FR5, FR7, FR9 (real overlay)",[
+ ("REAL-001","Real test-mode overlay opens","rzp_test_ keys only; B1 on C1","1. Click Buy Now","The real Razorpay overlay opens with INR 10 and the right prefill","P1","CK-34","tests/ui/discovery/checkout-real-gateway.spec.ts (opt-in E2E_REAL_GATEWAY=1)"),
+ ("REAL-002","Successful test card","REAL-001","1. Pay with the Razorpay test card","Success handler runs; verify-payment succeeds; Welcome Aboard! modal; enrolment created","P1","CK-34","tests/ui/discovery/checkout-real-gateway.spec.ts (opt-in E2E_REAL_GATEWAY=1)"),
+ ("REAL-003","Failure test card","REAL-001","1. Pay with the failure test card","'Payment failed or was cancelled…' alert; nothing granted; retry possible","P1","CK-35","tests/ui/discovery/checkout-real-gateway.spec.ts (opt-in E2E_REAL_GATEWAY=1)"),
+ ("REAL-004","Live key guard","Environment","1. Check RAZORPAY_KEY_ID and NEXT_PUBLIC_RAZORPAY_KEY_ID","Both start with rzp_test_; a live key makes the suite fail before any test runs","P0","CK-34","tests/ui/discovery/checkout-real-gateway.spec.ts (opt-in E2E_REAL_GATEWAY=1)"),
+ ("REAL-005","Stub still matches the real overlay","REAL-001/002","1. Compare options and handler arguments with the mocked stub","Same fields and shapes; update the stub if they differ","P1","CK-34","Partly: the real test proves the same flow (checkout-real-gateway.spec.ts); the shape comparison is manual"),
+]),
+# ---------------------------------------------------------------- 10
+("End-to-End Business-Critical","FR1 to FR19 (journeys)",[
+ ("E2E-001","Visitor to enrolled learner (INR)","V1 starts on /","1. Open Courses 2. Open C1 3. Click Buy Now 4. Sign in as B1 5. Pay 6. Go to Dashboard","Course is listed under My Enrolled Courses; one row; one email","P0","CK-15",N),
+ ("E2E-002","Buyer with a percentage coupon","B1 signed in","1. Apply K1 2. Buy Now 3. Pay","Charged INR 8; enrolment row has the coupon; receipt amount INR 8","P0","CK-12/15","CDP-E2E-001"),
+ ("E2E-003","International buyer (USD)","B1","1. Switch to International 2. Buy Now (USD) 3. Pay","Charged $1; modal; enrolled","P0","CK-16",N),
+ ("E2E-004","Failed payment then successful retry","B1","1. Buy Now 2. Fail 3. Buy Now 4. Pay","One enrolment; two orders at the gateway; one success email","P0","CK-20","CDP-E2E-008"),
+ ("E2E-005","Restricted coupon, wrong user","B2","1. Apply K3 2. Try Buy Now","Coupon refused; the buyer can still pay the full price","P0","CK-14","CDP-E2E-005"),
+ ("E2E-006","Enrolled student tries to buy again","S1 enrolled in C1","1. Open C1","Cannot start a purchase; Go to Dashboard","P0","CK-28","CDP-E2E-004"),
+ ("E2E-007","Closed cohort cannot be bought","Any user","1. Open C2 2. Try the API directly","UI has no Buy Now; API returns 400","P0","CK-03","tests/ui/sales-funnel.spec.ts"),
+ ("E2E-008","Free-coupon journey hand-off","B1","1. Apply QA100 2. Enroll for Free","No Razorpay; enrolled (full flow in PRD 05)","P0","CK-31","CDP-E2E-003"),
+ ("E2E-009","Mobile buyer","B2 on a phone","1. Full paid flow","All steps usable; enrolled","P1","CK-32","CDP-E2E-010"),
+ ("E2E-010","Admin sees the purchase","A1 after E2E-001","1. Open /admin","The new enrolment and the activity entry are visible","P1","CK-27",N),
+]),
+]

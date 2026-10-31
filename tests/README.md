@@ -28,6 +28,10 @@ tests/
 
 ---
 
+> Test plans, PRDs and the feature registry live in [docs/testing/](../docs/testing/README.md). Write specs from those PRDs and update the registry when specs are added.
+
+---
+
 ## ⚡ PR Smoke Suite
 
 Tests in describe blocks tagged `@smoke` run on every pull request (Chromium only, read-only: no payments, emails or DB writes).
@@ -37,7 +41,28 @@ npm run test:smoke   # @smoke on Chromium (what PR CI runs)
 npm run test:all     # everything, all browsers (what pushes to main run)
 ```
 
+QA fixture runs (open course `qa-checkout-sandbox`, free coupon `QA100`) use their own server so they never reuse a dev server on 3000: `PORT=3100 NEXT_PUBLIC_QA_FIXTURES=1 NEXT_PUBLIC_QA_FREE_COUPON_USERS="<clerk ids>" npx playwright test`. Details in [docs/testing/TEST_DATA.md](../docs/testing/TEST_DATA.md).
+
 Add `@smoke` to a describe title when a test guards a critical flow and runs in seconds. `.env.local` is loaded automatically for local runs.
+
+## 🔐 Signed-in tests, seeded personas and the Allure report
+
+Signed-in specs (`tests/ui/auth/`) sign personas in **without Google**: `tests/support/clerk.ts` asks the Clerk Backend API for a one-time sign-in token and redeems it in the browser (works for Google-only accounts; it refuses any key that is not `sk_test_`). Accounts and their roles are in [docs/testing/TEST_DATA.md](../docs/testing/TEST_DATA.md).
+
+Enrollment-dependent specs need the QA persona state. With `E2E_SEED_PERSONAS=1` (plus `SUPABASE_SERVICE_ROLE_KEY` of the **QA** project) `tests/support/global-setup.ts` snapshots the personas' `user_enrollments` rows, applies the canonical state once, and `global-teardown.ts` restores the snapshot (a snapshot left by a crashed run is restored first; file `.tmp/e2e-enrollment-snapshot.json`). Without the flag those specs skip with an explicit reason.
+
+```bash
+# everything signed-in + seeded, own server and build dir (does not touch a dev server on 3000)
+PORT=3100 E2E_SEED_PERSONAS=1 npx playwright test --project=chromium
+# with the QA fixture course/coupon as well
+PORT=3100 E2E_SEED_PERSONAS=1 NEXT_PUBLIC_QA_FIXTURES=1 NEXT_PUBLIC_QA_FREE_COUPON_USERS="<clerk ids>" npx playwright test --project=chromium
+# failure report (Allure 3, Node only, no Java)
+npm run report:allure && npm run report:allure:open
+# which manual cases are automated (rewrites docs/testing/COVERAGE.md)
+node scripts/case-coverage.mjs
+```
+
+Test titles carry the manual case ids in brackets (`[AUTH-PUB-001]`), which is how Allure, the coverage script and the workbooks line up. Failures never gate the automation work: they are collected in the Allure report.
 
 ---
 
@@ -86,3 +111,10 @@ This test suite is integrated directly into our deployment pipeline.
 
 ---
 *Maintained by the QA Engineering Team @ Shivam Academy*
+## Real Razorpay test mode (opt-in)
+
+`tests/ui/discovery/checkout-real-gateway.spec.ts` uses the real Razorpay overlay with `rzp_test_` keys and the demo bank page. It is skipped unless `E2E_REAL_GATEWAY=1` (a successful payment sends a receipt email). Steps and the command are in [docs/testing/TEST_DATA.md](../docs/testing/TEST_DATA.md).
+
+### Specs that share the `edu` account
+
+`tests/ui/dashboard/dashboard-edu-writes.spec.ts`, `tests/ui/dashboard/dashboard-stats-journeys.spec.ts`, `tests/ui/learning/learning-exam.spec.ts`, `tests/ui/discovery/checkout-real-db.spec.ts` and `tests/ui/discovery/checkout-real-flows.spec.ts` `tests/ui/admin/admin-enroll-writes.spec.ts`, `tests/api/payment-apis.spec.ts` and `tests/api/enrollment-apis.spec.ts` all add and remove enrolments for `shivamnamdev.edu@gmail.com`. Playwright runs files in parallel, so run these together in one worker (`--workers=1` for these eight files) or they can see each other's temporary enrolments.

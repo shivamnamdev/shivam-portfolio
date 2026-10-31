@@ -5,6 +5,18 @@ Newest first. Format: `hash` subject — author (files changed, +added/−delete
 
 _Last generated: 2026-10-16 from `d045541` on branch `docs/blast-progress-log`._
 
+## Hand-written notes
+
+### 2026-10-30
+- PRDs 07 and 08 written with workbooks (107 and 83 cases). All UI PRDs exist; manual suite = 962 cases. Automation starts next (owner plan).
+- PRD 06 approved; workbook (82 cases) built; Jira SCP-45/46 created; PRD 07 (Learning Experience) written; next PRD 08 Admin. Owner plan: finish all PRDs and manual cases today, automate afterwards. Jira stories SCP-4..9 updated with results.
+- Wrote PRD 06 (Student Dashboard & Course Access); next in the owner's order: PRD 07 Learning Lab.
+
+### 2026-10-29
+- Wrote PRD 05 (Free Enrollment Flow) in `docs/testing/prd/` and updated the registry and changelog. Next in the owner's order: PRD 06 Student Dashboard & Course Access.
+- The owner's full precedence list (UI, API, Database, Performance, 12-step production order) is recorded in `docs/blast/task_plan.md` under "Product-wide testing roadmap".
+- 2026-10-28: PRD 03 automation (134/140 ids), Jira SCP-42 and SCP-43 created; defect for duplicate free-enrollment rows (`CDP-RACE-003`) awaits the owner's go-ahead.
+
 ## Working tree (not yet committed)
 
 - ` M .gitignore`

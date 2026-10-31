@@ -1,0 +1,209 @@
+id,sheet,scenario,preconditions,steps,expected,priority,manual_result
+AUTH-ADMIN-001,Admin Access Control,Visitor accesses /admin,V1,Directly open /admin,Access denied,P0,Passed
+AUTH-ADMIN-002,Admin Access Control,Authenticated non-admin accesses /admin,U1,Open /admin,Access denied,P0,Passed
+AUTH-ADMIN-003,Admin Access Control,Enrolled student accesses /admin,S1,Open /admin,Access denied,P0,Passed
+AUTH-ADMIN-004,Admin Access Control,Admin accesses /admin,A1,Open /admin,Admin page loads,P0,Passed
+AUTH-ADMIN-005,Admin Access Control,Admin accesses admin dashboard,A1,Navigate to admin dashboard,Dashboard loads successfully,P0,Passed
+AUTH-ADMIN-006,Admin Access Control,Admin accesses admin functionality,A1,Open permitted administrative operation,Functionality is available,P0,Passed
+AUTH-ADMIN-007,Admin Access Control,Student cannot see admin navigation link,S1,Inspect navigation,Admin-only navigation/control is not exposed where conditional rendering applies,P0,Passed
+AUTH-ADMIN-008,Admin Access Control,Authenticated user cannot see admin controls,U1,Inspect UI,Admin controls are hidden,P0,Passed
+AUTH-ADMIN-009,Admin Access Control,Visitor cannot see admin controls,V1,Inspect public UI,Admin controls are not exposed,P0,Passed
+AUTH-ADMIN-010,Admin Access Control,Student bypasses hidden admin link using direct URL,S1,Manually enter /admin,Access remains denied and redirecting it to /learning URL,P0,Passed
+AUTH-ADMIN-011,Admin Access Control,Non-admin uses admin URL with query parameters,U1,Open /admin?role=admin,Access remains denied,P0,Passed
+AUTH-ADMIN-012,Admin Access Control,Non-admin refreshes /admin,U1,Open /admin → refresh,Access remains denied,P0,NA
+AUTH-ADMIN-013,Admin Access Control,Student opens /admin in new tab,S1,Open /admin in new tab,Access remains denied,P0,Passed
+AUTH-ADMIN-014,Admin Access Control,Admin refreshes /admin,A1,Open /admin → refresh,Admin remains authorized,P0,Passed
+AUTH-ADMIN-015,Admin Access Control,Admin logs out and accesses /admin,A1,Logout → /admin,Access denied,P0,Passed
+AUTH-ADMIN-016,Admin Access Control,Browser Back after admin logout,A1,/admin → logout → Back,Previous admin page cannot be used as authorized content,P0,Passed
+AUTH-ENR-001,Authenticated Non Enrolled User,Authenticated non-enrolled user accesses /learning,U1,Open /learning,Enrollment authorization is evaluated,P0,Passed
+AUTH-ENR-002,Authenticated Non Enrolled User,Non-enrolled user cannot see protected course content,U1,Open learning area,Enrolled-only content is not displayed,P0,Passed
+AUTH-ENR-003,Authenticated Non Enrolled User,Non-enrolled user receives expected access-denied state,U1,Open restricted learning content,Expected denied/enrollment/redirect UI appears,P0,Passed
+AUTH-ENR-004,Authenticated Non Enrolled User,Non-enrolled user accesses /live,U1,Open /live,Access depends on configured eligibility; unauthorized access is denied,P0,Passed
+AUTH-ENR-005,Authenticated Non Enrolled User,Non-enrolled user cannot access Course A,U1,Attempt Course A protected content,Access is denied unless enrolled,P0,Passed
+AUTH-ENR-006,Authenticated Non Enrolled User,Authentication alone does not grant learning access,U1,Login → open enrolled-only route,User remains restricted,P0,Passed
+AUTH-ENR-007,Authenticated Non Enrolled User,Non-enrolled user refreshes restricted route,U1,Open restricted content → refresh,Authorization remains enforced,P0,Passed
+AUTH-ENR-008,Authenticated Non Enrolled User,Non-enrolled user uses direct URL,U1,Enter protected course URL directly,Authorization rules are enforced,P0,Passed
+AUTH-CACHE-001,Browser Back Cache Behavior,Back navigation after student logout,S1,Access learning → logout → Back,Protected content cannot be used as authenticated content,P0,Passed
+AUTH-CACHE-002,Browser Back Cache Behavior,Refresh after browser Back,Logged out,Back → refresh,Protected route is denied,P0,Passed
+AUTH-CACHE-003,Browser Back Cache Behavior,Back navigation after admin logout,A1,Access admin → logout → Back,Admin functionality is inaccessible,P0,Passed
+AUTH-CACHE-004,Browser Back Cache Behavior,Open cached protected page after logout,S1,Access learning → logout → attempt previously visited page,Current authorization is not retained,P0,Passed
+AUTH-CACHE-005,Browser Back Cache Behavior,Forward navigation after logout,S1,Protected page → logout → Back → Forward,Authorization remains denied,P0,NA
+AUTH-CACHE-006,Browser Back Cache Behavior,Refresh protected page after logout,Logged out,Open previous protected URL → refresh,Access denied,P0,Passed
+AUTH-LOGIN-001,Clerk Sign In,Open sign-in flow,V1,Click Sign In,Clerk sign-in UI opens successfully,P0,Passed
+AUTH-LOGIN-002,Clerk Sign In,Sign in with valid credentials,Valid U1 account,Enter valid credentials and authenticate,User successfully signs in,P0,Passed
+AUTH-LOGIN-003,Clerk Sign In,Verify authenticated navigation flow,Logged in,Observe Sign in page redirected to the same page Sign in initiated it,Signed-in state is displayed correct page,P0,Passed
+AUTH-LOGIN-004,Clerk Sign In,Verify user information after login,Logged in,Open account/user UI,Correct authenticated user information is displayed,P1,Passed
+AUTH-LOGIN-005,Clerk Sign In,Login from protected /learning route,V1,Open /learning → sign in,"After successful authentication, expected redirect behavior occurs",P0,Passed
+AUTH-LOGIN-006,Clerk Sign In,Login from protected /live route,V1,Open /live → sign in,User is redirected according to configured flow,P0,Passed
+AUTH-LOGIN-007,Clerk Sign In,Login from /admin as non-admin,U1,Attempt /admin → sign in,"Authentication succeeds, but redirecting to /learning dashboard page",P0,Passed
+AUTH-LOGIN-008,Clerk Sign In,Invalid authentication attempt,V1,Enter invalid credentials,Authentication fails,P0,Passed
+AUTH-LOGIN-009,Clerk Sign In,Verify invalid login does not create session,Invalid credentials,Attempt invalid login → navigate to protected route,User remains unauthorized,P0,Passed
+AUTH-LOGIN-010,Clerk Sign In,Cancel sign-in flow,V1,Open sign-in → cancel/close,User remains unauthenticated,P1,Passed
+AUTH-LOGIN-011,Clerk Sign In,Verify authentication error message,Invalid authentication scenario,Trigger authentication failure,Appropriate error is displayed without breaking UI gracefully with Error: Couldn't find your account.,P1,Passed
+AUTH-LOGIN-012,Clerk Sign In,Multiple login attempts,V1,Perform failed login → retry with valid credentials,Valid login succeeds normally,P1,Passed
+AUTH-COURSE-001,Course Level Enrollment Authori,Course A student accesses Course A,S1 enrolled in A,Open Course A,Access granted,P0,Passed
+AUTH-COURSE-002,Course Level Enrollment Authori,Course A student accesses Course B,S1 enrolled only in A,Open Course B,Access denied,P0,Passed
+AUTH-COURSE-003,Course Level Enrollment Authori,Course B student accesses Course A,S2 enrolled only in B,Open Course A,Access denied,P0,Passed
+AUTH-COURSE-004,Course Level Enrollment Authori,Non-enrolled user accesses Course A,U1,Open Course A,Access denied,P0,Passed
+AUTH-COURSE-005,Course Level Enrollment Authori,Non-enrolled user accesses Course B,U1,Open Course B,Access denied,P0,Passed
+AUTH-COURSE-006,Course Level Enrollment Authori,Direct Course A URL access,S1,Enter Course A URL directly,Access granted,P0,Passed
+AUTH-COURSE-007,Course Level Enrollment Authori,Direct unauthorized Course B URL access,S1,Enter Course B URL directly,Access denied,P0,Passed
+AUTH-COURSE-008,Course Level Enrollment Authori,Unauthorized course URL with query parameters,S1,Add query parameters to Course B URL,Access remains denied,P0,Passed
+AUTH-COURSE-009,Course Level Enrollment Authori,Enrollment change from unauthorized to authorized,User initially not enrolled → enrollment added,Refresh/re-login → access course,Access becomes available according to application rules,P1,Passed
+AUTH-COURSE-010,Course Level Enrollment Authori,Enrollment removal,Student initially enrolled,Enrollment removed → refresh/reload,Previously authorized content becomes inaccessible according to application rules,P0,Passed
+AUTH-MATRIX-001,Cross Role Access Matrix,Visitor → Public page,,,✅ Allow,,Passed
+AUTH-MATRIX-002,Cross Role Access Matrix,Auth User → Public page,,,✅ Allow,,Passed
+AUTH-MATRIX-003,Cross Role Access Matrix,Student → Public page,,,✅ Allow,,Passed
+AUTH-MATRIX-004,Cross Role Access Matrix,Admin → Public page,,,✅ Allow,,Passed
+AUTH-MATRIX-005,Cross Role Access Matrix,Visitor → /learning,,,❌ Deny,,Passed
+AUTH-MATRIX-006,Cross Role Access Matrix,Non-enrolled → /learning,,,✅ Allow,,Passed
+AUTH-MATRIX-007,Cross Role Access Matrix,Enrolled Student → /learning,,,✅ Allow,,Passed
+AUTH-MATRIX-008,Cross Role Access Matrix,Admin → /learning,,,✅ Allow,,Passed
+AUTH-MATRIX-009,Cross Role Access Matrix,Visitor → /live,,,❌ Deny,,Passed
+AUTH-MATRIX-010,Cross Role Access Matrix,Non-enrolled User → /live,,,❌/Depends on eligibility,,Passed
+AUTH-MATRIX-011,Cross Role Access Matrix,Enrolled Student → /live,,,✅ Allow,,Passed
+AUTH-MATRIX-012,Cross Role Access Matrix,Admin → /live,,,✅ Allow,,Passed
+AUTH-MATRIX-013,Cross Role Access Matrix,Visitor → /admin,,,❌ Deny,,Passed
+AUTH-MATRIX-014,Cross Role Access Matrix,Authenticated User → /admin,,,❌ Deny,,Passed
+AUTH-MATRIX-015,Cross Role Access Matrix,Enrolled Student → /admin,,,❌ Deny,,Passed
+AUTH-MATRIX-016,Cross Role Access Matrix,Admin → /admin,,,✅ Allow,,Passed
+AUTH-MATRIX-017,Cross Role Access Matrix,Visitor → Admin controls,,,❌ Hidden/Denied,,Passed
+AUTH-MATRIX-018,Cross Role Access Matrix,Auth User → Admin controls,,,❌ Hidden/Denied,,Passed
+AUTH-MATRIX-019,Cross Role Access Matrix,Student → Admin controls,,,❌ Hidden/Denied,,Passed
+AUTH-MATRIX-020,Cross Role Access Matrix,Admin → Admin controls,,,✅ Visible/Available,,Passed
+AUTH-DEEP-001,Direct URL Deep Link Testing,Visitor opens /learning directly,V1,Paste URL in address bar,Access denied,P0,Passed
+AUTH-DEEP-002,Direct URL Deep Link Testing,Visitor opens /live directly,V1,Paste URL in address bar,Access denied,P0,Passed
+AUTH-DEEP-003,Direct URL Deep Link Testing,Visitor opens /admin directly,V1,Paste URL in address bar,Access denied,P0,Passed
+AUTH-DEEP-004,Direct URL Deep Link Testing,Non-enrolled user opens learning deep link,U1,Paste protected course URL,Access denied,P0,Passed
+AUTH-DEEP-005,Direct URL Deep Link Testing,Enrolled student opens authorized deep link,S1,Paste Course A URL,Access granted,P0,Passed
+AUTH-DEEP-006,Direct URL Deep Link Testing,Student opens unauthorized course deep link,S1,Paste Course B URL,Access denied,P0,Passed
+AUTH-DEEP-007,Direct URL Deep Link Testing,Non-admin opens admin deep link,U1,Paste /admin,Access denied,P0,Passed
+AUTH-DEEP-008,Direct URL Deep Link Testing,Admin opens admin deep link,A1,Paste /admin,Access granted,P0,Passed
+AUTH-DEEP-009,Direct URL Deep Link Testing,Protected deep link after logout,Logged out,Paste previously accessible URL,Access denied,P0,Passed
+AUTH-DEEP-010,Direct URL Deep Link Testing,Protected deep link after refresh,Unauthorized user,Refresh protected URL,Access remains denied,P0,Passed
+AUTH-E2E-001,End to End Authentication Journ,Visitor → Public → Login → Authenticated,,Public page → Sign In → authenticate,"Public page works, login succeeds, authenticated UI appears",P0,Passed
+AUTH-E2E-002,End to End Authentication Journ,Visitor → Login → Student Learning,,Open /learning → login as S1,Student returns to appropriate destination and learning access succeeds,P0,Passed
+AUTH-E2E-003,End to End Authentication Journ,Visitor → Login → Non-enrolled Learning,,Open /learning → login as U1,Authentication succeeds but learning authorization denies access,P0,Passed
+AUTH-E2E-004,End to End Authentication Journ,Student → Learning → Logout → Learning,,Login S1 → /learning → logout → /learning,Initial access succeeds; post-logout access denied,P0,Passed
+AUTH-E2E-005,End to End Authentication Journ,Student → Admin,,Login S1 → /admin,Admin access denied,P0,Passed
+AUTH-E2E-006,End to End Authentication Journ,Admin → Admin,,Login A1 → /admin,Admin page loads,P0,Passed
+AUTH-E2E-007,End to End Authentication Journ,Admin → Logout → Admin,,Login A1 → /admin → logout → /admin,Admin access denied after logout,P0,Passed
+AUTH-E2E-008,End to End Authentication Journ,Student → Refresh → Learning,,Login S1 → /learning → refresh,Student remains authorized,P0,Passed
+AUTH-E2E-009,End to End Authentication Journ,Student → Browser Back after Logout,,Login → learning → logout → Back,Protected content cannot be used,P0,Passed
+AUTH-E2E-010,End to End Authentication Journ,Course A Student → Course B,,Login S1 → Course B URL,Course B remains inaccessible,P0,Passed
+AUTH-STU-001,Enrolled Student Access,Enrolled student accesses /learning,S1,Open /learning,Learning experience loads,P0,Passed
+AUTH-STU-002,Enrolled Student Access,Enrolled student accesses permitted course content,S1,Open enrolled Course A,Course content is accessible,P0,Passed
+AUTH-STU-003,Enrolled Student Access,Student accesses /live,S1,Open /live,Permitted live-learning functionality is accessible,P0,Passed
+AUTH-STU-004,Enrolled Student Access,Student refreshes /learning,S1,Open /learning → refresh,Student remains authorized,P0,Passed
+AUTH-STU-005,Enrolled Student Access,Student accesses learning through UI navigation,S1,Click Learning,Learning area opens successfully,P1,Passed
+AUTH-STU-006,Enrolled Student Access,Student accesses learning through direct URL,S1,Enter /learning manually,Access is granted,P0,Passed
+AUTH-STU-007,Enrolled Student Access,Student opens protected course URL in new tab,S1,Open course URL in new tab,Authorized content loads,P1,Passed
+AUTH-STU-008,Enrolled Student Access,Student accesses another course without enrollment,S2,Attempt Course A while enrolled only in Course B,Course A content remains inaccessible,P0,Passed
+AUTH-STU-009,Enrolled Student Access,Student enrollment state after refresh,S1,Refresh learning page,Correct enrollment remains recognized,P0,Passed
+AUTH-STU-010,Enrolled Student Access,Student enrollment state change,Student enrollment removed/changed,Refresh/reload after enrollment state change,UI reflects current authorization state,P0,Passed
+AUTH-NEG-001,High Risk Negative Scenarios,Visitor → /learning,,,Access denied,,Passed
+AUTH-NEG-002,High Risk Negative Scenarios,Visitor → /live,,,Access denied,,Passed
+AUTH-NEG-003,High Risk Negative Scenarios,Visitor → /admin,,,Access denied,,Passed
+AUTH-NEG-004,High Risk Negative Scenarios,Authenticated non-enrolled user → learning content,,,Access denied,,Passed
+AUTH-NEG-005,High Risk Negative Scenarios,Authenticated user → /admin,,,Access denied,,Passed
+AUTH-NEG-006,High Risk Negative Scenarios,Student → /admin,,,Access denied,,Passed
+AUTH-NEG-007,High Risk Negative Scenarios,Course A student → Course B,,,Access denied,,Passed
+AUTH-NEG-008,High Risk Negative Scenarios,Logged-out user → previously opened /learning,,,Access denied,,Passed
+AUTH-NEG-009,High Risk Negative Scenarios,Expired session → /learning,,,Access denied,,Passed
+AUTH-NEG-010,High Risk Negative Scenarios,Invalid session → /admin,,,Access denied,,Passed
+AUTH-NEG-011,High Risk Negative Scenarios,Unauthorized user → protected URL + query parameters,,,Access denied,,Passed
+AUTH-NEG-012,High Risk Negative Scenarios,Unauthorized user → protected URL in new tab,,,Access denied,,Passed
+AUTH-NEG-013,High Risk Negative Scenarios,Unauthorized user → protected URL after refresh,,,Access denied,,Passed
+AUTH-NEG-014,High Risk Negative Scenarios,Logged-out user → browser Back,,,Protected content cannot be used/revealed as authorized,,Passed
+AUTH-NEG-015,High Risk Negative Scenarios,Non-admin → admin functionality,,,Access denied,,Passed
+AUTH-NEG-016,High Risk Negative Scenarios,User → another user's learning content,,,Access denied,,Passed
+AUTH-NEG-017,High Risk Negative Scenarios,Hidden admin link → manually typed /admin,,,Access denied,,Passed
+AUTH-NEG-018,High Risk Negative Scenarios,Authentication alone → enrolled-only content,,,Access denied,,Passed
+AUTH-NEG-019,High Risk Negative Scenarios,Student modifies URL to another course,,,Access denied,,Passed
+AUTH-NEG-020,High Risk Negative Scenarios,Non-admin attempts admin URL with role=admin query parameter,,,Access denied,,Passed
+AUTH-INVALID-001,Invalid Expired Session Handli,Expired session accessing /learning,E1,Open /learning,Access denied/authentication requested,P0,Passed
+AUTH-INVALID-002,Invalid Expired Session Handli,Expired session accessing /live,E1,Open /live,Access denied,P0,Passed
+AUTH-INVALID-003,Invalid Expired Session Handli,Expired session accessing /admin,E1,Open /admin,Access denied,P0,Passed
+AUTH-INVALID-004,Invalid Expired Session Handli,Invalid session after refresh,Invalid session,Refresh protected page,User is not granted access,P0,Passed
+AUTH-INVALID-005,Invalid Expired Session Handli,Invalid session cannot expose authenticated UI,Invalid session,Load application,UI does not incorrectly indicate authenticated state,P0,NA
+AUTH-INVALID-006,Invalid Expired Session Handli,Invalid session recovery through login,Invalid session,Trigger login → authenticate,Valid session is established and appropriate access is granted,P1,NA
+AUTH-INVALID-007,Invalid Expired Session Handli,Session invalidation while protected page is open,Active protected page,Invalidate session → interact/refresh,Protected access is rejected according to application behavior,P0,Passed
+AUTH-MW-001,Middleware Protection,Middleware protects /learning,V1,Directly access /learning,Middleware blocks unauthorized request,P0,Passed
+AUTH-MW-002,Middleware Protection,Middleware protects /live,V1,Directly access /live,Middleware blocks unauthorized request,P0,Passed
+AUTH-MW-003,Middleware Protection,Middleware protects /admin,V1,Directly access /admin,Middleware blocks unauthorized request,P0,Passed
+AUTH-MW-004,Middleware Protection,Middleware allows public route,V1,Open whitelisted route,Request proceeds without authentication,P0,Passed
+AUTH-MW-005,Middleware Protection,Middleware recognizes valid authenticated session,U1,Access permitted authenticated route,Request proceeds,P0,Failed
+AUTH-MW-006,Middleware Protection,Middleware rejects expired session,E1,Open protected route,Request is denied,P0,NA
+AUTH-MW-007,Middleware Protection,Middleware rejects invalid session,Invalid session,Open protected route,Request is denied,P0,NA
+AUTH-MW-008,Middleware Protection,Middleware protection survives refresh,V1,Open protected route → refresh,Protection remains active,P0,Passed
+AUTH-MW-009,Middleware Protection,Middleware cannot be bypassed with query parameters,V1,/learning?authenticated=true,Request remains protected,P0,Passed
+AUTH-MW-010,Middleware Protection,Middleware cannot be bypassed through direct URL,V1,Paste protected URL,Protection is enforced,P0,Passed
+AUTH-MW-011,Middleware Protection,Middleware does not accidentally protect public routes,V1,Open all configured public routes,Public routes remain accessible,P0,Passed
+AUTH-MW-012,Middleware Protection,Newly added protected route follows default-deny model,Route configured as protected,Directly access route,Authentication/authorization is enforced,P0,Passed
+AUTH-REDIR-001,Post Login Redirect,Preserve intended protected destination,V1,Open /learning → sign in,User returns to intended destination where supported,P0,Passed
+AUTH-REDIR-002,Post Login Redirect,Redirect after login from /live/[course-slug],V1,Open /live/[course-slug] → authenticate,User is redirected according to configured application behavior,P1,Passed
+AUTH-REDIR-003,Post Login Redirect,Verify unauthorized destination does not become authorized after login,U1,Attempt /admin → sign in,User is still denied because authentication ≠ admin authorization,P0,Passed
+AUTH-REDIR-004,Post Login Redirect,Verify no redirect loop after successful login,V1,Open protected route → sign in,Login completes without repeated redirects,P0,Passed
+AUTH-REDIR-005,Post Login Redirect,Cancel authentication from protected route,V1,Open protected route → open login → cancel,User remains denied from protected route,P1,Passed
+AUTH-PUB-001,Public Route Access,Access public page without authentication,V1,Open a whitelisted public page,Page loads successfully without sign-in,P0,Passed
+AUTH-PUB-002,Public Route Access,Access course sales page without authentication,V1,Open course sales/landing page,Course page loads successfully,P0,Passed
+AUTH-PUB-003,Public Route Access,Navigate between multiple public pages as visitor,V1,Open public page → navigate to another public page → repeat,All public pages remain accessible,P1,Passed
+AUTH-PUB-004,Public Route Access,Access public page after logout,Authenticated user,Sign in → logout → open public page,Public page loads normally,P0,Passed
+AUTH-PUB-005,Public Route Access,Refresh public page as visitor,V1,Open public page → refresh browser,Page remains accessible,P1,Passed
+AUTH-PUB-006,Public Route Access,Verify public page does not unnecessarily redirect to login,V1,Open each configured public route directly,No unexpected authentication redirect occurs,P0,Failed
+AUTH-PUB-007,Public Route Access,Verify public route with query parameters,V1,Open public URL with query parameters,Page remains accessible,P1,Passed
+AUTH-PUB-008,Public Route Access,Verify public route in new browser tab,V1,Open public URL in new tab,Page loads successfully,P1,Passed
+AUTH-BYPASS-001,Query Parameter URL Bypass,Add authentication query parameter,V1,/learning/python-beginners-batch-2?v=doc-thinking-pattern,Access denied,P0,Passed
+AUTH-BYPASS-002,Query Parameter URL Bypass,Add admin role query parameter,U1,/admin?role=admin,Access denied,P0,Passed
+AUTH-BYPASS-003,Query Parameter URL Bypass,Add enrollment query parameter,U1,/learning?enrolled=true,Access denied,P0,Passed
+AUTH-BYPASS-004,Query Parameter URL Bypass,Modify course ID through query parameter,S1,Attempt unauthorized course using query parameter,Authorization remains enforced,P0,Passed
+AUTH-BYPASS-005,Query Parameter URL Bypass,Add arbitrary query parameters to /live,V1,/live?user=admin,Access denied,P0,Passed
+AUTH-BYPASS-006,Query Parameter URL Bypass,Query parameter after valid route,Unauthorized user,Append multiple parameters,Route remains protected,P0,Passed
+AUTH-UI-001,Role Based UI Visibility,Visitor navigation state,V1,Open application,Visitor sees login button in navigation bar,P0,Passed
+AUTH-UI-002,Role Based UI Visibility,Authenticated navigation state,U1,Login → inspect navigation,Signed-in state is displayed,P0,Passed
+AUTH-UI-003,Role Based UI Visibility,Student navigation state,S1,Login → inspect navigation,Student-specific permitted UI is displayed,P1,Passed
+AUTH-UI-004,Role Based UI Visibility,Admin navigation state,A1,Login → inspect navigation,Admin-specific UI is displayed,P0,Passed
+AUTH-UI-005,Role Based UI Visibility,Visitor cannot see admin controls,V1,Inspect all visible navigation/actions,Admin controls are absent,P0,Passed
+AUTH-UI-006,Role Based UI Visibility,Authenticated user cannot see admin controls,U1,Inspect UI,Admin controls are absent,P0,NA
+AUTH-UI-007,Role Based UI Visibility,Student cannot see admin controls,S1,Inspect UI,Admin controls are absent,P0,NA
+AUTH-UI-008,Role Based UI Visibility,Admin can see admin controls,A1,Inspect UI,Appropriate admin controls are visible,P0,Passed
+AUTH-UI-009,Role Based UI Visibility,UI updates immediately after login,V1,Login,Authentication-related UI changes appropriately,P1,Passed
+AUTH-UI-010,Role Based UI Visibility,UI updates after logout,Authenticated user,Logout,Authentication-related UI changes to visitor state,P0,Passed
+AUTH-SESS-001,Session Persistence,Session persists during navigation,U1,Login → navigate across pages,User remains authenticated,P0,Passed
+AUTH-SESS-002,Session Persistence,Session persists after page refresh,U1,Login → refresh,User remains authenticated,P0,Passed
+AUTH-SESS-003,Session Persistence,Session persists on protected page refresh,S1,Login → /learning → refresh,User remains authorized,P0,Passed
+AUTH-SESS-004,Session Persistence,Authenticated UI remains consistent after refresh,U1,Login → refresh → inspect navigation,Authenticated state remains visible,P1,Passed
+AUTH-SESS-005,Session Persistence,Admin session persists after refresh,A1,Login → /admin → refresh,Admin remains authorized,P0,Passed
+AUTH-SESS-006,Session Persistence,Student session persists after navigation,S1,Login → navigate between learning/public pages,Student remains authenticated,P1,Passed
+AUTH-SESS-007,Session Persistence,Logout terminates session,U1,Login → logout → refresh,User remains logged out,P0,Passed
+AUTH-SESS-008,Session Persistence,Expired session cannot access protected route,E1,Open protected route,Access is denied or authentication is requested,P0,Passed
+AUTH-SESS-009,Session Persistence,Invalid session cannot access protected route,Invalid session,Open protected route,Access is denied,P0,Passed
+AUTH-SESS-010,Session Persistence,Session state after reopening protected URL,Valid session,Login → close/reopen tab → protected URL,Behavior matches configured session persistence,P1,Passed
+AUTH-LOGOUT-001,Sign Out,Sign out authenticated user,U1,Click Sign Out,User is successfully logged out,P0,Passed
+AUTH-LOGOUT-002,Sign Out,Verify navigation changes after logout,Logged in,Sign out,Navigation reflects unauthenticated state,P0,Passed
+AUTH-LOGOUT-003,Sign Out,Verify session is invalidated,Logged in,Logout → access protected route,Protected route is denied,P0,Passed
+AUTH-LOGOUT-004,Sign Out,Access /learning after logout,S1,Logout → open /learning,Access is denied,P0,Passed
+AUTH-LOGOUT-005,Sign Out,Access /live after logout,S1,Logout → open /live,Access is denied,P0,Passed
+AUTH-LOGOUT-006,Sign Out,Access /admin after logout,A1,Logout → open /admin,Access is denied,P0,Passed
+AUTH-LOGOUT-007,Sign Out,Browser back after logout,S1,Open protected page → logout → browser Back,Protected content is not usable/revealed as current authorized content,P0,Passed
+AUTH-LOGOUT-008,Sign Out,Refresh after logout,Authenticated user,Logout → refresh browser,User remains logged out,P0,Passed
+AUTH-LOGOUT-009,Sign Out,Open previously protected URL after logout,Authenticated user,Visit protected page → logout → reuse URL,User is denied,P0,Passed
+AUTH-LOGOUT-010,Sign Out,Access protected URL in new tab opened before logout,Logged out,Open previously accessed protected URL in new tab ; Logout in one of the tab ; Visit another tab accessing the Same URL,Access remains denied,P1,Passed
+AUTH-PROT-001,Unauthenticated Access to Prote,Visitor accesses /learning,V1,Directly enter /learning,Access is denied and expected login/redirect occurs,P0,Passed
+AUTH-PROT-002,Unauthenticated Access to Prote,Visitor accesses /live,V1,Directly enter /live,Access is denied and expected login/redirect occurs,P0,Passed
+AUTH-PROT-003,Unauthenticated Access to Prote,Visitor accesses /admin,V1,Directly enter /admin,Access is denied; admin content is not displayed,P0,Passed
+AUTH-PROT-004,Unauthenticated Access to Prote,Visitor accesses protected route through UI,V1,Click a link leading to protected route,Authentication/access-control flow is triggered,P0,Passed
+AUTH-PROT-005,Unauthenticated Access to Prote,Visitor accesses /learning after logout,Previously authenticated then logged out,Logout → directly enter /learning,User cannot access learning content,P0,Passed
+AUTH-PROT-006,Unauthenticated Access to Prote,Visitor accesses /live after logout,Logged out,Logout → directly enter /live,User cannot access live content,P0,Passed
+AUTH-PROT-007,Unauthenticated Access to Prote,Visitor accesses /admin after logout,Logged out,Logout → directly enter /admin,User cannot access admin content,P0,Passed
+AUTH-PROT-008,Unauthenticated Access to Prote,Protected route opened in new tab,V1,Open /learning in new tab,Route remains protected,P1,Passed
+AUTH-PROT-009,Unauthenticated Access to Prote,Protected route opened after browser refresh,V1,Open protected URL → refresh,Route remains protected,P0,Passed
+AUTH-PROT-010,Unauthenticated Access to Prote,Protected route with query parameters for Python Batch,V1,Open /learning/python-beginners?v=OkK3E7ApZ4Q,Authentication protection is not bypassed,P0,Passed
+AUTH-PROT-010,Unauthenticated Access to Prote,Protected route with query parameters for Python Batch 2,V1,Open /learning/python-beginners-batch-2?v=a9nrrH5XkG0,Authentication protection is not bypassed,P0,Passed
+AUTH-PROT-010,Unauthenticated Access to Prote,Protected route with query parameters for the document of Python Batch 2,V1,Open /learning/python-beginners-batch-2?v=doc-thinking-pattern,Authentication protection is not bypassed,P0,Passed
+AUTH-PROT-010,Unauthenticated Access to Prote,Protected route with query parameters for Generated Sharing URL,V1,Open /share/a9nrrH5XkG0?t=1788926719351,Redirect it to Course Page,P0,Passed
+AUTH-PROT-010,Unauthenticated Access to Prote,Protected route with query parameters for Sharing URL,V1,Open /share/OkK3E7ApZ4Q,Redirect it to Course Page,P0,Passed
+AUTH-PROT-011,Unauthenticated Access to Prote,Protected route with arbitrary query parameters,V1,Open /learning/python-beginners-batch-2?v=OkK3E7ApZ4Q,"User remains unauthorized, and redirecting it to Authentication Protection",P0,Passed
+AUTH-PROT-012,Unauthenticated Access to Prote,Protected route with trailing slash,V1,Open /learning/,Same protection rules apply,P1,Passed
+AUTH-PROT-013,Unauthenticated Access to Prote,Protected route with URL variations,V1,Try supported URL variations,No URL variation bypasses authorization,P0,Passed
+AUTH-PROT-014,Unauthenticated Access to Prote,Verify protected content is not briefly displayed before redirect,V1,Navigate directly to protected route,Protected content must not be exposed during redirect/loading,P0,Passed

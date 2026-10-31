@@ -1,6 +1,6 @@
 // data/courses.ts
 
-export const activeCourses = [
+const realCourses = [
 
   {
 id: "git-beginner-batch-1",
@@ -289,3 +289,38 @@ modules: [
       { title: "Advanced Python", topics: ["Object-Oriented Programming", "Virtual Environments"] }]
   }
 ];
+
+// ---------------------------------------------------------------------------
+// QA fixture (testing only). Exists ONLY when NEXT_PUBLIC_QA_FIXTURES=1, so the
+// production catalog is exactly `realCourses`. Never set the flag in production.
+// Docs: docs/testing/TEST_DATA.md. Hidden from /courses via isQaFixture().
+// ---------------------------------------------------------------------------
+export const QA_FIXTURES_ENABLED = process.env.NEXT_PUBLIC_QA_FIXTURES === "1";
+export const QA_FIXTURE_SLUG = "qa-checkout-sandbox";
+
+const qaBase = realCourses.find((c) => c.slug === "python-beginners-batch-2")!;
+
+const qaFixtureCourses = QA_FIXTURES_ENABLED
+  ? [{
+      ...qaBase,
+      id: QA_FIXTURE_SLUG,
+      slug: QA_FIXTURE_SLUG,
+      title: "QA Checkout Sandbox",
+      statusText: "QA fixture",
+      demoOffer: "Testing only",
+      enrollmentClosed: false,
+      whatsappLink: "https://chat.whatsapp.com/qa-checkout-sandbox",
+      liveLink: "https://meet.google.com/qa-checkout-sandbox", // lets the lobby cases (PRD 06 DSH-LOB-006/007) run
+      vsl: { ...qaBase.vsl, headlineHighlight: "QA CHECKOUT SANDBOX" },
+      pricing: {
+        inr: { currentPrice: "₹10", originalPrice: "₹20", savingsText: "QA fixture price", currencyCode: "INR" },
+        usd: { currentPrice: "$1", originalPrice: "$2", savingsText: "QA fixture price (Global)", currencyCode: "USD" },
+      },
+    }]
+  : [];
+
+export const activeCourses = [...realCourses, ...qaFixtureCourses];
+
+export function isQaFixture(slug: string): boolean {
+  return QA_FIXTURES_ENABLED && slug === QA_FIXTURE_SLUG;
+}

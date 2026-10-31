@@ -7,7 +7,7 @@
 **Date:** October 16, 2026
 **Document Type:** As-built product specification + PRD (derived from source code analysis)
 
-> **How to read this document.** Sections 1–8 describe the product the way a PRD does: goals, users, capabilities, flows, requirements. Sections 9–13 describe how it is actually built today, including a status column on every requirement and a list of verified gaps. Feature-level PRDs ([Authentication](#55-authentication--access-control), [Course Discovery & Pricing](PRD_COURSE_DISCOVERY_PRICING_TESTING.md)) are summarised here and remain the deeper references for those modules.
+> **How to read this document.** Sections 1–8 describe the product the way a PRD does: goals, users, capabilities, flows, requirements. Sections 9–13 describe how it is actually built today, including a status column on every requirement and a list of verified gaps. Feature-level PRDs ([Authentication](#55-authentication--access-control), [Course Discovery & Pricing](testing/prd/03-ui-course-discovery-pricing.md)) are summarised here and remain the deeper references for those modules.
 
 ---
 
@@ -832,7 +832,7 @@ See also [docs/CONTENT_MANAGEMENT.md](CONTENT_MANAGEMENT.md).
 - [docs/FEATURES.md](FEATURES.md): earlier capability notes (partly outdated)
 - [docs/DATABASE.md](DATABASE.md): earlier schema notes (superseded by §9.5)
 - [docs/CONTENT_MANAGEMENT.md](CONTENT_MANAGEMENT.md): content how-to
-- [docs/PRD_COURSE_DISCOVERY_PRICING_TESTING.md](PRD_COURSE_DISCOVERY_PRICING_TESTING.md): feature PRD for discovery and pricing UI
+- [docs/testing/](testing/README.md): feature-level testing PRDs (auth, public pages, discovery & pricing, checkout) and the test-plan tracker
 - Authentication PRD (Sept 3, 2026): feature PRD for auth and role-based access (summarised in §5.5)
 - [tests/README.md](../tests/README.md): QA automation architecture
 - [docs/AGENT_SKILLS.md](AGENT_SKILLS.md): which `agents/` skills AI agents must consult for each area of this codebase
