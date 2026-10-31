@@ -28,7 +28,7 @@ test.describe('PRD03 Currency toggle @regression', () => {
     await expect(page.getByText(fixtureCourse()!.pricing.usd.savingsText)).toBeVisible();
   });
 
-  test('[CDP-CUR-003] the course card price on the catalog follows the selected currency', async ({ page }) => {
+  test('[CDP-CUR-003] (SCP-62) the course card price on the catalog follows the selected currency', async ({ page }) => {
     await page.goto('/courses');
     await expect(page.getByRole('button', { name: /USD|International|\$/ })).toBeVisible();
   });
@@ -246,7 +246,7 @@ test.describe('PRD03 Coupons, pricing and CTA state @regression', () => {
 test.describe('PRD03 Mobile pricing @regression', () => {
   test.describe.configure({ mode: 'default' });
 
-  test('[CDP-UX-004][CDP-UX-005][CDP-UX-006][CDP-CTA-011][CHK-XB-001] on a phone pricing, coupon, currency toggle and CTA are visible and usable', async ({ browser }) => {
+  test('[CDP-UX-004][CDP-UX-005][CDP-UX-006][CDP-CTA-011][CHK-XB-001] (SCP-64) on a phone pricing, coupon, currency toggle and CTA are visible and usable', async ({ browser }) => {
     requireFixture(); requireSignIn();
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
     const page = await ctx.newPage();

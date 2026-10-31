@@ -83,7 +83,7 @@ test.describe('PRD04 paid checkout: order, errors and success screen (mocked gat
   test('[CHK-ORDER-009] create-order 403 shows the server message and recovers', orderError(403, 'This coupon is restricted'));
 
   // Not met today: handlePayment has no timeout, so a request that never answers leaves the button on Processing...
-  test.fixme('[CHK-ORDER-012] an order request that never answers ends the loading state with a message after about 30 seconds (no timeout exists)', async ({ page }) => {
+  test.fixme('[CHK-ORDER-012] an order request that never answers ends the loading state with a message after about 30 seconds (no timeout exists: SCP-65)', async ({ page }) => {
     test.setTimeout(90000);
     const dialogs = trackDialogs(page);
     await mockGateway(page, { order: 'slow', delayMs: 45000 });

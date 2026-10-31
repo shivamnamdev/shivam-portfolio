@@ -192,7 +192,7 @@ test.describe('PRD03 Paid checkout (mocked gateway) @regression', () => {
   test.fixme('[CDP-ERR-003] coupon lookup failure is handled (not applicable: coupons are validated in the browser)', async () => {});
   test.fixme('[CDP-ERR-008] coupon retry after network recovery (not applicable: coupon validation needs no network)', async () => {});
 
-  test('[CDP-E2E-010][CHK-XB-002][CHK-E2E-009] mobile purchase journey: coupon, currency and Buy Now work on a phone and open the gateway', async ({ browser }) => {
+  test('[CDP-E2E-010][CHK-XB-002][CHK-E2E-009] (SCP-64) mobile purchase journey: coupon, currency and Buy Now work on a phone and open the gateway', async ({ browser }) => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
     const page = await ctx.newPage();
     trackDialogs(page);

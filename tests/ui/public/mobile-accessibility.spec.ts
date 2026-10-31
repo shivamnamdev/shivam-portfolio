@@ -96,7 +96,7 @@ test.describe('PRD02 Mobile navigation @regression', () => {
     await expect(page.locator('input[name="identifier"]')).toBeVisible({ timeout: 20000 });
   });
 
-  test('[PUB-MOB-015] legal pages are reachable on mobile', async ({ page }) => {
+  test('[PUB-MOB-015] (SCP-36) legal pages are reachable on mobile', async ({ page }) => {
     for (const [name, path] of [['Privacy Policy', '/privacy'], ['Terms of Service', '/terms'], ['Refund Policy', '/refund']] as const) {
       await page.goto('/');
       await page.waitForLoadState('networkidle');

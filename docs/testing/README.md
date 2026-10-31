@@ -33,6 +33,8 @@ Related locations (not moved, linked here so the trail is complete):
 | Playwright specs and how to run them | [tests/](../../tests/), [tests/README.md](../../tests/README.md) |
 | CI workflow | [.github/workflows/playwright.yml](../../.github/workflows/playwright.yml) |
 
+**Run history:** [runs/README.md](runs/README.md) has one status page per full automation run (latest: [2026-10-31](runs/2026-10-31.md)).
+
 ## Test precedence (execution order)
 
 Follow the real product journey: **user lands → signs in → buys / joins → learns → administers → data persists → performs under load.**
@@ -51,7 +53,7 @@ Status values: `Planned` (no PRD) · `PRD draft` (written, not reviewed) · `PRD
 | # | Feature | PRD | Status | Automation today | Gaps |
 | --- | --- | --- | --- | --- | --- |
 | 01 | Authentication & Access Control | [01](prd/01-ui-authentication-access-control.md) | PRD ready · **Tests done** (203 of 204 manual cases automated; 155 passed in the last full run) | `tests/ui/auth/route-protection.spec.ts`, `sign-in-out-session.spec.ts`, `access-control.spec.ts` (all roles, sessions, enrolment, admin, SCP-29), plus `smoke.spec.ts` | `AUTH-PROT-004` blocked (no public link to a protected route exists). |
-| 02 | Public Pages & Navigation | [02](prd/02-ui-public-pages-navigation.md) | PRD ready · **Tests partial** (95 of 161 cases; 71 tests: 68 pass, 3 fail on real findings) | `tests/ui/public/landing-navigation.spec.ts`, `catalog-reliability.spec.ts`, `mobile-accessibility.spec.ts`, plus `smoke.spec.ts` | Still to do: CTA State & Context, Course Detail & Conversion, Redirect & Access Handoff (share links), Logged-in Navigation, both end-to-end sheets, `PUB-REL-009/010`; `PUB-A11Y-010` belongs to the Learning Lab PRD. |
+| 02 | Public Pages & Navigation | [02](prd/02-ui-public-pages-navigation.md) | PRD ready · **Tests done** (160 of 161; one open: PUB-A11Y-010) | `tests/ui/public/landing-navigation.spec.ts`, `catalog-reliability.spec.ts`, `mobile-accessibility.spec.ts`, plus `smoke.spec.ts` | Still to do: CTA State & Context, Course Detail & Conversion, Redirect & Access Handoff (share links), Logged-in Navigation, both end-to-end sheets, `PUB-REL-009/010`; `PUB-A11Y-010` belongs to the Learning Lab PRD. |
 | 03 | Course Discovery & Pricing | [03](prd/03-ui-course-discovery-pricing.md) | PRD ready · 140 manual cases not yet executed · Tests partial | `tests/ui/sales-funnel.spec.ts` (per-course INR/USD toggle, closed state), `tests/unit/pricing.spec.ts` | Coupon UI (needs sign-in), CTA states for enrolled users, open-cohort data. |
 | 04 | Checkout Flow | [04](prd/04-ui-checkout-flow.md) | **PRD ready** · **114 manual cases written** ([workbook](workbooks/%5BUI%5D%20Checkout%20Flow%20Testing.xlsx), 10 sheets, ids `CHK-…`) · automation: mocked-gateway cases already covered under PRD 03 ids | `tests/*/qa-fixture.spec.ts` (fixture, coupon, ₹10 / $1 orders) | Open: ~61 cases still to automate (CTA states for visitors, API error codes, idempotent verification, email, mobile/cross-browser). Real Razorpay test-mode run works (see below). |
 | 05 | Free Enrollment Flow | [05](prd/05-ui-free-enrollment-flow.md) | **PRD draft** (awaiting owner review) · **71 manual cases written** ([workbook](workbooks/%5BUI%5D%20Free%20Enrollment%20Flow%20Testing.xlsx), 8 sheets, ids `FRE-…`) · 36 scenarios FE-01…36, about 20 already covered by PRD 03 automation | `tests/ui/discovery/checkout-flow.spec.ts`, `checkout-real-db.spec.ts` | New scenarios still to write: visitor gate, forged/closed/non-zero API requests, modal copy and links, stale tab, activity log, cross-browser. Known failures: duplicate rows under concurrency, redirect, modal copy. |
@@ -61,25 +63,25 @@ Status values: `Planned` (no PRD) · `PRD draft` (written, not reviewed) · `PRD
 
 ### Phase 2 — API
 
-| # | Feature | PRD | Status | Automation today |
+| # | Feature | PRD | Status | Automation |
 | --- | --- | --- | --- | --- |
-| 09 | Payment APIs (`create-order`, `verify-payment`) | — | Planned | `tests/api/crm.spec.ts` (auth, unknown course, closed cohort, invalid coupon) |
-| 10 | Enrollment APIs (`enroll-free`, `admin/enroll`) | — | Planned | anonymous rejection only |
-| 11 | Clerk / webhook / user-lookup APIs | — | Planned | `tests/api/webhook.spec.ts`, anonymous rejection of user-directory routes |
-| 12 | Email APIs (`send-email`) | — | Planned | invalid email, honeypot |
-| 13 | AI tutor and certificate APIs | — | Planned | none |
+| 09 | Payment APIs (`create-order`, `verify-payment`) | [09](prd/09-api-payment.md) | PRD draft · 41 cases (`PAYA-…`) · **Tests done** (39 automated, 2 open) | `tests/api/payment-apis.spec.ts` |
+| 10 | Enrollment APIs (`enroll-free`, `admin/enroll`) | [10](prd/10-api-enrollment.md) | PRD draft · 28 cases (`ENRA-…`) · **Tests done** | `tests/api/enrollment-apis.spec.ts` |
+| 11 | Clerk webhook and user-lookup APIs | [11](prd/11-api-clerk.md) | PRD draft · 26 cases (`CLKA-…`) · **Tests done** (1 manual) | `tests/api/clerk-apis.spec.ts`, `webhook.spec.ts` |
+| 12 | Email API (`send-email`) | [12](prd/12-api-email.md) | PRD draft · 13 cases (`EMLA-…`) · **Tests done** (3 manual) | `tests/api/email-api.spec.ts` |
+| 13 | AI tutor, certificate, track-time and XP APIs | [13](prd/13-api-learning-support.md) | PRD draft · 19 cases (`AIA-…`) · **Tests done** | `tests/api/learning-apis.spec.ts` |
 
 ### Phase 3 — Database
 
-| # | Feature | PRD | Status |
-| --- | --- | --- | --- |
-| 14 | Data integrity in Supabase (`user_enrollments`, admin activity log, progress, CRM lookup) | — | Planned |
+| # | Feature | PRD | Status | Automation |
+| --- | --- | --- | --- | --- |
+| 14 | Database integrity (schema, constraints, access with the public key, data quality) | [14](prd/14-db-integrity.md) | PRD draft · 44 cases (`DBI-…`: 28 automated, 16 manual policy inventory) · **Tests done**; manual SQL inventory for the owner | `tests/db/db-integrity.spec.ts` |
 
 ### Phase 4 — Performance
 
-| # | Feature | PRD | Status |
-| --- | --- | --- | --- |
-| 15 | Checkout, auth, learning lab, admin CRM, backend latency | — | Planned |
+| # | Feature | PRD | Status | Automation |
+| --- | --- | --- | --- | --- |
+| 15 | Performance budgets, latency, concurrency | [15](prd/15-perf-budgets.md) | PRD draft · 35 cases (`PRF-…`) · **Baseline measured on the dev server and on a production build**; sustained load (k6) open | `tests/perf/perf-budgets.spec.ts`, `perf-production.spec.ts` |
 
 ## Weightage rules (applied to every PRD)
 

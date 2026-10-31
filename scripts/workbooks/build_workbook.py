@@ -24,6 +24,20 @@ CONFIG = {
                   xlsx="[UI] Learning Experience Testing.xlsx", csv="prd07-learning-experience.csv"),
     "prd08": dict(module="prd08_cases", prefix="ADM", title="[UI] Admin Portal Testing",
                   xlsx="[UI] Admin Portal Testing.xlsx", csv="prd08-admin-portal.csv"),
+    "prd09": dict(module="prd09_cases", prefix="PAYA", title="[API] Payment APIs Testing",
+                  xlsx="[API] Payment APIs Testing.xlsx", csv="prd09-payment-api.csv"),
+    "prd10": dict(module="prd10_cases", prefix="ENRA", title="[API] Enrollment APIs Testing",
+                  xlsx="[API] Enrollment APIs Testing.xlsx", csv="prd10-enrollment-api.csv"),
+    "prd11": dict(module="prd11_cases", prefix="CLKA", title="[API] Clerk Webhook and User Lookup APIs Testing",
+                  xlsx="[API] Clerk Webhook and User Lookup APIs Testing.xlsx", csv="prd11-clerk-api.csv"),
+    "prd12": dict(module="prd12_cases", prefix="EMLA", title="[API] Email API Testing",
+                  xlsx="[API] Email API Testing.xlsx", csv="prd12-email-api.csv"),
+    "prd13": dict(module="prd13_cases", prefix="AIA", title="[API] AI Tutor, Certificate and Learning Support APIs Testing",
+                  xlsx="[API] AI Tutor Certificate and Learning Support APIs Testing.xlsx", csv="prd13-learning-api.csv"),
+    "prd14": dict(module="prd14_cases", prefix="DBI", title="[DB] Database Integrity Testing",
+                  xlsx="[DB] Database Integrity Testing.xlsx", csv="prd14-database.csv"),
+    "prd15": dict(module="prd15_cases", prefix="PRF", title="[PERF] Performance Testing",
+                  xlsx="[PERF] Performance Testing.xlsx", csv="prd15-performance.csv"),
 }
 HEAD = PatternFill("solid", fgColor="0B5394")
 GREY = PatternFill("solid", fgColor="E5E5E5")

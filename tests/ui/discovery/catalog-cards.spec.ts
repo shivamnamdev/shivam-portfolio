@@ -48,19 +48,19 @@ test.describe('PRD03 Course discovery cards @regression', () => {
     }
   });
 
-  test('[CDP-003] each card shows the instructor', async ({ page }) => {
+  test('[CDP-003] (SCP-61) each card shows the instructor', async ({ page }) => {
     await expect(card(page, listed[0].title).getByText(/instructor|by shivam|taught by/i)).toBeVisible();
   });
 
-  test('[CDP-005] each card shows a course rating', async ({ page }) => {
+  test('[CDP-005] (SCP-61) each card shows a course rating', async ({ page }) => {
     await expect(card(page, listed[0].title).getByText(/★|⭐|rating|\d\.\d\s*\/\s*5/i)).toBeVisible();
   });
 
-  test('[CDP-008] card prices follow the selected currency (a currency control exists on the catalog)', async ({ page }) => {
+  test('[CDP-008] (SCP-62) card prices follow the selected currency (a currency control exists on the catalog)', async ({ page }) => {
     await expect(page.getByRole('button', { name: /USD|International|\$/ })).toBeVisible();
   });
 
-  test('[CDP-009][CDP-010] a quick preview shows syllabus and highlights without leaving the catalog', async ({ page }) => {
+  test('[CDP-009][CDP-010] (SCP-63) a quick preview shows syllabus and highlights without leaving the catalog', async ({ page }) => {
     await card(page, listed[0].title).hover();
     await expect(page.getByText(/syllabus|highlights/i).first()).toBeVisible();
   });

@@ -52,7 +52,7 @@ test.describe('PRD03 Free enrollment (real API + QA Supabase) @regression', () =
     expect(await rowCount()).toBe(1);
   });
 
-  test('[FRE-IDEM-004][CDP-RACE-003][CDP-FREE-010][CHK-IDEM-008] concurrent free-enrollment API calls do not create duplicate rows', async ({ page }) => {
+  test('[FRE-IDEM-004][CDP-RACE-003][CDP-FREE-010][CHK-IDEM-008] (SCP-44) concurrent free-enrollment API calls do not create duplicate rows', async ({ page }) => {
     await openFixture(page, USER);
     const call = () => page.request.post('/api/enroll-free', { data: { courseId: SLUG, currency: 'INR', couponCode: 'QA100' } });
     const results = await Promise.all(Array.from({ length: 6 }, call));

@@ -1,0 +1,65 @@
+# Test-case content for PRD 14 (Database integrity). Consumed by build_workbook.py.
+PERSONAS = [
+ ("SR", "Service-role connection to the QA Supabase project (used for assertions, setup and cleanup)", "SUPABASE_SERVICE_ROLE_KEY"),
+ ("AN", "Public anon key: exactly what any browser has (it ships in every page)", "NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+ ("T", "Test rows use the user id prefix qa_db_ and are removed after each case", "qa_db_*"),
+ ("P", "Persona accounts and the seeded enrolment state (mavish Course A, bazar Course B, edu none)", "docs/testing/TEST_DATA.md"),
+]
+LEGEND = "QA project only. Cases that describe the hardened state of docs/SUPABASE_HARDENING.md are known failures until that runbook (and the phase-2 policies) is applied; each carries a ticket. Never run the access cases against production data."
+SP = "tests/db/db-integrity.spec.ts"
+SHEETS = [
+("Schema", "FR1-FR3", [
+ ("SCH-001","Tables exist","SR","1. Read the PostgREST schema","user_enrollments, video_progress, video_comments, assignment_progress, exam_progress, user_stats, admin_activity_log are present","P0","DB-01",SP),
+ ("SCH-002","Columns match docs/DATABASE.md","SR","1. Compare column names per table","Exactly the documented columns","P1","DB-01",SP),
+ ("SCH-003","Primary keys","SR","1. Read key and default of each table","Generated uuid id (six tables); user_id on user_stats","P1","DB-02",SP),
+ ("SCH-004","Required columns","SR","1. Insert rows missing a required column","Refused with 23502 (not null)","P0","DB-03",SP),
+ ("SCH-005","Defaults","SR","1. Insert minimal rows","enrolled_at = now (UTC), is_read false, stats 1/0/0, exam 0/false/0, last_active_date today","P1","DB-03",SP),
+ ("SCH-006","video_likes exists","SR","1. Look for the table the course page queries","Present (known failure: missing, SCP-49)","P2","DB-01",SP+" (known failure)"),
+]),
+("Constraints", "FR4-FR5", [
+ ("CON-001","One video progress row","SR","1. Insert the same (user, course, video) twice","Second insert refused 23505","P0","DB-04",SP),
+ ("CON-002","One assignment row","SR","1. Insert the same (user, course, video) twice","Second insert refused 23505","P0","DB-04",SP),
+ ("CON-003","One exam row","SR","1. Insert the same (user, course) twice","Second insert refused 23505","P0","DB-04",SP),
+ ("CON-004","One stats row per learner","SR","1. Insert the same user_id twice","Second insert refused 23505","P0","DB-04",SP),
+ ("CON-005","One enrolment per learner and course","SR","1. Insert the same (user, course) twice","Second insert refused 23505 (known failure: allowed, SCP-44)","P0","DB-05",SP+" (known failure)"),
+ ("CON-006","Upsert is idempotent","SR","1. Upsert the same progress row twice","One row","P1","DB-04",SP),
+]),
+("Access with the Public Key", "FR6-FR8", [
+ ("ACC-001","Anon cannot insert an enrolment","AN","1. Insert into user_enrollments","Refused (known failure: accepted, SCP-74)","P0","DB-06",SP+" (known failure)"),
+ ("ACC-002","Anon cannot change or delete an enrolment","AN","1. Update and delete an existing row","No row affected (known failure, SCP-74)","P0","DB-06",SP+" (known failure)"),
+ ("ACC-003","Anon cannot read others' enrolments","AN","1. Select from user_enrollments","No rows (known failure, SCP-75)","P0","DB-07",SP+" (known failure)"),
+ ("ACC-004","Anon cannot read submitted code","AN","1. Select from assignment_progress","No rows (known failure, SCP-75)","P0","DB-07",SP+" (known failure)"),
+ ("ACC-005","Anon cannot read e-mail addresses","AN","1. Select user_email from user_stats","No rows (known failure, SCP-75)","P0","DB-07",SP+" (known failure)"),
+ ("ACC-006","Anon cannot write the activity log","AN","1. Insert into admin_activity_log","Refused (known failure, SCP-76)","P1","DB-08",SP+" (known failure)"),
+ ("ACC-007","Anon cannot change another learner's points","AN","1. Update user_stats.total_points of another user","Value unchanged (known failure, SCP-76)","P1","DB-08",SP+" (known failure)"),
+ ("ACC-008","Anon cannot post as another user","AN","1. Insert a comment with another user_id","Refused (known failure, SCP-76)","P1","DB-08",SP+" (known failure)"),
+]),
+("Data Quality", "FR9-FR11", [
+ ("DAT-001","No duplicate enrolments","SR","1. Group enrolments by user and course","No group larger than 1","P0","DB-09",SP),
+ ("DAT-002","Enrolments are for catalog courses","SR","1. Compare course_slug with the catalog","No unknown slug","P1","DB-09",SP),
+ ("DAT-003","No leftovers of test runs","SR","1. Look for qa_ ids and QA-DB log entries","None","P1","DB-10",SP),
+ ("DAT-004","Persona state is the seeded state","SR; P","1. Read each persona's enrolments","mavish A, bazar B, edu none","P1","DB-10",SP),
+ ("DAT-005","No placeholder identity","SR","1. Look for 'Unknown Email' or empty e-mail","None","P2","DB-09",SP),
+ ("DAT-006","Text round trip","SR","1. Store emoji, quotes, SQL-like text and 1 MB of code and read back","Unchanged; no table affected","P1","DB-11",SP),
+ ("DAT-007","Activity log order and flag","SR","1. Insert two entries, read newest first","Order by created_at desc; is_read false","P2","DB-11",SP),
+ ("DAT-008","Stored e-mail equals the Clerk e-mail","SR; P","1. Compare user_email on persona rows with Clerk","Equal","P2","DB-09",SP),
+]),
+("Policy Inventory (manual)", "FR12-FR14", [
+ ("POL-001","Row level security is on for every table","Owner; QA then production","1. Run: select c.relname, c.relrowsecurity, c.relforcerowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' order by 1;","relrowsecurity is true for all seven app tables and the cms_ tables","P0","DB-12","No (manual: run the SQL in the Supabase SQL editor, read-only SELECTs)"),
+ ("POL-002","Policy list matches the intent","Owner","1. Run: select tablename, policyname, cmd, roles, qual, with_check from pg_policies where schemaname='public' order by tablename, cmd;","No INSERT, UPDATE or DELETE policy for anon or authenticated on user_enrollments; no 'using (true)' write policy on any table (known failing: SCP-74, SCP-76)","P0","DB-12","No (manual: run the SQL in the Supabase SQL editor, read-only SELECTs)"),
+ ("POL-003","Table grants for the public roles","Owner","1. Run: select table_name, grantee, privilege_type from information_schema.role_table_grants where table_schema='public' and grantee in ('anon','authenticated') order by 1,2,3;","Only SELECT where the browser needs it; no INSERT/UPDATE/DELETE/TRUNCATE on user_enrollments (runbook step 2)","P0","DB-12","No (manual: run the SQL in the Supabase SQL editor, read-only SELECTs)"),
+ ("POL-004","Unique constraints and indexes exist","Owner","1. Run: select tablename, indexname, indexdef from pg_indexes where schemaname='public' order by 1,2;","Unique (user_id, course_slug) on user_enrollments (missing today, SCP-44); the progress unique keys; an index on user_id (and course_slug) for every table that is filtered by user","P0","DB-13","No (manual: run the SQL in the Supabase SQL editor, read-only SELECTs)"),
+ ("POL-005","Policies are tied to the signed-in learner","Owner","1. Read qual and with_check of every policy from POL-002 and look for auth.jwt() ->> 'sub' (Clerk id) or another per-user rule","Learner rows are limited to the caller's own user_id (needs Clerk as a Supabase third-party auth provider). Today the rules are 'true', so every learner can read and write every row","P0","DB-12","No (manual: run the SQL in the Supabase SQL editor, read-only SELECTs)"),
+ ("POL-006","Functions and views exposed to the API","Owner","1. Run: select routine_name, security_type from information_schema.routines where routine_schema='public'; and: select table_name from information_schema.views where table_schema='public';","No SECURITY DEFINER function callable by anon; the leaderboard (names and points only) exposed through a view or route instead of user_stats with e-mail","P1","DB-12","No (manual: run the SQL in the Supabase SQL editor, read-only SELECTs)"),
+ ("POL-007","Unused cms_ tables","Owner","1. Run: select 'cms_courses', count(*) from cms_courses union all select 'cms_curriculum', count(*) from cms_curriculum union all select 'cms_coupons', count(*) from cms_coupons; 2. Search the code for cms_ (none today)","A decision is recorded: drop them, or lock them to the service role. cms_coupons must never hold real coupon rules readable by anon","P1","DB-14","No (manual: run the SQL in the Supabase SQL editor, read-only SELECTs)"),
+ ("POL-008","Orphan rows","Owner","1. Run: select count(*) from video_progress v left join user_stats s using (user_id) where s.user_id is null; and the same for assignment_progress and exam_progress; and enrolments with a course_slug that is not in the catalog","Counts are known and explained (no foreign keys exist because user ids come from Clerk); no rows for deleted learners","P2","DB-14","No (manual: run the SQL in the Supabase SQL editor, read-only SELECTs)"),
+ ("POL-009","Realtime publications","Owner","1. Run: select * from pg_publication_tables where schemaname='public';","No learner table is published to Realtime for the anon role","P1","DB-12","No (manual: run the SQL in the Supabase SQL editor, read-only SELECTs)"),
+ ("POL-010","Storage buckets","Owner","1. Run: select id, public from storage.buckets;","No public bucket holds private data (none expected: the app uses no Supabase Storage)","P2","DB-12","No (manual: run the SQL in the Supabase SQL editor, read-only SELECTs)"),
+ ("POL-011","The service-role key is not in the browser bundle","A production build exists (.next-prod)","1. Search the built static JavaScript for the service-role key and for the string service_role","Not found; only the anon key is in client code","P0","DB-15","tests/db/db-integrity.spec.ts (needs a production build; skips otherwise)"),
+ ("POL-012","Backups and recovery","Owner","1. Supabase dashboard > Database > Backups: check daily backups or point-in-time recovery, the retention period and the date of the last restore test","Backups are on; retention known; one restore into a scratch project has been done and timed","P1","DB-16","No (manual: run the SQL in the Supabase SQL editor, read-only SELECTs)"),
+ ("POL-013","Extensions and versions","Owner","1. Run: select extname, extversion from pg_extension order by 1;","uuid-ossp is present (the id defaults use extensions.uuid_generate_v4()); versions are recorded; nothing unexpected","P2","DB-14","No (manual: run the SQL in the Supabase SQL editor, read-only SELECTs)"),
+ ("POL-014","Re-test after the hardening runbook","Owner has run steps 1 and 2 of docs/SUPABASE_HARDENING.md","1. Run the database spec: npx playwright test tests/db 2. Run POL-002 and POL-003 again","DBI-CON-005, DBI-ACC-001 and DBI-ACC-002 now pass; the checkout, enrolment and admin specs still pass (writes go through the server)","P0","DB-12","No (manual: run the SQL in the Supabase SQL editor, read-only SELECTs)"),
+ ("POL-015","QA matches production","Owner; read-only access to production","1. Run POL-001 to POL-004 on production and on QA and compare the output","The same policies, grants, constraints and indexes; every difference is explained. Never run write tests on production","P0","DB-15","No (manual: run the SQL in the Supabase SQL editor, read-only SELECTs)"),
+ ("POL-016","Delete one learner's data","A throw-away learner with rows in every table","1. Delete the learner's rows by user_id from the seven tables 2. Count rows left for that user_id","No row remains; nothing else changes. A deletion procedure and a retention period for e-mail addresses and submitted code are written down","P1","DB-16","No (manual: run the SQL in the Supabase SQL editor, read-only SELECTs)"),
+]),
+]
