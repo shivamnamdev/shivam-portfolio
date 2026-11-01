@@ -132,3 +132,5 @@ Order follows the real journey: user lands → signs in → buys/joins → learn
 **Production-ready execution order:** Authentication → Course access/public pages → Purchase flow → Free enrollment flow → Dashboard/student access → Learning lab → Admin portal → Payment APIs → Enrollment APIs → Clerk/webhook APIs → Data integrity in Supabase → Performance validation.
 
 Source of truth for status: [docs/testing/README.md](../testing/README.md) (registry) and [docs/testing/COVERAGE.md](../testing/COVERAGE.md).
+
+**Progress 2026-11-01 (PR 3, database lock):** `step4-lock-learner-tables.sql` (+ rollback) written, not run. Order for the owner: merge and deploy PR 1 and PR 2, run the script on QA, run the QA suites (DBI-ACC-004..008 must pass), then production after a backup.

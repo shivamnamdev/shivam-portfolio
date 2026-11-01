@@ -27,11 +27,8 @@ revoke insert, update, delete on public.user_enrollments from anon, authenticate
 --   drop policy "Allow public read" on public.cms_coupons;
 -- Option B, drop them:  drop table public.cms_coupons, public.cms_courses, public.cms_curriculum;
 
--- STEP 4 (needs code changes first, do not run yet): the browser still writes admin_activity_log, user_stats, video_comments, video_progress,
--- assignment_progress and exam_progress with the anon key, so their "Allow public read/write" policies cannot be dropped until those writes go
--- through server routes (service role) or Clerk is added to Supabase as a third-party auth provider and the policies compare user_id with auth.jwt() ->> 'sub'.
--- user_stats also exposes user_email to the leaderboard query (select '*'): the page must select explicit columns before email can be revoked
---   (revoke select on public.user_stats from anon, authenticated; grant select (user_id, user_name, total_points, current_streak, last_active_date, total_time_seconds) on public.user_stats to anon, authenticated;)
+-- STEP 4 (code changes done in SCP-74 to SCP-76 PRs 1 and 2): see docs/testing/sql/step4-lock-learner-tables.sql. Run it only after those PRs are deployed.
+-- It drops the "Allow public read/write" policy and revokes every privilege from anon and authenticated on the eight tables (service role only).
 
 -- STEP 5 (performance, safe): indexes for the filters the application uses
 create index if not exists video_comments_video_id_idx on public.video_comments (video_id, created_at desc);
