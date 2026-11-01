@@ -3,23 +3,17 @@
 Date-wise log of changes, generated from `git log` (see [CONSTITUTION.md](../../CONSTITUTION.md) §2).
 Newest first. Format: `hash` subject — author (files changed, +added/−deleted). Merge commits are tagged **[merge]**; commits on other branches but not yet in `origin/main` are tagged **[not in main]**.
 
-_Last generated: 2026-11-01 from `fe48f45` on branch `DB-Policy`._
+_Last generated: 2026-11-01 from `c66fb10` on branch `main`._
 
 ## Working tree (not yet committed)
 
-- ` M docs/blast/findings.md`
-- ` M docs/blast/task_plan.md`
-- ` M docs/testing/CHANGELOG.md`
-- ` M docs/testing/prd/14-db-integrity.md`
-- ` M tests/ui/admin/admin-enroll-writes.spec.ts`
-- `?? docs/testing/runs/policy-QA-2026-10-31.md`
-- `?? docs/testing/sql/`
-- `?? scripts/policy-check.py`
 
 ## Commit history
 
 ### 2026-11-01
 
+- `c66fb10` Merge pull request #62 from shivamnamdev/DB-Policy **[merge]** — SHIVAM NAMDEV
+- `56e27c9` test(db): policy inventory SQL, checker and QA/production results (PRD 14) — shivamnamdev (15 files, +999/−18)
 - `fe48f45` Merge pull request #61 from shivamnamdev/docs/bug-fix-workflow-skill **[merge]** — SHIVAM NAMDEV
 - `50cc67e` Merge pull request #60 from shivamnamdev/fix/SCP-85-unique-violation-in-grant-enrollment **[merge]** — SHIVAM NAMDEV
 - `03e287b` Python day-22 access specifier video updated — shivamnamdev (1 files, +2/−1)
