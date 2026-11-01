@@ -62,3 +62,23 @@ Research, discoveries, and constraints. Append dated entries.
 - Success modal routes to `/learning`; the course page is not marked enrolled behind the modal.
 - Catalog cards have no instructor, rating, currency toggle or preview (PRD 03 section 4.1 expects them).
 - Test infra: Clerk sign-in under load occasionally times out (passes on retry); run with `--workers=2`. Tests sharing one persona across files race: DB-writing specs live in one file/worker.
+
+## 2026-10-30 to 2026-11-01 (QA programme)
+
+Defects (all in Jira, tests keep failing on purpose until fixed; see `docs/testing/runs/2026-10-31.md`):
+- Checkout and enrolment: Buy Now re-enabled while the Razorpay window is open (SCP-50), paid order floored at one unit (SCP-51), no order timeout (SCP-65), parallel enrolments (SCP-44) and, once the unique rule exists, the losing request answered 500 (SCP-85, fixed on a branch).
+- Learning and dashboard: empty lesson list when the YouTube API fails (SCP-47), starter code after reload (SCP-48), no like button (SCP-49), View Solution before submitting (SCP-54), no Git lab reset (SCP-55), empty submission saved (SCP-56), streak uses the UTC date (SCP-60), dashboard waits for four requests in a row (SCP-77).
+- Public pages and accessibility: WhatsApp button covers the Terms link and the coupon Apply button on phones (SCP-36, SCP-64), icon-only controls without a name (SCP-58), no testimonials on the home page (SCP-57), catalog cards without instructor, rating, currency control or preview (SCP-61 to SCP-63).
+- APIs: verify-payment 500 for an unknown order (SCP-66), Clerk webhook not idempotent and 500 without `email_addresses` (SCP-67, SCP-68), no rate limit on `send-email` (SCP-69), public AI tutor (SCP-70), certificate route for any name and 500 for non-Latin names (SCP-71, SCP-72), `track-time` inflation (SCP-73).
+- Database and security: the public Supabase key can read and write every learner table; policy "Allow public read/write" (ALL, true) plus DELETE/TRUNCATE grants on seven tables (SCP-74 to SCP-76, root cause SCP-82), missing indexes (SCP-83), `cms_` tables readable (SCP-84), coupon codes in the public JavaScript (SCP-53), admin e-mail compared case-sensitively (SCP-59).
+- Performance (production build): every page is dynamic and `no-store` (SCP-80), admin user directory without `Cache-Control: no-store` (SCP-81).
+
+Environment findings:
+- `GMAIL_USER` and `GMAIL_APP_PASSWORD` are empty in `.env.local`: no e-mail has ever been sent by a test, the contact form answers 500 locally (SCP-35), verify-payment and the Clerk webhook skip mail silently.
+- Clerk development instance answers the first document request with a 401 handshake page and WebKit blocks Clerk's script chunk (uncaught error on every page): checks for uncaught errors skip WebKit; Clerk's dev 401 is ignored in the failed-request check.
+- A file-level `test.use({ userAgent })` is inherited by `browser.newContext()`, so Clerk answered 401 to signed-in API calls: `tests/support/api.ts` sets a browser User-Agent.
+- Dev server numbers are inflated (2.7 MB JavaScript); the production build (separate folder `.next-prod`, port 3101) is fast: TTFB 12 to 18 ms, 180 KB JavaScript, slow-phone LCP under 1 s. Long runs on a busy network produce timeouts that pass alone (PAYA-BND-001, AIA-XP-002, ADM-ENR-019).
+- The live database policies cannot be read through the REST API: they need the Supabase SQL editor (script and checker in `docs/testing/sql/`, `scripts/policy-check.py`).
+- `gh` is not installed: pull requests are opened by the owner from a compare link.
+
+Decisions and rules recorded: failures must not block automation (Allure and run pages show them); persona ids are namespaced per PRD; every Jira ticket is approved by the owner; the bug-fix workflow (branch, Jira bug under SCP-2, RCA, fix, PR, Jira comment) is in `.claude/skills/bug-fix-workflow/SKILL.md`.
