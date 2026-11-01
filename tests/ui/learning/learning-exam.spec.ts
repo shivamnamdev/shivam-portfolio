@@ -131,11 +131,28 @@ test.describe('PRD07 exam, advanced lessons and certificate', () => {
       await expect.poll(() => alerts.join('|')).toContain('Something went wrong while generating your certificate.');
     });
 
-    test('[LRN-TAB-011] a learner can like a lesson and remove the like (no like control exists today)', async ({ page }) => {
-      test.fixme(true, 'SCP-49: no like button is rendered on the course page: toggleLike() and hasLiked exist in app/learning/[slug]/page.tsx but nothing calls them');
-      await openCourse(page, U, SLUG);
-      await tab(page, /Q&A/).click();
-      await expect(page.getByRole('button', { name: /Like/ })).toBeVisible();
+    test('[LRN-TAB-011] a learner can like a lesson and remove the like', async ({ page }) => {
+      const probe = await adminDb().from('video_likes').select('id').limit(1);
+      test.skip(!!probe.error, 'video_likes does not exist on this Supabase project: run docs/testing/sql/qa-schema-gap.sql');
+      const uid = await clerkUserId(U);
+      await adminDb().from('video_likes').delete().eq('user_id', uid);
+      try {
+        await openCourse(page, U, SLUG);
+        const like = page.getByRole('button', { name: /\d+ Likes?$/ });
+        await expect(like).toHaveText(/^\s*0 Likes$/);
+        await like.click();
+        await expect(like).toHaveText(/^\s*1 Like$/);
+        await expect(like).toHaveAttribute('aria-pressed', 'true');
+        // the count moves at once; the row is written by the server call that follows
+        await expect.poll(async () => ((await adminDb().from('video_likes').select('id').eq('user_id', uid)).data ?? []).length, { timeout: 15000 }).toBe(1);
+        await page.reload();
+        await expect(page.getByRole('button', { name: /\d+ Likes?$/ })).toHaveText(/^\s*1 Like$/, { timeout: 30000 });
+        await page.getByRole('button', { name: /\d+ Likes?$/ }).click();
+        await expect(page.getByRole('button', { name: /\d+ Likes?$/ })).toHaveText(/^\s*0 Likes$/);
+        await expect.poll(async () => ((await adminDb().from('video_likes').select('id').eq('user_id', uid)).data ?? []).length, { timeout: 15000 }).toBe(0);
+      } finally {
+        await adminDb().from('video_likes').delete().eq('user_id', uid);
+      }
     });
 
     test('[LRN-E2E-006] an advanced lesson is locked, passing the exam opens it', async ({ page }) => {

@@ -1666,6 +1666,12 @@ sys.settrace(_trace_calls)
                       </button>
                     )}
 
+                    {activeVideo.type !== 'document' && (
+                      <button onClick={toggleLike} aria-pressed={hasLiked} className={`px-4 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors border ${hasLiked ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' : 'bg-[#1a1a1a] text-stone-400 border-stone-800 hover:bg-[#222]'}`}>
+                        <ThumbsUp size={18} className={hasLiked ? "fill-blue-400" : ""} /> {likesCount} {likesCount === 1 ? 'Like' : 'Likes'}
+                      </button>
+                    )}
+
                     {isVideoCompleted ? (
                       <button disabled className="px-6 py-3.5 rounded-xl bg-green-500/10 text-green-400 font-bold text-sm flex items-center justify-center gap-2 border border-green-500/20 shadow-sm">
                         <CheckCircle size={18} /> {activeVideo.type === 'document' ? 'Read Complete' : 'Video Watched'}
