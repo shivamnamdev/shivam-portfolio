@@ -560,7 +560,8 @@ export const courseCurriculumMap: Record<string, any[]> = {
     moduleTitle: "Module 4: Advanced Python",
     videoIds:[
       "n_R3amNHuXs",
-      "cYvQOXfgdPQ"// OOPS: Constructor and Polymorphism
+      "cYvQOXfgdPQ",
+      "tqAAEGDtsIE"// OOPS: Constructor and Polymorphism
     ],
     githubAssignments: {
       "n_R3amNHuXs": {
