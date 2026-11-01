@@ -216,6 +216,7 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 
 - Added `tests/api/learner-apis.spec.ts` (LRNA-*, 9 cases) for the new `/api/learning/*` routes (SCP-74 to SCP-76, step 4 of the database lock). The progress, exam, comment, like and submission specs now mock `/api/learning/*` instead of the Supabase REST calls (`LRN-PLY-010`).
 - Added `docs/testing/sql/qa-schema-gap.sql`: the QA project has no `video_likes` table (production has), so `LRNA-SOC-002` skips there until it is created.
+
 ## 2026-11-01 (admin data route)
 
 - Added `tests/api/admin-data-api.spec.ts` (ADMD-DATA-001 to 003) for `GET /api/admin/dashboard-data` (SCP-74 to SCP-76, PR 2 of 3). `mockTable` in `tests/support/admin.ts` now overrides one list of that route instead of one Supabase REST call; `ADM-GATE-002` also checks the new route refuses a learner.
