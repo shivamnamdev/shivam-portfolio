@@ -82,3 +82,6 @@ Environment findings:
 - `gh` is not installed: pull requests are opened by the owner from a compare link.
 
 Decisions and rules recorded: failures must not block automation (Allure and run pages show them); persona ids are namespaced per PRD; every Jira ticket is approved by the owner; the bug-fix workflow (branch, Jira bug under SCP-2, RCA, fix, PR, Jira comment) is in `.claude/skills/bug-fix-workflow/SKILL.md`.
+
+- 2026-11-01: the QA Supabase project has no `video_likes` or `test_attempts` table (production has both), so the like button never worked on QA and the old browser code hid the error. The new like route reports errors; the social route shows zero likes if the likes lookup fails.
+- 2026-11-01: `exam_progress` still stores a score computed in the browser. The server now caps attempts at 5 and validates 0-100, but cannot prove the score is honest.
