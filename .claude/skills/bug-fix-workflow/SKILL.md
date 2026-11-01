@@ -81,10 +81,14 @@ python3 -I scripts/jira.py transition SCP-<n> "In Review"
 
 When the PR is merged and verified, move the bug to Done and close the tickets it unblocks.
 
-## 8. Keep the test records true
+## 8. Keep the test records and the project memory true
 
 - A test that failed on purpose for this bug loses its "known failure" wording; remove `test.fixme` or the ticket tag only after it passes in a run.
 - Append a dated line to `docs/testing/CHANGELOG.md`; regenerate the coverage with `node scripts/case-coverage.mjs`; the next full run page (`docs/testing/runs/`) should show the failure gone.
+- Update the project memory in `docs/blast/` (CONSTITUTION §2, append and keep entries short and dated):
+  - `task_plan.md`: tick or add the checklist line for the bug (Jira key, branch, PR waiting for the owner).
+  - `findings.md`: add what was learned (cause, environment quirk, rule) when it is new knowledge.
+  - `progress.md`: a dated hand-written note with what was done, the errors met and the test result. Regenerate the commit list after the merge: `python3 -I scripts/generate-progress.py docs/blast/progress.md`.
 - Restore any stashed work: `git checkout <previous branch> && git stash pop`.
 
 ## 9. Report
