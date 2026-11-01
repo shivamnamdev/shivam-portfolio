@@ -31,8 +31,23 @@ export const formMessage = (page: Page, text: string | RegExp) => page.getByText
 
 export const json = (route: Route, status: number, body: unknown) =>
   route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
-export async function mockTable(page: Page, table: 'user_enrollments' | 'assignment_progress' | 'video_progress' | 'user_stats', data: unknown[] | number): Promise<void> {
-  await page.route(`**/rest/v1/${table}*`, route => typeof data === 'number' ? json(route, data, { message: 'mock failure' }) : json(route, 200, data));
+// The portal reads its four lists from one admin route. mockTable overrides one list (or makes it fail: the route then returns it empty
+// and names it in `failed`); the lists that are not mocked still come from the real route.
+const lists = { user_enrollments: 'enrollments', assignment_progress: 'submissions', video_progress: 'videoProgress', user_stats: 'userStats' } as const;
+const overrides = new WeakMap<Page, Record<string, unknown[] | number>>();
+export async function mockTable(page: Page, table: keyof typeof lists, data: unknown[] | number): Promise<void> {
+  const known = overrides.get(page) ?? {};
+  known[lists[table]] = data;
+  if (overrides.has(page)) return void overrides.set(page, known);
+  overrides.set(page, known);
+  await page.route('**/api/admin/dashboard-data', async route => {
+    const real = await route.fetch();
+    const body = await real.json();
+    for (const [key, value] of Object.entries(overrides.get(page)!)) {
+      if (typeof value === 'number') { body[key] = []; body.failed = [...(body.failed ?? []), key]; } else body[key] = value;
+    }
+    await route.fulfill({ response: real, json: body });
+  });
 }
 export async function mockUsers(page: Page, users: unknown[] | number): Promise<void> {
   await page.route('**/api/get-all-users', route => typeof users === 'number' ? json(route, users, { success: false }) : json(route, 200, { success: true, users }));

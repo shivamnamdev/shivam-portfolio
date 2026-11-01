@@ -132,3 +132,5 @@ Order follows the real journey: user lands → signs in → buys/joins → learn
 **Production-ready execution order:** Authentication → Course access/public pages → Purchase flow → Free enrollment flow → Dashboard/student access → Learning lab → Admin portal → Payment APIs → Enrollment APIs → Clerk/webhook APIs → Data integrity in Supabase → Performance validation.
 
 Source of truth for status: [docs/testing/README.md](../testing/README.md) (registry) and [docs/testing/COVERAGE.md](../testing/COVERAGE.md).
+
+**Progress 2026-11-01 (PR 2, admin data route):** `GET /api/admin/dashboard-data` (admin only, a failed list comes back empty and is named in `failed`); the admin page no longer imports the Supabase client. Admin API and UI specs: 40 passed, 2 skipped; the 6 that timed out in the long run passed when re-run. PR 3 (database lock) must wait until PRs 1 and 2 are deployed.

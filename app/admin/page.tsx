@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { ShieldAlert, CheckCircle2, UserPlus, Loader2, FileCode2, Users, BarChart, Code2, Eye, X, BookOpen, Clock, Flame } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
 import { activeCourses } from '@/data/courses';
 import { courseCurriculumMap } from '@/data/learning-content';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -76,26 +75,22 @@ export default function AdminDashboard() {
     async function fetchAdminData() {
       if (!isLoaded || !isSignedIn || user.primaryEmailAddress?.emailAddress !== ADMIN_EMAIL) return;
       try {
-        const[enrRes, assRes, vidRes, statsRes, usersRes] = await Promise.all([
-          supabase.from('user_enrollments').select('*').order('enrolled_at', { ascending: false }),
-          supabase.from('assignment_progress').select('*').order('completed_at', { ascending: false }),
-          supabase.from('video_progress').select('*'),
-          supabase.from('user_stats').select('*').order('total_time_seconds', { ascending: false }), // 🚨 Fetch User Stats
-          fetch('/api/get-all-users').then(res => res.json()) // 🚨 Fetch CRM Data
+        const [dataRes, usersRes] = await Promise.all([
+          fetch('/api/admin/dashboard-data').then(res => res.json()),
+          fetch('/api/get-all-users').then(res => res.json()) // CRM data
         ]);
 
-        if (enrRes.data) {
-          setEnrollments(enrRes.data);
+        if (dataRes.success) {
+          setEnrollments(dataRes.enrollments);
           const usage: Record<string, number> = {};
-          enrRes.data.forEach((row) => {
+          dataRes.enrollments.forEach((row: any) => {
             if (row.coupon_used) usage[row.coupon_used] = (usage[row.coupon_used] || 0) + 1;
           });
-          setAnalytics({ totalStudents: enrRes.data.length, couponUsage: usage });
+          setAnalytics({ totalStudents: dataRes.enrollments.length, couponUsage: usage });
+          setSubmissions(dataRes.submissions);
+          setVideoProgress(dataRes.videoProgress);
+          setUserStats(dataRes.userStats);
         }
-        
-        if (assRes.data) setSubmissions(assRes.data);
-        if (vidRes.data) setVideoProgress(vidRes.data);
-        if (statsRes.data) setUserStats(statsRes.data);
         if (usersRes.success) setAllUsers(usersRes.users);
 
       } catch (err) {
