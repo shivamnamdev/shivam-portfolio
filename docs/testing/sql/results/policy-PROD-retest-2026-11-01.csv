@@ -1,0 +1,91 @@
+case_id,item,detail
+COUNT,admin_activity_log,120
+COUNT,assignment_progress,65
+COUNT,exam_progress,0
+COUNT,test_attempts,0
+COUNT,user_enrollments,39
+COUNT,user_stats,27
+COUNT,video_comments,6
+COUNT,video_likes,2
+COUNT,video_progress,54
+POL-001,admin_activity_log,rls=true forced=false
+POL-001,assignment_progress,rls=true forced=false
+POL-001,exam_progress,rls=true forced=false
+POL-001,test_attempts,rls=true forced=false
+POL-001,user_enrollments,rls=true forced=false
+POL-001,user_stats,rls=true forced=false
+POL-001,video_comments,rls=true forced=false
+POL-001,video_likes,rls=true forced=false
+POL-001,video_progress,rls=true forced=false
+POL-002,admin_activity_log / Allow public read/write,cmd=ALL roles={public} using=true check=
+POL-002,assignment_progress / Allow public read/write,cmd=ALL roles={public} using=true check=
+POL-002,exam_progress / Allow public read/write,cmd=ALL roles={public} using=true check=
+POL-002,test_attempts / Allow public read/write,cmd=ALL roles={public} using=true check=
+POL-002,user_enrollments / Allow public read,cmd=SELECT roles={public} using=true check=
+POL-002,user_stats / Allow public read/write,cmd=ALL roles={public} using=true check=
+POL-002,video_comments / Allow public read/write,cmd=ALL roles={public} using=true check=
+POL-002,video_likes / Allow public read/write,cmd=ALL roles={public} using=true check=
+POL-002,video_progress / Allow public read/write,cmd=ALL roles={public} using=true check=
+POL-003,admin_activity_log / anon,"DELETE,INSERT,SELECT,UPDATE"
+POL-003,admin_activity_log / authenticated,"DELETE,INSERT,SELECT,UPDATE"
+POL-003,assignment_progress / anon,"DELETE,INSERT,SELECT,UPDATE"
+POL-003,assignment_progress / authenticated,"DELETE,INSERT,SELECT,UPDATE"
+POL-003,exam_progress / anon,"DELETE,INSERT,SELECT,UPDATE"
+POL-003,exam_progress / authenticated,"DELETE,INSERT,SELECT,UPDATE"
+POL-003,test_attempts / anon,"DELETE,INSERT,SELECT,UPDATE"
+POL-003,test_attempts / authenticated,"DELETE,INSERT,SELECT,UPDATE"
+POL-003,user_enrollments / anon,SELECT
+POL-003,user_enrollments / authenticated,SELECT
+POL-003,user_stats / anon,"DELETE,INSERT,SELECT,UPDATE"
+POL-003,user_stats / authenticated,"DELETE,INSERT,SELECT,UPDATE"
+POL-003,video_comments / anon,"DELETE,INSERT,SELECT,UPDATE"
+POL-003,video_comments / authenticated,"DELETE,INSERT,SELECT,UPDATE"
+POL-003,video_likes / anon,"DELETE,INSERT,SELECT,UPDATE"
+POL-003,video_likes / authenticated,"DELETE,INSERT,SELECT,UPDATE"
+POL-003,video_progress / anon,"DELETE,INSERT,SELECT,UPDATE"
+POL-003,video_progress / authenticated,"DELETE,INSERT,SELECT,UPDATE"
+POL-004,admin_activity_log / admin_activity_log_pkey,CREATE UNIQUE INDEX admin_activity_log_pkey ON public.admin_activity_log USING btree (id)
+POL-004,admin_activity_log / admin_activity_log_pkey,PRIMARY KEY (id)
+POL-004,assignment_progress / assignment_progress_pkey,CREATE UNIQUE INDEX assignment_progress_pkey ON public.assignment_progress USING btree (id)
+POL-004,assignment_progress / assignment_progress_pkey,PRIMARY KEY (id)
+POL-004,assignment_progress / assignment_progress_user_id_course_slug_video_id_key,"CREATE UNIQUE INDEX assignment_progress_user_id_course_slug_video_id_key ON public.assignment_progress USING btree (user_id, course_slug, video_id)"
+POL-004,assignment_progress / assignment_progress_user_id_course_slug_video_id_key,"UNIQUE (user_id, course_slug, video_id)"
+POL-004,exam_progress / exam_progress_pkey,CREATE UNIQUE INDEX exam_progress_pkey ON public.exam_progress USING btree (id)
+POL-004,exam_progress / exam_progress_pkey,PRIMARY KEY (id)
+POL-004,exam_progress / exam_progress_user_id_course_slug_key,"CREATE UNIQUE INDEX exam_progress_user_id_course_slug_key ON public.exam_progress USING btree (user_id, course_slug)"
+POL-004,exam_progress / exam_progress_user_id_course_slug_key,"UNIQUE (user_id, course_slug)"
+POL-004,test_attempts / test_attempts_pkey,CREATE UNIQUE INDEX test_attempts_pkey ON public.test_attempts USING btree (id)
+POL-004,test_attempts / test_attempts_pkey,PRIMARY KEY (id)
+POL-004,test_attempts / test_attempts_user_id_course_slug_test_id_key,"CREATE UNIQUE INDEX test_attempts_user_id_course_slug_test_id_key ON public.test_attempts USING btree (user_id, course_slug, test_id)"
+POL-004,test_attempts / test_attempts_user_id_course_slug_test_id_key,"UNIQUE (user_id, course_slug, test_id)"
+POL-004,user_enrollments / user_enrollments_pkey,CREATE UNIQUE INDEX user_enrollments_pkey ON public.user_enrollments USING btree (id)
+POL-004,user_enrollments / user_enrollments_pkey,PRIMARY KEY (id)
+POL-004,user_stats / user_stats_pkey,CREATE UNIQUE INDEX user_stats_pkey ON public.user_stats USING btree (user_id)
+POL-004,user_stats / user_stats_pkey,PRIMARY KEY (user_id)
+POL-004,video_comments / video_comments_pkey,CREATE UNIQUE INDEX video_comments_pkey ON public.video_comments USING btree (id)
+POL-004,video_comments / video_comments_pkey,PRIMARY KEY (id)
+POL-004,video_likes / video_likes_pkey,CREATE UNIQUE INDEX video_likes_pkey ON public.video_likes USING btree (id)
+POL-004,video_likes / video_likes_pkey,PRIMARY KEY (id)
+POL-004,video_likes / video_likes_video_id_user_id_key,"CREATE UNIQUE INDEX video_likes_video_id_user_id_key ON public.video_likes USING btree (video_id, user_id)"
+POL-004,video_likes / video_likes_video_id_user_id_key,"UNIQUE (video_id, user_id)"
+POL-004,video_progress / video_progress_pkey,CREATE UNIQUE INDEX video_progress_pkey ON public.video_progress USING btree (id)
+POL-004,video_progress / video_progress_pkey,PRIMARY KEY (id)
+POL-004,video_progress / video_progress_user_id_course_slug_video_id_key,"CREATE UNIQUE INDEX video_progress_user_id_course_slug_video_id_key ON public.video_progress USING btree (user_id, course_slug, video_id)"
+POL-004,video_progress / video_progress_user_id_course_slug_video_id_key,"UNIQUE (user_id, course_slug, video_id)"
+POL-007,cms_coupons,table does not exist
+POL-007,cms_courses,table does not exist
+POL-007,cms_curriculum,table does not exist
+POL-008,assignment_progress without a user_stats row,0
+POL-008,enrolments for a course outside the catalog,none
+POL-008,exam_progress without a user_stats row,0
+POL-008,video_progress without a user_stats row,2
+POL-013,pg_stat_statements,1.11
+POL-013,pgcrypto,1.3
+POL-013,plpgsql,1.0
+POL-013,supabase_vault,0.3.1
+POL-013,uuid-ossp,1.1
+ROLES,anon,bypassrls=false
+ROLES,authenticated,bypassrls=false
+ROLES,service_role,bypassrls=true
+POL-004,user_enrollments / user_enrollments_user_course_unique,"CREATE UNIQUE INDEX user_enrollments_user_course_unique ON public.user_enrollments USING btree (user_id, course_slug)"
+POL-004,user_enrollments / user_enrollments_user_course_unique,"UNIQUE (user_id, course_slug)"

@@ -4,6 +4,36 @@ Phases, goals, checklists, and the approved Blueprint for the current task. See 
 
 ## Current task
 
+Testing programme, 2026-10-30 to 2026-11-01 (owner plan: PRDs and manual cases first, then automation, then API, database, performance). Goal: cover all QA of the portal, log every defect in Jira (epic SCP-3 stories, bugs under SCP-2), keep a dated run history.
+
+Blueprint approved by the owner in the chat of each day ("go ahead" per step; every Jira ticket approved; fixes and PRs only on request).
+
+- [x] UI PRDs 01 to 08: 1,168 cases in total with PRDs 09 to 15; UI automation done (PRD 01 to 08: 203, 160, 134, 111, 70, 81, 104, 81 cases automated)
+- [x] API PRDs 09 to 13 (payment, enrollment, Clerk/webhook/user lookup, e-mail, AI tutor/certificate/time/XP): 127 cases, specs in `tests/api/`
+- [x] Database PRD 14 (44 cases: 28 automated, 16 manual policy inventory, SQL in `docs/testing/sql/`) and performance PRD 15 (35 cases, dev server and production build)
+- [x] First full run 2026-10-31: 714 tests, 643 passed, 1 flaky, 31 failed (all known defects, ticketed), 39 skipped. Page `docs/testing/runs/2026-10-31.md`; Jira SCP-78 (run log) and SCP-79
+- [x] Jira: SCP-44 to SCP-85 created or updated; every story under SCP-3 carries an automation status comment
+- [x] Policy inventory on QA run by the owner (2026-10-31): public read/write policies and write grants on seven tables (SCP-82); steps 1 and 2 of the fix applied by the owner on QA (2026-11-01); re-test 224 passed / 13 failed (expected) / 26 skipped
+- [x] SCP-85 (unique violation answered 500) fixed on branch `fix/SCP-85-unique-violation-in-grant-enrollment`, pushed, PR to be opened by the owner; skill `.claude/skills/bug-fix-workflow` and `scripts/jira.py` on branch `docs/bug-fix-workflow-skill`
+- [ ] Owner: open and merge both PRs; commit the `DB-Policy` documentation work (policy SQL, checker, PRD 14 results)
+- [ ] Owner: run the policy inventory on production (read-only, POL-015), then apply steps 1 and 2 there after SCP-85 is deployed; POL-012 (backups) and POL-016 (delete one learner) are manual
+- [ ] Database fix step 3 (cms_ tables, SCP-84) and step 4 (code changes before locking the other six tables, SCP-74 to SCP-76)
+- [ ] Not covered yet: Firefox/WebKit full runs, security PRD (headers, `npm audit`, stored XSS in Q&A), automated accessibility scan, real Razorpay checkout, e-mail content and counts (Gmail variables are empty locally), k6 load run, CI workflow for the full suite (QA secrets), production smoke
+- [ ] PRDs 05 and 07 to 15 are still "PRD draft": owner review pending
+
+### State of the roadmap (2026-11-01)
+
+| # | Feature | PRD | State |
+|---|---|---|---|
+| 1 to 8 | UI: auth, public, catalog, checkout, free enrollment, dashboard, learning, admin | 01 to 08 | Tests done; remaining cases are `test.fixme` for defects or missing access |
+| 9 to 13 | API: payment, enrollment, Clerk/webhook/lookup, e-mail, AI/certificate/time/XP | 09 to 13 | Tests done; 3 e-mail content cases and 2 server-state cases manual |
+| 14 | Database integrity and policy inventory | 14 | Automated cases done; 16 manual SQL cases (QA graded, production pending) |
+| 15 | Performance | 15 | Baseline on dev server and production build; k6, 1000+ users and sustained load open |
+
+Source of truth: [docs/testing/README.md](../testing/README.md), [COVERAGE.md](../testing/COVERAGE.md), [runs/README.md](../testing/runs/README.md).
+
+## Earlier task: automation batch 1 (2026-10-27)
+
 Automation batch 1 (2026-10-27): automate the existing manual cases, PRD 01 first; Allure report; fix SCP-29.
 
 - [x] Sign-in helper (Clerk token), persona seeding with snapshot/restore, Allure 3, coverage script

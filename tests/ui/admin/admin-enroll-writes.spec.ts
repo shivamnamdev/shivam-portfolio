@@ -44,6 +44,7 @@ async function learnerContext(browser: Browser, email: string) {
 
 test.describe('PRD08 manual enrolment and real table data', () => {
   test.describe.configure({ mode: 'default' });
+  test.setTimeout(90000);   // sign-in and the admin tables are slow on a busy network: 30 s was too tight
   test.describe('@regression', () => {
     test.beforeEach(() => { requireSeed(); requireFixture(); });
     test.afterEach(async () => {

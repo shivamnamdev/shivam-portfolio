@@ -1,35 +1,60 @@
 # Progress Log
 
 Date-wise log of changes, generated from `git log` (see [CONSTITUTION.md](../../CONSTITUTION.md) §2).
-Newest first. Format: `hash` subject — author (files changed, +added/−deleted). Merge commits are tagged **[merge]**.
+Newest first. Format: `hash` subject — author (files changed, +added/−deleted). Merge commits are tagged **[merge]**; commits on other branches but not yet in `origin/main` are tagged **[not in main]**.
 
-_Last generated: 2026-10-16 from `d045541` on branch `docs/blast-progress-log`._
-
-## Hand-written notes
-
-### 2026-10-30
-- PRDs 07 and 08 written with workbooks (107 and 83 cases). All UI PRDs exist; manual suite = 962 cases. Automation starts next (owner plan).
-- PRD 06 approved; workbook (82 cases) built; Jira SCP-45/46 created; PRD 07 (Learning Experience) written; next PRD 08 Admin. Owner plan: finish all PRDs and manual cases today, automate afterwards. Jira stories SCP-4..9 updated with results.
-- Wrote PRD 06 (Student Dashboard & Course Access); next in the owner's order: PRD 07 Learning Lab.
-
-### 2026-10-29
-- Wrote PRD 05 (Free Enrollment Flow) in `docs/testing/prd/` and updated the registry and changelog. Next in the owner's order: PRD 06 Student Dashboard & Course Access.
-- The owner's full precedence list (UI, API, Database, Performance, 12-step production order) is recorded in `docs/blast/task_plan.md` under "Product-wide testing roadmap".
-- 2026-10-28: PRD 03 automation (134/140 ids), Jira SCP-42 and SCP-43 created; defect for duplicate free-enrollment rows (`CDP-RACE-003`) awaits the owner's go-ahead.
+_Last generated: 2026-11-01 from `fe48f45` on branch `DB-Policy`._
 
 ## Working tree (not yet committed)
 
-- ` M .gitignore`
-- ` M CLAUDE.md`
-- `?? BLAST.md`
-- `?? CONSTITUTION.md`
-- `?? "Product Requirements Document (PRD) VWO.com.docx"`
-- `?? docs/blast/`
+- ` M docs/blast/findings.md`
+- ` M docs/blast/task_plan.md`
+- ` M docs/testing/CHANGELOG.md`
+- ` M docs/testing/prd/14-db-integrity.md`
+- ` M tests/ui/admin/admin-enroll-writes.spec.ts`
+- `?? docs/testing/runs/policy-QA-2026-10-31.md`
+- `?? docs/testing/sql/`
+- `?? scripts/policy-check.py`
 
 ## Commit history
 
+### 2026-11-01
+
+- `fe48f45` Merge pull request #61 from shivamnamdev/docs/bug-fix-workflow-skill **[merge]** — SHIVAM NAMDEV
+- `50cc67e` Merge pull request #60 from shivamnamdev/fix/SCP-85-unique-violation-in-grant-enrollment **[merge]** — SHIVAM NAMDEV
+- `03e287b` Python day-22 access specifier video updated — shivamnamdev (1 files, +2/−1)
+- `ad729c8` docs(skills): bug-fix-workflow also updates docs/blast (task plan, findings, progress) — shivamnamdev (1 files, +5/−1)
+- `25a59d2` docs(skills): add the bug-fix-workflow skill and a Jira helper script — shivamnamdev (3 files, +152/−1)
+- `1b7e9c5` fix(enrollments): treat a unique violation as "already enrolled" (SCP-85) — shivamnamdev (1 files, +9/−1)
+
+### 2026-10-31
+
+- `36736db` Merge pull request #59 from shivamnamdev/docs/testing-hub **[merge]** — SHIVAM NAMDEV
+- `8ce2957` Updated all the PRDs and test cases — shivamnamdev (56 files, +3078/−301)
+
+### 2026-10-30
+
+- `dad94e0` Updated prds and testing scripts — shivamnamdev (62 files, +8563/−214)
+
+### 2026-10-27
+
+- `dde206e` PRD-01 and PRD-02 Updated — shivamnamdev (47 files, +7393/−192)
+- `0b5abd0` Merge pull request #58 from shivamnamdev/test/pr-smoke-suite **[merge]** — SHIVAM NAMDEV
+- `4f1010a` testcase added — shivamnamdev (11 files, +136/−24)
+
+### 2026-10-24
+
+- `5ddb5c8` Python day 21 oops inheritance uploaded — shivamnamdev (1 files, +3/−2)
+
+### 2026-10-18
+
+- `5fa1bbb` Merge branch 'main' of github-personal:shivamnamdev/shivam-portfolio merge it **[merge]** — shivamnamdev
+- `5609380` python day-20 oops — shivamnamdev (1 files, +3/−3)
+
 ### 2026-10-16
 
+- `7a67129` Blast — shivamnamdev (8 files, +790/−0)
+- `be922f1` Course sales page upgrade with plan-based pricing (from course-cta-update-2) **[not in main]** — shivamnamdev (25 files, +728/−82)
 - `d045541` Merge pull request #57 from shivamnamdev/fix/prd-known-issues **[merge]** — SHIVAM NAMDEV
 - `67a63d8` Add pricing unit tests and record regression findings — shivamnamdev (2 files, +68/−1)
 - `67748bb` Fix security and correctness issues from the platform PRD audit — shivamnamdev (36 files, +815/−352)
@@ -53,7 +78,10 @@ _Last generated: 2026-10-16 from `d045541` on branch `docs/blast-progress-log`._
 
 ### 2026-09-27
 
+- `65de6c3` Updated the python course page detail draft 2 **[not in main]** — shivamnamdev (7 files, +446/−397)
+- `a1e5513` Updated the course title by removing batch detail **[not in main]** — shivamnamdev (1 files, +5/−1)
 - `57021c7` Product Diagram — shivamnamdev (1 files, +0/−0)
+- `b93ea51` Course CTA draft 1 **[not in main]** — shivamnamdev (4 files, +375/−93)
 
 ### 2026-09-20
 
@@ -62,6 +90,9 @@ _Last generated: 2026-10-16 from `d045541` on branch `docs/blast-progress-log`._
 ### 2026-09-19
 
 - `4159f65` file handling pythonsession uploaded — shivamnamdev (1 files, +5/−4)
+- `c0a91d4` basic course-manager update **[not in main]** — shivamnamdev (1 files, +54/−0)
+- `5485ec1` WIP on main: 8f858bc Merge pull request #56 from shivamnamdev/mobile-responsive **[merge]** **[not in main]** — shivamnamdev
+- `0d6ba14` index on main: 8f858bc Merge pull request #56 from shivamnamdev/mobile-responsive **[not in main]** — shivamnamdev
 
 ### 2026-09-15
 
@@ -105,6 +136,10 @@ _Last generated: 2026-10-16 from `d045541` on branch `docs/blast-progress-log`._
 ### 2026-08-25
 
 - `63325ec` Updated python session video — shivamnamdev (1 files, +4/−2)
+
+### 2026-08-13
+
+- `fdce43c` Stage branch testing **[not in main]** — shivamnamdev (2 files, +353/−0)
 
 ### 2026-08-10
 
@@ -227,6 +262,7 @@ _Last generated: 2026-10-16 from `d045541` on branch `docs/blast-progress-log`._
 
 - `d66b66c` updated day 2 assignment — SHIVAM NAMDEV (1 files, +8/−5)
 - `4620115` Add new GIT video ID for Day 07 to Module 3 — SHIVAM NAMDEV (1 files, +3/−2)
+- `e1ea737` Git Day-07 video **[not in main]** — shivamnamdev (1 files, +2/−1)
 
 ### 2026-07-01
 
@@ -271,6 +307,10 @@ _Last generated: 2026-10-16 from `d045541` on branch `docs/blast-progress-log`._
 - `2eb71d4` Revert "Coupon for git class has been updated" — shivamnamdevqa-kyndryl (1 files, +1/−10)
 - `8641c7f` Coupon for git class has been updated — shivamnamdevqa-kyndryl (1 files, +10/−1)
 
+### 2026-06-17
+
+- `28cbe0f` Updated the redundant portfolio **[not in main]** — shivamnamdev (1 files, +1/−4)
+
 ### 2026-06-16
 
 - `1772e51` update git course syllabus and code — shivamnamdev (5 files, +28/−5)
@@ -296,10 +336,16 @@ _Last generated: 2026-10-16 from `d045541` on branch `docs/blast-progress-log`._
 - `d0064d8` Merge pull request #46 from shivamnamdev/advance-lessons **[merge]** — SHIVAM NAMDEV
 - `08a4ffd` Updated video resolution — shivamnamdev (1 files, +292/−297)
 
+### 2026-06-01
+
+- `543f71e` Updated the portfolio **[not in main]** — shivamnamdev (6 files, +305/−74)
+
 ### 2026-05-30
 
 - `0a33444` Merge pull request #45 from shivamnamdev/new-ui **[merge]** — SHIVAM NAMDEV
 - `0818d5a` Update all video links — shivamnamdev (1 files, +3/−1)
+- `6b6b205` Portfolio update **[not in main]** — shivamnamdev (1 files, +62/−0)
+- `709f4c6` Updated the portfolio **[not in main]** — shivamnamdev (2 files, +255/−22)
 
 ### 2026-05-27
 
@@ -384,6 +430,10 @@ _Last generated: 2026-10-16 from `d045541` on branch `docs/blast-progress-log`._
 - `78de640` Merge pull request #20 from shivamnamdev/visualiser **[merge]** — SHIVAM NAMDEV
 - `4c30afb` Admin and lab update — shivamnamdev (6 files, +435/−356)
 
+### 2026-05-10
+
+- `a55084e` update lab content **[not in main]** — shivamnamdevqa-kyndryl (1 files, +7/−7)
+
 ### 2026-05-08
 
 - `b10c77c` Updated lab solutions — shivamnamdev (1 files, +2/−1)
@@ -444,6 +494,10 @@ _Last generated: 2026-10-16 from `d045541` on branch `docs/blast-progress-log`._
 - `cd29599` Merge pull request #7 from shivamnamdev/Course-Content **[merge]** — SHIVAM NAMDEV
 - `bfb644e` Added razor pay as well — shivamnamdev (10 files, +640/−63)
 
+### 2026-04-23
+
+- `42fc2de` Merge pull request #6 from shivamnamdev/main **[merge]** **[not in main]** — SHIVAM NAMDEV
+
 ### 2026-04-22
 
 - `4a5a25e` Merge pull request #5 from shivamnamdev/Multi-Page-Website **[merge]** — SHIVAM NAMDEV
@@ -492,6 +546,8 @@ _Last generated: 2026-10-16 from `d045541` on branch `docs/blast-progress-log`._
 ### 2026-04-03
 
 - `6b4fa33` High-Converting Video Sales Letter (VSL) Funnel — shivamnamdev (7 files, +294/−22)
+- `b674dcd` Updated the README.md file with build command details **[not in main]** — shivamnamdev (1 files, +32/−2)
+- `5f8e88e` next.config.mjs file updated for npm run build command to generate the  out folder as per s3 bucket requirements **[not in main]** — shivamnamdev (1 files, +1/−0)
 
 ### 2026-04-01
 
