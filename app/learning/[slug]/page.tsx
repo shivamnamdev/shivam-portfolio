@@ -24,6 +24,14 @@ import { ADMIN_EMAIL } from '@/lib/admin';
 // XP is recomputed server-side from progress rows; fire-and-forget after progress changes.
 const syncXp = () => fetch('/api/xp/sync', { method: 'POST' }).catch(() => {});
 
+// The learner tables are written by server routes (the browser has no database access to them).
+const postJson = async (url: string, body: unknown) => {
+  const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.success) throw new Error(data.error || 'Request failed');
+  return data;
+};
+
 function formatYouTubeDuration(duration: string) {
   const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
   if (!match) return "0:00";
@@ -545,23 +553,17 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
         // 🚨 NEW: Filter out Standalone Document IDs so we don't crash YouTube!
         const ytVideoIds = allItemIds.filter(id => !id.startsWith('doc-'));
 
-        const [vidRes, assRes, examRes] = await Promise.all([
-          supabase.from('video_progress').select('video_id').eq('user_id', user.id).eq('course_slug', params.slug),
-          // Also fetch submitted_code so we can restore previous submissions
-          supabase.from('assignment_progress').select('video_id, submitted_code').eq('user_id', user.id).eq('course_slug', params.slug),
-          supabase.from('exam_progress').select('*').eq('user_id', user.id).eq('course_slug', params.slug).maybeSingle()
-        ]);
+        const progressRes = await fetch(`/api/learning/progress?courseSlug=${encodeURIComponent(params.slug)}`);
+        const progress = await progressRes.json();
+        if (!progress.success) throw new Error(progress.error || 'Could not load progress');
 
-        setCompletedVideos(vidRes.data ? vidRes.data.map(p => p.video_id) :[]);
-        setCompletedAssignments(assRes.data ? assRes.data.map(p => p.video_id) :[]);
-        // Build a quick map of submitted_code by video id for fast restore
-        const submissionMap: Record<string, string> = {};
-        if (assRes.data) {
-          assRes.data.forEach((r: any) => { if (r.video_id && r.submitted_code) submissionMap[r.video_id] = r.submitted_code; });
-        }
+        setCompletedVideos(progress.completedVideoIds);
+        setCompletedAssignments(progress.completedAssignmentIds);
+        // Previous submissions by video id, for fast restore
+        const submissionMap: Record<string, string> = progress.assignments;
         assignmentSubmissionsRef.current = submissionMap;
         setAssignmentSubmissions(submissionMap);
-        if (examRes.data) setExamStatus({ is_passed: examRes.data.is_passed, attempts_used: examRes.data.attempts_used });
+        if (progress.exam) setExamStatus({ is_passed: progress.exam.is_passed, attempts_used: progress.exam.attempts_used });
 
         if (allItemIds.length === 0) {
           setPlaylist(courseModules.map(m => ({ moduleTitle: m.moduleTitle, videos:[] })));
@@ -666,15 +668,13 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     }
 
     try {
-      const [{ data: commentData }, { data: likesData }] = await Promise.all([
-        supabase.from('video_comments').select('*').eq('video_id', targetVideoId).order('created_at', { ascending: false }),
-        supabase.from('video_likes').select('user_id').eq('video_id', targetVideoId)
-      ]);
+      const socialRes = await fetch(`/api/learning/social?videoId=${encodeURIComponent(targetVideoId)}`);
+      const social = await socialRes.json();
+      if (!social.success) throw new Error(social.error || 'Could not load Q&A');
 
-      setComments(commentData ?? []);
-      const nextLikes = likesData ?? [];
-      setLikesCount(nextLikes.length);
-      setHasLiked(Boolean(user?.id && nextLikes.some((l: any) => l.user_id === user.id)));
+      setComments(social.comments);
+      setLikesCount(social.likesCount);
+      setHasLiked(social.hasLiked);
     } catch (error) {
       console.error('Failed to load Q&A data:', error);
       setComments([]);
@@ -780,16 +780,15 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   const toggleLike = async () => {
     if (!user || !activeVideo) return;
     try {
-      if (hasLiked) {
-        setHasLiked(false);
-        setLikesCount(prev => prev - 1);
-        await supabase.from('video_likes').delete().eq('video_id', activeVideo.id).eq('user_id', user.id);
-      } else {
-        setHasLiked(true);
-        setLikesCount(prev => prev + 1);
-        await supabase.from('video_likes').insert([{ video_id: activeVideo.id, user_id: user.id }]);
-      }
-    } catch (err) {}
+      // Optimistic update, then settle on the server's answer (the call toggles the caller's like).
+      setHasLiked(!hasLiked);
+      setLikesCount(prev => prev + (hasLiked ? -1 : 1));
+      const result = await postJson('/api/learning/like', { videoId: activeVideo.id });
+      setHasLiked(result.liked);
+      setLikesCount(result.likesCount);
+    } catch (err) {
+      await refreshCommentsAndLikes(activeVideo.id);
+    }
   };
 
   const handleAdminShare = async () => {
@@ -805,19 +804,8 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
 
     setIsPosting(true);
     const trimmedComment = newComment.trim();
-    const newEntry = {
-      video_id: activeVideo.id,
-      user_id: user.id,
-      user_name: user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || 'Student',
-      user_image: user.imageUrl,
-      content: trimmedComment,
-    };
-
     try {
-      const { data, error } = await supabase.from('video_comments').insert([newEntry]).select();
-      if (error) throw error;
-
-      const insertedComment = data?.[0] ?? { ...newEntry, id: `temp-${Date.now()}`, created_at: new Date().toISOString() };
+      const { comment: insertedComment } = await postJson('/api/learning/comment', { videoId: activeVideo.id, content: trimmedComment });
       setComments((prev) => [insertedComment, ...prev.filter(item => item.id !== insertedComment.id)]);
       setNewComment('');
       await refreshCommentsAndLikes(activeVideo.id);
@@ -833,8 +821,7 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     if (!user || !activeVideo || isMarking || !hasAccess) return;
     setIsMarking(true);
     try {
-      const { error } = await supabase.from('video_progress').insert([{ user_id: user.id, course_slug: params.slug, video_id: activeVideo.id }]);
-      if (error) throw error;
+      await postJson('/api/learning/complete-video', { courseSlug: params.slug, videoId: activeVideo.id });
       setCompletedVideos(prev =>[...prev, activeVideo.id]);
       syncXp();
     } catch (err) {
@@ -870,32 +857,17 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
           submittedAt: new Date().toISOString()
         };
 
-        const { error } = await supabase.from("assignment_progress").upsert(
-          {
-            user_id: user.id,
-            course_slug: params.slug,
-            video_id: activeVideo.id,
-            submitted_code: JSON.stringify(gitSubmission, null, 2),
-            user_name: studentName,
-            completed_at: new Date().toISOString()
-          },
-          { onConflict: "user_id,course_slug,video_id" }
-        );
+        const submittedCode = JSON.stringify(gitSubmission, null, 2);
+        const result = await postJson('/api/learning/submit-assignment', {
+          courseSlug: params.slug, videoId: activeVideo.id, submittedCode, kind: 'git',
+          title: activeVideo.githubAssignment?.title || activeVideo.title
+        });
 
-        if (error) throw error;
+        setAssignmentSubmissions(prev => ({ ...prev, [activeVideo.id]: submittedCode }));
 
-        setAssignmentSubmissions(prev => ({ ...prev, [activeVideo.id]: JSON.stringify(gitSubmission, null, 2) }));
-
-        if (!completedAssignments.includes(activeVideo.id)) {
-          setCompletedAssignments(prev => [...prev, activeVideo.id]);
+        if (result.firstSubmission || !completedAssignments.includes(activeVideo.id)) {
+          setCompletedAssignments(prev => prev.includes(activeVideo.id) ? prev : [...prev, activeVideo.id]);
           syncXp();
-          supabase.from("admin_activity_log").insert([
-            {
-              type: "submission",
-              message: "New Git Lab Submission: " + (activeVideo.githubAssignment?.title || activeVideo.title),
-              user_email: user.primaryEmailAddress?.emailAddress
-            }
-          ]).then();
         }
 
         showToast("Success!", "Your Git lab state has been saved.", "success");
@@ -944,19 +916,10 @@ sys.stderr = io.StringIO()
         setOutput(stdout || "Failed to generate exam report.");
 
         const isPassed = score >= 80;
-        const newAttempts = examStatus.attempts_used + 1;
-
-        const { error } = await supabase.from('exam_progress').upsert({
-          user_id: user.id,
-          course_slug: params.slug,
-          attempts_used: newAttempts,
-          is_passed: isPassed || examStatus.is_passed,
-          last_score: score,
-          completed_at: isPassed ? new Date().toISOString() : null
-        }, { onConflict: 'user_id, course_slug' });
-
-        if (error) throw error;
-        setExamStatus({ is_passed: isPassed || examStatus.is_passed, attempts_used: newAttempts });
+        // The server records the attempt (and enforces the 5-attempt cap).
+        const result = await postJson('/api/learning/exam-result', { courseSlug: params.slug, score });
+        const newAttempts = result.attempts_used;
+        setExamStatus({ is_passed: result.is_passed, attempts_used: newAttempts });
 
         if (isPassed) {
           showToast("🏆 EXAM PASSED!", `You scored ${score}%. All Advanced Videos are now unlocked!`, "success");
@@ -989,19 +952,16 @@ sys.stderr = io.StringIO()
         }).join('\n\n');
       }
 
-      const studentName = user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || 'Student';
-      const { error } = await supabase.from('assignment_progress').upsert(
-        { user_id: user.id, course_slug: params.slug, video_id: activeVideo.id, submitted_code: combinedCode, user_name: studentName, completed_at: new Date().toISOString() },
-        { onConflict: 'user_id, course_slug, video_id' }
-      );
-      if (error) throw error;
+      const result = await postJson('/api/learning/submit-assignment', {
+        courseSlug: params.slug, videoId: activeVideo.id, submittedCode: combinedCode,
+        title: activeVideo.githubAssignment?.title || activeVideo.title
+      });
 
       setAssignmentSubmissions(prev => ({ ...prev, [activeVideo.id]: combinedCode }));
 
-      if (!completedAssignments.includes(activeVideo.id)) {
-        setCompletedAssignments(prev => [...prev, activeVideo.id]);
+      if (result.firstSubmission || !completedAssignments.includes(activeVideo.id)) {
+        setCompletedAssignments(prev => prev.includes(activeVideo.id) ? prev : [...prev, activeVideo.id]);
         syncXp();
-        supabase.from('admin_activity_log').insert([{ type: 'submission', message: `New Code Submission: ${activeVideo.githubAssignment?.title || activeVideo.title}`, user_email: user.primaryEmailAddress?.emailAddress }]).then();
       }
 
       showToast("Success!", "Your code has been securely saved.", "success");

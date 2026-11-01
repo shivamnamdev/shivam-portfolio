@@ -32,30 +32,10 @@ export default function LearningDashboard() {
           setEnrolledCourses(myCourses);
         }
 
-        const todayDate = new Date();
-        const today = todayDate.toISOString().split('T')[0];
-        todayDate.setDate(todayDate.getDate() - 1);
-        const yesterday = todayDate.toISOString().split('T')[0];
-
-        const studentName = user.fullName || user.firstName || user.primaryEmailAddress?.emailAddress || 'Student';
-        const studentEmail = user.primaryEmailAddress?.emailAddress || ""; 
-
-        const { data: userStats } = await supabase.from('user_stats').select('*').eq('user_id', user.id).single();
-
-        if (userStats) {
-          let newStreak = userStats.current_streak || 0;
-          if (userStats.last_active_date === yesterday) newStreak += 1; 
-          else if (userStats.last_active_date < yesterday) newStreak = 1; 
-          
-          setStats({ streak: newStreak, points: userStats.total_points || 0 });
-
-          if (userStats.last_active_date !== today || userStats.user_email !== studentEmail) {
-            await supabase.from('user_stats').update({ current_streak: newStreak, last_active_date: today, user_name: studentName, user_email: studentEmail }).eq('user_id', user.id);
-          }
-        } else {
-          setStats({ streak: 1, points: 0 });
-          await supabase.from('user_stats').insert([{ user_id: user.id, user_name: studentName, user_email: studentEmail, current_streak: 1, total_points: 0, last_active_date: today }]);
-        }
+        // Streak and stats live on the server (the browser has no access to the stats table).
+        const statsRes = await fetch('/api/learning/stats', { method: 'POST' });
+        const statsData = await statsRes.json();
+        if (statsData.success) setStats({ streak: statsData.streak, points: statsData.points });
 
         // XP is computed server-side from progress rows (also backfills existing students).
         try {
@@ -66,12 +46,9 @@ export default function LearningDashboard() {
           console.error("XP sync failed:", xpError);
         }
 
-        const { data: leaders } = await supabase.from('user_stats').select('user_name, total_points, user_email').order('total_points', { ascending: false }).limit(15); 
-        if (leaders) {
-          const blockedEmails = ["financetrail.bazar@gmail.com", "mavish.ps8@gmail.com", "shivamnamdev.edu@gmail.com", "shivamnamdev.corp@gmail.com"]; 
-          const realStudents = leaders.filter(leader => !blockedEmails.includes(leader.user_email)).slice(0, 5); 
-          setLeaderboard(realStudents);
-        }
+        const boardRes = await fetch('/api/learning/leaderboard');
+        const board = await boardRes.json();
+        if (board.success) setLeaderboard(board.leaders);
       } catch (error) {
         console.error("Error fetching dashboard:", error);
       } finally {

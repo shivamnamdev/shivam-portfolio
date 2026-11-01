@@ -133,4 +133,40 @@ Order follows the real journey: user lands → signs in → buys/joins → learn
 
 Source of truth for status: [docs/testing/README.md](../testing/README.md) (registry) and [docs/testing/COVERAGE.md](../testing/COVERAGE.md).
 
+## 2026-11-01 — Step 4: lock the 8 browser-writable tables (SCP-74 to SCP-76) — BLUEPRINT, awaiting approval
+
+Branch `security/SCP-74-lock-browser-writable-tables`. Skills: supabase, supabase-postgres-best-practices, api-security-best-practices, auth-implementation-patterns (Clerk v4 and the anon-key client mean no Supabase JWT: RLS cannot see the caller, so the only safe pattern is "server routes + service role", the same as enrolments).
+
+1. **North Star:** anon and authenticated can no longer read or write `admin_activity_log, assignment_progress, exam_progress, test_attempts, user_stats, video_comments, video_likes, video_progress`; the app behaves the same for learners and the admin.
+2. **Integrations:** Clerk (session), Supabase (service role in routes). Keys exist in `.env*`.
+3. **Source of truth:** the 8 tables ([docs/DATABASE.md](../DATABASE.md)).
+4. **Delivery payload:** new server routes (below); pages call them instead of `supabase.from(...)`.
+5. **Behavioural rules:** identity only from the Clerk session; learner routes check enrolment (or admin); inputs validated and length-capped; admin routes check the admin on the server; no new dependency.
+
+**Browser calls found (all must move):** `app/learning/page.tsx` (user_stats read, update, insert, leaderboard read incl. e-mails), `app/learning/[slug]/page.tsx` (progress reads; video_progress insert; assignment_progress upsert x2; exam_progress upsert; video_comments read/insert; video_likes read/insert/delete; admin_activity_log insert x2), `app/admin/page.tsx` (reads of enrolments, assignment_progress, video_progress, user_stats). `test_attempts` has no code. Server routes already using the service role: track-time, xp/sync, webhook, lib/enrollments.
+
+**Routes (input -> output):**
+
+| Route | Input | Output | Server rules |
+| --- | --- | --- | --- |
+| `GET /api/learning/progress?courseSlug=` | slug | `{ completedVideoIds: string[], assignments: {videoId: submittedCode}, exam: {is_passed, attempts_used} \| null }` | session; enrolled or admin |
+| `POST /api/learning/complete-video` | `{ courseSlug, videoId }` | `{ success }` | session; enrolled; idempotent (unique rule) |
+| `POST /api/learning/submit-assignment` | `{ courseSlug, videoId, submittedCode }` | `{ success, firstSubmission }` | session; enrolled; size cap; user_name from Clerk; writes the activity-log row on first submission |
+| `POST /api/learning/exam-result` | `{ courseSlug, score }` | `{ is_passed, attempts_used }` | session; enrolled; attempts capped at 5; score 0-100 (the score is still computed in the browser, known limit, see findings) |
+| `GET /api/learning/social?videoId=` | video id | `{ comments[], likesCount, hasLiked }` | session |
+| `POST /api/learning/comment` | `{ videoId, content }` | `{ comment }` | session; trimmed, max 1000 chars; name and image from Clerk |
+| `POST /api/learning/like` | `{ videoId }` | `{ liked, likesCount }` | session; toggle |
+| `POST /api/learning/stats` | none | `{ streak, points }` | session; streak maths moves server-side |
+| `GET /api/learning/leaderboard` | none | `[{ user_name, total_points }]` (top 5, no e-mail) | session; blocked accounts filtered here |
+| `GET /api/admin/dashboard-data` | none | `{ enrollments, submissions, videoProgress, userStats }` | admin only |
+
+**Database (run last, on QA first, then production, after the code is deployed):** `revoke all on <8 tables> from anon, authenticated; drop policy "Allow public read/write" on <each>;` RLS stays on with no policy (deny all). Order matters: deploy code, then lock. Rollback = re-create the policy and re-grant (script kept in `docs/testing/sql/`).
+
+**Tests:** unit-style API tests for each route (401 without session, 403 not enrolled, happy path, validation), UI specs for learning/dashboard/admin must still pass, DB specs DBI-ACC / DBI-POL updated so the 8 tables must be unreadable for anon (the tests for the old behaviour flip from "documents the gap" to "enforces the rule").
+
+**Risks:** many UI specs seed or read these tables with the anon key (will be moved to the service role helpers); the admin page and leaderboard change data source; `user_enrollments` is still publicly readable and holds e-mails (separate follow-up, not part of this step).
+
+**Open questions for the owner:** (a) OK to remove e-mails from the leaderboard response (the UI only shows names and points)? (b) OK to cap exam attempts at 5 on the server? (c) split into 3 PRs (learner routes, admin route, database lock) or one? I recommend three.
+
+**Progress 2026-11-01 (PR 1, learner routes):** owner approved the blueprint (drop e-mails from the leaderboard, cap exam attempts at 5, three PRs). Done: `lib/learnerApi.ts`, nine `/api/learning/*` routes, both learner pages call them, `learner-apis.spec.ts` (8 pass, 1 skip: QA has no `video_likes`). Learning and dashboard UI specs: 106 passed, 8 skipped, 1 spec updated (`LRN-PLY-010`); `LRN-PY-017` is the known flaky Monaco case; `DSH-CHG-005` needs `NEXT_PUBLIC_QA_FREE_COUPON_USERS`, which this run did not set (to confirm on the next full run). Next: PR 2 (admin data route), PR 3 (database lock).
 **Progress 2026-11-01 (PR 2, admin data route):** `GET /api/admin/dashboard-data` (admin only, a failed list comes back empty and is named in `failed`); the admin page no longer imports the Supabase client. Admin API and UI specs: 40 passed, 2 skipped; the 6 that timed out in the long run passed when re-run. PR 3 (database lock) must wait until PRs 1 and 2 are deployed.

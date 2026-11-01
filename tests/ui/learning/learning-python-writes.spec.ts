@@ -54,8 +54,8 @@ test.describe('PRD07 Python course: progress, Q&A and lab (writes)', () => {
 
     test('[LRN-PLY-010] a failed progress save shows a message, saves nothing and keeps the button usable', async ({ page }) => {
       await openCourse(page, S2, SLUG);
-      await page.route('**/rest/v1/video_progress*', route =>
-        route.request().method() === 'POST' ? route.fulfill({ status: 500, contentType: 'application/json', body: '{"message":"mock"}' }) : route.continue());
+      await page.route('**/api/learning/complete-video', route =>
+        route.fulfill({ status: 500, contentType: 'application/json', body: '{"success":false,"error":"mock"}' }));
       await markButton(page).click();
       await expect(page.getByText('Could not mark this lesson as complete. Please try again.')).toBeVisible();
       await expect(page.getByRole('button', { name: 'Mark Complete' })).toBeEnabled();
