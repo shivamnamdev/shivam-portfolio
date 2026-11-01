@@ -224,3 +224,7 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 ## 2026-11-01 (database lock)
 
 - Added `docs/testing/sql/step4-lock-learner-tables.sql` with its rollback (SCP-74 to SCP-76, PR 3 of 3). Not run: it waits for PRs 1 and 2 to be deployed. `DBI-ACC-004` to `DBI-ACC-008` already assert the locked state and are the acceptance tests on QA.
+
+## 2026-11-02
+
+- Restored the lesson Like button on the course page (removed on 2026-06-06 in `cd5dccd`); `LRN-TAB-011` is automated (was a `test.fixme`, SCP-49). It skips on a project without the `video_likes` table.

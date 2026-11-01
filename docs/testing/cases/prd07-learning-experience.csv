@@ -31,7 +31,7 @@ LRN-TAB-007,Tabs Q&A and Materials,Details shows the description,S2,1. Open Deta
 LRN-TAB-008,Tabs Q&A and Materials,Post a comment,S2 on Q&A,1. Type 'QA comment' 2. Post,Comment appears at the top with name and time; row saved,P1,
 LRN-TAB-009,Tabs Q&A and Materials,Empty comment is refused,S2,1. Post with empty text,Nothing posted,P1,
 LRN-TAB-010,Tabs Q&A and Materials,Comment order,Two comments,1. Read the list,Newest first,P2,
-LRN-TAB-011,Tabs Q&A and Materials,Like the lesson,S2,1. Click the like,Count +1 and highlighted; second click removes it (known gap: video_likes table missing),P1,
+LRN-TAB-011,Tabs Q&A and Materials,Like the lesson,S2,1. Click the like,Count +1 and highlighted; second click removes it,P1,
 LRN-TAB-012,Tabs Q&A and Materials,Comments are per lesson,Comment on lesson 1,1. Open lesson 2 Q&A,Comment not shown,P1,
 LRN-PY-001,Python Lab,Workspace and instructions load,S2; LP lesson,1. Open Practice,Instructions/steps shown; editor with main.py ready,P0,
 LRN-PY-002,Python Lab,Run prints the output,PY-001 with print('hello'),1. Click Run,Output 'hello',P0,
