@@ -50,13 +50,14 @@ test.describe('PRD08 admin portal: access and page load @regression', () => {
     expect(errors, 'uncaught page errors').toEqual([]);
   });
 
-  test('[ADM-GATE-002][ADM-E2E-005] a learner is sent to the dashboard without seeing admin text, and both admin APIs refuse them', async ({ page }) => {
+  test('[ADM-GATE-002][ADM-E2E-005] a learner is sent to the dashboard without seeing admin text, and the admin APIs refuse them', async ({ page }) => {
     requireSeed();
     await signInAs(page, EMAIL.mavish);
     await page.goto('/admin');
     await expectOnPath(page, '/learning');
     await expect(page.getByText('Admin Command Center')).toHaveCount(0);
     expect((await page.request.get('/api/get-all-users')).status()).toBe(403);
+    expect((await page.request.get('/api/admin/dashboard-data')).status()).toBe(403);
     expect((await page.request.post('/api/admin/enroll', { data: { userId: 'user_x', courseSlug: COURSE.A } })).status()).toBe(403);
   });
 
