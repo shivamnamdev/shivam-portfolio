@@ -36,7 +36,7 @@ Also check [PRD_TM_DIGITAL_LEARNING_PLATFORM.md §13](PRD_TM_DIGITAL_LEARNING_PL
 | **React components, state, performance** | `components/`, `app/learning/[slug]/page.tsx` | `react-best-practices`, `react-patterns` | `react-ui-patterns`, `react-component-performance`, `senior-frontend`, `frontend-api-integration-patterns` |
 | **TypeScript typing / re-enabling type checks** | `tsconfig.json`, `data/*.ts` | `typescript-expert` | — |
 | **Refactoring large files / tech debt** | `app/learning/[slug]/page.tsx` (~2k lines), unused components | `code-refactoring-tech-debt`, `repo-native-refactor` | `orchestrate-batch-refactor` |
-| **Bug fixing** | any | `systematic-debugging` | `debugging-strategies` |
+| **Bug fixing** | any | `bug-fix-workflow` (local, `.claude/skills/bug-fix-workflow/SKILL.md`: branch, Jira bug, RCA, fix, PR, Jira comment), `systematic-debugging` | `debugging-strategies` |
 | **Playwright tests (UI + API)** | `tests/`, `playwright.config.ts` | `e2e-testing`, `e2e-testing-patterns` | `playwright-skill`, `api-contract-testing`, `test-driven-development` |
 | **CI / GitHub Actions** | `.github/workflows/` | `github-actions-advanced` | `github-actions-debugger` |
 | **Code review before merge** | any diff | `code-review-and-quality` | `five-axis-code-review` |
