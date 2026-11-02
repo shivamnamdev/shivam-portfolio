@@ -105,6 +105,10 @@ First inventory on production ([policy-PROD-2026-11-01.md](../runs/policy-PROD-2
 
 After steps 1 and 2 (backup first, SCP-85 deployed): 40 rows became 39, the unique rule `user_enrollments_user_course_unique` exists, `user_enrollments` is read-only for anon and authenticated, TRUNCATE/TRIGGER/REFERENCES are revoked ([retest](../runs/policy-PROD-retest-2026-11-01.md)). SCP-44 closed. The other 8 tables still have the open policy (SCP-74 to SCP-76, step 4). Two `video_progress` rows have no `user_stats` row (POL-008, harmless).
 
+### 6.5 Production after the lock (2026-11-02)
+
+Steps 4 and 5 were run on production after the `/api/learning/*`, `/api/admin/dashboard-data` and `/api/learning/enrollments` code was deployed ([result](../runs/policy-PROD-locked-2026-11-02.md)). All 9 tables have RLS on, no policy and no grant for anon or authenticated, so only the service role can read or write them. POL-002 and POL-003 pass; POL-005 stays FAIL in the checker by design (no policy refers to a JWT because none exists). Row counts unchanged (39 enrolments, 27 learners). R-DB-1 to R-DB-3 are closed on production.
+
 ## 7. Risks
 
 | Risk | Ticket |

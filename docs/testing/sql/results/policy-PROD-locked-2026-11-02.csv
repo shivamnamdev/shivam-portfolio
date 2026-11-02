@@ -1,0 +1,42 @@
+case_id,item,detail
+COUNT,admin_activity_log,120
+COUNT,assignment_progress,65
+COUNT,exam_progress,0
+COUNT,test_attempts,0
+COUNT,user_enrollments,39
+COUNT,user_stats,27
+COUNT,video_comments,6
+COUNT,video_likes,4
+COUNT,video_progress,55
+POL-001,admin_activity_log,rls=true forced=false
+POL-001,assignment_progress,rls=true forced=false
+POL-001,exam_progress,rls=true forced=false
+POL-001,test_attempts,rls=true forced=false
+POL-001,user_enrollments,rls=true forced=false
+POL-001,user_stats,rls=true forced=false
+POL-001,video_comments,rls=true forced=false
+POL-001,video_likes,rls=true forced=false
+POL-001,video_progress,rls=true forced=false
+POL-004,admin_activity_log / admin_activity_log_pkey,PRIMARY KEY (id)
+POL-004,assignment_progress / assignment_progress_user_id_course_slug_video_id_key,"UNIQUE (user_id, course_slug, video_id)"
+POL-004,exam_progress / exam_progress_user_id_course_slug_key,"UNIQUE (user_id, course_slug)"
+POL-004,test_attempts / test_attempts_user_id_course_slug_test_id_key,"UNIQUE (user_id, course_slug, test_id)"
+POL-004,user_enrollments / user_enrollments_user_course_unique,"UNIQUE (user_id, course_slug)"
+POL-004,user_stats / user_stats_pkey,PRIMARY KEY (user_id)
+POL-004,video_likes / video_likes_video_id_user_id_key,"UNIQUE (video_id, user_id)"
+POL-004,video_progress / video_progress_user_id_course_slug_video_id_key,"UNIQUE (user_id, course_slug, video_id)"
+POL-007,cms_coupons,table does not exist
+POL-007,cms_courses,table does not exist
+POL-007,cms_curriculum,table does not exist
+POL-008,assignment_progress without a user_stats row,0
+POL-008,enrolments for a course outside the catalog,none
+POL-008,exam_progress without a user_stats row,0
+POL-008,video_progress without a user_stats row,2
+POL-013,pg_stat_statements,1.11
+POL-013,pgcrypto,1.3
+POL-013,plpgsql,1.0
+POL-013,supabase_vault,0.3.1
+POL-013,uuid-ossp,1.1
+ROLES,anon,bypassrls=false
+ROLES,authenticated,bypassrls=false
+ROLES,service_role,bypassrls=true

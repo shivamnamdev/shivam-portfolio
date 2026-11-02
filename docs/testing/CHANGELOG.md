@@ -233,3 +233,7 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 
 - Added `GET /api/learning/enrollments` (the learner's own course slugs, service role) and `tests/api/enrollments-api.spec.ts` (`LRNA-ENR-001`, `LRNA-ENR-002`). The dashboard, lesson page, live lobby and checkout card now call it, and the share page reads with the service role, so no browser code reads `user_enrollments` any more (SCP-75).
 - Added `docs/testing/sql/step5-lock-user-enrollments.sql`: drops the public read policy and revokes anon access. Not run yet: it waits for this code to be deployed. After it runs, `DBI-ACC-003` passes.
+
+## 2026-11-02 (production lock verified)
+
+- Production inventory after steps 4 and 5 graded: no policies and no anon/authenticated grants on all 9 tables ([run page](runs/policy-PROD-locked-2026-11-02.md), PRD 14 §6.5). SCP-74 to SCP-76 can close.
