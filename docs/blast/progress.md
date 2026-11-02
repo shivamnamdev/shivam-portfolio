@@ -3,20 +3,22 @@
 Date-wise log of changes, generated from `git log` (see [CONSTITUTION.md](../../CONSTITUTION.md) §2).
 Newest first. Format: `hash` subject — author (files changed, +added/−deleted). Merge commits are tagged **[merge]**; commits on other branches but not yet in `origin/main` are tagged **[not in main]**.
 
-_Last generated: 2026-11-02 from `0911504` on branch `docs/prod-lock-results`._
+_Last generated: 2026-11-02 from `22fb41b` on branch `docs/qa-step5-verified`._
 
 ## Working tree (not yet committed)
 
 - ` M docs/blast/task_plan.md`
 - ` M docs/testing/CHANGELOG.md`
-- ` M docs/testing/prd/14-db-integrity.md`
-- `?? docs/testing/runs/policy-PROD-locked-2026-11-02.md`
-- `?? docs/testing/sql/results/policy-PROD-locked-2026-11-02.csv`
 
 ## Commit history
 
 ### 2026-11-02
 
+- `22fb41b` Merge pull request #70 from shivamnamdev/fix/supabase-admin-requires-service-key **[merge]** — SHIVAM NAMDEV
+- `0c2097d` Merge main into fix/supabase-admin-requires-service-key (keep both changelog entries) **[merge]** — shivamnamdev
+- `0746845` fix: supabaseAdmin no longer falls back to the public key when the service-role key is missing — shivamnamdev (3 files, +13/−8)
+- `76bfc3b` Merge pull request #69 from shivamnamdev/docs/prod-lock-results **[merge]** — SHIVAM NAMDEV
+- `7251613` docs: production lock verified (steps 4 and 5), SCP-74 to SCP-76 — shivamnamdev (6 files, +165/−1)
 - `0911504` Merge pull request #68 from shivamnamdev/security/SCP-74-enrollments-route **[merge]** — SHIVAM NAMDEV
 - `9ef1b13` security(SCP-75): read enrolments through /api/learning/enrollments and add the step 5 lock script — shivamnamdev (16 files, +114/−42)
 - `80773bd` Merge pull request #67 from shivamnamdev/feat/restore-lesson-like-button **[merge]** — SHIVAM NAMDEV
