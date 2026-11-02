@@ -6,7 +6,6 @@ import { activeCourses } from '@/data/courses';
 import { applyCoupon, formatPrice, parsePrice, resolveCoupon, toCurrencyCode, type Coupon } from '@/lib/pricing';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
 import SpotlightCard from '@/components/SpotlightCard';
 
 interface ActiveCohortsProps {
@@ -46,13 +45,9 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
     async function checkEnrollment() {
       if (!isSignedIn || !user?.id || !displayCourse?.slug) return;
       try {
-        const { data, error } = await supabase
-          .from('user_enrollments')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('course_slug', displayCourse.slug);
-          
-        if (!error && data && data.length > 0) setIsAlreadyEnrolled(true);
+        const res = await fetch('/api/learning/enrollments');
+        const data = await res.json();
+        if (data.success && data.slugs.includes(displayCourse.slug)) setIsAlreadyEnrolled(true);
       } catch (err) {}
     }
     checkEnrollment();

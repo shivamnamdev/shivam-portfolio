@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { courseCurriculumMap } from '@/data/learning-content';
 import { activeCourses } from '@/data/courses';
-import { supabase } from '@/lib/supabaseClient';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { isAdminEmail } from '@/lib/admin';
 import { getPrimaryEmail } from '@/lib/serverAuth';
 
@@ -64,7 +64,7 @@ async function resolveDestination(videoId: string) {
   if (isAdmin) return `/learning/${details.slug}?v=${videoId}`;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('user_enrollments')
       .select('id')
       .eq('user_id', userId)

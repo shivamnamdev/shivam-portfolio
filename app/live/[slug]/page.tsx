@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { Loader2, ChevronLeft, ShieldAlert, Video, ExternalLink, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabaseClient';
 import { activeCourses } from '@/data/courses';
 import { isAdminEmail } from '@/lib/admin';
 
@@ -30,13 +29,9 @@ export default function LiveClassLobby({ params }: { params: { slug: string } })
       }
 
       try {
-        const { data, error } = await supabase
-          .from('user_enrollments')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('course_slug', params.slug);
-
-        if (!error && data && data.length > 0) {
+        const res = await fetch('/api/learning/enrollments');
+        const data = await res.json();
+        if (data.success && data.slugs.includes(params.slug)) {
           setHasAccess(true);
         }
       } catch (err) {

@@ -85,3 +85,7 @@ Decisions and rules recorded: failures must not block automation (Allure and run
 
 - 2026-11-01: the QA Supabase project has no `video_likes` or `test_attempts` table (production has both), so the like button never worked on QA and the old browser code hid the error. The new like route reports errors; the social route shows zero likes if the likes lookup fails.
 - 2026-11-01: `exam_progress` still stores a score computed in the browser. The server now caps attempts at 5 and validates 0-100, but cannot prove the score is honest.
+
+## 2026-11-02
+
+- `user_enrollments` was the last table the public key could read (learner ids and course slugs). Every browser read of it was "does this learner own course X" or "list my courses", so one own-slugs route covers all of them; the share page is a server component and uses the service role directly.
