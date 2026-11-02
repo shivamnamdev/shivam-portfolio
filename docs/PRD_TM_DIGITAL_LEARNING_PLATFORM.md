@@ -624,7 +624,7 @@ flowchart LR
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` | Client / Server | Clerk |
 | `CLERK_WEBHOOK_SECRET` | Server | Svix verification |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client / Server | Supabase client |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server | Defined but **not used** in code |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server | Required: every server route reads and writes the locked tables with it (missing key = logged error and failing routes, 2026-11-02 incident) |
 | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `NEXT_PUBLIC_RAZORPAY_KEY_ID` | Server / Client | Payments |
 | `GMAIL_USER`, `GMAIL_APP_PASSWORD` | Server | Email |
 | `NEXT_PUBLIC_YOUTUBE_API_KEY` | Client | YouTube metadata |

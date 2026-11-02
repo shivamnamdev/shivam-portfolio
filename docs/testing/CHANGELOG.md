@@ -233,3 +233,8 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 
 - Added `GET /api/learning/enrollments` (the learner's own course slugs, service role) and `tests/api/enrollments-api.spec.ts` (`LRNA-ENR-001`, `LRNA-ENR-002`). The dashboard, lesson page, live lobby and checkout card now call it, and the share page reads with the service role, so no browser code reads `user_enrollments` any more (SCP-75).
 - Added `docs/testing/sql/step5-lock-user-enrollments.sql`: drops the public read policy and revokes anon access. Not run yet: it waits for this code to be deployed. After it runs, `DBI-ACC-003` passes.
+
+## 2026-11-02 (missing service-role key on production)
+
+- After the production lock the dashboard, admin page and enrolment routes returned empty data because `SUPABASE_SERVICE_ROLE_KEY` was not set in Vercel and `lib/supabaseAdmin.ts` silently fell back to the public key. The owner added the key and redeployed. `supabaseAdmin` now logs an error at start-up and fails with a clear message on first use when the key is missing; it no longer falls back.
+- Automated run on QA (tests/db, tests/api): 130 passed, 16 failed, 22 skipped. The failures are the known ticketed defects (SCP-66 to SCP-73), the free-coupon cases that need `NEXT_PUBLIC_QA_FREE_COUPON_USERS`, and `DBI-ACC-003`, which passes once step 5 runs on QA.
