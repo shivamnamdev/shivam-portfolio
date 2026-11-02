@@ -185,3 +185,22 @@ Blueprint (owner: "do it yourself" after the like-button PR merged): input `GET 
 - [x] 2026-11-02: step 5 run on QA; `tests/db` 27 passed, 0 failed (DBI-ACC-003 passes). Open: POL-012 (backups are a paid feature, not available), POL-016, Jira token rotation, server-side exam scoring.
 
 - [x] 2026-11-02: POL-016 run on QA by the owner (`user_stats` 4 to 3; per-table zeros not reported). POL-012 not available (backups are a paid feature). Jira token rotated and verified.
+
+## 2026-11-02 Blueprint: server-side exam grading (awaiting owner approval, no code written)
+
+**North Star:** a pass is only recorded when the server itself ran the learner's code against the grader and got a score of 80 or more.
+
+**Integrations:** Clerk session, Supabase (`exam_progress`, service role), `pyodide` npm package in Node (new dependency, not in `package.json` today; the browser loads it from a CDN). No new keys.
+
+**Source of truth:** `exam_progress` (attempts, pass, last score). The grader script moves out of `data/learning-content.ts` (shipped to every browser) into a server-only file `lib/examGraders.ts`, keyed by `courseSlug`; the client data keeps only the exam's title and file URLs.
+
+**Data shapes**
+- Request `POST /api/learning/exam-grade` `{ courseSlug: string, files: Record<string,string>[] }` (one file map per step, as the page builds them today); total code capped at 200,000 characters.
+- Response `{ success: true, score: number (0-100, integer), is_passed: boolean, attempts_used: number, report: string }`; errors: 400 invalid, 401, 403 not enrolled or no attempts left, 408 time limit, 500.
+- `POST /api/learning/exam-result` stops accepting a score from the browser (refused with 410/403); only the grade route writes `exam_progress`.
+
+**Behavioural rules:** attempt cap 5 (admin exempt) and pass mark 80 stay as today; the attempt is counted before grading starts (a crash or timeout still uses an attempt); one grade at a time per learner; 20 s time limit and 64 KB report cap per run; the score comes from the grader's own computation, never from text the learner's code printed (the learner's stdout is captured separately from the grader's result value); runs in a separate Node worker, no file, network or `os` access for the Python code.
+
+**Risks to check first:** Pyodide cold start inside a Vercel function (time and memory), bundle size, and whether the time limit can stop an infinite loop (worker termination). A spike on QA decides this before the route is built; if it does not fit, fall back to the external runner or the limits-only option.
+
+**Plan:** 1) spike: run Pyodide in a Node worker locally and on a Vercel preview, measure; 2) grader file and route; 3) page change (send code, show returned report); 4) tests: `LRNA-EXM-*` updated, new cases (forged score refused, learner printing `EXAM_SCORE: 100` still gets the real score, infinite loop times out, attempt cap, not enrolled); 5) docs (PRD 07/13 cases, changelog).
