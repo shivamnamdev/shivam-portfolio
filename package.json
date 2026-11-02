@@ -27,6 +27,7 @@
     "nodemailer": "^8.0.6",
     "openai": "^6.35.0",
     "pdf-lib": "^1.17.1",
+    "pyodide": "^0.26.4",
     "razorpay": "^2.9.6",
     "react": "^18",
     "react-dom": "^18",
