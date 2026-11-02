@@ -3,7 +3,7 @@
 --   PR 1 (/api/learning/* routes) and PR 2 (/api/admin/dashboard-data). Running it earlier breaks progress saving, comments and the admin portal.
 -- Order: QA first, then npx playwright test tests/db tests/api tests/ui/learning tests/ui/dashboard tests/ui/admin; production after QA is green,
 -- outside class hours, with a backup (DBI-POL-012). Tables that do not exist on a project (video_likes and test_attempts on QA) are skipped.
--- user_enrollments is NOT touched here: it keeps the read-only policy from step 2 (the dashboard and checkout still read it with the public key).
+-- user_enrollments is NOT touched here: see step5-lock-user-enrollments.sql (needs the /api/learning/enrollments code deployed first).
 
 do $$
 declare t text;

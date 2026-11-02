@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { BookOpen, Video, FileText, CheckCircle2, PlayCircle, Loader2, Flame, Trophy } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
 import { activeCourses } from '@/data/courses';
 import SpotlightCard from '@/components/SpotlightCard';
 
@@ -25,9 +24,10 @@ export default function LearningDashboard() {
     async function fetchDashboardData() {
       if (!isLoaded || !user) return;
       try {
-        const { data: enrollments } = await supabase.from('user_enrollments').select('course_slug').eq('user_id', user.id);
-        if (enrollments) {
-          const purchasedSlugs = enrollments.map(d => d.course_slug);
+        const enrollRes = await fetch('/api/learning/enrollments');
+        const enrollData = await enrollRes.json();
+        if (enrollData.success) {
+          const purchasedSlugs: string[] = enrollData.slugs;
           const myCourses = activeCourses.filter(c => purchasedSlugs.includes(c.slug));
           setEnrolledCourses(myCourses);
         }

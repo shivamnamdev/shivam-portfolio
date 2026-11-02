@@ -228,3 +228,8 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 ## 2026-11-02
 
 - Restored the lesson Like button on the course page (removed on 2026-06-06 in `cd5dccd`); `LRN-TAB-011` is automated (was a `test.fixme`, SCP-49). It skips on a project without the `video_likes` table.
+
+## 2026-11-02 (enrolments route)
+
+- Added `GET /api/learning/enrollments` (the learner's own course slugs, service role) and `tests/api/enrollments-api.spec.ts` (`LRNA-ENR-001`, `LRNA-ENR-002`). The dashboard, lesson page, live lobby and checkout card now call it, and the share page reads with the service role, so no browser code reads `user_enrollments` any more (SCP-75).
+- Added `docs/testing/sql/step5-lock-user-enrollments.sql`: drops the public read policy and revokes anon access. Not run yet: it waits for this code to be deployed. After it runs, `DBI-ACC-003` passes.

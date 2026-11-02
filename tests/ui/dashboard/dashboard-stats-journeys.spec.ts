@@ -215,10 +215,10 @@ test.describe('PRD06 stats, lobby link, expiry and learner journeys', () => {
 
       test('[DSH-ERR-002] after a failed load, restoring the network and reloading brings the course card back', async ({ page }) => {
         await signInAs(page, EMAIL.mavish);
-        await failRoute(page, '**/rest/v1/user_enrollments*');
+        await failRoute(page, '**/api/learning/enrollments');
         await page.goto('/learning');
         await expect(cards(page)).toHaveCount(0, { timeout: 25000 });
-        await page.unroute('**/rest/v1/user_enrollments*');
+        await page.unroute('**/api/learning/enrollments');
         await page.reload();
         await expect(cards(page)).toHaveCount(1, { timeout: 25000 });
       });

@@ -172,3 +172,10 @@ Branch `security/SCP-74-lock-browser-writable-tables`. Skills: supabase, supabas
 **Progress 2026-11-01 (PR 2, admin data route):** `GET /api/admin/dashboard-data` (admin only, a failed list comes back empty and is named in `failed`); the admin page no longer imports the Supabase client. Admin API and UI specs: 40 passed, 2 skipped; the 6 that timed out in the long run passed when re-run. PR 3 (database lock) must wait until PRs 1 and 2 are deployed.
 
 **Progress 2026-11-01 (PR 3, database lock):** `step4-lock-learner-tables.sql` (+ rollback) written, not run. Order for the owner: merge and deploy PR 1 and PR 2, run the script on QA, run the QA suites (DBI-ACC-004..008 must pass), then production after a backup.
+
+## 2026-11-02 (enrolments route, last open table)
+
+Blueprint (owner: "do it yourself" after the like-button PR merged): input `GET /api/learning/enrollments` (session only) -> `{ success, slugs: string[] }`; source of truth `user_enrollments` read with the service role; then `step5-lock-user-enrollments.sql` removes the public read. Callers moved: `app/learning/page.tsx`, `app/learning/[slug]/page.tsx`, `app/live/[slug]/page.tsx`, `components/ActiveCohorts.tsx`; `app/share/[videoId]/page.tsx` uses `supabaseAdmin`.
+
+- [x] Route, five callers, test spec, SQL script, docs
+- [ ] Owner: deploy, run step 5 on QA then production, re-run `tests/db`

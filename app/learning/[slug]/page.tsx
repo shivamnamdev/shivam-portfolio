@@ -15,7 +15,6 @@ import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight,
 import Link from 'next/link';
 import { courseCurriculumMap } from '@/data/learning-content';
 import { activeCourses } from '@/data/courses';
-import { supabase } from '@/lib/supabaseClient';
 import Editor from '@monaco-editor/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GitGraphVisualizer from '@/components/GitGraphVisualizer';
@@ -264,14 +263,9 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
       }
 
       try {
-        const { data, error } = await supabase
-          .from('user_enrollments')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('course_slug', params.slug)
-          .limit(1);
-
-        setHasAccess(!error && !!data && data.length > 0);
+        const res = await fetch('/api/learning/enrollments');
+        const data = await res.json();
+        setHasAccess(!!data.success && data.slugs.includes(params.slug));
       } catch (err) {
         setHasAccess(false);
       } finally {

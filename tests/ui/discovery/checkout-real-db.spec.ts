@@ -125,7 +125,7 @@ test.describe('PRD03 Already-enrolled learner @regression', () => {
 
   test('[CDP-ENR-006] if the enrolment lookup fails the page still works and does not crash', async ({ page }) => {
     const errors = trackPageErrors(page);
-    await page.route('**/rest/v1/user_enrollments**', route => route.fulfill({ status: 500, contentType: 'application/json', body: '{"message":"boom"}' }));
+    await page.route('**/api/learning/enrollments*', route => route.fulfill({ status: 500, contentType: 'application/json', body: '{"message":"boom"}' }));
     await openFixture(page, USER);
     await expect(ui.finalPrice(page)).toHaveText('₹10');
     expect(errors).toEqual([]);
