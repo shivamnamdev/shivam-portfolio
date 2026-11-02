@@ -242,3 +242,7 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 ## 2026-11-02 (production lock verified)
 
 - Production inventory after steps 4 and 5 graded: no policies and no anon/authenticated grants on all 9 tables ([run page](runs/policy-PROD-locked-2026-11-02.md), PRD 14 §6.5). SCP-74 to SCP-76 can close.
+
+## 2026-11-02 (QA step 5 verified)
+
+- Owner ran `step5-lock-user-enrollments.sql` on QA, then `tests/db`: 27 passed, 15 skipped (manual SQL cases), 0 failed. `DBI-ACC-003` now passes, so the public key can no longer read `user_enrollments`. SCP-75 is closed on QA and production.
