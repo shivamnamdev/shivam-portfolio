@@ -246,3 +246,7 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 ## 2026-11-02 (QA step 5 verified)
 
 - Owner ran `step5-lock-user-enrollments.sql` on QA, then `tests/db`: 27 passed, 15 skipped (manual SQL cases), 0 failed. `DBI-ACC-003` now passes, so the public key can no longer read `user_enrollments`. SCP-75 is closed on QA and production.
+
+## 2026-11-02 (POL-016 delete one learner's data, QA)
+
+- Owner deleted one QA test learner's rows from the learner tables and `user_enrollments` in one transaction. `user_stats` went from 4 to 3 rows, so exactly one learner was removed and the other three were untouched. The per-table counts of 0 after the delete were not sent, so the result is owner-reported. Production was not used (no backups on the current plan). DBI-POL-012 (backups) is not available on the free plan.

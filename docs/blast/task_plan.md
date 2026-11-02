@@ -183,3 +183,5 @@ Blueprint (owner: "do it yourself" after the like-button PR merged): input `GET 
 - [x] 2026-11-02: owner ran steps 4 and 5 on production; inventory graded (no policies, no anon grants, counts unchanged). SCP-74 to SCP-76 closed.
 
 - [x] 2026-11-02: step 5 run on QA; `tests/db` 27 passed, 0 failed (DBI-ACC-003 passes). Open: POL-012 (backups are a paid feature, not available), POL-016, Jira token rotation, server-side exam scoring.
+
+- [x] 2026-11-02: POL-016 run on QA by the owner (`user_stats` 4 to 3; per-table zeros not reported). POL-012 not available (backups are a paid feature). Jira token rotated and verified.
