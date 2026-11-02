@@ -250,3 +250,10 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 ## 2026-11-02 (POL-016 delete one learner's data, QA)
 
 - Owner deleted one QA test learner's rows from the learner tables and `user_enrollments` in one transaction. `user_stats` went from 4 to 3 rows, so exactly one learner was removed and the other three were untouched. The per-table counts of 0 after the delete were not sent, so the result is owner-reported. Production was not used (no backups on the current plan). DBI-POL-012 (backups) is not available on the free plan.
+
+## 2026-11-02 (server-side exam grading)
+
+- New `POST /api/learning/exam-grade`: the server runs the learner's code and the course grader in Pyodide inside a worker thread (empty environment, no `fetch`/`process`/`require`, 20 s compute limit, 64 KB report), counts the attempt before grading and records the result. The browser sends code and the answers it recorded for `input()` (any number, in order), never a score. `POST /api/learning/exam-result` now answers 410.
+- The grader moved from `data/learning-content.ts` (sent to every browser) to `lib/examGraders.ts` (server only). The Run button no longer shows the grader's verdict for the exam lesson; only Submit Exam grades.
+- Tests: `tests/api/exam-grading-api.spec.ts` (`LRNA-EXG-001` to `010`: forged score refused, fail/pass, own `EXAM_SCORE` line ignored, attempt cap, three `input()` calls, too few answers, infinite loop 408, secrets and network blocked, course without exam 404); `LRNA-EXM-001` replaced; validation cases in `learner-apis.spec.ts` moved to the grade route. With the new tests: 30 passed (grading spec, learner API spec, `learning-exam.spec.ts` browser flow).
+- Open before production: measure cold start and memory on a Vercel preview. A production build traces the Pyodide files and the worker into the route.

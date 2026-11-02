@@ -896,29 +896,58 @@ sys.stderr = io.StringIO()
         finalStepFiles[currentStepIndex] = currentFiles;
         const combinedCode = finalStepFiles.map(stepDict => Object.values(stepDict).join('\n\n')).join('\n\n');
 
+        // Run the learner's program here first so input() pop-ups work as always, and record what they type.
+        // The server runs the same program again with these answers and does the grading (scores are never sent from here).
+        const typedAnswers: string[] = [];
+        pyodide.globals.set("_exam_prompt", (message: string) => {
+          const value = window.prompt(message);
+          if (value !== null) typedAnswers.push(value);
+          return value;
+        });
+        await pyodide.runPythonAsync(`
+import builtins, sys, time
+_exam_start = time.time()
+
+def _exam_trace(frame, event, arg):
+    if time.time() - _exam_start > 3.0:  # same 3 second watchdog as the Run button
+        sys.settrace(None)
+        raise TimeoutError("Infinite Loop Detected")
+    return _exam_trace
+
+def _exam_input(p=""):
+    global _exam_start
+    sys.stdout.write(str(p))
+    sys.settrace(None)  # waiting for the learner is not computing time
+    val = _exam_prompt(str(p))
+    _exam_start = time.time()
+    sys.settrace(_exam_trace)
+    if val is None:
+        sys.stdout.write("\\n")
+        raise EOFError("EOF when reading a line")
+    sys.stdout.write(val + "\\n")
+    return val
+
+builtins.input = _exam_input
+sys.settrace(_exam_trace)
+        `);
         try {
           await pyodide.runPythonAsync(combinedCode);
-          if (activeVideo.githubAssignment.testCode) {
-            await pyodide.runPythonAsync(activeVideo.githubAssignment.testCode);
-          }
-        } catch (e) {}
+        } catch (e) {
+        } finally {
+          await pyodide.runPythonAsync(`sys.settrace(None)`);
+        }
 
-        const stdout = pyodide.runPython("sys.stdout.getvalue()");
-        const match = stdout.match(/EXAM_SCORE:\s*(\d+)/);
-        const score = match ? parseInt(match[1]) : 0;
-
-        setOutput(stdout || "Failed to generate exam report.");
-
-        const isPassed = score >= 80;
-        // The server records the attempt (and enforces the 5-attempt cap).
-        const result = await postJson('/api/learning/exam-result', { courseSlug: params.slug, score });
+        setOutput("Your program finished. Sending it to the server to be graded...");
+        const result = await postJson('/api/learning/exam-grade', { courseSlug: params.slug, files: finalStepFiles, inputs: typedAnswers });
+        const score: number = result.score;
         const newAttempts = result.attempts_used;
+        setOutput(result.report || "No report was produced.");
         setExamStatus({ is_passed: result.is_passed, attempts_used: newAttempts });
 
-        if (isPassed) {
+        if (score >= 80) {
           showToast("🏆 EXAM PASSED!", `You scored ${score}%. All Advanced Videos are now unlocked!`, "success");
         } else {
-          showToast("❌ Exam Failed", `You scored ${score}%. You need 80% to pass. Attempts left: ${5 - newAttempts}`, "error");
+          showToast("❌ Exam Failed", `You scored ${score}%. You need 80% to pass. Attempts left: ${Math.max(0, 5 - newAttempts)}`, "error");
         }
       } catch (err) {
         showToast("Error", "Failed to grade exam. Try again.", "error");
