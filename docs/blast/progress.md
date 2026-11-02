@@ -3,7 +3,7 @@
 Date-wise log of changes, generated from `git log` (see [CONSTITUTION.md](../../CONSTITUTION.md) §2).
 Newest first. Format: `hash` subject — author (files changed, +added/−deleted). Merge commits are tagged **[merge]**; commits on other branches but not yet in `origin/main` are tagged **[not in main]**.
 
-_Last generated: 2026-11-02 from `22fb41b` on branch `docs/qa-step5-verified`._
+_Last generated: 2026-11-02 from `2f9b4ce` on branch `docs/pol-016-result`._
 
 ## Working tree (not yet committed)
 
@@ -14,6 +14,8 @@ _Last generated: 2026-11-02 from `22fb41b` on branch `docs/qa-step5-verified`._
 
 ### 2026-11-02
 
+- `2f9b4ce` Merge pull request #71 from shivamnamdev/docs/qa-step5-verified **[merge]** — SHIVAM NAMDEV
+- `71a9522` docs: QA step 5 verified, tests/db all green — shivamnamdev (3 files, +12/−4)
 - `22fb41b` Merge pull request #70 from shivamnamdev/fix/supabase-admin-requires-service-key **[merge]** — SHIVAM NAMDEV
 - `0c2097d` Merge main into fix/supabase-admin-requires-service-key (keep both changelog entries) **[merge]** — shivamnamdev
 - `0746845` fix: supabaseAdmin no longer falls back to the public key when the service-role key is missing — shivamnamdev (3 files, +13/−8)
