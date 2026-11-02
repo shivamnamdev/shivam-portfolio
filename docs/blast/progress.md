@@ -3,15 +3,38 @@
 Date-wise log of changes, generated from `git log` (see [CONSTITUTION.md](../../CONSTITUTION.md) §2).
 Newest first. Format: `hash` subject — author (files changed, +added/−deleted). Merge commits are tagged **[merge]**; commits on other branches but not yet in `origin/main` are tagged **[not in main]**.
 
-_Last generated: 2026-11-01 from `c66fb10` on branch `main`._
+_Last generated: 2026-11-02 from `0911504` on branch `docs/prod-lock-results`._
 
 ## Working tree (not yet committed)
 
+- ` M docs/blast/task_plan.md`
+- ` M docs/testing/CHANGELOG.md`
+- ` M docs/testing/prd/14-db-integrity.md`
+- `?? docs/testing/runs/policy-PROD-locked-2026-11-02.md`
+- `?? docs/testing/sql/results/policy-PROD-locked-2026-11-02.csv`
 
 ## Commit history
 
+### 2026-11-02
+
+- `0911504` Merge pull request #68 from shivamnamdev/security/SCP-74-enrollments-route **[merge]** — SHIVAM NAMDEV
+- `9ef1b13` security(SCP-75): read enrolments through /api/learning/enrollments and add the step 5 lock script — shivamnamdev (16 files, +114/−42)
+- `80773bd` Merge pull request #67 from shivamnamdev/feat/restore-lesson-like-button **[merge]** — SHIVAM NAMDEV
+- `304a03d` feat(learning): restore the lesson Like button and automate LRN-TAB-011 (SCP-49) — shivamnamdev (4 files, +140/−113)
+
 ### 2026-11-01
 
+- `6402e40` Merge pull request #66 from shivamnamdev/security/SCP-74-lock-learner-tables **[merge]** — SHIVAM NAMDEV
+- `2ddaf0b` Merge main into security/SCP-74-lock-learner-tables (keep all log entries) **[merge]** — shivamnamdev
+- `478f655` Merge pull request #65 from shivamnamdev/security/SCP-74-admin-data-route **[merge]** — SHIVAM NAMDEV
+- `ba69f75` docs: blank line before the admin-data changelog heading — shivamnamdev (1 files, +1/−0)
+- `ca2916c` Merge main into security/SCP-74-admin-data-route (keep both log entries) **[merge]** — shivamnamdev
+- `560f281` Merge pull request #64 from shivamnamdev/security/SCP-74-learner-routes **[merge]** — SHIVAM NAMDEV
+- `e718b82` feat(security): database lock script for the learner tables with rollback (SCP-74 to SCP-76, PR 3 of 3) — shivamnamdev (4 files, +47/−5)
+- `f64052c` feat(security): admin portal reads its data through /api/admin/dashboard-data (SCP-74 to SCP-76, PR 2 of 3) — shivamnamdev (7 files, +102/−18)
+- `ddc54b3` feat(security): learner routes under /api/learning replace browser access to the learner tables (SCP-74 to SCP-76, PR 1 of 3) — shivamnamdev (19 files, +625/−126)
+- `ef233c6` Merge pull request #63 from shivamnamdev/docs/progress-after-db-policy **[merge]** — SHIVAM NAMDEV
+- `e6447ed` docs(blast): regenerate progress.md after the DB-Policy merge — shivamnamdev (1 files, +3/−9)
 - `c66fb10` Merge pull request #62 from shivamnamdev/DB-Policy **[merge]** — SHIVAM NAMDEV
 - `56e27c9` test(db): policy inventory SQL, checker and QA/production results (PRD 14) — shivamnamdev (15 files, +999/−18)
 - `fe48f45` Merge pull request #61 from shivamnamdev/docs/bug-fix-workflow-skill **[merge]** — SHIVAM NAMDEV
