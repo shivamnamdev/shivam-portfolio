@@ -89,3 +89,12 @@ Decisions and rules recorded: failures must not block automation (Allure and run
 ## 2026-11-02
 
 - `user_enrollments` was the last table the public key could read (learner ids and course slugs). Every browser read of it was "does this learner own course X" or "list my courses", so one own-slugs route covers all of them; the share page is a server component and uses the service role directly.
+
+## 2026-11-02 Spike: Pyodide on the server for exam grading
+
+Measured locally (Node 26, `pyodide@0.26.4`, 13 MB on disk): load 0.7 s, about 200 MB resident, a run of three `input()` calls 3 ms. Results:
+- `input()`: answers fed from an ordered list; too few answers raises `EOFError`; any number of calls works (no human time on the server).
+- Infinite loop (`while True: pass`) is stopped by terminating the worker thread after the limit (5 s in the test, 20 s planned).
+- **Sandbox escape found and closed in the spike:** with Pyodide's default setup, learner Python reaches the server through `import js`: `js.process.env` returned a secret environment variable (this would expose `SUPABASE_SERVICE_ROLE_KEY`), and `js.fetch` and `pyodide.http` give network access. Closed by (1) starting the worker with an empty `env`, (2) loading Pyodide first, then setting `fetch`, `XMLHttpRequest`, `WebSocket`, `require`, `Worker` to undefined, deleting every `process.env` key and hiding `process` before learner code runs. Re-test: env, require, fetch, process and network were all blocked; the file system is Pyodide's own in-memory one.
+- **Limit that stays:** the existing grader (`data/learning-content.ts`, Q5) instantiates the learner's own classes from their globals, so the grader and the learner's code must share one Python session. A learner's program can therefore still tamper with the grader inside that session (for example replace `re.search`). That is the same weakness as the printed-text matching and is fixed only by the grader rewrite (follow-up). The server version still stops forged scores, direct posts and reading the grader, and the learner can no longer touch secrets or the network.
+- Not yet measured: cold start and memory inside a Vercel function (needs a preview deployment) and bundling of the Pyodide files (`outputFileTracingIncludes`).
