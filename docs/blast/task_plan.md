@@ -211,3 +211,6 @@ Blueprint (owner: "do it yourself" after the like-button PR merged): input `GET 
 
 - [x] 2026-11-02 server-side exam grading built on `feat/server-side-exam-grading`: `lib/examGraders.ts`, `lib/examWorker.mjs`, `lib/runExam.ts`, `app/api/learning/exam-grade`, page change, 10 new tests. 30 tests pass locally; `next build` traces Pyodide into the route.
 - [ ] Owner: open the PR, check the Vercel preview (cold start and memory of `/api/learning/exam-grade`), then merge. Follow-up task: rewrite the grader (it scores printed text and name checks, and shares one Python session with the learner).
+
+## 2026-11-03 · SCP-87 dependency upgrades (Blueprint proposed, awaiting approval)
+Plan: `docs/architecture/dependency-upgrade-plan.md`. Stages 0 to 6 (prep, in-range fixes, swagger-ui-react, nodemailer, Next 15, Next 16, Clerk 7). No install until each stage is approved.
