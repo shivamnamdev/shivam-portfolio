@@ -27,7 +27,7 @@ The platform takes money (Razorpay), personal data (names, e-mails, submitted co
 
 | Area | Finding | State |
 | --- | --- | --- |
-| Headers | Production sends only `Strict-Transport-Security` (Vercel). No `Content-Security-Policy`, no clickjacking protection, no `nosniff`, no `Referrer-Policy`, no `Permissions-Policy`; `X-Powered-By: Next.js` is announced | Defect, fixed 2026-11-03 in `next.config.mjs`: frame, nosniff, referrer and permissions headers enforced, `X-Powered-By` removed, CSP in report-only mode (switch to enforcing after a clean run with no console violations). `SEC-HDR-001` to `006` pass |
+| Headers | Production sends only `Strict-Transport-Security` (Vercel). No `Content-Security-Policy`, no clickjacking protection, no `nosniff`, no `Referrer-Policy`, no `Permissions-Policy`; `X-Powered-By: Next.js` is announced | Defect, fixed 2026-11-03 in `next.config.mjs`: frame, nosniff, referrer and permissions headers enforced, `X-Powered-By` removed, CSP in report-only mode (switch to enforcing after a clean run with no console violations). `SEC-HDR-001` to `006` pass (SCP-86) |
 | Dependencies | `npm audit --omit=dev`: 24 advisories (2 critical: `next`, `dompurify` through `swagger-ui-react`; 15 high: `@clerk/*`, `nodemailer`, `postcss` and others) | Defect, `SEC-DEP-001` to `003` (manual / CI) |
 | Injection | Q&A text is rendered as React text (escaped); the only `dangerouslySetInnerHTML` is the share page redirect, whose target comes from a fixed catalogue | Pass (`SEC-XSS-001`, `002`, `003`) |
 | Exposure | `.env`, `.git`, `package.json` not served; broken input to public routes shows no stack trace; `/api-docs` needs sign-in | Pass (`SEC-EXP-001` to `003`) |
