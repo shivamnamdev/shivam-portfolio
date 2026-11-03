@@ -10,6 +10,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing data" }, { status: 400 });
     }
 
+    // SCP-72: the built-in PDF fonts print Latin text only. Refuse what they cannot draw (or what would run off the page)
+    // with a clear 400 instead of a 500 from the PDF library.
+    const printable = (text: string, max: number) => typeof text === "string" && text.length <= max && /^[\x20-\x7E\u00A0-\u00FF]+$/.test(text);
+    if (!printable(studentName, 60) || !printable(courseTitle, 100)) {
+      return NextResponse.json({ error: "Name or course title has characters or a length the certificate cannot print" }, { status: 400 });
+    }
+
     // Generate a unique Certificate ID (e.g., SN-PY-2026-A1B2)
     const uniqueId = `SN-PY-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
     const dateStr = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
