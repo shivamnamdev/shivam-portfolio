@@ -132,8 +132,8 @@ test.describe('PRD15 performance budgets @perf', () => {
     test.afterAll(async () => { await learner?.close(); await admin?.close(); });
     test.beforeEach(() => requireSeed());
 
-    test('[PRF-API-001] ai-tutor answers within 3 s (it waits 1.2 s on purpose today)', async ({ request }) => {
-      const r = await timeCalls(8, () => request.post('/api/ai-tutor', { data: { labType: 'python', code: 'print(1)', output: '' }, headers: { 'User-Agent': API_UA } }));
+    test('[PRF-API-001] ai-tutor answers within 3 s (it waits 1.2 s on purpose today)', async () => {
+      const r = await timeCalls(8, () => learner.request.post('/api/ai-tutor', { data: { labType: 'python', code: 'print(1)', output: '' } }));
       note('ai-tutor', `p50 ${r.p50.toFixed(0)} ms, p95 ${r.p95.toFixed(0)} ms`);
       expect(r.statuses.every(s => s === 200)).toBe(true);
       expect(r.p95).toBeLessThan(3000); // not scaled: the mock waits 1.2 s on purpose

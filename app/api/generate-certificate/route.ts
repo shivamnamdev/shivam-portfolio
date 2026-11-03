@@ -1,13 +1,45 @@
 // app/api/generate-certificate/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { activeCourses } from "@/data/courses";
+import { certificateEligibility } from "@/lib/certificateEligibility";
+import { getDisplayName, getPrimaryEmail } from "@/lib/serverAuth";
+import { isAdminEmail } from "@/lib/admin";
 
 export async function POST(req: NextRequest) {
   try {
-    const { studentName, courseTitle } = await req.json();
+    // SCP-71: who the certificate is for and what it is for come from the server (Clerk session and the course catalogue),
+    // never from the request body. Rule: 80% of the tasks done and the final exam passed (lib/certificateEligibility.ts).
+    const { userId } = auth();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    if (!studentName || !courseTitle) {
-      return NextResponse.json({ error: "Missing data" }, { status: 400 });
+    const body = await req.json().catch(() => null);
+    const courseSlug = typeof body?.courseSlug === "string" ? body.courseSlug : "";
+    const course = activeCourses.find(c => c.slug === courseSlug);
+    if (!course) return NextResponse.json({ error: "Missing data" }, { status: 400 });
+
+    const user = await currentUser();
+    const isAdmin = isAdminEmail(getPrimaryEmail(user));
+    if (!isAdmin) {
+      const result = await certificateEligibility(userId, course.slug);
+      if (!result.eligible) {
+        return NextResponse.json({
+          error: "The certificate is available after 80% of the course and a passed final exam",
+          percent: result.percent, examPassed: result.examPassed,
+        }, { status: 403 });
+      }
+    }
+
+    const studentName = getDisplayName(user, "");
+    const courseTitle = course.title;
+    if (!studentName) return NextResponse.json({ error: "Missing data" }, { status: 400 });
+
+    // SCP-72: the built-in PDF fonts print Latin text only. Refuse what they cannot draw (or what would run off the page)
+    // with a clear 400 instead of a 500 from the PDF library.
+    const printable = (text: string, max: number) => typeof text === "string" && text.length <= max && /^[\x20-\x7E\u00A0-\u00FF]+$/.test(text);
+    if (!printable(studentName, 60) || !printable(courseTitle, 100)) {
+      return NextResponse.json({ error: "Name or course title has characters or a length the certificate cannot print" }, { status: 400 });
     }
 
     // Generate a unique Certificate ID (e.g., SN-PY-2026-A1B2)

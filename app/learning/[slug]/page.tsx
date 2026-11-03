@@ -1495,7 +1495,7 @@ sys.settrace(_trace_calls)
                <div className="h-full rounded-full bg-green-500 transition-all duration-1000" style={{ width: `${progressPercentage}%` }}></div>
              </div>
           </div>
-          {(progressPercentage === 100 || isAdmin) && (
+          {((progressPercentage >= 80 && examStatus.is_passed) || isAdmin) && (
             <button onClick={handleGenerateCertificate} className="flex items-center gap-1 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-3 py-1.5 text-[10px] font-bold text-black shadow-lg transition-transform hover:scale-105 md:text-xs">
               <Award size={14} /> Certificate
             </button>

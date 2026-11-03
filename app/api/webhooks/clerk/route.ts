@@ -44,17 +44,22 @@ export async function POST(req: Request) {
   if (evt.type === 'user.created') {
     const { id, first_name, last_name, email_addresses } = evt.data;
     
-    const email = email_addresses[0]?.email_address;
+    // SCP-68: a user.created without an e-mail list is handled like one without an address.
+    const email = email_addresses?.[0]?.email_address;
     const firstName = first_name || "Student";
     const fullName = `${first_name || ''} ${last_name || ''}`.trim() || "A New Student";
 
-    // 🚨 NEW: Log the signup to Supabase so it appears in your Admin Bell!
+    // Log the signup to Supabase so it appears in the Admin Bell.
+    // SCP-67: Clerk retries a delivery it thinks failed. The same signup (same type, e-mail and message) is logged and
+    // announced once; a retry is acknowledged with 200 and does nothing. (Check-then-insert: two deliveries at the very
+    // same moment could still both pass; a unique key on the log would be needed to close that.)
+    const signupMessage = `New Account Created: ${fullName}`;
+    const signupEmail = email || "No email";
     try {
-      await supabaseAdmin.from('admin_activity_log').insert([{
-        type: 'signup',
-        message: `New Account Created: ${fullName}`,
-        user_email: email || "No email"
-      }]);
+      const { data: already } = await supabaseAdmin.from('admin_activity_log').select('id')
+        .eq('type', 'signup').eq('user_email', signupEmail).eq('message', signupMessage).limit(1);
+      if (already && already.length > 0) return NextResponse.json({ success: true }, { status: 200 });
+      await supabaseAdmin.from('admin_activity_log').insert([{ type: 'signup', message: signupMessage, user_email: signupEmail }]);
     } catch (dbError) {
       console.error("Failed to log signup to Supabase:", dbError);
     }
