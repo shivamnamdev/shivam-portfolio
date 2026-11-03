@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { EMAIL } from '../support/personas';
+import { EMAIL, COURSE } from '../support/personas';
+import { courseCurriculumMap } from '../../data/learning-content';
 import { clerkUserId } from '../support/clerk';
 import { adminDb } from '../support/db';
 import { requireSeed } from '../support/guards';
@@ -73,26 +74,49 @@ test.describe('PRD13 AI tutor, certificate, track-time and xp/sync @regression',
 
   test.describe('POST /api/generate-certificate', () => {
     test('[AIA-CRT-001] a visitor is refused (sign-in required)', async ({ request }) => {
-      const res = await request.post('/api/generate-certificate', { data: { studentName: 'QA', courseTitle: 'QA' }, maxRedirects: 0 });
+      const res = await request.post('/api/generate-certificate', { data: { courseSlug: 'python-beginners' }, maxRedirects: 0 });
       expect([401, 403, 307]).toContain(res.status());
     });
 
     test.describe('signed in', () => {
+      test.describe.configure({ mode: 'default' });
       test.beforeEach(() => requireSeed());
-      let s: Session;
-      test.beforeAll(async ({ browser }) => { s = await sessionFor(browser, U); });
-      test.afterAll(async () => { await s?.close(); });
+      let s: Session, uid = '';
+      const CERT = COURSE.C;   // python-beginners: the only course with a final exam
+      const modules = courseCurriculumMap[CERT] as any[];
+      const lessons: string[] = modules.flatMap(m => m.videoIds);
+      const assignments: string[] = modules.flatMap(m => Object.keys(m.githubAssignments ?? {}));
+      const total = lessons.length + assignments.length;
+      test.beforeAll(async ({ browser }) => { s = await sessionFor(browser, U); uid = await clerkUserId(U); });
+      test.afterAll(async () => { await clear(); await s?.close(); });
+      const clear = async () => {
+        const db = adminDb();
+        for (const t of ['video_progress', 'assignment_progress', 'exam_progress']) await db.from(t).delete().eq('user_id', uid).eq('course_slug', CERT);
+      };
+      test.afterEach(clear);
+      // Seeds exactly `n` finished tasks (lessons first, then assignments) and the exam state.
+      async function seed(n: number, examPassed: boolean) {
+        const db = adminDb();
+        const v = lessons.slice(0, n), a = assignments.slice(0, Math.max(0, n - lessons.length));
+        if (v.length) { const r = await db.from('video_progress').insert(v.map(video_id => ({ user_id: uid, course_slug: CERT, video_id }))); if (r.error) throw r.error; }
+        if (a.length) { const r = await db.from('assignment_progress').insert(a.map(video_id => ({ user_id: uid, course_slug: CERT, video_id, submitted_code: '# QA', user_name: 'QA', completed_at: new Date().toISOString() }))); if (r.error) throw r.error; }
+        const r = await db.from('exam_progress').upsert({ user_id: uid, course_slug: CERT, attempts_used: 1, is_passed: examPassed, last_score: examPassed ? 90 : 40 }, { onConflict: 'user_id,course_slug' });
+        if (r.error) throw r.error;
+      }
+      const ask = (data: object) => s.request.post('/api/generate-certificate', { data });
+      const need = Math.ceil(total * 0.8);
 
-      test('[AIA-CRT-002] missing name or title is refused with 400', async () => {
-        for (const data of [{}, { studentName: 'QA' }, { courseTitle: 'QA' }, { studentName: '', courseTitle: '' }]) {
-          const res = await s.request.post('/api/generate-certificate', { data });
-          expect(res.status()).toBe(400);
+      test('[AIA-CRT-002] a missing or unknown course is refused with 400', async () => {
+        for (const data of [{}, { courseSlug: '' }, { courseSlug: 'no-such-course' }, { studentName: 'QA', courseTitle: 'QA' }]) {
+          const res = await ask(data);
+          expect(res.status(), JSON.stringify(data)).toBe(400);
           expect((await res.json()).error).toBe('Missing data');
         }
       });
 
-      test('[AIA-CRT-003] a valid request returns a PDF file', async () => {
-        const res = await s.request.post('/api/generate-certificate', { data: { studentName: 'QA Student', courseTitle: 'QA Course' } });
+      test('[AIA-CRT-003] a learner with 80% of the tasks and the exam passed gets a PDF', async () => {
+        await seed(need, true);
+        const res = await ask({ courseSlug: CERT });
         expect(res.status()).toBe(200);
         expect(res.headers()['content-type']).toContain('application/pdf');
         const bytes = await res.body();
@@ -100,16 +124,25 @@ test.describe('PRD13 AI tutor, certificate, track-time and xp/sync @regression',
         expect(bytes.length).toBeGreaterThan(1000);
       });
 
-      test('[AIA-CRT-004] (SCP-72) long, accented and symbol-heavy names do not break the PDF', async () => {
-        for (const studentName of ['Zoë Çelik-Ñandú', 'A'.repeat(300), '<script>alert(1)</script>', '日本語の名前']) {
-          const res = await s.request.post('/api/generate-certificate', { data: { studentName, courseTitle: 'QA Course' } });
-          expect(res.status(), studentName.slice(0, 20)).toBeLessThan(500);
-        }
+      test('[AIA-CRT-004] (SCP-72) a name or title in the request is ignored, so unprintable or other people\'s names never reach the PDF', async () => {
+        await seed(need, true);
+        const res = await ask({ courseSlug: CERT, studentName: '日本語の名前', courseTitle: 'Someone Else Entirely' });
+        expect(res.status()).toBe(200);
+        expect(res.headers()['content-disposition'] ?? '').not.toMatch(/Someone|Else|\?/);
       });
 
-      test('[AIA-CRT-005] (SCP-71) a certificate is only issued to a learner who has finished the course', async () => {
-        const res = await s.request.post('/api/generate-certificate', { data: { studentName: 'Someone Else Entirely', courseTitle: 'Python Foundation' } });
-        expect([401, 403, 400]).toContain(res.status());
+      test('[AIA-CRT-005] (SCP-71) no certificate without 80% of the tasks AND a passed exam', async () => {
+        expect((await ask({ courseSlug: CERT })).status(), 'no progress').toBe(403);
+        await seed(need - 1, true);
+        expect((await ask({ courseSlug: CERT })).status(), 'just under 80%').toBe(403);
+        await clear();
+        await seed(total, false);
+        const noExam = await ask({ courseSlug: CERT });
+        expect(noExam.status(), 'everything done, exam not passed').toBe(403);
+        expect(await noExam.json()).toMatchObject({ examPassed: false, percent: 100 });
+        await clear();
+        await seed(0, true);
+        expect((await ask({ courseSlug: CERT })).status(), 'exam passed, nothing else').toBe(403);
       });
     });
   });

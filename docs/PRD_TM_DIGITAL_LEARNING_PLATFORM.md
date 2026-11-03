@@ -298,7 +298,7 @@ Assignments with `labType: "git"` replace the Python IDE with a **simulated Git 
 **Certificate of Completion:**
 - The **Certificate** button appears at **100% course progress** (always visible to the admin).
 - The PDF is generated **client-side with jsPDF** (A4 landscape, dark theme, amber borders, student name in capitals).
-- A server-side generator (`POST /api/generate-certificate`, `pdf-lib`, ID format `SN-PY-<year>-<rand>`) exists, but **nothing in the UI calls it**.
+- A server-side generator (`POST /api/generate-certificate`, `pdf-lib`, ID format `SN-PY-<year>-<rand>`) exists, takes `{courseSlug}` and checks the certificate rule (80% of tasks done and the final exam passed, `lib/certificateEligibility.ts`), but **nothing in the UI calls it** yet; the Certificate button follows the same rule.
 
 ---
 
