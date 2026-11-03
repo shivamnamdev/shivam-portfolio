@@ -43,6 +43,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Manual enrollment error:", error);
-    return NextResponse.json({ success: false, error: "Database Error." }, { status: 500 });
+    // Admin-only route: show the cause (e.g. "SUPABASE_SERVICE_ROLE_KEY is missing", a Postgres code and message) so a failure can be fixed without digging in logs.
+    const e = error as { message?: string; code?: string };
+    const cause = [e?.code, e?.message].filter(Boolean).join(": ").slice(0, 300);
+    return NextResponse.json({ success: false, error: cause ? `Database Error. ${cause}` : "Database Error." }, { status: 500 });
   }
 }
