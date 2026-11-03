@@ -35,7 +35,15 @@ export async function POST(req: NextRequest) {
     // 1. Re-fetch the order from Razorpay: the course and buyer come from the order created
     //    server-side in /api/create-order, never from the client request.
     const razorpay = new Razorpay({ key_id: keyId, key_secret: secret });
-    const order = await razorpay.orders.fetch(razorpay_order_id);
+    let order;
+    try {
+      order = await razorpay.orders.fetch(razorpay_order_id);
+    } catch (fetchError) {
+      // SCP-66: Razorpay answers 400/404 for an id it does not know. That is a bad request, not a server fault.
+      const status = (fetchError as { statusCode?: number })?.statusCode;
+      if (status === 400 || status === 404) return NextResponse.json({ success: false, error: "Order not found" }, { status: 404 });
+      throw fetchError;
+    }
     const notes = (order.notes || {}) as Record<string, string>;
 
     if (!notes.courseSlug || !notes.userId) {
