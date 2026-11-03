@@ -182,13 +182,22 @@ test.describe('PRD13 AI tutor, certificate, track-time and xp/sync @regression',
     });
 
     test('[AIA-TRK-004] (SCP-73) the total cannot be pushed up faster than real time: ten pings at once add one minute, not ten', async () => {
-      test.skip(!original, 'mavish has no stats row');
       test.skip(!!(await adminDb().from('rate_limits').select('key').limit(1)).error, 'rate_limits does not exist on this Supabase project: run docs/testing/sql/step6-rate-limits.sql');
-      const results = await Promise.all(Array.from({ length: 10 }, () => s.request.post('/api/track-time', { data: { seconds: 60 } })));
-      const codes = results.map(r => r.status());
-      expect(codes.filter(c => c === 200)).toHaveLength(1);
-      expect(codes.filter(c => c === 429)).toHaveLength(9);
-      expect((await stats()).total_time_seconds).toBe((original.total_time_seconds || 0) + 60);
+      // The stats row is normally created by the first dashboard visit; make one for this test when the account has none, and remove it after.
+      const made = !original;
+      if (made) {
+        const r = await adminDb().from('user_stats').insert([{ user_id: uid, user_name: 'QA', user_email: U, current_streak: 1, total_points: 0, total_time_seconds: 0 }]);
+        if (r.error) throw r.error;
+      }
+      try {
+        const results = await Promise.all(Array.from({ length: 10 }, () => s.request.post('/api/track-time', { data: { seconds: 60 } })));
+        const codes = results.map(r => r.status());
+        expect(codes.filter(c => c === 200)).toHaveLength(1);
+        expect(codes.filter(c => c === 429)).toHaveLength(9);
+        expect((await stats()).total_time_seconds).toBe(((original?.total_time_seconds) || 0) + 60);
+      } finally {
+        if (made) await adminDb().from('user_stats').delete().eq('user_id', uid);
+      }
     });
 
     test('[AIA-XP-002] xp/sync sets the points to 10 per video and 50 per assignment, and calling it again changes nothing', async () => {
