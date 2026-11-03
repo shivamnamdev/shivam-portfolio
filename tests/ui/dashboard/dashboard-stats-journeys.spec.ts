@@ -14,7 +14,8 @@ import { cards, denied, emptyState, failRoute, openDashboard } from '../../suppo
 // undone afterwards. edu is shared with the other edu specs: run those files in one worker (tests/README.md).
 const U1 = EMAIL.edu;
 const FIXTURE = QA_FIXTURE_SLUG;
-const day = (offset: number) => { const d = new Date(); d.setDate(d.getDate() + offset); return d.toISOString().split('T')[0]; };
+// The learner's own calendar day (the page sends the browser time zone, SCP-60), not the UTC date.
+const day = (offset: number) => { const d = new Date(); d.setDate(d.getDate() + offset); return new Intl.DateTimeFormat('en-CA').format(d); };
 const haveTestKeys = () => !!process.env.RAZORPAY_KEY_ID?.startsWith('rzp_test_') && !!process.env.RAZORPAY_KEY_SECRET;
 
 const streakValue = (page: Page) => page.getByText('Log in daily to keep the fire alive!').locator('xpath=../..').locator('span.text-3xl');
