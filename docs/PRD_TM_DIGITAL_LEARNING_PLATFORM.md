@@ -216,7 +216,7 @@ Courses are defined entirely in [data/courses.ts](../data/courses.ts). Each entr
 | Admin authorization | Primary email compared against a hard-coded `ADMIN_EMAIL` constant (in admin, learning player, live lobby, share route, navbar) |
 | Identity sync | Clerk `user.created` webhook, verified with **Svix** headers (`svix-id`, `svix-timestamp`, `svix-signature`) → admin activity log + welcome email to student + alert email to admin |
 
-**Public routes:** `/`, `/courses(.*)`, `/about`, `/privacy`, `/terms`, `/refund`, `/contact`, `/mentorship`, `/share(.*)`, plus API routes `create-order`, `verify-payment`, `enroll-free`, `send-email`, `ai-tutor`, `get-clerk-users`, `get-all-users`.
+**Public routes:** `/`, `/courses(.*)`, `/about`, `/privacy`, `/terms`, `/refund`, `/contact`, `/mentorship`, `/share(.*)`, plus API routes `create-order`, `verify-payment`, `enroll-free`, `send-email`, `get-clerk-users`, `get-all-users`.
 
 **Requirement Highlights**
 - Any route not on the whitelist must require a Clerk session.
@@ -575,7 +575,7 @@ flowchart LR
 | `POST /api/verify-payment` | Public | Verify signature → enroll → log → email | Clerk session; constant-time HMAC check; order re-fetched from Razorpay and its `notes.userId` must match the caller |
 | `POST /api/enroll-free` | Public | 100%-coupon enrollment | Clerk session; course open; server-side price must equal 0 |
 | `POST /api/send-email` | Public | Lead / contact email to admin | Email format, length caps, HTML escaping, honeypot |
-| `POST /api/ai-tutor` | Public | Hints for Python/Git labs | None (mock responses) |
+| `POST /api/ai-tutor` | Signed-in learner | Hints for Python/Git labs | None (mock responses) |
 | `POST /api/get-clerk-users` | Protected | Resolve Clerk IDs → name/email/avatar | Admin (server-side) |
 | `GET /api/get-all-users` | Protected | Full Clerk user list (paginated) | Admin (server-side) |
 | `POST /api/admin/enroll` | Protected | Manual (offline-payment) enrollment | Admin (server-side); Clerk user must exist; idempotent |

@@ -15,8 +15,7 @@ export default authMiddleware({
     "/api/create-order",
     "/api/verify-payment",
     "/api/enroll-free",
-    "/api/send-email",
-    "/api/ai-tutor"
+    "/api/send-email"
     // Admin APIs (/api/get-all-users, /api/get-clerk-users, /api/admin/*) are intentionally NOT public;
     // their handlers also verify the admin identity server-side.
   ],

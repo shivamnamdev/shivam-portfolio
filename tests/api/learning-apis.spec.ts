@@ -16,51 +16,56 @@ test.describe('PRD13 AI tutor, certificate, track-time and xp/sync @regression',
   test.describe.configure({ mode: 'default' });
 
   test.describe('POST /api/ai-tutor', () => {
+    test.beforeEach(() => requireSeed());
+    let learner: Session;
+    test.beforeAll(async ({ browser }) => { learner = await sessionFor(browser, U); });
+    test.afterAll(async () => { await learner?.close(); });
     const ask = (request: any, data: object) => request.post('/api/ai-tutor', { data });
+    const askAs = (data: object) => ask(learner.request, data);
 
-    test('[AIA-TUT-001] a visitor can call it (public route): 200 with a message', async ({ request }) => {
-      const res = await ask(request, { labType: 'python', code: 'print(1)', output: '' });
+    test('[AIA-TUT-001] a signed-in learner gets 200 with a message', async () => {
+      const res = await askAs({ labType: 'python', code: 'print(1)', output: '' });
       expect(res.status()).toBe(200);
       const body = await res.json();
       expect(body.success).toBe(true);
       expect(typeof body.message).toBe('string');
     });
 
-    test('[AIA-TUT-002] the hint depends on the error in the output (syntax, name) and an empty editor', async ({ request }) => {
-      const syntax = (await (await ask(request, { labType: 'python', code: 'print(', output: 'SyntaxError: invalid syntax' })).json()).message;
-      const name = (await (await ask(request, { labType: 'python', code: 'x', output: "NameError: name 'x' is not defined" })).json()).message;
-      const empty = (await (await ask(request, { labType: 'python', code: '   ', output: '' })).json()).message;
+    test('[AIA-TUT-002] the hint depends on the error in the output (syntax, name) and an empty editor', async () => {
+      const syntax = (await (await askAs({ labType: 'python', code: 'print(', output: 'SyntaxError: invalid syntax' })).json()).message;
+      const name = (await (await askAs({ labType: 'python', code: 'x', output: "NameError: name 'x' is not defined" })).json()).message;
+      const empty = (await (await askAs({ labType: 'python', code: '   ', output: '' })).json()).message;
       expect(syntax).toMatch(/Syntax Error/i);
       expect(name).toMatch(/not been defined/i);
       expect(empty).toMatch(/editor is empty/i);
     });
 
-    test('[AIA-TUT-003] a Git lab gets a Git hint based on the last command', async ({ request }) => {
-      const a = (await (await ask(request, { labType: 'git', gitContext: { commandHistory: ['git commit -m x', 'nothing to commit'] } })).json()).message;
-      const b = (await (await ask(request, { labType: 'git', gitContext: { commandHistory: ['git rebase', 'not supported'] } })).json()).message;
-      const c = (await (await ask(request, { labType: 'git', gitContext: { commandHistory: [] } })).json()).message;
+    test('[AIA-TUT-003] a Git lab gets a Git hint based on the last command', async () => {
+      const a = (await (await askAs({ labType: 'git', gitContext: { commandHistory: ['git commit -m x', 'nothing to commit'] } })).json()).message;
+      const b = (await (await askAs({ labType: 'git', gitContext: { commandHistory: ['git rebase', 'not supported'] } })).json()).message;
+      const c = (await (await askAs({ labType: 'git', gitContext: { commandHistory: [] } })).json()).message;
       expect(a).toMatch(/staged changes/i);
       expect(b).toMatch(/simulator/i);
       expect(c).toMatch(/git status/i);
     });
 
-    test('[AIA-TUT-004] a body with none of the expected fields still gets the default hint', async ({ request }) => {
-      const res = await ask(request, {});
+    test('[AIA-TUT-004] a body with none of the expected fields still gets the default hint', async () => {
+      const res = await askAs({});
       expect(res.status()).toBe(200);
       expect((await res.json()).message).toMatch(/Test Mode/i);
     });
 
-    test('[AIA-TUT-005] an unreadable body is a client error, not a server error', async ({ request }) => {
-      const res = await request.post('/api/ai-tutor', { data: '{not json', headers: { 'content-type': 'application/json' } });
+    test('[AIA-TUT-005] an unreadable body is a client error, not a server error', async () => {
+      const res = await learner.request.post('/api/ai-tutor', { data: '{not json', headers: { 'content-type': 'application/json' } });
       expect(res.status()).toBeLessThan(500);
     });
 
-    test('[AIA-TUT-006] a very large code field is accepted or refused in a controlled way', async ({ request }) => {
-      const res = await ask(request, { labType: 'python', code: 'x = 1\n'.repeat(200000), output: '' });
+    test('[AIA-TUT-006] a very large code field is accepted or refused in a controlled way', async () => {
+      const res = await askAs({ labType: 'python', code: 'x = 1\n'.repeat(200000), output: '' });
       expect([200, 400, 413]).toContain(res.status());
     });
 
-    test('[AIA-TUT-007] (SCP-70) the endpoint needs a signed-in learner (it is public today, so a real model would be free to anyone)', async ({ request }) => {
+    test('[AIA-TUT-007] (SCP-70) a visitor is refused: the endpoint needs a signed-in learner', async ({ request }) => {
       const res = await ask(request, { labType: 'python', code: 'print(1)', output: '' });
       expect([401, 403]).toContain(res.status());
     });

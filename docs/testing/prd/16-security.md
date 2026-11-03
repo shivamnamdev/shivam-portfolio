@@ -32,7 +32,7 @@ The platform takes money (Razorpay), personal data (names, e-mails, submitted co
 | Injection | Q&A text is rendered as React text (escaped); the only `dangerouslySetInnerHTML` is the share page redirect, whose target comes from a fixed catalogue | Pass (`SEC-XSS-001`, `002`, `003`) |
 | Exposure | `.env`, `.git`, `package.json` not served; broken input to public routes shows no stack trace; `/api-docs` needs sign-in | Pass (`SEC-EXP-001` to `003`) |
 | API access | Every API route outside the public list refuses a visitor | Pass (`SEC-AUTH-001`) |
-| Public routes | `/api/send-email` and `/api/ai-tutor` are public and unlimited (SCP-69, SCP-70, already ticketed) | Open |
+| Public routes | `/api/send-email` is public and unlimited (SCP-69, open). `/api/ai-tutor` now needs a signed-in learner (SCP-70, fixed 2026-11-03) | Partly open |
 
 Upgrading `next` (14 to 16) and `@clerk/nextjs` (4 to 7) are breaking changes with their own risk: they need their own plan and the full regression run, not a quick `npm audit fix --force`.
 
