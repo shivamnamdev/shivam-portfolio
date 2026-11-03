@@ -29,7 +29,7 @@
 | Route | Request | Success | Refusals |
 | --- | --- | --- | --- |
 | `POST /api/ai-tutor` | `{labType, code, assignment, output, gitContext}` | `200 {success:true, message}` | `500 {success:false}` on a handler error |
-| `POST /api/generate-certificate` | `{studentName, courseTitle}` | `200` `application/pdf` | `401/redirect` visitor · `400 {error:"Missing data"}` · `500` |
+| `POST /api/generate-certificate` | `{courseSlug}` (name and title come from Clerk and the catalogue; any `studentName`/`courseTitle` is ignored) | `200` `application/pdf` | `401/redirect` visitor · `400 {error:"Missing data"}` unknown course · `403 {error, percent, examPassed}` not eligible · `500` |
 | `POST /api/track-time` | `{seconds}` | `200 {success:true, newTotal}` | `401` · `400 {error:"Invalid seconds"}` · `500` |
 | `POST /api/xp/sync` | none | `200 {success:true, points}` | `401` · `500` |
 
@@ -55,7 +55,7 @@
 | Risk | Note |
 | --- | --- |
 | R-AI-1 | The tutor is public. Once a real model replaces the mock, any visitor can spend the owner's tokens (needs sign-in, a per-user limit and a size limit). |
-| R-AI-2 | `generate-certificate` issues a certificate for any name and course to any signed-in user; it does not check completion. It is unused by the UI today, so it can be removed or fixed. |
+| R-AI-2 | Fixed 2026-11-03 (SCP-71, SCP-72): the route needs 80% of the course tasks and a passed final exam (admin exempt), takes the name from Clerk and refuses text the PDF font cannot print. The page still builds its own jsPDF certificate; the Certificate button now shows at 80% with the exam passed (admin always). |
 | R-AI-3 | A name the standard PDF font cannot draw (for example Japanese) returns `500`. |
 | R-AI-4 | `track-time` has no rate limit: ten pings at once add ten minutes. Engagement time on the admin screen and any reward based on it can be inflated. |
 | R-AI-5 | `track-time` and `xp/sync` read then write (no atomic add), so concurrent pings can lose updates. |
