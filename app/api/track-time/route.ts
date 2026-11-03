@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { rateLimitAllows } from "@/lib/rateLimit";
 
 // TimeTracker sends one 60s heartbeat per minute; anything larger is rejected.
 const MAX_SECONDS_PER_PING = 60;
@@ -15,6 +16,12 @@ export async function POST(req: NextRequest) {
     const { seconds } = await req.json();
     if (!Number.isInteger(seconds) || seconds <= 0 || seconds > MAX_SECONDS_PER_PING) {
       return NextResponse.json({ error: "Invalid seconds" }, { status: 400 });
+    }
+
+    // SCP-73: the tracker sends one ping a minute, so one accepted ping per 55 seconds per learner is enough. Parallel or
+    // scripted pings cannot add more time than really passed.
+    if (!(await rateLimitAllows(`track-time:${userId}`, 55, 1))) {
+      return NextResponse.json({ error: "Too many pings" }, { status: 429 });
     }
 
     // 1. Fetch their current time
