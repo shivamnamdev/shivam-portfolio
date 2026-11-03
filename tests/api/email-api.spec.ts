@@ -1,14 +1,22 @@
 import { test, expect } from '@playwright/test';
 import { API_UA } from '../support/api';
+import { adminDb } from '../support/db';
 
 // PRD 12 · Email API (POST /api/send-email, the contact form). Every valid request sends a real e-mail to the owner's Gmail, so
 // only requests that cannot send are made by default (honeypot, invalid address, wrong method, unreadable body, burst of refusals).
 // The one real send is opt-in: E2E_SEND_REAL_EMAIL=1 (one e-mail with the subject prefix [QA-AUTOMATION], see D4 in docs/testing/README.md).
 test.use({ userAgent: API_UA });
-const send = (request: any, data: object) => request.post('/api/send-email', { data });
+// The route limits requests per address (SCP-69). Each call here comes from its own made-up address so the other cases are not limited;
+// the abuse case uses one fixed address. The counters are cleared before and after (they are service-role only).
+let n = 0;
+const send = (request: any, data: object, ip = `203.0.113.${(n++ % 250) + 1}`) => request.post('/api/send-email', { data, headers: { 'x-forwarded-for': ip } });
+const clearCounters = async () => { await adminDb().from('rate_limits').delete().like('key', 'send-email%'); };
+const limiterReady = async () => !(await adminDb().from('rate_limits').select('key').limit(1)).error;
 const valid = { name: 'QA Tester', email: 'qa.tester@example.test', message: 'automated check', subject: '[QA-AUTOMATION] contact form' };
 
 test.describe('PRD12 send-email @regression', () => {
+  test.beforeAll(clearCounters);
+  test.afterAll(clearCounters);
   test('[EMLA-ACC-001][EMLA-HNY-001] a visitor can call it, and a filled honeypot field is accepted without sending', async ({ request }) => {
     const res = await send(request, { ...valid, website: 'https://spam.example' });
     expect(res.status()).toBe(200);
@@ -44,10 +52,17 @@ test.describe('PRD12 send-email @regression', () => {
     expect((await request.get('/api/send-email')).status()).toBe(405);
   });
 
-  test('[EMLA-ABU-001] (SCP-69) a burst of 30 refused requests is rate limited (429) at some point', async ({ request }) => {
+  test('[EMLA-ABU-001] (SCP-69) from one address the sixth request in ten minutes is refused with 429 and a Retry-After; another address is still served', async ({ request }) => {
+    test.skip(!(await limiterReady()), 'rate_limits does not exist on this Supabase project: run docs/testing/sql/step6-rate-limits.sql');
+    await clearCounters();
     const statuses: number[] = [];
-    for (let i = 0; i < 30; i++) statuses.push((await send(request, { ...valid, email: 'bad' })).status());
-    expect(statuses, 'a public mail endpoint needs a rate limit').toContain(429);
+    for (let i = 0; i < 7; i++) statuses.push((await send(request, { ...valid, email: 'bad' }, '198.51.100.7')).status());
+    expect(statuses).toEqual([400, 400, 400, 400, 400, 429, 429]);
+    const limited = await send(request, { ...valid, email: 'bad' }, '198.51.100.7');
+    expect(limited.headers()['retry-after']).toBe('600');
+    expect((await limited.json()).error).toMatch(/Too many/);
+    expect((await send(request, { ...valid, email: 'bad' }, '198.51.100.8')).status()).toBe(400);
+    await clearCounters();
   });
 
   test.fixme('[EMLA-CNT-001] message content is escaped in the e-mail (needs mailbox access: manual)', async () => {});

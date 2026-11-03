@@ -114,7 +114,8 @@ test.describe('PRD13 AI tutor, certificate, track-time and xp/sync @regression',
     let s: Session, original: any = null, uid = '';
     test.beforeAll(async ({ browser }) => { s = await sessionFor(browser, U); uid = await clerkUserId(U); });
     test.afterAll(async () => { await s?.close(); });
-    test.beforeEach(async () => { original = (await adminDb().from('user_stats').select('*').eq('user_id', uid)).data?.[0] ?? null; });
+    const clearPings = async () => { await adminDb().from('rate_limits').delete().like('key', 'track-time:%'); };   // one ping per 55 s per learner (SCP-73)
+    test.beforeEach(async () => { await clearPings(); original = (await adminDb().from('user_stats').select('*').eq('user_id', uid)).data?.[0] ?? null; });
     test.afterEach(async () => {
       if (original) await adminDb().from('user_stats').update({ total_time_seconds: original.total_time_seconds, total_points: original.total_points }).eq('user_id', uid);
     });
@@ -142,11 +143,14 @@ test.describe('PRD13 AI tutor, certificate, track-time and xp/sync @regression',
       expect((await stats()).total_time_seconds).toBe(newTotal);
     });
 
-    test('[AIA-TRK-004] (SCP-73) the total cannot be pushed up faster than real time (a limit of one ping a minute)', async () => {
+    test('[AIA-TRK-004] (SCP-73) the total cannot be pushed up faster than real time: ten pings at once add one minute, not ten', async () => {
       test.skip(!original, 'mavish has no stats row');
+      test.skip(!!(await adminDb().from('rate_limits').select('key').limit(1)).error, 'rate_limits does not exist on this Supabase project: run docs/testing/sql/step6-rate-limits.sql');
       const results = await Promise.all(Array.from({ length: 10 }, () => s.request.post('/api/track-time', { data: { seconds: 60 } })));
-      const accepted = (await Promise.all(results.map(r => r.json()))).filter(b => b.success).length;
-      expect(accepted, 'ten pings at once must not add ten minutes').toBeLessThan(10);
+      const codes = results.map(r => r.status());
+      expect(codes.filter(c => c === 200)).toHaveLength(1);
+      expect(codes.filter(c => c === 429)).toHaveLength(9);
+      expect((await stats()).total_time_seconds).toBe((original.total_time_seconds || 0) + 60);
     });
 
     test('[AIA-XP-002] xp/sync sets the points to 10 per video and 50 per assignment, and calling it again changes nothing', async () => {

@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { escapeHtml } from '@/lib/escapeHtml';
+import { clientIp, rateLimitAllows } from '@/lib/rateLimit';
 
 const LIMITS = { name: 100, email: 254, subject: 200, message: 5000 };
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -17,6 +18,13 @@ export async function POST(req: NextRequest) {
     // Honeypot: real users never see or fill the hidden "website" field.
     if (clean(body.website, 200)) {
       return NextResponse.json({ success: true, message: "Email sent successfully!" });
+    }
+
+    // SCP-69: a script must not be able to flood the owner's inbox. Every request counts, valid or not:
+    // 5 per 10 minutes per address, and 200 a day for the whole site as a backstop against many addresses.
+    const allowed = await rateLimitAllows(`send-email:ip:${clientIp(req)}`, 600, 5) && await rateLimitAllows('send-email:all', 86400, 200);
+    if (!allowed) {
+      return NextResponse.json({ success: false, error: "Too many messages. Please try again later." }, { status: 429, headers: { 'Retry-After': '600' } });
     }
 
     const name = clean(body.name, LIMITS.name);
