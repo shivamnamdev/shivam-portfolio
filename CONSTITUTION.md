@@ -88,6 +88,7 @@ Invariants:
 - Use repo versions (Clerk v4 `authMiddleware`, Tailwind v3, Next 14 sync `params`) regardless of skill advice.
 - Escape/sanitize user input in HTML, emails, and share pages.
 - Never commit or push unless asked; never touch `.env*`, `agents/` submodule, or unrelated files.
+- **Never install anything without telling the owner first.** Before running `npm install`/`npm i`/`npx` of a package not already in `package.json`, `pip install`, `brew install`, or any tool/package/global/submodule download, stop and say what it is, why it is needed and what it changes (e.g. `package.json`, lock file); proceed only after the owner agrees. Lock-file repairs from the existing `package.json` (`npm ci`) are the only exception, and must still be reported.
 - Prefer small, reviewable diffs; no speculative abstractions.
 - Self-healing: when something fails, read the error, fix the cause, re-run the check, and log the failure and fix in `progress.md`. Do not retry blindly or paper over with try/catch.
 - Report faithfully: failing tests and skipped steps are stated plainly.
@@ -125,3 +126,5 @@ Append one line per significant change to architecture, schema, or integrations:
 - 2026-10-30 — Added PRD 06 (Student Dashboard & Course Access) to docs/testing — next topic in the owner's precedence list
 - 2026-10-30 — Added PRD 07 (Learning Experience) and the PRD 06 workbook to docs/testing — owner's plan: all PRDs and manual cases first, automation after
 - 2026-10-30 — Added PRD 08 (Admin Portal) and workbooks for PRDs 07 and 08 to docs/testing — all UI PRDs now have manual cases
+- 2026-11-03 — Added the "inform before installing" rule (§7) — a `--legacy-peer-deps` install broke the CI lock file
+- 2026-11-03 — Security response headers in `next.config.mjs` (CSP report-only) — PRD 16 SEC-HDR defects
