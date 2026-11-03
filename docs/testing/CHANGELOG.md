@@ -257,3 +257,7 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 - The grader moved from `data/learning-content.ts` (sent to every browser) to `lib/examGraders.ts` (server only). The Run button no longer shows the grader's verdict for the exam lesson; only Submit Exam grades.
 - Tests: `tests/api/exam-grading-api.spec.ts` (`LRNA-EXG-001` to `010`: forged score refused, fail/pass, own `EXAM_SCORE` line ignored, attempt cap, three `input()` calls, too few answers, infinite loop 408, secrets and network blocked, course without exam 404); `LRNA-EXM-001` replaced; validation cases in `learner-apis.spec.ts` moved to the grade route. With the new tests: 30 passed (grading spec, learner API spec, `learning-exam.spec.ts` browser flow).
 - Open before production: measure cold start and memory on a Vercel preview. A production build traces the Pyodide files and the worker into the route.
+
+## 2026-11-03 (PRD 16 security baseline)
+
+- Added PRD 16 (`docs/testing/prd/16-security.md`), 22 cases (`prd16-security.csv`), `tests/api/security-baseline.spec.ts` (12 tests) and `tests/ui/learning/learning-xss.spec.ts`. First run: 7 passed, 6 failed on purpose (`SEC-HDR-001` to `006`: no CSP, no clickjacking protection, no nosniff, no Referrer-Policy, no Permissions-Policy, `X-Powered-By` announced). `npm audit --omit=dev` reports 24 advisories (2 critical: `next`, `dompurify`). Q&A text, share links, exposed files, error leaks and the visitor sweep over all API routes pass.
