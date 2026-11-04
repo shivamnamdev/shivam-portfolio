@@ -21,8 +21,12 @@ vsl: {
   headlineHighlight: "UNDERSTAND VERSION CONTROL",
   subheadline: "Learn Git from scratch with real-life analogies and practical scenarios. Perfect for beginners, students, aspiring developers & career transitioners.",
   videoCoverUrl: "https://images.unsplash.com/photo-1556075798-4825dfaaf498?q=80&w=2000&auto=format&fit=crop",
-  flyerUrl: "/git-batch1-flyer.jpeg"
+  flyerUrl: "/git-batch1-flyer.jpeg",
+  ctaLabel: "Enroll Now & Learn Git The Right Way",
+  facts: ["2-3 Weeks", "Live: Mon-Fri", "Recordings", "Certificate"]
 },
+
+differentiatorsTagline: "Understand version control, branch safely & collaborate like a real team",
 
 painPoints: {
   oldWay: [
@@ -148,7 +152,7 @@ modules: [
   {
     id: "python-beginners-batch-2",
     slug: "python-beginners-batch-2",
-    title: "Python Live Session (Batch 2)",
+    title: "Python Live Session",
     statusText: "🔒 Cohort Completed",
     demoOffer: "Enrollment Closed",
     duration: "6-8 Weeks | Weekends Only (Sat & Sun)",
@@ -161,10 +165,48 @@ modules: [
     vsl: {
       headlinePart1: "Don't just learn Python.",
       headlineHighlight: "THINK IN PYTHON",
-      subheadline: "Build logic. Solve problems. Write code with confidence. A Foundation level Python cohort for Beginners, Students, Professionals & Career Transitioners.",
+      subheadline: "By the end, you won't just know Python syntax — you'll start from print(\"Hello World\") to building your own modules while handling exceptions, and parsing JSON like a pro with OOPs Concepts. Built the way production code actually gets written.",
       videoCoverUrl: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?q=80&w=2000&auto=format&fit=crop",
-      flyerUrl: "/batch3-flyer.png" // 🚨 Make sure to save your new image as this in the 'public' folder!
+      flyerUrl: "/batch3-flyer.png", // 🚨 Make sure to save your new image as this in the 'public' folder!
+      ctaLabel: "Enroll Now & Learn Python The Right Way",
+      facts: ["6-8 Weeks", "Live: Sat & Sun", "Max 20 Learners", "Certificate"]
     },
+
+    differentiatorsTagline: "Read, Understand, Debug & Build Python Programs Independently",
+
+    // Plan-based pricing (INR only, GST inclusive). When present, the sales page shows plan cards and the
+    // server prices orders from these plans (lib/pricing.ts → getBasePrice); `pricing` below still feeds the catalog card.
+    pricingPlans: [
+      {
+        id: "community",
+        name: "Community Plan",
+        subtitle: "For aspiring engineers ready to start the journey.",
+        price: "₹1999",
+        originalPrice: "₹2499",
+        features: [
+          "Live interactive classes (Sat & Sun)",
+          "Course completion certificate",
+          "Discord community access",
+          "Daily assignments with solutions"
+        ],
+        isPopular: false
+      },
+      {
+        id: "personal",
+        name: "Personal Plan",
+        subtitle: "For serious learners who want direct mentorship.",
+        price: "₹2999",
+        originalPrice: "₹4999",
+        features: [
+          "Everything in Community Plan",
+          "1-on-1 Video Call (Architecture Review)",
+          "1-on-1 Video Call (Resume & Interview Prep)",
+          "Bonus: Advanced Python Recordings",
+          "Direct WhatsApp access to Shivam"
+        ],
+        isPopular: true
+      }
+    ],
     
     painPoints: {
   oldWay: [
@@ -242,6 +284,7 @@ modules: [
     id: "python-beginners",
     slug: "python-beginners", 
     title: "Python Live Session (Batch 1)",
+    listed: false, // hidden from /courses; still powers dashboards, certificates and admin for enrolled students
     statusText: "🔒 Cohort Completed",
     demoOffer: "Enrollment Closed",
     duration: "30 Sessions | Complete in 45 Days",

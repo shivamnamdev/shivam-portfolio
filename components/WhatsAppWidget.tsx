@@ -9,7 +9,10 @@ const WhatsAppIcon = () => (
   </svg>
 );
 
-export default function WhatsAppWidget() {
+// `topic` personalises the bubble and the pre-filled message (e.g. the course title on sales pages).
+// `liftOnMobile` keeps the button clear of the mobile StickyEnrollBar on open course pages.
+export default function WhatsAppWidget({ topic = "the Python Cohort", liftOnMobile = false }: { topic?: string; liftOnMobile?: boolean }) {
+  const message = encodeURIComponent(`Hi Shivam, I have a question about ${topic}!`);
   const [showTooltip, setShowTooltip] = useState(true);
 
   // Auto-hide the tooltip after 5 seconds so it doesn't block the screen forever
@@ -19,7 +22,7 @@ export default function WhatsAppWidget() {
   },[]);
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-4 pointer-events-none">
+    <div className={`fixed ${liftOnMobile ? "bottom-24 md:bottom-6" : "bottom-6"} right-6 z-[100] flex flex-col items-end gap-4 pointer-events-none`}>
       
       {/* Tooltip Chat Bubble */}
       <AnimatePresence>
@@ -31,7 +34,7 @@ export default function WhatsAppWidget() {
             className="bg-white text-stone-800 px-4 py-3 rounded-2xl shadow-xl border border-stone-200 pointer-events-auto relative flex items-start gap-3"
           >
             <div className="text-sm font-medium">
-              Have doubts about the Python Cohort? <br/>
+              Have doubts about {topic}? <br/>
               <span className="font-bold text-amber-600">Chat with me directly!</span>
             </div>
             <button onClick={() => setShowTooltip(false)} className="text-stone-400 hover:text-stone-600 mt-0.5">
@@ -45,7 +48,7 @@ export default function WhatsAppWidget() {
 
       {/* Floating Button */}
       <a 
-        href="https://wa.me/917057034840?text=Hi%20Shivam,%20I%20have%20a%20question%20about%20the%20Python%20Live%20Session!" 
+        href={`https://wa.me/917057034840?text=${message}`} 
         target="_blank" 
         rel="noreferrer"
         onMouseEnter={() => setShowTooltip(true)}
