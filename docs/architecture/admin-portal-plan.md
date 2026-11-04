@@ -66,11 +66,14 @@ type Lesson = { id: string; moduleId: string; position: number; kind: 'video' | 
 type Coupon = {                                         // section 4.2
   code: string; active: boolean;
   discount: { type: 'percentage'; percent: number } | { type: 'fixed'; inr?: number; usd?: number };
-  expiresAt: string;                                     // MANDATORY for both kinds, no coupon without an expiry
-  audience: { kind: 'everyone' }                         // type 1: open for all
-          | { kind: 'selected'; userIds: string[] };     // type 2: only the signed-up users the admin selected (at least one)
+  expiresAt: string;                                     // MANDATORY for every kind, no coupon without an expiry
+  audience: { kind: 'everyone' }                         // kind 1: open for all, many uses
+          | { kind: 'selected'; userIds: string[] }      // kind 2: only the signed-up users the admin selected (at least one)
+          | { kind: 'single-use' };                      // kind 3: generated code for a student the admin does not know yet, ONE redemption
   appliesTo?: { courseSlugs?: string[]; planIds?: string[] };   // optional extra: limit to some courses or plans
-  maxRedemptions?: number | null; redemptions: number;          // optional extra: overall use limit
+  maxRedemptions?: number | null; redemptions: number;          // optional extra for kinds 1 and 2
+  reservedBy?: string | null; reservedUntil?: string | null;    // kind 3 only: held while a payment is in progress
+  redeemedBy?: string | null; redeemedAt?: string | null;       // kind 3 only: who used it
 };
 type Banner = {                                          // section 4.4
   id: string; purpose: 'announcement' | 'offer' | 'course-promo' | 'learner-notice' | 'maintenance';
@@ -110,29 +113,31 @@ type Plan = { id: string; name: string; subtitle?: string; price: Price; origina
               unlocks?: { moduleIds?: string[]; lessonIds?: string[] } };   // plan-gated content, Q3
 ```
 
+**Owner answers (2026-11-04)**: the further models (installments, bundles, upgrade by paying the difference, subscription) sound good and are wanted **in addition to plans**; plan facilities are kept: the admin can track what a plan owes a learner (for example 2 calls included, 1 used) and a plan can unlock specific modules or lessons, checked on the server. Delivery order, each as its own small plan before any code: (1) plans (already built on the branch), (2) upgrade by paying the difference, (3) bundles, (4) installments, (5) subscription (needs recurring payments from Razorpay and is the largest). The pricing model is a discriminated union so each kind is added without touching the others.
+
 Rules: prices and plan ids are validated on the server; the amount never comes from the browser (already true on the branch); the plan is recorded on the order notes and on the enrolment (`plan_id`); a plan cannot be deleted while enrolments use it (archive instead); a plan price change does not touch past orders.
 
 **Dependency:** `course-cta-update-3` changes `data/courses.ts`, `lib/pricing.ts`, the three payment routes and `lib/enrollments.ts`: the same files phase 1 imports and phase 5 replaces. It should land on `main` (and its `plan_id` SQL run) **before** phase 1's import script is written, so the imported shape includes plans. Open question Q6.
 
-## 4.2 Coupons (decision D8, corrected 2026-11-04)
+## 4.2 Coupons (decision D8, corrected twice: 2026-11-04)
 
-Two kinds of coupon, and **both always have an expiry date**:
+Three kinds of coupon, and **every kind has a mandatory expiry date**:
 
-| | Type 1: open for all | Type 2: selected students |
-|---|---|---|
-| Who can use it | any signed-in learner who knows the code | only the learners the admin selected |
-| Expiry | mandatory | mandatory |
-| Discount | percentage, or fixed amount (INR and/or USD) | same |
-| Selection | none | the admin picks **several** users from the people who have signed up (a searchable multi-select by name or e-mail) |
+| | Kind 1: open for all | Kind 2: selected students | Kind 3: one-time use |
+|---|---|---|---|
+| Who can use it | any signed-in learner who knows the code | only the learners the admin selected | the first signed-in person who redeems it, **not known in advance** |
+| How many uses | many (optional overall limit) | many by each selected student (optional limit) | **exactly one**, then it is dead |
+| Created how | admin types or generates a code | admin picks **several** signed-up users (searchable multi-select by name or e-mail) | admin generates **one or many random codes** in one action (for example 25 codes for a workshop), copies or downloads them and hands them out |
+| Expiry | mandatory | mandatory | mandatory |
+| Discount | percentage, or fixed amount (INR and/or USD) | same | same |
 
-- **Expiry**: no coupon can be created, imported or re-activated without a future `expiresAt`; an expired coupon is refused in validate, create-order and enroll-free, and the admin list shows "expired" and "expires in N days". The 4 coupons in `data/coupons.ts` have no expiry today: **the owner gives a date for each** before they are imported (no invented dates).
-- **Selected students**: the picker lists Clerk users who have signed up (the data behind today's `/api/get-clerk-users`, behind the admin guard) and stores their **Clerk ids**; the browser never receives a coupon's list of ids, which closes the id leak in SCP-53. A person who has not signed up yet cannot be selected: they sign up first, then the admin adds them. The admin can add or remove students while the coupon is live; a removed student loses the coupon at once, and an order already created keeps its price.
-- **Wrong account**: a selected-students coupon used by anyone else answers "This coupon is not available for your account" (the same message the sales page shows today for restricted coupons) and does not reveal who is on the list.
-- **Optional extras, off by default** (say if you do not want them): limit to some courses or plans (needed once plans exist, for example a coupon only for the Personal plan) and an overall use limit, applied atomically once per verified order or free enrolment so retries and parallel calls cannot over-use it.
-- Price maths stays deterministic in `lib/pricing.ts` and unit-tested; a fixed discount larger than the price makes the order free only through `enroll-free`; the Razorpay one-unit floor (SCP-51) is decided with Q7.
-- Test-only: `QA100` (the QA fixture coupon built from `NEXT_PUBLIC_QA_FREE_COUPON_USERS`) stays an environment-driven test fixture, not an admin coupon.
-
-Mapping of today's coupons once dates are given: `EXISTINGSTUDENT_BATCH03` and `BIRTHDAY20` become type 1; `BATCH002` becomes type 2 with its 4 Clerk ids; `SHIVAMSPECIAL` lists a placeholder id (`user_2aBcD1234567890`) that is not a real user, so it needs real students selected or it is retired.
+- **Expiry**: no coupon can be created or re-activated without a future `expiresAt`; an expired coupon is refused in validate, create-order and enroll-free; the admin list shows "expired" and "expires in N days".
+- **Selected students**: the picker lists Clerk users who have signed up (the data behind today's `/api/get-clerk-users`, behind the admin guard) and stores their **Clerk ids**; the browser never receives a coupon's list of ids (closes the id leak in SCP-53). A person who has not signed up cannot be selected yet; they sign up first, then the admin adds them. Removing a student takes effect at once; an order already created keeps its price. Anyone else sees "This coupon is not available for your account" and learns nothing about the list.
+- **One-time use**: codes are random and long enough not to be guessed (for example 10 characters from an unambiguous alphabet), created by the server, never derived from a name. To stop two people paying with the same code at once, the code is **reserved** for the signed-in user when the order is created (held for a short time, for example 30 minutes, then released) and **consumed** only when the payment is verified or the free enrolment is created, in one atomic step; a second person who tries a reserved or used code is refused. A failed or abandoned payment releases it. The admin list shows each code as unused, reserved, redeemed (by whom and when) or expired, and can void an unused code.
+- **Optional extras, off by default** (say if you do not want them): limit a coupon to some courses or plans (needed once plans exist, for example only the Personal plan) and an overall use limit for kinds 1 and 2 (applied atomically, once per verified order or free enrolment).
+- **Existing coupons** (decision Q5): they stay **as they are, aside**: `data/coupons.ts` is not imported into the admin. Phase 5 switches the learner portal to the database coupons; **from that moment the four old codes stop working** unless you recreate them in the portal. You create new coupons in the Course Manager whenever needed. (Existing students who already used them keep their enrolments.)
+- Price maths stays deterministic in `lib/pricing.ts` and unit-tested. A discount that brings the price to **exactly zero** uses the free-enrolment path; the admin screen refuses a coupon and plan combination that would leave a price between zero and the payment minimum (decision Q7, below).
+- Test-only: `QA100` (QA fixture coupon built from `NEXT_PUBLIC_QA_FREE_COUPON_USERS`) stays an environment-driven test fixture, not an admin coupon.
 
 ## 4.3 Notifications: in-app inbox with a bell, and e-mail
 
@@ -144,10 +149,10 @@ Every notification has a **type**; the type decides the default channels and whe
 | Course announcement | schedule change, live link posted, class cancelled | yes | yes | no, while enrolled |
 | Reminder | class starts soon, assignment due | yes | optional per send | yes |
 | Progress | exam passed, streak milestone, new lesson unlocked | yes | no | yes |
-| Marketing | new batch, offer, coupon for you | yes | only if the learner opted in | yes (consent kept) |
+| Marketing | new batch, offer, coupon for you | yes | **no** (owner decision: e-mail is only for receipts and small announcements) | yes |
 | Admin alert | new signup, new enrolment, failed payment | admin bell only | optional to the owner | n/a |
 
-Needs: a `notifications` row per message plus `notification_reads` (per user read state) for the learner bell; sending e-mail to many learners needs a provider decision because the current sender is a Gmail app password (a personal Gmail account allows roughly 500 messages a day): Q4. Opt-in and unsubscribe for marketing mail are needed in India (DPDP) and elsewhere.
+Needs: a `notifications` row per message plus `notification_reads` (per user read state) for the learner bell. **E-mail stays on the current Gmail sender** and is used only for receipts and small announcements (decision Q4): the send action refuses an announcement e-mail above a recipient cap (default 50, adjustable in settings) and counts sends against the daily Gmail allowance through the existing rate-limit counter, so the account is never pushed over its limit. No marketing e-mail, so no opt-in or unsubscribe flow is needed yet; if that changes, a provider and a consent flow come first.
 
 ## 4.4 Banners (all purposes)
 
@@ -251,26 +256,21 @@ Server-side authorisation on every route; RLS on, no policies, no anon grants; i
 | D7 | Packages | "Appreciate it": recorded as thanks for asking, **not** as approval of a specific install. Exact proposal below, nothing installed |
 | D8 | Coupons | **Corrected**: two kinds, open for all or selected students (several signed-up users picked by the admin), both with a mandatory expiry, percentage or fixed discount (section 4.2); plus payment models per course (section 4.1) |
 
-**D7 proposal (needs an explicit yes or no):**
+**D7 decision (owner, 2026-11-04):** an **upgrade of a package that is already installed is fine; a new package must be shown to the owner first** (office laptop and office policies). So: **no new package for this epic.** Request validation and the OpenAPI document are written by hand in `lib/` (typed validators plus a typed OpenAPI object), and the contract test keeps spec and routes in sync. `zod` and `zod-to-openapi` are **not** proposed any more. The only package change in sight is the **upgrade of the already installed `swagger-ui-react` (3.x to 5.x)** for the admin docs page, which is stage 2 of the dependency plan (SCP-87); I will tell you the exact version and what changes before running it, as always.
 
-| Package | Why | What it changes | Notes |
-|---|---|---|---|
-| `zod` (4.6.7) | one place that validates every request and response | `package.json` and the lock file; about 6 MB unpacked, no runtime dependencies | not installed today |
-| `@asteasolutions/zod-to-openapi` (9.1.0, peer `zod` ^4) | builds the OpenAPI document from the same schemas, so spec and code cannot drift | `package.json` and the lock file | needs `zod` 4 |
-| `swagger-ui-react` | already installed, but at 3.x with a critical `dompurify` advisory (SCP-87); the admin docs page should use 5.x | upgrade of an existing package, stage 2 of the dependency plan | I would do that stage first or together with phase 1 |
+### 11.2 Status of the questions
 
-Alternative with **no new package**: hand-written validators and a hand-written OpenAPI object, plus the contract test. More code to keep in sync, nothing to install. Which do you prefer?
+| # | Topic | Status |
+|---|---|---|
+| Q1 | Payment models | Answered: wanted, roadmap above |
+| Q2, Q3 | Plan facilities and plan-gated content | Answered: keep both |
+| Q4 | E-mail | Answered: receipts and small announcements only, Gmail stays |
+| Q5 | Existing coupons | Answered: kept aside, not imported, new ones created in the portal |
+| Q6 | `course-cta-update-3` | Merged with current `main` on a **test branch** (`integrate/course-cta-update-3`), 2 small conflicts resolved, tests run; the owner tests it before it lands |
+| Q7 | Orders under the payment minimum | **Explained and proposed below, needs a yes** |
+| Q8 | Approval of this Blueprint | **Still open** |
 
-### 11.2 New questions from your answers
-
-- **Q1 Payment models**: which models are real in the next 6 months? Today: single price, and plans (Community/Personal). Candidates: installments or EMI, bundle of courses, subscription or monthly, free with coupon only, upgrade from one plan to another by paying the difference. I will build the model so new kinds can be added, but only implement the ones you confirm.
-- **Q2 Plan facilities with consequences**: the Personal plan promises 1-on-1 calls and direct WhatsApp access. Do you want the admin to track what is owed and done per learner (for example "2 calls included, 1 used")? That is a small extra table or JSON field.
-- **Q3 Plan-gated content**: "Bonus: Advanced Python Recordings" suggests some lessons only for some plans. Should the plan unlock lessons or modules (access checked on the server), or are bonuses delivered outside the platform?
-- **Q4 E-mail provider**: Gmail with an app password limits bulk sending. Keep it for transactional mail and small announcements (a few dozen), or move bulk and marketing mail to a provider with a free tier? (A choice and an account on your side; nothing installed without telling you.)
-- **Q5 Coupon dates**: please give an expiry date for each existing coupon (`EXISTINGSTUDENT_BATCH03`, `BATCH002`, `BIRTHDAY20`, `SHIVAMSPECIAL`), or tell me which to retire.
-- **Q6 `course-cta-update-3`**: will it merge to `main` soon? I recommend it lands (and `plan_id` SQL runs) before phase 1's import script, so plans are in the imported shape. It also hard-codes `InstructorStory` and `CertificatePreview`; the plan treats those as later "page sections" the admin can edit, not phase 1.
-- **Q7 Minimum order**: with coupons and plans, should an order under the Razorpay minimum become free (enrol without payment) or be charged the minimum (SCP-51)? A business rule, so your call.
-- **Q8 Approval**: do you approve this Blueprint (phases 0 to 6 as written, with the answers above) so I can write PRD 17, create the Jira tasks and start phase 1?
+**Q7 explained.** Razorpay refuses an order below its minimum (1 rupee, 100 paise; 1 dollar-cent equivalents differ). Today `create-order` quietly charges at least 1 unit (SCP-51). That only matters if a discount leaves a price **between zero and the minimum**, for example a fixed-amount coupon that leaves 40 paise. With your prices (1999, 2999) and your rule "nothing is free until a coupon makes it free", the real cases are only two: (a) the coupon takes the price to **exactly zero**, which already goes through free enrolment and needs no decision; (b) a coupon that leaves a tiny positive amount, which should never happen on purpose. **Proposal:** the admin screen and API refuse to save a coupon (or a plan price) whose result for any course or plan would be above zero and below the minimum, and the server keeps the safety floor as a last guard. Then there is nothing for a learner to hit and SCP-51 closes as "prevented at creation". If you agree, no business decision is left here.
 
 Also from CONSTITUTION section 3: **integrations** Clerk, Supabase, Razorpay (plans), Gmail sender (templates); **delivery** admin UI, API and Swagger; **Do not**: no executable content from the admin, no VM or lab features from the enterprise guide.
 
