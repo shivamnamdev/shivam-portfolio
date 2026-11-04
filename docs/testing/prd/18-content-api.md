@@ -25,8 +25,10 @@ R1 unique lesson ids; R2 https links on allowed hosts only; R3 limits (60 module
 **API (QA, `tests/api/admin-api-curriculum.spec.ts`, 7 tests):** `AAPI-CUR-001` to `007`. The generic access, 401 and 403, and the OpenAPI contract tests (`AAPI-AUTH-001/002`, `AAPI-OAS-002`) cover the new routes automatically.
 Run all admin API tests: `npm run test:admin-api`.
 
-## 5. Not covered yet
-* The import script that copies today's `data/learning-content.ts` into the tables (next step; its conversion code is already unit-tested).
+## 5. Import of today's curricula
+`POST /api/admin/v1/import/curriculum` (owner only, permission `import:run`) copies `data/learning-content.ts` into the tables. It is an endpoint, not a script, because the repo has no TypeScript runner and adding one needs the owner's approval. **Dry run by default** (`apply: true` writes). Repeatable: a second run says `unchanged`. A curriculum that an admin edited is reported as `differs` and left alone unless `overwrite: true`. Imported curricula are published (the files are what learners see today). Everything it does not copy is listed under `dropped` with the reason. Unit: `AAPI-UNIT-IMP-001` to `005`; API: `AAPI-IMP-001` to `003`. Courses, cohorts and coupons are imported after `course-cta-update-3` is merged.
+
+## 5b. Not covered yet
 * Learner portal reads (phase 5) and admin screens (phase 4).
 
 ## 6. Manual cases

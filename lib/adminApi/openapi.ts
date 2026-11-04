@@ -56,6 +56,8 @@ export const OPERATIONS: Op[] = [
   op("delete", "/curriculum/{cohort}/lessons/{lessonId}", "curriculum:write", "Curriculum", "Delete a lesson (refused while learners have progress on it)", { response: "Curriculum", headers: ["If-Match"], codes: [401, 403, 404, 409, 422, 428, 429] }),
   op("post", "/curriculum/{cohort}/publish", "curriculum:write", "Curriculum", "Publish: the working copy becomes the published copy", { response: "Curriculum", headers: ["If-Match"], codes: [401, 403, 404, 409, 422, 428, 429] }),
   op("post", "/curriculum/{cohort}/discard", "curriculum:write", "Curriculum", "Discard the draft: the working copy goes back to the published copy", { response: "Curriculum", headers: ["If-Match"], codes: [401, 403, 404, 409, 422, 428, 429] }),
+  // one-off import (owner only)
+  op("post", "/import/curriculum", "import:run", "Import", "Copy the curricula in data/learning-content.ts into the tables. Dry run unless apply is true; an existing curriculum that differs is skipped unless overwrite is true", { body: "ImportCurriculum", response: "ImportResult", codes: [400, 401, 403, 429] }),
   // people, history, keys, spec
   op("get", "/learners", "learners:read", "Learners", "Search signed-up users by name or e-mail (the picker for selected-students coupons)", { response: "LearnerList", query: ["q", "limit"], codes: [...STD_READ, 400] }),
   op("get", "/audit", "audit:read", "Audit", "Read the audit log, newest first (read only)", { response: "AuditList", query: ["limit", "cursor", "resource", "action", "resourceId"], codes: [...STD_READ, 400] }),
@@ -107,6 +109,9 @@ const SCHEMAS: Record<string, unknown> = {
   LessonCreate: obj({ id: str(), kind: str({ enum: ["video", "document"] }), title: str(), description: str(), assignment: ref("Assignment"), resources: { type: "array", items: ref("Resource") }, position: { type: "integer", minimum: 0 } }, ["id"]),
   LessonUpdate: obj({ title: str(), description: str(), assignment: { allOf: [ref("Assignment")], nullable: true }, resources: { type: "array", items: ref("Resource") } }),
   LessonReorder: obj({ layout: { type: "array", items: obj({ moduleId: str(), lessonIds: { type: "array", items: str() } }, ["moduleId", "lessonIds"]) } }, ["layout"]),
+  ImportCurriculum: obj({ cohorts: { type: "array", items: str(), description: "Default: all cohorts in data/learning-content.ts" }, apply: { type: "boolean", description: "false (default) = dry run, nothing is written" }, overwrite: { type: "boolean", description: "Replace a curriculum that differs from the files" } }),
+  ImportResult: obj({ success: { type: "boolean" }, data: obj({ dryRun: { type: "boolean" }, results: { type: "array", items: ref("ImportItem") } }) }),
+  ImportItem: obj({ cohort: str(), action: str({ enum: ["create", "unchanged", "differs", "overwrite"] }), applied: { type: "boolean" }, counts: obj({ modules: { type: "integer" }, lessons: { type: "integer" } }), existing: obj({ modules: { type: "integer" }, lessons: { type: "integer" } }), dropped: { type: "array", items: str(), description: "Entries in the files that were not copied, with the reason" } }),
   LearnerList: obj({ success: { type: "boolean" }, data: obj({ items: { type: "array", items: obj({ id: str(), email: str(), name: str() }) } }) }),
   AuditList: list("AuditEntry"), AuditEntry: obj({ id: { type: "integer" }, at: str(), actor: str(), action: str(), resource: str(), resourceId: str(), before: {}, after: {} }),
   ApiKeyList: list("ApiKey"), ApiKey: obj({ id: str(), name: str(), level: str({ enum: ["admin", "staff"] }), createdBy: str(), createdAt: str(), lastUsedAt: str(), revokedAt: str() }),
@@ -137,7 +142,7 @@ export function buildOpenApi() {
     openapi: "3.0.3",
     info: { title: "Shivam Academy Admin API", version: "1.0.0", description: "Admin only. Sign in as the admin, or send `Authorization: Bearer tmk_...` with an admin API key. Every operation lists the permission it needs (`x-permission`). Answers are `{ success, data }` or `{ success: false, error }`." },
     servers: [{ url: "/api/admin/v1" }],
-    tags: ["Courses", "Cohorts", "Curriculum", "Coupons", "Learners", "Audit", "API keys", "Docs"].map((name) => ({ name })),
+    tags: ["Courses", "Cohorts", "Curriculum", "Import", "Coupons", "Learners", "Audit", "API keys", "Docs"].map((name) => ({ name })),
     paths,
     components: {
       securitySchemes: { adminSession: { type: "apiKey", in: "cookie", name: "__session", description: "The admin's signed-in browser session" }, apiKey: { type: "http", scheme: "bearer", description: "tmk_<id>_<secret>" } },

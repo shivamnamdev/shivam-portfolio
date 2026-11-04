@@ -73,10 +73,10 @@ test.describe('AAPI access @regression', () => {
     expect((await request.post(`${BASE}/api-keys`, { headers: auth, data: { name: 'QA-AAPI x', level: 'admin' } })).status()).toBe(403);
     // the list never shows the secret; the table holds only the hash
     const list = JSON.stringify(await (await admin.request.get(`${BASE}/api-keys`)).json());
-    expect(list).not.toContain(token.split('_')[2]);
+    expect(list).not.toContain(token.slice(token.indexOf('_', 4) + 1));
     const row = (await adminDb().from('api_keys').select('hash').eq('id', created.data.id).single()).data!;
     expect(row.hash).toMatch(/^[0-9a-f]{64}$/);
-    expect(JSON.stringify(row)).not.toContain(token.split('_')[2]);
+    expect(JSON.stringify(row)).not.toContain(token.slice(token.indexOf('_', 4) + 1));
     // bad keys all look the same
     for (const bad of [`${token}x`, 'Bearer tmk_aaaaaaaaaaaa_' + 'A'.repeat(43), 'Bearer nonsense', 'Bearer ']) {
       const res = await request.get(`${BASE}/courses`, { headers: { ...H, Authorization: bad.startsWith('Bearer') ? bad : `Bearer ${bad}` } });

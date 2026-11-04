@@ -201,3 +201,17 @@ The cohort must exist (use `demo-python-b1` from section 2). The first write cre
 - `DELETE /curriculum/demo-python-b1/lessons/{lessonId}` and `.../modules/{moduleId}`.
 
 Must be refused: a lesson id used twice (400); an `http` or foreign `rawUrl` (400); `"isExam": true` on any assignment (400, read-only); publishing an empty curriculum (422); deleting a lesson learners have progress on (422); a reorder that misses an id (400, nothing changes).
+
+## 8. Import today's curricula (owner only, one-off)
+
+`POST /import/curriculum` copies `data/learning-content.ts` into the tables. **Always dry-run first** (the default) and read `dropped`.
+```json
+{ }
+```
+Apply one course:
+```json
+{ "cohorts": ["git-beginner-batch-1"], "apply": true }
+```
+Apply all three (`python-beginners`, `python-beginners-batch-2`, `git-beginner-batch-1`): `{ "apply": true }`.
+Run it again: every course says `unchanged`. If someone edited a curriculum in the admin API, the import says `differs` and leaves it; `{ "apply": true, "overwrite": true }` replaces it with the files.
+Imported curricula are published. An API key cannot run it (403), only the signed-in owner.

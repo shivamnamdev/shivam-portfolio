@@ -223,3 +223,48 @@ test.describe('AAPI curriculum @regression', () => {
     expect(roleCan('key-staff', 'curriculum:write')).toBe(false);
   });
 });
+
+import { canonical, planCurriculumImport } from '../../lib/adminApi/importCurriculum';
+import { courseCurriculumMap as FILES } from '../../data/learning-content';
+import { PERMISSIONS } from '../../lib/adminApi/permissions';
+
+test.describe('AAPI import plan @regression', () => {
+  const legacy = FILES['git-beginner-batch-1'];
+  test('[AAPI-UNIT-IMP-001] canonical form ignores key order and compares values', () => {
+    expect(canonical({ b: 1, a: [{ d: 1, c: 2 }] })).toBe(canonical({ a: [{ c: 2, d: 1 }], b: 1 }));
+    expect(canonical({ a: 1 })).not.toBe(canonical({ a: 2 }));
+    expect(canonical([1, 2])).not.toBe(canonical([2, 1]));
+  });
+
+  test('[AAPI-UNIT-IMP-002] a new cohort is created and published; the same data again is unchanged, even after a key-order change', () => {
+    const first = planCurriculumImport('git-beginner-batch-1', legacy, null, false, '2027-01-01T00:00:00.000Z');
+    expect(first.action).toBe('create');
+    expect(first.doc.published).toEqual(first.doc.modules);
+    expect(first.counts.modules).toBe(legacy.length);
+    const stored = JSON.parse(canonical(first.doc));                        // what the database hands back: keys in another order
+    const again = planCurriculumImport('git-beginner-batch-1', legacy, stored, false);
+    expect(again.action).toBe('unchanged');
+  });
+
+  test('[AAPI-UNIT-IMP-003] an existing curriculum that differs is never overwritten unless asked', () => {
+    const plan = planCurriculumImport('git-beginner-batch-1', legacy, null, false);
+    const edited = JSON.parse(JSON.stringify(plan.doc)); edited.modules[0].title = 'Edited by an admin';
+    expect(planCurriculumImport('git-beginner-batch-1', legacy, edited, false)).toMatchObject({ action: 'differs', existing: { modules: legacy.length } });
+    expect(planCurriculumImport('git-beginner-batch-1', legacy, edited, true).action).toBe('overwrite');
+    const neverPublished = { ...JSON.parse(JSON.stringify(plan.doc)), published: null };
+    expect(planCurriculumImport('git-beginner-batch-1', legacy, neverPublished, false).action).toBe('differs');
+  });
+
+  test('[AAPI-UNIT-IMP-004] the plan reports what it drops, for all three real courses', () => {
+    const dropped = Object.entries(FILES).flatMap(([c, l]) => planCurriculumImport(c, l, null, false).dropped);
+    expect(dropped.length).toBeGreaterThanOrEqual(2);
+    for (const d of dropped) expect(d).toMatch(/^[a-z0-9-]+ \/ /);
+  });
+
+  test('[AAPI-UNIT-IMP-005] only the owner may run the import; an admin key cannot', () => {
+    expect(PERMISSIONS).toContain('import:run');
+    expect(roleCan('owner', 'import:run')).toBe(true);
+    expect(roleCan('key-admin', 'import:run')).toBe(false);
+    expect(roleCan('key-staff', 'import:run')).toBe(false);
+  });
+});

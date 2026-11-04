@@ -234,4 +234,4 @@ Plan: `docs/architecture/admin-portal-plan.md` (branch `epic/admin-portal`). Pha
 - [x] Core library `lib/adminApi/curriculum.ts` + 17 unit tests (2026-11-04)
 - [x] Store helper, 11 routes, OpenAPI, 7 API tests, PRD 18 + cases, sample requests (2026-11-04). `npm run test:admin-api`: all pass
 - [ ] Owner review, PR into `epic/admin-portal`
-- [ ] Import script (next, after phase 2)
+- [x] Curriculum import (2026-11-04): endpoint `POST /import/curriculum` (dry run default, owner only) instead of a script: the repo has no TypeScript runner. Courses, cohorts and coupons import waits for course-cta-update-3.
