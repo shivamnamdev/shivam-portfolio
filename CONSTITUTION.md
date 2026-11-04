@@ -128,3 +128,4 @@ Append one line per significant change to architecture, schema, or integrations:
 - 2026-10-30 — Added PRD 08 (Admin Portal) and workbooks for PRDs 07 and 08 to docs/testing — all UI PRDs now have manual cases
 - 2026-11-03 — Added the "inform before installing" rule (§7) — a `--legacy-peer-deps` install broke the CI lock file
 - 2026-11-03 — Security response headers in `next.config.mjs` (CSP report-only) — PRD 16 SEC-HDR defects
+- 2026-11-04 — Admin portal epic plan added (docs/architecture/admin-portal-plan.md, branch epic/admin-portal) — proposed only, awaiting approval

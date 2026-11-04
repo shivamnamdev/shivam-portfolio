@@ -211,3 +211,10 @@ Blueprint (owner: "do it yourself" after the like-button PR merged): input `GET 
 
 - [x] 2026-11-02 server-side exam grading built on `feat/server-side-exam-grading`: `lib/examGraders.ts`, `lib/examWorker.mjs`, `lib/runExam.ts`, `app/api/learning/exam-grade`, page change, 10 new tests. 30 tests pass locally; `next build` traces Pyodide into the route.
 - [ ] Owner: open the PR, check the Vercel preview (cold start and memory of `/api/learning/exam-grade`), then merge. Follow-up task: rewrite the grader (it scores printed text and name checks, and shares one Python session with the learner).
+
+## 2026-11-04 · Admin portal and learner portal epic (Blueprint proposed, awaiting approval)
+Plan: `docs/architecture/admin-portal-plan.md` (branch `epic/admin-portal`). Phases: 0 Blueprint, 1 Admin API + Swagger, 2 Content API, 3 Engagement and operations API, 4 Admin portal UI, 5 Learner portal reads the database, 6 Hardening and cutover. Open decisions D1 to D8 in section 11 of the plan. **Halt rule: no implementation code until the owner approves this Blueprint.**
+- [ ] Owner answers D1 to D8
+- [ ] Approval recorded here
+- [ ] PRD 17 (admin API) case list written
+- [ ] Jira tasks created per phase
