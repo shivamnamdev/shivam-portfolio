@@ -355,6 +355,8 @@ const qaFixtureCourses = QA_FIXTURES_ENABLED
       whatsappLink: "https://chat.whatsapp.com/qa-checkout-sandbox",
       liveLink: "https://meet.google.com/qa-checkout-sandbox", // lets the lobby cases (PRD 06 DSH-LOB-006/007) run
       vsl: { ...qaBase.vsl, headlineHighlight: "QA CHECKOUT SANDBOX" },
+      pricingPlans: undefined, // the fixture is a single-price course; the base course now has plans and orders would need a planId
+      listed: true,
       pricing: {
         inr: { currentPrice: "₹10", originalPrice: "₹20", savingsText: "QA fixture price", currencyCode: "INR" },
         usd: { currentPrice: "$1", originalPrice: "$2", savingsText: "QA fixture price (Global)", currencyCode: "USD" },

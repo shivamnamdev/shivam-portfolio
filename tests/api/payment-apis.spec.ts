@@ -137,7 +137,7 @@ test.describe('PRD09 create-order and verify-payment @regression', () => {
 
     test('[PAYA-AMT-005] the order notes carry the buyer, course and coupon', async () => {
       const { order } = await (await create(s.request, { courseId: SLUG, currency: 'INR', couponCode: 'BIRTHDAY20' })).json();
-      expect(order.notes).toEqual({ userId: await clerkUserId(BUYER), courseId: SLUG, courseSlug: SLUG, couponCode: 'BIRTHDAY20' });
+      expect(order.notes).toEqual({ userId: await clerkUserId(BUYER), courseId: SLUG, courseSlug: SLUG, couponCode: 'BIRTHDAY20', planId: '' });   // planId is empty for single-price courses
     });
 
     test('[PAYA-AMT-006][PAYA-AMT-008] the receipt is short and every order is new', async () => {
