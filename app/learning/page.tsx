@@ -33,7 +33,7 @@ export default function LearningDashboard() {
         }
 
         // Streak and stats live on the server (the browser has no access to the stats table).
-        const statsRes = await fetch('/api/learning/stats', { method: 'POST' });
+        const statsRes = await fetch('/api/learning/stats', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }) });
         const statsData = await statsRes.json();
         if (statsData.success) setStats({ streak: statsData.streak, points: statsData.points });
 

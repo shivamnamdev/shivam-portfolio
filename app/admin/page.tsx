@@ -9,7 +9,7 @@ import { activeCourses } from '@/data/courses';
 import { courseCurriculumMap } from '@/data/learning-content';
 import { motion, AnimatePresence } from 'framer-motion';
 import Editor from '@monaco-editor/react';
-import { ADMIN_EMAIL } from '@/lib/admin';
+import { ADMIN_EMAIL, isAdminEmail } from '@/lib/admin';
 
 function getVideoTitle(videoId: string) {
   for (const courseSlug in courseCurriculumMap) {
@@ -67,13 +67,13 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (isLoaded) {
       if (!isSignedIn) router.push('/');
-      else if (user.primaryEmailAddress?.emailAddress !== ADMIN_EMAIL) router.push('/learning');
+      else if (!isAdminEmail(user.primaryEmailAddress?.emailAddress)) router.push('/learning');
     }
   }, [isLoaded, isSignedIn, user, router]);
 
   useEffect(() => {
     async function fetchAdminData() {
-      if (!isLoaded || !isSignedIn || user.primaryEmailAddress?.emailAddress !== ADMIN_EMAIL) return;
+      if (!isLoaded || !isSignedIn || !isAdminEmail(user.primaryEmailAddress?.emailAddress)) return;
       try {
         const [dataRes, usersRes] = await Promise.all([
           fetch('/api/admin/dashboard-data').then(res => res.json()),
@@ -129,7 +129,7 @@ export default function AdminDashboard() {
     }
   };
 
-  if (!isLoaded || !isSignedIn || user.primaryEmailAddress?.emailAddress !== ADMIN_EMAIL) {
+  if (!isLoaded || !isSignedIn || !isAdminEmail(user.primaryEmailAddress?.emailAddress)) {
     return <div className="min-h-screen flex items-center justify-center bg-stone-50"><Loader2 className="animate-spin text-amber-500" size={48} /></div>;
   }
 

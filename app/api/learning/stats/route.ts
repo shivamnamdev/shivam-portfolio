@@ -4,19 +4,18 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getDisplayName, getPrimaryEmail } from "@/lib/serverAuth";
-import { fail, requireLearner } from "@/lib/learnerApi";
+import { fail, readJson, requireLearner } from "@/lib/learnerApi";
+import { streakDays } from "@/lib/streakDay";
 
-const dayKey = (d: Date) => d.toISOString().split("T")[0];
 
-export async function POST() {
+export async function POST(req: Request) {
   const who = requireLearner();
   if ("response" in who) return who.response;
 
   try {
-    const now = new Date();
-    const today = dayKey(now);
-    now.setUTCDate(now.getUTCDate() - 1);
-    const yesterday = dayKey(now);
+    // SCP-60: the day changes at the learner's midnight, not at UTC midnight. The page sends its time zone (optional).
+    const body = await readJson(req);
+    const { today, yesterday } = streakDays(new Date(), body?.timeZone);
 
     const user = await currentUser();
     const name = getDisplayName(user);
