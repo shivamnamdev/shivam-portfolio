@@ -122,22 +122,28 @@ export async function listCoupons(p: { limit: number; cursor: string | null; q: 
   return { rows: p.state ? rows.filter((r) => couponState(r) === p.state) : rows, next };
 }
 
-// Owner decision Q7, coupon side: refuse a coupon that would leave an amount above zero and below the payment minimum on any price it covers.
+// Owner decision Q7: the first price of this cohort that the discount would leave above zero and below the payment minimum, or null.
+// Pure, so the rule is unit-tested without a database; both checks below use it.
+export function discountProblem(d: Discount, scope: AppliesTo | null | undefined, cohortSlug: string, pricing: Pricing): { label: string; result: number; currency: string } | null {
+  if (scope?.cohortSlugs?.length && !scope.cohortSlugs.includes(cohortSlug)) return null;
+  for (const item of priceList(pricing)) {
+    if (scope?.planIds?.length && (!item.planId || !scope.planIds.includes(item.planId))) continue;
+    if (d.type === "fixed" && (item.currency === "INR" ? d.inr : d.usd) === undefined) continue;
+    const result = discountedAmount(item.amount, d, item.currency as PayCurrency);
+    if (!amountIsAllowed(result, item.currency as PayCurrency)) return { label: item.label, result, currency: item.currency };
+  }
+  return null;
+}
+
+// Coupon side: refuse a coupon that would leave an amount above zero and below the payment minimum on any price it covers.
 export async function checkCouponAgainstPrices(d: Discount, scope: AppliesTo | null | undefined): Promise<void> {
   const { data, error } = await supabaseAdmin.from("content_docs").select("key, doc").eq("kind", "cohort");
   if (error) throw error;
   for (const row of data ?? []) {
-    if (scope?.cohortSlugs?.length && !scope.cohortSlugs.includes(row.key as string)) continue;
     const pricing = (row.doc as { pricing?: Pricing }).pricing;
     if (!pricing) continue;
-    for (const item of priceList(pricing)) {
-      if (scope?.planIds?.length && (!item.planId || !scope.planIds.includes(item.planId))) continue;
-      if (d.type === "fixed" && (item.currency === "INR" ? d.inr : d.usd) === undefined) continue;
-      const result = discountedAmount(item.amount, d, item.currency as PayCurrency);
-      if (!amountIsAllowed(result, item.currency as PayCurrency)) {
-        throw unprocessable(`This discount would leave ${result} ${item.currency} on ${item.label} of cohort "${row.key}", which is above zero and below the payment minimum. Change the discount or the price`);
-      }
-    }
+    const p = discountProblem(d, scope, row.key as string, pricing);
+    if (p) throw unprocessable(`This discount would leave ${p.result} ${p.currency} on ${p.label} of cohort "${row.key}", which is above zero and below the payment minimum. Change the discount or the price`);
   }
 }
 
@@ -146,17 +152,8 @@ export async function checkCohortAgainstCoupons(cohortSlug: string, pricing: Pri
   const { data, error } = await supabaseAdmin.from("coupons").select("code, discount, applies_to").eq("active", true).gt("expires_at", new Date().toISOString()).is("redeemed_at", null);
   if (error) throw error;
   for (const c of data ?? []) {
-    const scope = c.applies_to as AppliesTo | null;
-    if (scope?.cohortSlugs?.length && !scope.cohortSlugs.includes(cohortSlug)) continue;
-    const d = c.discount as Discount;
-    for (const item of priceList(pricing)) {
-      if (scope?.planIds?.length && (!item.planId || !scope.planIds.includes(item.planId))) continue;
-      if (d.type === "fixed" && (item.currency === "INR" ? d.inr : d.usd) === undefined) continue;
-      const result = discountedAmount(item.amount, d, item.currency as PayCurrency);
-      if (!amountIsAllowed(result, item.currency as PayCurrency)) {
-        throw unprocessable(`Coupon ${c.code} would leave ${result} ${item.currency} on ${item.label}, which is above zero and below the payment minimum. Change the price or the coupon first`);
-      }
-    }
+    const p = discountProblem(c.discount as Discount, c.applies_to as AppliesTo | null, cohortSlug, pricing);
+    if (p) throw unprocessable(`Coupon ${c.code} would leave ${p.result} ${p.currency} on ${p.label}, which is above zero and below the payment minimum. Change the price or the coupon first`);
   }
 }
 

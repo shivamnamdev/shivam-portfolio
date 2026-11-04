@@ -2,6 +2,8 @@
 
 For the owner. Everything below runs against the Supabase project your local `.env.local` points to (QA), so nothing touches production.
 
+Ready-to-paste request bodies for every endpoint: [admin-api-sample-requests.md](admin-api-sample-requests.md).
+
 ## 1. Open the docs and sign in
 
 1. Start the app: `npm run dev` (port 3000).
