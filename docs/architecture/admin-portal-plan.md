@@ -66,10 +66,11 @@ type Lesson = { id: string; moduleId: string; position: number; kind: 'video' | 
 type Coupon = {                                         // section 4.2
   code: string; active: boolean;
   discount: { type: 'percentage'; percent: number } | { type: 'fixed'; inr?: number; usd?: number };
-  expiresAt: string;                                     // MANDATORY, no coupon without an expiry
-  audience: 'anyone' | { userIds: string[] };            // 'listed' students only: stored by Clerk id, picked by e-mail in the UI
-  appliesTo?: { courseSlugs?: string[]; planIds?: string[] };   // empty = every course and plan
-  maxRedemptions: number | null; maxPerUser: number | null; redemptions: number;
+  expiresAt: string;                                     // MANDATORY for both kinds, no coupon without an expiry
+  audience: { kind: 'everyone' }                         // type 1: open for all
+          | { kind: 'selected'; userIds: string[] };     // type 2: only the signed-up users the admin selected (at least one)
+  appliesTo?: { courseSlugs?: string[]; planIds?: string[] };   // optional extra: limit to some courses or plans
+  maxRedemptions?: number | null; redemptions: number;          // optional extra: overall use limit
 };
 type Banner = {                                          // section 4.4
   id: string; purpose: 'announcement' | 'offer' | 'course-promo' | 'learner-notice' | 'maintenance';
@@ -113,14 +114,25 @@ Rules: prices and plan ids are validated on the server; the amount never comes f
 
 **Dependency:** `course-cta-update-3` changes `data/courses.ts`, `lib/pricing.ts`, the three payment routes and `lib/enrollments.ts`: the same files phase 1 imports and phase 5 replaces. It should land on `main` (and its `plan_id` SQL run) **before** phase 1's import script is written, so the imported shape includes plans. Open question Q6.
 
-## 4.2 Coupons (decision D8)
+## 4.2 Coupons (decision D8, corrected 2026-11-04)
 
-- **Expiry is mandatory**: no coupon can be created or imported without `expiresAt`; an expired coupon is refused everywhere (validate, create-order, enroll-free). The 4 coupons in `data/coupons.ts` have no expiry today: **the owner must give a date for each** before they can be imported (I will not invent dates).
-- **Audience**: anyone, or only the listed students (Clerk ids; the admin picks learners by e-mail and the API resolves them; lists are never sent to the browser, which closes the id leak in SCP-53).
-- **Discount**: percentage, or fixed amount (INR and/or USD).
-- **Scope** (new, needed for plans): optionally limited to some courses or some plans (for example a coupon only for the Personal plan).
-- **Limits** (flexibility asked): `maxRedemptions` and `maxPerUser`, both optional; the counter is incremented atomically when a paid order is verified or a free enrolment is created, once per order (idempotent), so retries and parallel calls cannot over-use a coupon.
-- Price maths stays deterministic in `lib/pricing.ts` and unit-tested: fixed discount larger than the price gives a free order only through `enroll-free`; the Razorpay one-unit floor (SCP-51) is decided together with this (Q7).
+Two kinds of coupon, and **both always have an expiry date**:
+
+| | Type 1: open for all | Type 2: selected students |
+|---|---|---|
+| Who can use it | any signed-in learner who knows the code | only the learners the admin selected |
+| Expiry | mandatory | mandatory |
+| Discount | percentage, or fixed amount (INR and/or USD) | same |
+| Selection | none | the admin picks **several** users from the people who have signed up (a searchable multi-select by name or e-mail) |
+
+- **Expiry**: no coupon can be created, imported or re-activated without a future `expiresAt`; an expired coupon is refused in validate, create-order and enroll-free, and the admin list shows "expired" and "expires in N days". The 4 coupons in `data/coupons.ts` have no expiry today: **the owner gives a date for each** before they are imported (no invented dates).
+- **Selected students**: the picker lists Clerk users who have signed up (the data behind today's `/api/get-clerk-users`, behind the admin guard) and stores their **Clerk ids**; the browser never receives a coupon's list of ids, which closes the id leak in SCP-53. A person who has not signed up yet cannot be selected: they sign up first, then the admin adds them. The admin can add or remove students while the coupon is live; a removed student loses the coupon at once, and an order already created keeps its price.
+- **Wrong account**: a selected-students coupon used by anyone else answers "This coupon is not available for your account" (the same message the sales page shows today for restricted coupons) and does not reveal who is on the list.
+- **Optional extras, off by default** (say if you do not want them): limit to some courses or plans (needed once plans exist, for example a coupon only for the Personal plan) and an overall use limit, applied atomically once per verified order or free enrolment so retries and parallel calls cannot over-use it.
+- Price maths stays deterministic in `lib/pricing.ts` and unit-tested; a fixed discount larger than the price makes the order free only through `enroll-free`; the Razorpay one-unit floor (SCP-51) is decided with Q7.
+- Test-only: `QA100` (the QA fixture coupon built from `NEXT_PUBLIC_QA_FREE_COUPON_USERS`) stays an environment-driven test fixture, not an admin coupon.
+
+Mapping of today's coupons once dates are given: `EXISTINGSTUDENT_BATCH03` and `BIRTHDAY20` become type 1; `BATCH002` becomes type 2 with its 4 Clerk ids; `SHIVAMSPECIAL` lists a placeholder id (`user_2aBcD1234567890`) that is not a real user, so it needs real students selected or it is retired.
 
 ## 4.3 Notifications: in-app inbox with a bell, and e-mail
 
@@ -237,7 +249,7 @@ Server-side authorisation on every route; RLS on, no policies, no anon grants; i
 | D5 | Roles | RBAC wanted later: role-ready guard now, roles in a later phase (section 4.5) |
 | D6 | Attachments and Supabase | Keep Supabase small, no Storage, few tables (section 4.6) |
 | D7 | Packages | "Appreciate it": recorded as thanks for asking, **not** as approval of a specific install. Exact proposal below, nothing installed |
-| D8 | Coupons | Expiry mandatory, listed students only (optional per coupon), fixed or percentage discount (section 4.2); plus payment models per course (section 4.1) |
+| D8 | Coupons | **Corrected**: two kinds, open for all or selected students (several signed-up users picked by the admin), both with a mandatory expiry, percentage or fixed discount (section 4.2); plus payment models per course (section 4.1) |
 
 **D7 proposal (needs an explicit yes or no):**
 
