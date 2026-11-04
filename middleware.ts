@@ -15,7 +15,9 @@ export default authMiddleware({
     "/api/create-order",
     "/api/verify-payment",
     "/api/enroll-free",
-    "/api/send-email"
+    "/api/send-email",
+    // Admin API v1 answers its own 401/403 (lib/adminApi/guard.ts) so that API keys work without a Clerk session; every route calls authorize().
+    "/api/admin/v1(.*)"
     // Admin APIs (/api/get-all-users, /api/get-clerk-users, /api/admin/*) are intentionally NOT public;
     // their handlers also verify the admin identity server-side.
   ],

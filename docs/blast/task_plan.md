@@ -219,5 +219,9 @@ Plan: `docs/architecture/admin-portal-plan.md` (branch `epic/admin-portal`). Pha
 - [x] Q7 approved 2026-11-04: a price or discount result above zero and below the payment minimum is refused at creation
 - [x] **Q8 Blueprint approved by the owner on 2026-11-04** (phases 0 to 6 as written in the plan, incl. three coupon kinds, no new packages)
 - [ ] Approval recorded here
-- [x] PRD 17 (admin API) case list written (`docs/testing/prd/17-admin-api.md`, 45 cases)
+- [x] PRD 17 (admin API) case list written (`docs/testing/prd/17-admin-api.md`, 46 cases)
 - [ ] Jira tasks created per phase
+
+### Phase 1 progress (SCP-89, branch `admin-portal/p1-api-foundation`)
+- [x] Slice 1 (2026-11-04): SQL for the 4 tables (`docs/testing/sql/step7-admin-api-tables.sql`, **not run**), `lib/adminApi/` core (permissions, envelope, hand-written validators, payment minimum, API keys, guard, audit), middleware entry for `/api/admin/v1`, 9 unit cases passing.
+- [ ] Owner runs step7 SQL on QA, then slices 2 onward: audit read and API keys routes, courses, cohorts, coupons (3 kinds), OpenAPI and `/admin/api-docs`, contract test, import script (after `course-cta-update-3` lands).

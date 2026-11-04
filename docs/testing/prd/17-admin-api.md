@@ -35,7 +35,7 @@ Plan: `docs/architecture/admin-portal-plan.md` (sections 4, 4.1, 4.2, 5, 6). Bra
 
 ## 5. Cases
 
-`docs/testing/cases/prd17-admin-api.csv` (45 cases, ids `AAPI-…`). Automation target: `tests/api/admin-api-*.spec.ts` plus a contract test. Manual or SQL checks: `AAPI-DB-001` (policy inventory).
+`docs/testing/cases/prd17-admin-api.csv` (46 cases, ids `AAPI-…`). Automation target: `tests/api/admin-api-*.spec.ts` plus a contract test. Manual or SQL checks: `AAPI-DB-001` (policy inventory).
 
 ## 6. Open items
 
