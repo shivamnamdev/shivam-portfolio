@@ -227,3 +227,11 @@ Plan: `docs/architecture/admin-portal-plan.md` (branch `epic/admin-portal`). Pha
 - [x] Owner ran step7 SQL on QA (2026-11-04).
 - [x] Slice 2 (2026-11-04): routes for courses (CRUD, publish, unpublish, archive, restore, duplicate), cohorts (single and plan pricing, links, open and close enrolment, status), coupons (everyone, selected students by e-mail, one-time; generate up to 200; list states; payment-minimum rule both ways), learners picker, audit (read only), API keys, OpenAPI 3 document and `/admin/api-docs`, contract test, write rate limit, redemption library for one-time codes. 47 PRD cases written; automated specs in `tests/api/admin-api-*.spec.ts`, `tests/db/admin-coupon-redemption.spec.ts`, `tests/unit/admin-api-core.spec.ts`.
 - [ ] Owner manual test (`docs/testing/admin-api-manual-guide.md`), PR, step7 SQL on production, then import script (after `course-cta-update-3`), then phase 2.
+
+
+### Phase 2 progress (Content API, branch `admin-portal/p2-content-api`)
+- [x] Blueprint approved by the owner 2026-11-04 (`docs/architecture/admin-portal-phase2-content-api.md`, recommended option on all five decisions). Keyed by cohort slug.
+- [x] Core library `lib/adminApi/curriculum.ts` + 17 unit tests (2026-11-04)
+- [x] Store helper, 11 routes, OpenAPI, 7 API tests, PRD 18 + cases, sample requests (2026-11-04). `npm run test:admin-api`: all pass
+- [ ] Owner review, PR into `epic/admin-portal`
+- [ ] Import script (next, after phase 2)

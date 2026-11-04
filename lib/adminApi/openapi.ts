@@ -4,7 +4,7 @@
 // that is not listed here, or a path is listed that has no route, so this file cannot drift from the code.
 import { PERMISSIONS, type Permission } from "./permissions";
 
-type Method = "get" | "post" | "patch" | "delete";
+type Method = "get" | "post" | "put" | "patch" | "delete";
 type Op = { method: Method; path: string; permission: Permission; tag: string; summary: string; body?: string; response?: string; codes?: number[]; description?: string; query?: string[]; headers?: string[] };
 
 const STD_READ = [401, 403];
@@ -42,6 +42,20 @@ export const OPERATIONS: Op[] = [
   op("get", "/coupons/{code}", "coupons:read", "Coupons", "Read a coupon (selected students are listed with name and e-mail)", { response: "Coupon", codes: [...STD_READ, 404] }),
   op("patch", "/coupons/{code}", "coupons:write", "Coupons", "Change a coupon: expiry, discount, active, students, scope", { body: "CouponUpdate", response: "Coupon", codes: [400, 401, 403, 404, 422, 429] }),
   op("delete", "/coupons/{code}", "coupons:write", "Coupons", "Delete an unused coupon (a used one can only be deactivated)", { codes: [401, 403, 404, 422, 429] }),
+  // curriculum (modules and lessons of a cohort)
+  op("get", "/curriculum", "curriculum:read", "Curriculum", "List cohorts that have a curriculum (counts and whether there are unpublished changes)", { response: "CurriculumList", query: ["limit", "cursor", "q", "status"], codes: [...STD_READ, 400] }),
+  op("get", "/curriculum/{cohort}", "curriculum:read", "Curriculum", "Read the working copy and the published copy", { response: "Curriculum", codes: [...STD_READ, 404] }),
+  op("put", "/curriculum/{cohort}", "curriculum:write", "Curriculum", "Replace the whole working copy (import and export). The first write to a cohort creates the curriculum; later writes need If-Match", { body: "CurriculumReplace", response: "Curriculum", headers: ["If-Match"], codes: [200, 201, 400, 401, 403, 404, 409, 422, 428, 429] }),
+  op("post", "/curriculum/{cohort}/modules", "curriculum:write", "Curriculum", "Add a module (optionally with lessons, at a position)", { body: "ModuleCreate", response: "Curriculum", headers: ["If-Match"], codes: [200, 201, 400, 401, 403, 404, 409, 428, 429] }),
+  op("post", "/curriculum/{cohort}/modules/reorder", "curriculum:write", "Curriculum", "Reorder modules: send every module id once, in the new order (atomic)", { body: "ModuleReorder", response: "Curriculum", headers: ["If-Match"], codes: [400, 401, 403, 404, 409, 428, 429] }),
+  op("patch", "/curriculum/{cohort}/modules/{moduleId}", "curriculum:write", "Curriculum", "Rename a module or mark it advanced", { body: "ModuleUpdate", response: "Curriculum", headers: ["If-Match"], codes: [400, 401, 403, 404, 409, 428, 429] }),
+  op("delete", "/curriculum/{cohort}/modules/{moduleId}", "curriculum:write", "Curriculum", "Delete a module (refused while learners have progress on one of its lessons)", { response: "Curriculum", headers: ["If-Match"], codes: [401, 403, 404, 409, 422, 428, 429] }),
+  op("post", "/curriculum/{cohort}/modules/{moduleId}/lessons", "curriculum:write", "Curriculum", "Add a lesson (a YouTube id or a doc- id) with an optional assignment and resources", { body: "LessonCreate", response: "Curriculum", headers: ["If-Match"], codes: [400, 401, 403, 404, 409, 428, 429] }),
+  op("post", "/curriculum/{cohort}/lessons/reorder", "curriculum:write", "Curriculum", "Reorder lessons, also across modules: send every module with its lesson ids (atomic)", { body: "LessonReorder", response: "Curriculum", headers: ["If-Match"], codes: [400, 401, 403, 404, 409, 428, 429] }),
+  op("patch", "/curriculum/{cohort}/lessons/{lessonId}", "curriculum:write", "Curriculum", "Change a lesson's title, description, assignment (null removes it) or resources. Exam flags are read-only", { body: "LessonUpdate", response: "Curriculum", headers: ["If-Match"], codes: [400, 401, 403, 404, 409, 422, 428, 429] }),
+  op("delete", "/curriculum/{cohort}/lessons/{lessonId}", "curriculum:write", "Curriculum", "Delete a lesson (refused while learners have progress on it)", { response: "Curriculum", headers: ["If-Match"], codes: [401, 403, 404, 409, 422, 428, 429] }),
+  op("post", "/curriculum/{cohort}/publish", "curriculum:write", "Curriculum", "Publish: the working copy becomes the published copy", { response: "Curriculum", headers: ["If-Match"], codes: [401, 403, 404, 409, 422, 428, 429] }),
+  op("post", "/curriculum/{cohort}/discard", "curriculum:write", "Curriculum", "Discard the draft: the working copy goes back to the published copy", { response: "Curriculum", headers: ["If-Match"], codes: [401, 403, 404, 409, 422, 428, 429] }),
   // people, history, keys, spec
   op("get", "/learners", "learners:read", "Learners", "Search signed-up users by name or e-mail (the picker for selected-students coupons)", { response: "LearnerList", query: ["q", "limit"], codes: [...STD_READ, 400] }),
   op("get", "/audit", "audit:read", "Audit", "Read the audit log, newest first (read only)", { response: "AuditList", query: ["limit", "cursor", "resource", "action", "resourceId"], codes: [...STD_READ, 400] }),
@@ -80,6 +94,19 @@ const SCHEMAS: Record<string, unknown> = {
   CouponCreate: obj({ code: str({ description: "4 to 40 letters, numbers, - or _ (stored upper case)" }), kind: str({ enum: ["everyone", "selected", "single-use"] }), discount, expiresAt: str({ format: "date-time", description: "Mandatory, must be in the future" }), users: { type: "array", items: str(), description: "E-mails of signed-up users; required for kind selected, not allowed otherwise" }, appliesTo, maxRedemptions: { type: "integer" } }, ["code", "kind", "discount", "expiresAt"]),
   CouponUpdate: obj({ discount, expiresAt: str(), active: { type: "boolean" }, users: { type: "array", items: str() }, appliesTo, maxRedemptions: { type: "integer" } }),
   CouponGenerate: obj({ count: { type: "integer", minimum: 1, maximum: 200 }, discount, expiresAt: str({ format: "date-time" }), appliesTo }, ["count", "discount", "expiresAt"]),
+  Curriculum: one("CurriculumData"),
+  CurriculumData: obj({ cohort: str(), status: str({ enum: ["draft", "published"] }), version: { type: "integer" }, modules: { type: "array", items: ref("Module") }, published: { type: "array", nullable: true, items: ref("Module") }, publishedAt: str({ format: "date-time" }), hasUnpublishedChanges: { type: "boolean" }, counts: obj({ modules: { type: "integer" }, lessons: { type: "integer" } }), updatedAt: str(), updatedBy: str() }),
+  CurriculumList: list("CurriculumSummary"), CurriculumSummary: obj({ cohort: str(), status: str(), version: { type: "integer" }, hasUnpublishedChanges: { type: "boolean" }, counts: obj({ modules: { type: "integer" }, lessons: { type: "integer" } }), updatedAt: str() }),
+  Module: obj({ id: str({ description: "m- plus 8 characters, generated by the API" }), title: str(), advanced: { type: "boolean" }, lessons: { type: "array", items: ref("Lesson") } }),
+  Lesson: obj({ id: str({ description: "YouTube video id (11 characters) or doc-... for a document" }), kind: str({ enum: ["video", "document"] }), title: str(), description: str(), assignment: ref("Assignment"), resources: { type: "array", maxItems: 20, items: ref("Resource") } }, ["id"]),
+  Assignment: obj({ title: str(), labType: str({ enum: ["python", "git"] }), rawUrl: str(), solutionUrl: str(), starterCodeUrl: str(), instructionsUrl: str(), starterRepoUrl: str(), expectedStateUrl: str(), validatorUrl: str(), carryOverCode: { type: "boolean" }, isExam: { type: "boolean", readOnly: true }, serverGraded: { type: "boolean", readOnly: true }, expectedOutcomeUrl: { type: "string", readOnly: true } }, ["title"]),
+  Resource: obj({ title: str(), url: str({ description: "https; s3.ap-south-1.amazonaws.com, raw.githubusercontent.com, drive/docs.google.com, github.com or YouTube" }), type: str({ enum: ["PDF", "Document", "Link"] }) }, ["title", "url", "type"]),
+  CurriculumReplace: obj({ modules: { type: "array", maxItems: 60, items: ref("Module") } }, ["modules"]),
+  ModuleCreate: obj({ title: str(), advanced: { type: "boolean" }, lessons: { type: "array", items: ref("Lesson") }, position: { type: "integer", minimum: 0 } }, ["title"]),
+  ModuleUpdate: obj({ title: str(), advanced: { type: "boolean" } }), ModuleReorder: obj({ moduleIds: { type: "array", items: str() } }, ["moduleIds"]),
+  LessonCreate: obj({ id: str(), kind: str({ enum: ["video", "document"] }), title: str(), description: str(), assignment: ref("Assignment"), resources: { type: "array", items: ref("Resource") }, position: { type: "integer", minimum: 0 } }, ["id"]),
+  LessonUpdate: obj({ title: str(), description: str(), assignment: { allOf: [ref("Assignment")], nullable: true }, resources: { type: "array", items: ref("Resource") } }),
+  LessonReorder: obj({ layout: { type: "array", items: obj({ moduleId: str(), lessonIds: { type: "array", items: str() } }, ["moduleId", "lessonIds"]) } }, ["layout"]),
   LearnerList: obj({ success: { type: "boolean" }, data: obj({ items: { type: "array", items: obj({ id: str(), email: str(), name: str() }) } }) }),
   AuditList: list("AuditEntry"), AuditEntry: obj({ id: { type: "integer" }, at: str(), actor: str(), action: str(), resource: str(), resourceId: str(), before: {}, after: {} }),
   ApiKeyList: list("ApiKey"), ApiKey: obj({ id: str(), name: str(), level: str({ enum: ["admin", "staff"] }), createdBy: str(), createdAt: str(), lastUsedAt: str(), revokedAt: str() }),
@@ -110,7 +137,7 @@ export function buildOpenApi() {
     openapi: "3.0.3",
     info: { title: "Shivam Academy Admin API", version: "1.0.0", description: "Admin only. Sign in as the admin, or send `Authorization: Bearer tmk_...` with an admin API key. Every operation lists the permission it needs (`x-permission`). Answers are `{ success, data }` or `{ success: false, error }`." },
     servers: [{ url: "/api/admin/v1" }],
-    tags: ["Courses", "Cohorts", "Coupons", "Learners", "Audit", "API keys", "Docs"].map((name) => ({ name })),
+    tags: ["Courses", "Cohorts", "Curriculum", "Coupons", "Learners", "Audit", "API keys", "Docs"].map((name) => ({ name })),
     paths,
     components: {
       securitySchemes: { adminSession: { type: "apiKey", in: "cookie", name: "__session", description: "The admin's signed-in browser session" }, apiKey: { type: "http", scheme: "bearer", description: "tmk_<id>_<secret>" } },

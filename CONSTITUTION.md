@@ -132,3 +132,4 @@ Append one line per significant change to architecture, schema, or integrations:
 - 2026-11-04 — Admin portal epic plan added (docs/architecture/admin-portal-plan.md, branch epic/admin-portal) — proposed only, awaiting approval
 - 2026-11-04 — Admin portal Blueprint approved; PRD 17 (admin API) written — phase 1 starts
 - 2026-11-04 — Added the "unit tests ship with the code" rule (§7, §10) — owner wants unit-level certainty while building
+- 2026-11-04 — Phase 2 Content API (curriculum of a cohort in `content_docs`, no new table) — blueprint approved, built with unit tests

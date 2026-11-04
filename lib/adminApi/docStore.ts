@@ -6,7 +6,7 @@ import { conflict, notFound } from "./envelope";
 import type { ListParams } from "./request";
 import { likeSafe } from "./request";
 
-export type DocKind = "course" | "cohort";
+export type DocKind = "course" | "cohort" | "curriculum";
 type Row = { kind: string; key: string; status: string; version: number; doc: Record<string, unknown>; created_by: string; updated_by: string; created_at: string; updated_at: string };
 
 // Never returns the `private` part of a document (cohort links): that is only served by the dedicated links route.

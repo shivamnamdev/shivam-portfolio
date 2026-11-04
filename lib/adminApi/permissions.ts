@@ -7,6 +7,7 @@ export const PERMISSIONS = [
   "courses:read", "courses:write",
   "cohorts:read", "cohorts:write", "cohorts:links",
   "coupons:read", "coupons:write",
+  "curriculum:read", "curriculum:write",
   "audit:read",
   "learners:read",
   "keys:read", "keys:write",

@@ -169,3 +169,35 @@ curl -H "Authorization: Bearer tmk_<id>_<secret>" http://localhost:3000/api/admi
 ## 6. Cleanup order
 
 Coupons first (a used one is refused: deactivate it instead), then cohorts, then courses (`demo-python`, `demo-python-copy`).
+
+## 7. Curriculum (phase 2)
+
+The cohort must exist (use `demo-python-b1` from section 2). The first write creates the curriculum; every later write needs `If-Match: <version>` (the `version` in the last answer). Lesson ids are YouTube ids (11 characters) or `doc-...`. Assignment links must be on `raw.githubusercontent.com`.
+
+`PUT /curriculum/demo-python-b1` (first write, no header)
+```json
+{
+  "modules": [
+    { "title": "Module 1: Python Fundamentals", "lessons": [
+      { "id": "OkK3E7ApZ4Q", "title": "Python Basics & Setup",
+        "assignment": { "title": "Day 01: Introduction", "rawUrl": "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2001%3A%20Introduction%20and%20print%20function/Assignment", "solutionUrl": "https://raw.githubusercontent.com/shivamnamdev/learn-python-step-by-step/refs/heads/main/Day%2001%3A%20Introduction%20and%20print%20function/Solution.py" } },
+      { "id": "bpjcslHyYEA", "title": "Variables, Inputs & Operators" }
+    ] },
+    { "title": "Module 2: Resources", "lessons": [
+      { "id": "doc-cheatsheet", "title": "Cheatsheet", "resources": [ { "title": "Git Cheatsheet", "url": "https://s3.ap-south-1.amazonaws.com/git-course-content.shivamnamdev.com/Git+Cheatsheet.pdf", "type": "PDF" } ] }
+    ] }
+  ]
+}
+```
+`GET /curriculum/demo-python-b1` shows `modules` (working copy), `published` (null until you publish) and `hasUnpublishedChanges`. The module ids (`m-xxxxxxxx`) are generated; copy them from the answer.
+
+- `POST /curriculum/demo-python-b1/modules`: `{ "title": "Advanced", "advanced": true, "position": 0 }`
+- `PATCH /curriculum/demo-python-b1/modules/{moduleId}`: `{ "title": "Renamed" }`
+- `POST /curriculum/demo-python-b1/modules/reorder`: `{ "moduleIds": ["m-bbbbbbbb", "m-aaaaaaaa"] }` (every id exactly once)
+- `POST /curriculum/demo-python-b1/modules/{moduleId}/lessons`: `{ "id": "TXRqDxL0Ob0", "title": "Modules", "position": 1 }`
+- `PATCH /curriculum/demo-python-b1/lessons/OkK3E7ApZ4Q`: `{ "title": "New title", "assignment": null }` (null removes the assignment)
+- `POST /curriculum/demo-python-b1/lessons/reorder`: `{ "layout": [ { "moduleId": "m-aaaaaaaa", "lessonIds": ["bpjcslHyYEA"] }, { "moduleId": "m-bbbbbbbb", "lessonIds": ["OkK3E7ApZ4Q", "doc-cheatsheet"] } ] }` (every module and every lesson exactly once; lessons can change module)
+- `POST /curriculum/demo-python-b1/publish`, then change something, then `POST .../discard` to go back to the published copy.
+- `DELETE /curriculum/demo-python-b1/lessons/{lessonId}` and `.../modules/{moduleId}`.
+
+Must be refused: a lesson id used twice (400); an `http` or foreign `rawUrl` (400); `"isExam": true` on any assignment (400, read-only); publishing an empty curriculum (422); deleting a lesson learners have progress on (422); a reorder that misses an id (400, nothing changes).
