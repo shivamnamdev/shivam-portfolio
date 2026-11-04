@@ -216,7 +216,8 @@ Blueprint (owner: "do it yourself" after the like-button PR merged): input `GET 
 Plan: `docs/architecture/admin-portal-plan.md` (branch `epic/admin-portal`). Phases: 0 Blueprint, 1 Admin API + Swagger, 2 Content API, 3 Engagement and operations API, 4 Admin portal UI, 5 Learner portal reads the database, 6 Hardening and cutover. Decisions D1 to D8 answered 2026-11-04 (section 11.1 of the plan); new questions Q1 to Q8 in 11.2. **Halt rule: no implementation code until the owner approves this Blueprint (Q8).**
 - [x] Owner answers D1 to D8; D7 = no new packages (hand-written validators and OpenAPI), swagger-ui-react upgrade only
 - [x] Coupons: three kinds (open, selected students, one-time), mandatory expiry; existing coupons kept aside
-- [ ] Q7 (price between zero and the payment minimum is refused at creation) and Q8 (approval) pending
+- [x] Q7 approved 2026-11-04: a price or discount result above zero and below the payment minimum is refused at creation
+- [x] **Q8 Blueprint approved by the owner on 2026-11-04** (phases 0 to 6 as written in the plan, incl. three coupon kinds, no new packages)
 - [ ] Approval recorded here
-- [ ] PRD 17 (admin API) case list written
+- [x] PRD 17 (admin API) case list written (`docs/testing/prd/17-admin-api.md`, 45 cases)
 - [ ] Jira tasks created per phase

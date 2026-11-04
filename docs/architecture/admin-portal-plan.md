@@ -1,6 +1,6 @@
 # Admin portal and learner portal (epic)
 
-Status: **decisions D1 to D8 answered on 2026-11-04 (section 11); Blueprint approval and the new questions in section 11.2 are still open. No implementation code exists.** Date: 2026-11-04. Branch: `epic/admin-portal` (from `main`).
+Status: **approved by the owner on 2026-11-04 (decisions D1 to D8, Q1 to Q8). Phase 0 done; phase 1 in progress. No implementation code existed at approval time.** Date: 2026-11-04. Branch: `epic/admin-portal` (from `main`).
 Owner request: two portals (Admin and Learner), switched with a toggle that only the admin sees; the admin portal gets full CRUD on courses, contents, coupons, banners (new), notifications and more; work in phases on a dedicated branch; **start with the admin API and Swagger**. A third-party enterprise Course Manager guide (the Skytap/Kyndryl help set, supplied by the owner) is the reference for what a mature course manager covers.
 
 Per CONSTITUTION section 2 (halt rule): nothing below is built until the owner approves the Blueprint in `docs/blast/task_plan.md` and answers the questions in section 11.
