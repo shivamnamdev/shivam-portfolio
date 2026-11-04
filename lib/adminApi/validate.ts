@@ -79,16 +79,57 @@ export const optional = <T,>(check: Check<T>): Check<T | undefined> => (v) => (v
 type Shape = Record<string, Check<unknown>>;
 type Parsed<S extends Shape> = { [K in keyof S]: S[K] extends Check<infer T> ? T : never };
 
-export function parseObject<S extends Shape>(input: unknown, shape: S): Parsed<S> {
+function runShape(input: unknown, shape: Shape): { value: Record<string, unknown>; fields: FieldErrors } | null {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return null;
   const fields: FieldErrors = {};
-  if (!input || typeof input !== "object" || Array.isArray(input)) throw badRequest("Request body must be a JSON object");
   const body = input as Record<string, unknown>;
   for (const key of Object.keys(body)) if (!(key in shape)) fields[key] = "is not a known field";
-  const out: Record<string, unknown> = {};
+  const value: Record<string, unknown> = {};
   for (const [key, check] of Object.entries(shape)) {
     const r = check(body[key]);
-    if (r.ok) out[key] = r.value; else fields[key] = r.message;
+    if (r.ok) value[key] = r.value; else fields[key] = r.message;
   }
-  if (Object.keys(fields).length) throw badRequest("Some fields are not valid", fields);
-  return out as Parsed<S>;
+  return { value, fields };
+}
+
+export function parseObject<S extends Shape>(input: unknown, shape: S): Parsed<S> {
+  const run = runShape(input, shape);
+  if (!run) throw badRequest("Request body must be a JSON object");
+  if (Object.keys(run.fields).length) throw badRequest("Some fields are not valid", run.fields);
+  return run.value as Parsed<S>;
+}
+
+// A nested object as a Check (reports the first problem with its path).
+export const objectOf = <S extends Shape>(shape: S): Check<Parsed<S>> => (v) => {
+  const run = runShape(v, shape);
+  if (!run) return bad("must be an object");
+  const first = Object.entries(run.fields)[0];
+  return first ? bad(`${first[0]} ${first[1]}`) : good(run.value as Parsed<S>);
+};
+
+// Free-form JSON with limits (used for page copy until the screens define exact blocks): plain data only, bounded size, depth and string length.
+export const boundedJson = (o: { maxBytes: number; maxDepth: number; maxString: number }): Check<Record<string, unknown>> => (v) => {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return bad("must be an object");
+  let bytes = 0;
+  const walk = (x: unknown, depth: number): string | null => {
+    if (depth > o.maxDepth) return "is nested too deeply";
+    if (typeof x === "string") { bytes += x.length; return x.length > o.maxString ? `has a text longer than ${o.maxString} characters` : null; }
+    if (x === null || typeof x === "number" || typeof x === "boolean") { bytes += 8; return null; }
+    if (Array.isArray(x)) { for (const i of x) { const r = walk(i, depth + 1); if (r) return r; } return null; }
+    if (typeof x === "object") { for (const [k, i] of Object.entries(x as object)) { bytes += k.length; const r = walk(i, depth + 1); if (r) return r; } return null; }
+    return "contains a value that is not plain data";
+  };
+  const problem = walk(v, 0);
+  if (problem) return bad(problem);
+  return bytes > o.maxBytes ? bad(`is larger than ${o.maxBytes} characters`) : good(v as Record<string, unknown>);
+};
+
+export const email: Check<string> = (v) => {
+  const s = str({ max: 254, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ })(v);
+  return s.ok ? good(s.value.toLowerCase()) : s;
+};
+
+// Reads the JSON body; anything that is not valid JSON is a 400, never a 500.
+export async function readBody(req: Request): Promise<unknown> {
+  try { return await req.json(); } catch { throw badRequest("Request body must be valid JSON"); }
 }

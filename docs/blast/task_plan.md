@@ -224,4 +224,6 @@ Plan: `docs/architecture/admin-portal-plan.md` (branch `epic/admin-portal`). Pha
 
 ### Phase 1 progress (SCP-89, branch `admin-portal/p1-api-foundation`)
 - [x] Slice 1 (2026-11-04): SQL for the 4 tables (`docs/testing/sql/step7-admin-api-tables.sql`, **not run**), `lib/adminApi/` core (permissions, envelope, hand-written validators, payment minimum, API keys, guard, audit), middleware entry for `/api/admin/v1`, 9 unit cases passing.
-- [ ] Owner runs step7 SQL on QA, then slices 2 onward: audit read and API keys routes, courses, cohorts, coupons (3 kinds), OpenAPI and `/admin/api-docs`, contract test, import script (after `course-cta-update-3` lands).
+- [x] Owner ran step7 SQL on QA (2026-11-04).
+- [x] Slice 2 (2026-11-04): routes for courses (CRUD, publish, unpublish, archive, restore, duplicate), cohorts (single and plan pricing, links, open and close enrolment, status), coupons (everyone, selected students by e-mail, one-time; generate up to 200; list states; payment-minimum rule both ways), learners picker, audit (read only), API keys, OpenAPI 3 document and `/admin/api-docs`, contract test, write rate limit, redemption library for one-time codes. 47 PRD cases written; automated specs in `tests/api/admin-api-*.spec.ts`, `tests/db/admin-coupon-redemption.spec.ts`, `tests/unit/admin-api-core.spec.ts`.
+- [ ] Owner manual test (`docs/testing/admin-api-manual-guide.md`), PR, step7 SQL on production, then import script (after `course-cta-update-3`), then phase 2.

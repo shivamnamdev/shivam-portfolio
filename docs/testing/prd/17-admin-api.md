@@ -35,7 +35,18 @@ Plan: `docs/architecture/admin-portal-plan.md` (sections 4, 4.1, 4.2, 5, 6). Bra
 
 ## 5. Cases
 
-`docs/testing/cases/prd17-admin-api.csv` (46 cases, ids `AAPI-…`). Automation target: `tests/api/admin-api-*.spec.ts` plus a contract test. Manual or SQL checks: `AAPI-DB-001` (policy inventory).
+`docs/testing/cases/prd17-admin-api.csv` (47 cases, ids `AAPI-…`).
+
+**Automated (2026-11-04, QA):** `tests/unit/admin-api-core.spec.ts` (validators, key handling, permissions, payment minimum, audit redaction), `tests/api/admin-api-access.spec.ts` (AUTH, ENV-001, OAS-001/002/004, includes the contract test), `admin-api-courses.spec.ts` (CRS, ENV-002/003, VAL, AUD, RTE-001), `admin-api-cohorts.spec.ts` (COH, VAL-002), `admin-api-coupons.spec.ts` (CPN, AUD), `tests/db/admin-coupon-redemption.spec.ts` (CPN-007/008/009).
+
+**Not automated yet:** `AAPI-DB-001` (policy inventory, manual SQL), `AAPI-DB-002` (the import script, waits for `course-cta-update-3`), `AAPI-OAS-003` (every documented status code reachable: most are covered case by case, a full sweep is not written), `AAPI-COH-005` (skips until `user_enrollments.plan_id` exists on the QA project: run `docs/SUPABASE_PLAN_COLUMN.md`).
+
+## 5b. Decisions recorded while building
+
+* Coupon scope is `appliesTo: { cohortSlugs, planIds }` (cohort slug = the slug enrolments use).
+* Idempotency-Key is supported where a retry would create more records: `POST /coupons/generate` (the batch id is derived from the key). Other creates are already safe because slugs and codes are unique.
+* The write limit is 120 a minute per admin or key, a fixed 60-second window; the admin check is cached for 60 seconds per server instance so a burst of calls does not hit Clerk's own rate limit.
+* `pitch` (course page copy) is bounded free-form JSON for now; exact blocks are fixed with the admin screens (phase 4).
 
 ## 6. Open items
 

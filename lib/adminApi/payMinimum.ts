@@ -10,3 +10,10 @@ export function amountIsAllowed(amountMajor: number, currency: PayCurrency): boo
   if (!Number.isFinite(amountMajor) || amountMajor < 0) return false;
   return amountMajor === 0 || amountMajor >= PAYMENT_MINIMUM_MAJOR[currency];
 }
+
+// Price after a coupon, in major units, rounded to 2 decimals and never below zero. Same arithmetic as create-order (percentage or fixed per currency).
+export type Discount = { type: "percentage"; percent: number } | { type: "fixed"; inr?: number; usd?: number };
+export function discountedAmount(price: number, discount: Discount, currency: PayCurrency): number {
+  const off = discount.type === "percentage" ? (price * discount.percent) / 100 : (currency === "INR" ? discount.inr : discount.usd) ?? 0;
+  return Math.max(0, Math.round((price - off) * 100) / 100);
+}

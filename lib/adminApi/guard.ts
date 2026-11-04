@@ -33,10 +33,21 @@ async function actorFromKey(header: string): Promise<Actor> {
   return { id: `key:${data.id}`, label: `API key "${data.name}"`, role: data.level === "admin" ? "key-admin" : "key-staff" };
 }
 
+// Asking Clerk who the user is costs an API call, and Clerk rate limits them. The answer (admin or not) is kept for 60 seconds per
+// server instance; a changed admin e-mail therefore takes up to a minute to take effect, which is acceptable for a single owner.
+const SESSION_TTL_MS = 60_000;
+const sessionCache = new Map<string, { email: string | null; admin: boolean; until: number }>();
+
 async function actorFromSession(): Promise<Actor> {
   const { userId } = auth();
   if (!userId) throw unauthorized();
-  const email = getPrimaryEmail(await currentUser());
-  if (!isAdminEmail(email)) throw forbidden();
-  return { id: userId, label: email ?? userId, role: "owner" };
+  let hit = sessionCache.get(userId);
+  if (!hit || hit.until < Date.now()) {
+    const email = getPrimaryEmail(await currentUser());
+    hit = { email, admin: isAdminEmail(email), until: Date.now() + SESSION_TTL_MS };
+    if (sessionCache.size > 200) sessionCache.clear();
+    sessionCache.set(userId, hit);
+  }
+  if (!hit.admin) throw forbidden();
+  return { id: userId, label: hit.email ?? userId, role: "owner" };
 }

@@ -70,7 +70,7 @@ type Coupon = {                                         // section 4.2
   audience: { kind: 'everyone' }                         // kind 1: open for all, many uses
           | { kind: 'selected'; userIds: string[] }      // kind 2: only the signed-up users the admin selected (at least one)
           | { kind: 'single-use' };                      // kind 3: generated code for a student the admin does not know yet, ONE redemption
-  appliesTo?: { courseSlugs?: string[]; planIds?: string[] };   // optional extra: limit to some courses or plans
+  appliesTo?: { cohortSlugs?: string[]; planIds?: string[] };   // optional extra: limit to some cohorts (the slug enrolments use) or plans
   maxRedemptions?: number | null; redemptions: number;          // optional extra for kinds 1 and 2
   reservedBy?: string | null; reservedUntil?: string | null;    // kind 3 only: held while a payment is in progress
   redeemedBy?: string | null; redeemedAt?: string | null;       // kind 3 only: who used it

@@ -8,6 +8,7 @@ export const PERMISSIONS = [
   "cohorts:read", "cohorts:write", "cohorts:links",
   "coupons:read", "coupons:write",
   "audit:read",
+  "learners:read",
   "keys:read", "keys:write",
   "openapi:read",
 ] as const;
