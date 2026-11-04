@@ -1,6 +1,6 @@
 # Admin portal and learner portal (epic)
 
-Status: **proposed, not approved. No implementation code exists.** Date: 2026-11-04. Branch: `epic/admin-portal` (from `main`).
+Status: **decisions D1 to D8 answered on 2026-11-04 (section 11); Blueprint approval and the new questions in section 11.2 are still open. No implementation code exists.** Date: 2026-11-04. Branch: `epic/admin-portal` (from `main`).
 Owner request: two portals (Admin and Learner), switched with a toggle that only the admin sees; the admin portal gets full CRUD on courses, contents, coupons, banners (new), notifications and more; work in phases on a dedicated branch; **start with the admin API and Swagger**. A third-party enterprise Course Manager guide (the Skytap/Kyndryl help set, supplied by the owner) is the reference for what a mature course manager covers.
 
 Per CONSTITUTION section 2 (halt rule): nothing below is built until the owner approves the Blueprint in `docs/blast/task_plan.md` and answers the questions in section 11.
@@ -54,7 +54,8 @@ type Course = {                       // content shared by every batch
 type Cohort = {                       // a batch / run of a course
   id: string; courseId: string; slug: string; status: Status;
   statusText: string; demoOffer: string; duration: string; contactPhone: string;
-  enrollmentClosed: boolean; pricing: { inr: Price; usd: Price };
+  enrollmentClosed: boolean; listed: boolean;          // listed=false hides it from /courses (already on course-cta-update-3)
+  pricing: PricingModel;                               // section 4.1
   startsAt?: string; endsAt?: string;
   // private part, server only (SCP-45): returned only to the admin and, after the access check, to enrolled learners
   whatsappLink: string; liveLink: string;
@@ -62,13 +63,27 @@ type Cohort = {                       // a batch / run of a course
 type Module = { id: string; courseId: string; title: string; position: number; advanced: boolean };
 type Lesson = { id: string; moduleId: string; position: number; kind: 'video' | 'document'; videoId?: string; title?: string;
                 assignment?: { title: string; rawUrl: string; solutionUrl?: string; starterCodeUrl?: string; labType?: 'python' | 'git'; isExam?: boolean } };
-type Coupon = { code: string; discountType: 'percentage' | 'fixed'; value: number | { inr: number; usd: number };
-                allowedUsers: string[]; expiresAt: string | null; maxRedemptions: number | null; redemptions: number; active: boolean };   // SCP-53
-type Banner = { id: string; message: string; ctaLabel?: string; ctaUrl?: string; style: 'info' | 'urgent' | 'success';
-                placement: 'site' | 'courses' | 'learning'; audience: 'all' | 'visitors' | 'learners' | { courseSlug: string };
-                startsAt: string | null; endsAt: string | null; dismissible: boolean; countdownTo?: string; active: boolean };   // replaces the hard-coded countdown banner
-type Notification = { id: string; title: string; body: string; target: 'all' | { courseSlug: string } | { userId: string };
-                      publishAt: string; expiresAt: string | null; createdBy: string };   // learner side: read state per user
+type Coupon = {                                         // section 4.2
+  code: string; active: boolean;
+  discount: { type: 'percentage'; percent: number } | { type: 'fixed'; inr?: number; usd?: number };
+  expiresAt: string;                                     // MANDATORY, no coupon without an expiry
+  audience: 'anyone' | { userIds: string[] };            // 'listed' students only: stored by Clerk id, picked by e-mail in the UI
+  appliesTo?: { courseSlugs?: string[]; planIds?: string[] };   // empty = every course and plan
+  maxRedemptions: number | null; maxPerUser: number | null; redemptions: number;
+};
+type Banner = {                                          // section 4.4
+  id: string; purpose: 'announcement' | 'offer' | 'course-promo' | 'learner-notice' | 'maintenance';
+  message: string; ctaLabel?: string; ctaUrl?: string; style: 'info' | 'urgent' | 'success' | 'warning';
+  placement: 'site-top' | 'courses' | 'course-page' | 'learning' | 'dashboard';
+  audience: 'all' | 'visitors' | 'learners' | { courseSlug: string } | { planId: string };
+  startsAt: string | null; endsAt: string | null; countdownTo?: string; dismissible: boolean; priority: number; active: boolean;
+};
+type Notification = {                                    // section 4.3
+  id: string; type: NotificationType; title: string; body: string;
+  channels: Array<'inbox' | 'email'>;                    // defaulted by type, the admin may narrow it per send
+  target: 'all' | { courseSlug: string } | { planId: string } | { userId: string };
+  publishAt: string; expiresAt: string | null; createdBy: string;
+};
 type EmailTemplate = { key: 'welcome' | 'payment-receipt' | 'free-enrolment'; subject: string; bodyHtml: string; updatedAt: string };   // placeholders escaped
 type Setting = { key: string; value: string };       // small, typed list, not free-form
 type AuditEntry = { id: string; at: string; actor: string; action: string; resource: string; resourceId: string; before?: unknown; after?: unknown };
@@ -76,6 +91,74 @@ type ApiKey = { id: string; name: string; level: 'admin' | 'staff'; hash: string
 ```
 
 Things the admin must **not** be able to enter: executable code (exam graders stay in `lib/examGraders.ts`, reviewed in git, because they run on the server), raw HTML in public pages (rich text is sanitised on write and escaped on render), URLs other than `https`.
+
+## 4.1 Payment models (multi-plan pricing)
+
+Source: branch `course-cta-update-3` (commit `be922f1`, not merged). It adds `pricingPlans` to a course (Community and Personal for Python: INR only, GST inclusive, different "facilities"), `planId` in `create-order`, `enroll-free` and `verify-payment`, `getBasePrice()` in `lib/pricing.ts`, `user_enrollments.plan_id` (SQL in `docs/SUPABASE_PLAN_COLUMN.md`), a `listed` flag, and a new Python sales page (plan cards, sticky enrol bar, instructor story, certificate preview).
+
+The admin must manage pricing as a **model per cohort**, not two price strings:
+
+```ts
+type PricingModel =
+  | { kind: 'single'; inr: Price; usd?: Price }                       // today's courses
+  | { kind: 'plans'; currency: 'INR'; plans: Plan[] }                 // Community / Personal (on the branch)
+  | { kind: 'installments'; ... } | { kind: 'bundle'; ... };          // reserved, not built until confirmed (Q1)
+type Plan = { id: string; name: string; subtitle?: string; price: Price; originalPrice?: Price; popular?: boolean;
+              features: string[];                                      // sales-page bullets
+              perks?: Perk[];                                          // facilities with consequences, Q2
+              unlocks?: { moduleIds?: string[]; lessonIds?: string[] } };   // plan-gated content, Q3
+```
+
+Rules: prices and plan ids are validated on the server; the amount never comes from the browser (already true on the branch); the plan is recorded on the order notes and on the enrolment (`plan_id`); a plan cannot be deleted while enrolments use it (archive instead); a plan price change does not touch past orders.
+
+**Dependency:** `course-cta-update-3` changes `data/courses.ts`, `lib/pricing.ts`, the three payment routes and `lib/enrollments.ts`: the same files phase 1 imports and phase 5 replaces. It should land on `main` (and its `plan_id` SQL run) **before** phase 1's import script is written, so the imported shape includes plans. Open question Q6.
+
+## 4.2 Coupons (decision D8)
+
+- **Expiry is mandatory**: no coupon can be created or imported without `expiresAt`; an expired coupon is refused everywhere (validate, create-order, enroll-free). The 4 coupons in `data/coupons.ts` have no expiry today: **the owner must give a date for each** before they can be imported (I will not invent dates).
+- **Audience**: anyone, or only the listed students (Clerk ids; the admin picks learners by e-mail and the API resolves them; lists are never sent to the browser, which closes the id leak in SCP-53).
+- **Discount**: percentage, or fixed amount (INR and/or USD).
+- **Scope** (new, needed for plans): optionally limited to some courses or some plans (for example a coupon only for the Personal plan).
+- **Limits** (flexibility asked): `maxRedemptions` and `maxPerUser`, both optional; the counter is incremented atomically when a paid order is verified or a free enrolment is created, once per order (idempotent), so retries and parallel calls cannot over-use a coupon.
+- Price maths stays deterministic in `lib/pricing.ts` and unit-tested: fixed discount larger than the price gives a free order only through `enroll-free`; the Razorpay one-unit floor (SCP-51) is decided together with this (Q7).
+
+## 4.3 Notifications: in-app inbox with a bell, and e-mail
+
+Every notification has a **type**; the type decides the default channels and whether the learner can opt out. The admin may narrow channels on a manual send, never widen them past what the type allows.
+
+| Type | Examples | Inbox (bell) | E-mail | Opt-out |
+|---|---|---|---|---|
+| Transactional | payment receipt, enrolment confirmed, free enrolment, certificate ready | yes | yes | no |
+| Course announcement | schedule change, live link posted, class cancelled | yes | yes | no, while enrolled |
+| Reminder | class starts soon, assignment due | yes | optional per send | yes |
+| Progress | exam passed, streak milestone, new lesson unlocked | yes | no | yes |
+| Marketing | new batch, offer, coupon for you | yes | only if the learner opted in | yes (consent kept) |
+| Admin alert | new signup, new enrolment, failed payment | admin bell only | optional to the owner | n/a |
+
+Needs: a `notifications` row per message plus `notification_reads` (per user read state) for the learner bell; sending e-mail to many learners needs a provider decision because the current sender is a Gmail app password (a personal Gmail account allows roughly 500 messages a day): Q4. Opt-in and unsubscribe for marketing mail are needed in India (DPDP) and elsewhere.
+
+## 4.4 Banners (all purposes)
+
+`purpose` x `placement` x `audience` x schedule x priority, one model for every use: site-wide announcement, **offer with countdown** (replaces the hard-coded `UrgencyBanner`), course promo on a course page, learner notice inside `/learning` or the dashboard, and maintenance or incident notice. Rules: only banners inside their window and matching the viewer's audience show; at most one per placement (highest priority) unless the admin allows more; dismissal is remembered per browser (cookie), never required; the message is plain text with an optional `https` link (no raw HTML); a banner with a countdown never shows a negative time.
+
+## 4.5 Role-ready guard (decision D5: RBAC later, designed in now)
+
+Every admin route calls `requirePermission('resource:action')` (for example `courses:write`, `coupons:write`, `audit:read`) instead of `requireAdmin()`. In phase 1 the only role is `owner` (the admin e-mail) and it holds every permission, so behaviour equals today. Phase 6 (or earlier if wanted) adds a `roles` source and roles such as `editor` (content, no coupons or settings), `support` (learners and enrolments read, grant access) and `viewer`. Permissions are listed in the OpenAPI document per operation, so Swagger shows who may call what, and API keys carry a role. Cost now: one function and a permission list; cost later: a roles table and a screen, no route rewrites.
+
+## 4.6 Supabase footprint (decision D6: keep it small, free plan)
+
+The Free plan is limited (500 MB database, 1 GB storage, limited projects) and you run SQL by hand, so the design uses **few tables** and **no Storage**:
+
+| Table | Holds | Phase | Why a table of its own |
+|---|---|---|---|
+| `content_docs` | one row per document: `kind` (`course`, `cohort`, `curriculum`, `banner`, `email_template`, `setting`), `key` (slug), `status`, `version`, `doc jsonb`, `updated_by`, `updated_at`; unique on (`kind`, `key`) | 1 | one table instead of about ten; the JSON shape is validated by the API, versions give draft, publish and revert |
+| `coupons` | the coupon rows | 1 | needs unique codes and an atomic redemption counter |
+| `admin_audit` | every admin write | 1 | append-only history |
+| `api_keys` | hashed keys | 1 | secrets handled apart |
+| `notifications`, `notification_reads` | messages and read state | 3 | per-learner state |
+| `rate_limits` | exists | done | |
+
+That is **4 new tables in phase 1**, 2 more in phase 3, and one added column already planned (`user_enrollments.plan_id`). Attachments and images stay in git (`/public`) or on external links; **no Storage bucket** until you ask. Each table comes with a SQL file and a rollback in `docs/testing/sql/`, run on QA first by you. Estimated data size is tiny (a few hundred KB of JSON); the audit log and notifications are the only tables that grow, and the plan includes a retention rule (for example keep 12 months of audit rows).
 
 ## 5. Admin API v1 (phase 1)
 
@@ -141,20 +224,46 @@ Server-side authorisation on every route; RLS on, no policies, no anon grants; i
 - **Scope**: this is a multi-week epic. Mitigation: phases ship independently; stop after any phase and the product still works.
 - **Two long-lived branches** (`epic/admin-portal` and `main`) drift. Mitigation: merge `main` into the epic at the start of every phase and after any hotfix.
 
-## 11. Decisions needed from the owner
+## 11. Decisions
 
-- **D1 Model**: Course + Cohort (recommended: price, links, dates and open/closed are per batch; pitch and curriculum are per course), or keep one flat "course = batch" record as today?
-- **D2 Branching**: each phase PR into `epic/admin-portal`, and the epic merges to `main` after phases 3, 5 and 6 (recommended); or one PR to `main` per phase; or one PR at the very end?
-- **D3 Learner notifications**: what does a notification mean here? An in-app inbox with a bell for learners (needs a read state per user), an e-mail, or both? Today the bell in the admin page shows `admin_activity_log` only.
-- **D4 Banner scope**: only the top site banner (replacing the hard-coded countdown), or also per-course banners and in-lesson notices?
-- **D5 Roles**: the single admin e-mail only for now (recommended), or editor/viewer roles in phase 6?
-- **D6 Attachments**: syllabus PDFs and flyers today live in `/public`. Upload through the admin (needs a Supabase Storage bucket) or keep them in git for now?
-- **D7 Packages**: may phase 1 add a validation/OpenAPI helper (for example `zod` plus an OpenAPI generator), or write the schemas by hand without new packages? Each install will be listed with its reason and what it changes before I run anything.
-- **D8 Coupons**: expiry and usage limits per coupon (see `docs/architecture/course-links-and-coupons-plan.md`, section 6): which coupons expire, when, and how many uses.
-- Also from CONSTITUTION section 3: **integrations** needed are Clerk, Supabase and (for templates) the existing Gmail sender; **delivery** is the admin UI, the API and Swagger; **Do not**: no executable content from the admin, no VM or lab features from the enterprise guide.
+### 11.1 Answered on 2026-11-04
+
+| # | Decision | Recorded answer |
+|---|---|---|
+| D1 | Model | **Course + Cohort** (agreed) |
+| D2 | Branching | Each phase PR into `epic/admin-portal`; epic merges to `main` after phases 3, 5 and 6 |
+| D3 | Notifications | In-app inbox with a bell **and** e-mail; the type decides which (section 4.3) |
+| D4 | Banners | Every purpose (section 4.4) |
+| D5 | Roles | RBAC wanted later: role-ready guard now, roles in a later phase (section 4.5) |
+| D6 | Attachments and Supabase | Keep Supabase small, no Storage, few tables (section 4.6) |
+| D7 | Packages | "Appreciate it": recorded as thanks for asking, **not** as approval of a specific install. Exact proposal below, nothing installed |
+| D8 | Coupons | Expiry mandatory, listed students only (optional per coupon), fixed or percentage discount (section 4.2); plus payment models per course (section 4.1) |
+
+**D7 proposal (needs an explicit yes or no):**
+
+| Package | Why | What it changes | Notes |
+|---|---|---|---|
+| `zod` (4.6.7) | one place that validates every request and response | `package.json` and the lock file; about 6 MB unpacked, no runtime dependencies | not installed today |
+| `@asteasolutions/zod-to-openapi` (9.1.0, peer `zod` ^4) | builds the OpenAPI document from the same schemas, so spec and code cannot drift | `package.json` and the lock file | needs `zod` 4 |
+| `swagger-ui-react` | already installed, but at 3.x with a critical `dompurify` advisory (SCP-87); the admin docs page should use 5.x | upgrade of an existing package, stage 2 of the dependency plan | I would do that stage first or together with phase 1 |
+
+Alternative with **no new package**: hand-written validators and a hand-written OpenAPI object, plus the contract test. More code to keep in sync, nothing to install. Which do you prefer?
+
+### 11.2 New questions from your answers
+
+- **Q1 Payment models**: which models are real in the next 6 months? Today: single price, and plans (Community/Personal). Candidates: installments or EMI, bundle of courses, subscription or monthly, free with coupon only, upgrade from one plan to another by paying the difference. I will build the model so new kinds can be added, but only implement the ones you confirm.
+- **Q2 Plan facilities with consequences**: the Personal plan promises 1-on-1 calls and direct WhatsApp access. Do you want the admin to track what is owed and done per learner (for example "2 calls included, 1 used")? That is a small extra table or JSON field.
+- **Q3 Plan-gated content**: "Bonus: Advanced Python Recordings" suggests some lessons only for some plans. Should the plan unlock lessons or modules (access checked on the server), or are bonuses delivered outside the platform?
+- **Q4 E-mail provider**: Gmail with an app password limits bulk sending. Keep it for transactional mail and small announcements (a few dozen), or move bulk and marketing mail to a provider with a free tier? (A choice and an account on your side; nothing installed without telling you.)
+- **Q5 Coupon dates**: please give an expiry date for each existing coupon (`EXISTINGSTUDENT_BATCH03`, `BATCH002`, `BIRTHDAY20`, `SHIVAMSPECIAL`), or tell me which to retire.
+- **Q6 `course-cta-update-3`**: will it merge to `main` soon? I recommend it lands (and `plan_id` SQL runs) before phase 1's import script, so plans are in the imported shape. It also hard-codes `InstructorStory` and `CertificatePreview`; the plan treats those as later "page sections" the admin can edit, not phase 1.
+- **Q7 Minimum order**: with coupons and plans, should an order under the Razorpay minimum become free (enrol without payment) or be charged the minimum (SCP-51)? A business rule, so your call.
+- **Q8 Approval**: do you approve this Blueprint (phases 0 to 6 as written, with the answers above) so I can write PRD 17, create the Jira tasks and start phase 1?
+
+Also from CONSTITUTION section 3: **integrations** Clerk, Supabase, Razorpay (plans), Gmail sender (templates); **delivery** admin UI, API and Swagger; **Do not**: no executable content from the admin, no VM or lab features from the enterprise guide.
 
 ## 12. What happens after approval
 
-1. Record the approval and decisions in `docs/blast/task_plan.md`; create `docs/testing/prd/17-admin-api.md` with the case list for phase 1.
+1. Record the approval (Q8) and decisions in `docs/blast/task_plan.md`; create `docs/testing/prd/17-admin-api.md` with the case list for phase 1.
 2. Create Jira stories under SCP-3 (tests) and tasks under SCP-2 (one per phase).
 3. Phase 1 starts on branch `admin-portal/p1-api-foundation` from `epic/admin-portal`. Before the first SQL or any package install I will tell you exactly what it is and wait for your OK.

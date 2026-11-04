@@ -213,8 +213,8 @@ Blueprint (owner: "do it yourself" after the like-button PR merged): input `GET 
 - [ ] Owner: open the PR, check the Vercel preview (cold start and memory of `/api/learning/exam-grade`), then merge. Follow-up task: rewrite the grader (it scores printed text and name checks, and shares one Python session with the learner).
 
 ## 2026-11-04 · Admin portal and learner portal epic (Blueprint proposed, awaiting approval)
-Plan: `docs/architecture/admin-portal-plan.md` (branch `epic/admin-portal`). Phases: 0 Blueprint, 1 Admin API + Swagger, 2 Content API, 3 Engagement and operations API, 4 Admin portal UI, 5 Learner portal reads the database, 6 Hardening and cutover. Open decisions D1 to D8 in section 11 of the plan. **Halt rule: no implementation code until the owner approves this Blueprint.**
-- [ ] Owner answers D1 to D8
+Plan: `docs/architecture/admin-portal-plan.md` (branch `epic/admin-portal`). Phases: 0 Blueprint, 1 Admin API + Swagger, 2 Content API, 3 Engagement and operations API, 4 Admin portal UI, 5 Learner portal reads the database, 6 Hardening and cutover. Decisions D1 to D8 answered 2026-11-04 (section 11.1 of the plan); new questions Q1 to Q8 in 11.2. **Halt rule: no implementation code until the owner approves this Blueprint (Q8).**
+- [x] Owner answers D1 to D8 (D7 package choice still needs an explicit yes or no)
 - [ ] Approval recorded here
 - [ ] PRD 17 (admin API) case list written
 - [ ] Jira tasks created per phase
