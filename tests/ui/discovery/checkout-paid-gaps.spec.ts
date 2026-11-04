@@ -26,7 +26,7 @@ test.describe('PRD04 paid checkout: order, errors and success screen (mocked gat
     await page.goto('/courses/git-beginner-batch-1');
     await expect(page.getByRole('heading', { name: 'Enrollment Closed' })).toBeVisible();
     await expect(page.getByRole('button', { name: /Buy Now/ })).toHaveCount(0);
-    await page.getByText('View Open Cohorts').click();
+    await page.getByRole('link', { name: 'View Open Cohorts' }).first().click();   // the closed page has two (page bottom and cohort card)
     await expect.poll(() => new URL(page.url()).pathname).toBe('/courses');
   });
 

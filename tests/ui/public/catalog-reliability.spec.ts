@@ -8,7 +8,7 @@ import { expectOnPath } from '../../support/assertions';
 // PRD 02 · Course Catalog & Discovery, Reliability / Navigation Consistency, Performance-oriented UI checks.
 // C1 / C2 (representative paid / free course) = the QA fixture course when it is enabled; otherwise the real
 // (closed) courses are used for everything that does not need an open cohort.
-const realCourses = activeCourses.filter(c => !isQaFixture(c.slug));
+const realCourses = activeCourses.filter(c => !isQaFixture(c.slug) && (c as { listed?: boolean }).listed !== false);   // same rule as /courses (unlisted batches are hidden)
 const first = realCourses[0];
 const FIXTURE = `/courses/${QA_FIXTURE_SLUG}`;
 
