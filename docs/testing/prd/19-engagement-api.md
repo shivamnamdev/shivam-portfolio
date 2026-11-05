@@ -4,7 +4,7 @@
 **Feature:** \[API\] Engagement and operations API: banners, settings, e-mail templates, notifications, enrolments, reports (phase 3 of the admin portal epic)  
 **Prepared By:** Shivam Namdev & Claude Code  
 **Date:** Nov 5, 2026  
-**Status:** Blueprint approved on 2026-11-05 (`docs/architecture/admin-portal-phase3-engagement-api.md`). **Slice 3a built** (banners, settings, e-mail templates). Slices 3b (notifications) and 3c (operations) are added to this file as they are built.
+**Status:** Blueprint approved on 2026-11-05 (`docs/architecture/admin-portal-phase3-engagement-api.md`). **Slice 3a built** (banners, settings, e-mail templates). **Slice 3b built** (notifications; needs `docs/testing/sql/step8-notifications.sql`). Slice 3c (operations) is added when built.
 
 ---
 
@@ -31,3 +31,17 @@ Run all admin API tests: `npm run test:admin-api`.
 ## 5. Endpoints (slice 3a)
 `banners` (GET, POST), `banners/{slug}` (GET, PATCH, DELETE), `banners/{slug}/publish|unpublish|archive|restore` (POST); `settings` (GET), `settings/{key}` (PUT); `email-templates` (GET), `email-templates/{key}` (GET, PUT), `email-templates/{key}/preview` (POST). Permissions: `banners:*`, `settings:*`, `templates:*`; owner and admin keys have all, a staff key reads and previews only.
 
+---
+
+## 6. Slice 3b: notifications
+In-app notifications and the one explicit e-mail action. Tables `notifications` and `notification_reads` (step 8 SQL, run on QA first). Learners do not see them until phase 5; `learnerVisible()` is the rule that phase uses.
+
+**Rules under test:** N1 channels by type (transactional, announcement, reminder: inbox and e-mail; progress, marketing, admin-alert: inbox only; the inbox is always on; outside the allowed set is 422). N2 e-mail send: only through `POST /notifications/{id}/send-email`, immediate, once (claimed atomically, a second call is 409), recipients come from the target on the server and are never accepted from the request or returned, refused above `announcement-email-cap` (422), refused when the day's budget (`daily-email-cap`, shared with the contact form through `rate_limit_take`) would pass (422), and refused (503) if the counter is unreachable: this budget fails closed. One message per person, no shared To or Bcc. N3 an inbox item may be scheduled; a notification with the email channel may not (422). N4 an admin sees only a count of readers. N5 `admin-alert` is aimed at `admins` and only it can be.
+**Decision recorded:** `notifications:send` is owner only (an admin API key can create and delete notifications but cannot send e-mail). Change it in `lib/adminApi/permissions.ts` if you want keys to send.
+A send that reaches nobody (every attempt fails) records nothing and can be retried; the budget it used is not refunded.
+
+**Unit (`tests/unit/admin-api-notifications.spec.ts`, 11 tests):** `AAPI-UNIT-NTF-001` to `011`.
+**API (QA, `tests/api/admin-api-notifications.spec.ts`, 6 tests):** `AAPI-NTF-001` to `006` (skipped with a clear message until the step 8 SQL has run). They never send a real e-mail.
+**Manual:** `AAPI-NTF-M-001` (a real send to two test inboxes) is in `docs/testing/cases/prd19-engagement-api.csv`.
+
+Endpoints: `notifications` (GET list with `status`, `q`, `cursor`; POST), `notifications/{id}` (GET with `readCount`, DELETE), `notifications/{id}/recipients` (GET count and at most 5 sample), `notifications/{id}/send-email` (POST, owner only).

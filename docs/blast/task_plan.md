@@ -239,5 +239,6 @@ Plan: `docs/architecture/admin-portal-plan.md` (branch `epic/admin-portal`). Pha
 ### Phase 3 progress (Engagement and operations API, branch `admin-portal/p3-engagement-api`)
 - [x] Blueprint approved by the owner 2026-11-05 (`docs/architecture/admin-portal-phase3-engagement-api.md`, recommended option on all five decisions: three slices and three PRs, plain-text e-mail templates, immediate explicit e-mail sends only, four settings, revoking a paid enrolment refused unless `force` by the owner session).
 - [x] Slice 3a (2026-11-05): banners (CRUD, life cycle, `visibleBanners`), settings (4 keys, S2 rule), e-mail templates (plain text, safe render, preview); 20 unit and 8 API tests; PRD 19 and cases; OpenAPI. No SQL. Setting keys are kebab-case (`announcement-email-cap`, `daily-email-cap`, `support-phone`, `support-email`) because `content_docs.key` only allows lower case.
-- [ ] Slice 3b: notifications (needs `step8-notifications.sql` run by the owner on QA first)
+- [x] Slice 3b code (2026-11-05): `lib/adminApi/notifications.ts` (pure rules), `notificationStore.ts`, 6 routes under `notifications/`, `rate_limit_take`, OpenAPI, PRD 19 section 6, 11 unit tests passing. `notifications:send` is owner only.
+- [ ] Owner runs `docs/testing/sql/step8-notifications.sql` on QA, then the 6 API tests (`AAPI-NTF-001` to `006`) run; manual real-send case `AAPI-NTF-M-001`
 - [ ] Slice 3c: enrolments, reports, CSV export

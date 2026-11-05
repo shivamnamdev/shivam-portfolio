@@ -11,6 +11,7 @@ export const PERMISSIONS = [
   "banners:read", "banners:write",
   "settings:read", "settings:write",
   "templates:read", "templates:write",
+  "notifications:read", "notifications:write", "notifications:send",
   "audit:read",
   "learners:read",
   "keys:read", "keys:write",
@@ -25,7 +26,7 @@ const READ_ONLY = PERMISSIONS.filter((p) => p.endsWith(":read")) as Permission[]
 
 export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
   owner: PERMISSIONS,
-  "key-admin": PERMISSIONS.filter((p) => p !== "keys:write" && p !== "keys:read" && p !== "import:run"),   // a key cannot mint or list keys, nor run the one-off import
+  "key-admin": PERMISSIONS.filter((p) => p !== "keys:write" && p !== "keys:read" && p !== "import:run" && p !== "notifications:send"),   // a key cannot mint or list keys, run the one-off import, or send e-mail
   "key-staff": READ_ONLY.filter((p) => p !== "keys:read"),
 };
 

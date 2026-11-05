@@ -72,6 +72,13 @@ export const OPERATIONS: Op[] = [
   op("get", "/email-templates/{key}", "templates:read", "E-mail templates", "Read one e-mail template", { response: "EmailTemplate", codes: [...STD_READ, 404] }),
   op("put", "/email-templates/{key}", "templates:write", "E-mail templates", "Save a template as plain text. The first save needs no version; later saves need If-Match", { body: "EmailTemplateUpdate", response: "EmailTemplate", headers: ["If-Match"], codes: [200, 201, 400, 401, 403, 404, 409, 428, 429] }),
   op("post", "/email-templates/{key}/preview", "templates:read", "E-mail templates", "Render the template with sample values (sends and saves nothing). Optionally send unsaved subject and body", { body: "EmailPreviewRequest", response: "EmailPreview", codes: [200, 400, 401, 403, 404] }),
+  // notifications
+  op("get", "/notifications", "notifications:read", "Notifications", "List notifications, newest first (status: scheduled, live or expired)", { response: "NotificationList", query: ["limit", "cursor", "q", "status"], codes: [...STD_READ, 400] }),
+  op("post", "/notifications", "notifications:write", "Notifications", "Create an in-app notification. Sends no e-mail by itself", { body: "NotificationCreate", response: "Notification", codes: [201, 400, 401, 403, 422, 429] }),
+  op("get", "/notifications/{id}", "notifications:read", "Notifications", "Read a notification with how many people have read it (a count, never who)", { response: "Notification", codes: [...STD_READ, 404] }),
+  op("delete", "/notifications/{id}", "notifications:write", "Notifications", "Delete a notification and its read marks", { codes: [401, 403, 404, 429] }),
+  op("get", "/notifications/{id}/recipients", "notifications:read", "Notifications", "How many people the target reaches, with a sample of at most 5", { response: "NotificationRecipients", codes: [...STD_READ, 404, 422] }),
+  op("post", "/notifications/{id}/send-email", "notifications:send", "Notifications", "Send the e-mail now, once (owner only). Recipients come from the target; refused above announcement-email-cap or the day's daily-email-cap", { response: "EmailSendResult", codes: [200, 401, 403, 404, 409, 422, 429, 502, 503] }),
   // one-off import (owner only)
   op("post", "/import/curriculum", "import:run", "Import", "Copy the curricula in data/learning-content.ts into the tables. Dry run unless apply is true; an existing curriculum that differs is skipped unless overwrite is true", { body: "ImportCurriculum", response: "ImportResult", codes: [400, 401, 403, 429] }),
   // people, history, keys, spec
@@ -145,6 +152,12 @@ const SCHEMAS: Record<string, unknown> = {
   EmailPreviewRequest: obj({ subject: str(), body: str() }),
   EmailPreview: one("EmailPreviewData"),
   EmailPreviewData: obj({ key: str(), subject: str(), text: str(), html: str({ description: "Safe HTML: everything typed is escaped" }), values: { type: "object", additionalProperties: str() } }),
+  Notification: one("NotificationData"), NotificationList: list("NotificationData"),
+  NotificationData: obj({ id: str(), type: str({ enum: ["transactional", "announcement", "reminder", "progress", "marketing", "admin-alert"] }), title: str(), body: str(), link: str({ nullable: true }), channels: { type: "array", items: str({ enum: ["inbox", "email"] }) }, target: ref("NotificationTarget"), publishAt: str({ format: "date-time" }), expiresAt: str({ format: "date-time", nullable: true }), status: str({ enum: ["scheduled", "live", "expired"] }), createdBy: str(), createdAt: str(), emailSentAt: str({ nullable: true }), emailRecipients: { type: "integer", nullable: true }, readCount: { type: "integer", description: "Only on a single read" } }),
+  NotificationTarget: { oneOf: [obj({ kind: str({ enum: ["all", "admins"] }) }, ["kind"]), obj({ kind: str({ enum: ["cohort"] }), cohortSlug: str() }, ["kind", "cohortSlug"]), obj({ kind: str({ enum: ["plan"] }), planId: str() }, ["kind", "planId"]), obj({ kind: str({ enum: ["user"] }), userId: str({ description: "Clerk user id" }) }, ["kind", "userId"])], description: "admins is only for type admin-alert, and admin-alert can only use it" },
+  NotificationCreate: obj({ type: str({ enum: ["transactional", "announcement", "reminder", "progress", "marketing", "admin-alert"], description: "marketing, progress and admin-alert are inbox only" }), title: str({ description: "Plain text, one line, at most 120" }), body: str({ description: "Plain text, at most 2000. Blank line = paragraph, **bold**, [label](https://link)" }), link: str({ description: "https, or a path on this site" }), channels: { type: "array", items: str({ enum: ["inbox", "email"] }), default: ["inbox"], description: "Must include inbox. email only sends when you call send-email" }, target: ref("NotificationTarget"), publishAt: str({ format: "date-time", description: "Default now. A notification with the email channel cannot be scheduled for later" }), expiresAt: str({ format: "date-time", description: "After publishAt" }) }, ["type", "title", "body", "target"]),
+  NotificationRecipients: obj({ success: { type: "boolean" }, data: obj({ target: ref("NotificationTarget"), count: { type: "integer" }, sample: { type: "array", maxItems: 5, items: obj({ name: str(), email: str({ nullable: true }) }) }, sampleSize: { type: "integer" } }) }),
+  EmailSendResult: obj({ success: { type: "boolean" }, data: obj({ sent: { type: "integer" }, failed: { type: "integer" }, skipped: { type: "integer", description: "People with no e-mail address" }, notification: ref("NotificationData") }) }),
   LearnerList: obj({ success: { type: "boolean" }, data: obj({ items: { type: "array", items: obj({ id: str(), email: str(), name: str() }) } }) }),
   AuditList: list("AuditEntry"), AuditEntry: obj({ id: { type: "integer" }, at: str(), actor: str(), action: str(), resource: str(), resourceId: str(), before: {}, after: {} }),
   ApiKeyList: list("ApiKey"), ApiKey: obj({ id: str(), name: str(), level: str({ enum: ["admin", "staff"] }), createdBy: str(), createdAt: str(), lastUsedAt: str(), revokedAt: str() }),
@@ -175,7 +188,7 @@ export function buildOpenApi() {
     openapi: "3.0.3",
     info: { title: "Shivam Academy Admin API", version: "1.0.0", description: "Admin only. Sign in as the admin, or send `Authorization: Bearer tmk_...` with an admin API key. Every operation lists the permission it needs (`x-permission`). Answers are `{ success, data }` or `{ success: false, error }`." },
     servers: [{ url: "/api/admin/v1" }],
-    tags: ["Courses", "Cohorts", "Curriculum", "Banners", "Settings", "E-mail templates", "Import", "Coupons", "Learners", "Audit", "API keys", "Docs"].map((name) => ({ name })),
+    tags: ["Courses", "Cohorts", "Curriculum", "Banners", "Settings", "E-mail templates", "Notifications", "Import", "Coupons", "Learners", "Audit", "API keys", "Docs"].map((name) => ({ name })),
     paths,
     components: {
       securitySchemes: { adminSession: { type: "apiKey", in: "cookie", name: "__session", description: "The admin's signed-in browser session" }, apiKey: { type: "http", scheme: "bearer", description: "tmk_<id>_<secret>" } },

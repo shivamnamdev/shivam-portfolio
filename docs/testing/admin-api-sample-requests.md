@@ -245,3 +245,19 @@ Placeholders: `welcome` and `free-enrolment`: `{{name}}`, `{{course}}`; `payment
 Must be refused: HTML in a banner or template (banner 400; in a template it is shown as text); a `javascript:` or `//` link (400); a template placeholder the template does not have (400); `announcement-email-cap` above `daily-email-cap` (422); a banner for a cohort that does not exist (422); deleting a published banner (422).
 
 Clean up: DELETE each demo banner after unpublishing it. Settings and templates cannot be deleted (they fall back to the built-in text only if you remove the row in Supabase).
+
+## 10. Notifications (phase 3, slice 3b)
+
+Needs the step 8 SQL. `POST /notifications` (it only creates the in-app notification; no e-mail leaves until you call send-email):
+```json
+{ "type": "announcement", "title": "Tonight's class moves to 9 pm", "body": "Hi all,\n\nTonight's live class starts at **9 pm** instead of 8 pm.", "link": "/dashboard",
+  "channels": ["inbox", "email"], "target": { "kind": "cohort", "cohortSlug": "demo-python-b1" } }
+```
+- `type`: transactional, announcement, reminder (inbox and e-mail); progress, marketing, admin-alert (inbox only). The inbox is always on.
+- `target`: `{ "kind": "all" }`, `{ "kind": "cohort", "cohortSlug": "…" }` (must exist), `{ "kind": "plan", "planId": "…" }`, `{ "kind": "user", "userId": "user_…" }`. An admin alert uses `{ "kind": "admins" }` and only it can.
+- `publishAt` (default now) can be in the future for an inbox-only notification; `expiresAt` must be after it. A notification with `email` cannot be scheduled.
+- `GET /notifications?status=live|scheduled|expired&q=…`, `GET /notifications/{id}` (shows `readCount`), `DELETE /notifications/{id}`.
+- `GET /notifications/{id}/recipients`: how many people it reaches and a sample of at most 5.
+- `POST /notifications/{id}/send-email` (owner only, no body): sends now, once. Refused (422) above `announcement-email-cap` (default 50) or when today's `daily-email-cap` would pass; a second call is 409. **Run it only on a test cohort with your own test accounts.** Answer: `{ "sent": 2, "failed": 0, "skipped": 0, "notification": { … } }`.
+
+Must be refused: HTML in the title (400); marketing or progress with `email` (422); a scheduled notification with `email` (422); a cohort that does not exist (422); `recipients` in the body (400); an admin key calling send-email (403).

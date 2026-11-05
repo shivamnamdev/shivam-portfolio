@@ -28,7 +28,10 @@ export async function idsForEmails(emails: string[]): Promise<LearnerRef[]> {
 
 export async function refsForIds(ids: string[]): Promise<LearnerRef[]> {
   if (!ids.length) return [];
-  const users = await clerkClient.users.getUserList({ userId: ids.slice(0, 100), limit: 100 });
-  const byId = new Map(users.map((u) => [u.id, ref(u as never)]));
+  const byId = new Map<string, LearnerRef>();
+  for (let i = 0; i < ids.length; i += 100) {
+    const users = await clerkClient.users.getUserList({ userId: ids.slice(i, i + 100), limit: 100 });
+    for (const u of users) byId.set(u.id, ref(u as never));
+  }
   return ids.map((id) => byId.get(id) ?? { id, email: null, name: "(user not found)" });
 }
