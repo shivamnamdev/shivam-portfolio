@@ -45,3 +45,21 @@ A send that reaches nobody (every attempt fails) records nothing and can be retr
 **Manual:** `AAPI-NTF-M-001` (a real send to two test inboxes) is in `docs/testing/cases/prd19-engagement-api.csv`.
 
 Endpoints: `notifications` (GET list with `status`, `q`, `cursor`; POST), `notifications/{id}` (GET with `readCount`, DELETE), `notifications/{id}/recipients` (GET count and at most 5 sample), `notifications/{id}/send-email` (POST, owner only).
+
+---
+
+## 7. Slice 3c: enrolments, reports and exports
+No SQL. Enrolments live in the existing `user_enrollments`; reports read it, `coupons` and Clerk.
+
+**Rules under test:**
+* **O1 Grant:** `POST /enrolments` with `cohortSlug` and exactly one of `userId` or `email` (signed-up users only; unknown id 404, unknown e-mail 400). The cohort must exist (an admin-API cohort or a course of the older static list; otherwise 422). A `planId` must be a plan of that cohort (400); recording it needs the `user_enrollments.plan_id` column (a clear 422 where it is missing, as on production today). Reuses `grantEnrollment` (idempotent, activity log). Already enrolled is 409. Audited as `grant`.
+* **O1 Revoke:** `DELETE /enrolments/{id}`. `user_enrollments` has no "source" column, so **everything the admin API did not grant itself (paid, coupon, older manual) is protected**: refused with 409 unless `?force=true` from the **owner session** (an admin key with `force` gets 403). An enrolment counts as admin-granted only when a `grant` audit entry names that exact row id, so a later purchase of the same course never inherits an old grant. Only the enrolment row is removed; progress and submissions stay. Audited as `revoke` with `forced`.
+* **O2 CSV:** `GET /exports/enrolments.csv` and `/exports/learners.csv`. Owner or admin key only (a staff key is 403), counted against the write limit, every export audited (`export`, with the row count). Every cell is quoted; a text cell starting with `=`, `+`, `-`, `@`, tab or CR gets a leading `'` so it cannot run as a spreadsheet formula. Fixed columns; no payment ids, tokens or private links are ever selected. `Cache-Control: no-store`, `Content-Disposition: attachment`. At most 20,000 rows (`X-Export-Truncated: true` if cut).
+* **O3 Reports:** `GET /reports/{enrolments-per-cohort|signups-per-day|coupon-usage}`: counts only, no name, e-mail or id of a person. `signups-per-day` takes `days` (1 to 90, default 30; zero-filled UTC days, from Clerk, at most 2,500 people read). `truncated` says when data was cut at a safe limit.
+**Decision recorded:** protect-all-but-admin-granted for revoke (chosen over adding a `source` column, which would touch the payment routes and need SQL). A `source` column can replace the audit lookup later without changing the endpoint.
+
+**Unit (`tests/unit/admin-api-operations.spec.ts`, 9 tests):** `AAPI-UNIT-ENR-001` to `003`, `AAPI-UNIT-CSV-001` to `003`, `AAPI-UNIT-RPT-001` and `002`, `AAPI-UNIT-PERM-004`.
+**API (QA, `tests/api/admin-api-operations.spec.ts`, 7 tests):** `AAPI-ENR-001` to `004`, `AAPI-RPT-001`, `AAPI-CSV-001` and `002`. They use the edu persona and remove every row they make.
+Permissions: `enrolments:read|write`, `reports:read`, `exports:run` (owner and admin keys have all; a staff key reads enrolments and reports only).
+Endpoints: `enrolments` (GET with `cohortSlug`, `userId`, `q`, `cursor`; POST), `enrolments/{id}` (DELETE), `reports/{name}` (GET), `exports/{file}` (GET).
+
