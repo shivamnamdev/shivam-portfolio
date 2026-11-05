@@ -211,3 +211,34 @@ Blueprint (owner: "do it yourself" after the like-button PR merged): input `GET 
 
 - [x] 2026-11-02 server-side exam grading built on `feat/server-side-exam-grading`: `lib/examGraders.ts`, `lib/examWorker.mjs`, `lib/runExam.ts`, `app/api/learning/exam-grade`, page change, 10 new tests. 30 tests pass locally; `next build` traces Pyodide into the route.
 - [ ] Owner: open the PR, check the Vercel preview (cold start and memory of `/api/learning/exam-grade`), then merge. Follow-up task: rewrite the grader (it scores printed text and name checks, and shares one Python session with the learner).
+
+## 2026-11-04 · Admin portal and learner portal epic (Blueprint proposed, awaiting approval)
+Plan: `docs/architecture/admin-portal-plan.md` (branch `epic/admin-portal`). Phases: 0 Blueprint, 1 Admin API + Swagger, 2 Content API, 3 Engagement and operations API, 4 Admin portal UI, 5 Learner portal reads the database, 6 Hardening and cutover. Decisions D1 to D8 answered 2026-11-04 (section 11.1 of the plan); new questions Q1 to Q8 in 11.2. **Halt rule: no implementation code until the owner approves this Blueprint (Q8).**
+- [x] Owner answers D1 to D8; D7 = no new packages (hand-written validators and OpenAPI), swagger-ui-react upgrade only
+- [x] Coupons: three kinds (open, selected students, one-time), mandatory expiry; existing coupons kept aside
+- [x] Q7 approved 2026-11-04: a price or discount result above zero and below the payment minimum is refused at creation
+- [x] **Q8 Blueprint approved by the owner on 2026-11-04** (phases 0 to 6 as written in the plan, incl. three coupon kinds, no new packages)
+- [ ] Approval recorded here
+- [x] PRD 17 (admin API) case list written (`docs/testing/prd/17-admin-api.md`, 46 cases)
+- [ ] Jira tasks created per phase
+
+### Phase 1 progress (SCP-89, branch `admin-portal/p1-api-foundation`)
+- [x] Slice 1 (2026-11-04): SQL for the 4 tables (`docs/testing/sql/step7-admin-api-tables.sql`, **not run**), `lib/adminApi/` core (permissions, envelope, hand-written validators, payment minimum, API keys, guard, audit), middleware entry for `/api/admin/v1`, 9 unit cases passing.
+- [x] Owner ran step7 SQL on QA (2026-11-04).
+- [x] Slice 2 (2026-11-04): routes for courses (CRUD, publish, unpublish, archive, restore, duplicate), cohorts (single and plan pricing, links, open and close enrolment, status), coupons (everyone, selected students by e-mail, one-time; generate up to 200; list states; payment-minimum rule both ways), learners picker, audit (read only), API keys, OpenAPI 3 document and `/admin/api-docs`, contract test, write rate limit, redemption library for one-time codes. 47 PRD cases written; automated specs in `tests/api/admin-api-*.spec.ts`, `tests/db/admin-coupon-redemption.spec.ts`, `tests/unit/admin-api-core.spec.ts`.
+- [ ] Owner manual test (`docs/testing/admin-api-manual-guide.md`), PR, step7 SQL on production, then import script (after `course-cta-update-3`), then phase 2.
+
+
+### Phase 2 progress (Content API, branch `admin-portal/p2-content-api`)
+- [x] Blueprint approved by the owner 2026-11-04 (`docs/architecture/admin-portal-phase2-content-api.md`, recommended option on all five decisions). Keyed by cohort slug.
+- [x] Core library `lib/adminApi/curriculum.ts` + 17 unit tests (2026-11-04)
+- [x] Store helper, 11 routes, OpenAPI, 7 API tests, PRD 18 + cases, sample requests (2026-11-04). `npm run test:admin-api`: all pass
+- [ ] Owner review, PR into `epic/admin-portal`
+- [x] Curriculum import (2026-11-04): endpoint `POST /import/curriculum` (dry run default, owner only) instead of a script: the repo has no TypeScript runner. Courses, cohorts and coupons import waits for course-cta-update-3.
+
+### Phase 3 progress (Engagement and operations API, branch `admin-portal/p3-engagement-api`)
+- [x] Blueprint approved by the owner 2026-11-05 (`docs/architecture/admin-portal-phase3-engagement-api.md`, recommended option on all five decisions: three slices and three PRs, plain-text e-mail templates, immediate explicit e-mail sends only, four settings, revoking a paid enrolment refused unless `force` by the owner session).
+- [x] Slice 3a (2026-11-05): banners (CRUD, life cycle, `visibleBanners`), settings (4 keys, S2 rule), e-mail templates (plain text, safe render, preview); 20 unit and 8 API tests; PRD 19 and cases; OpenAPI. No SQL. Setting keys are kebab-case (`announcement-email-cap`, `daily-email-cap`, `support-phone`, `support-email`) because `content_docs.key` only allows lower case.
+- [x] Slice 3b code (2026-11-05): `lib/adminApi/notifications.ts` (pure rules), `notificationStore.ts`, 6 routes under `notifications/`, `rate_limit_take`, OpenAPI, PRD 19 section 6, 11 unit tests passing. `notifications:send` is owner only.
+- [ ] Owner runs `docs/testing/sql/step8-notifications.sql` on QA, then the 6 API tests (`AAPI-NTF-001` to `006`) run; manual real-send case `AAPI-NTF-M-001`
+- [ ] Slice 3c: enrolments, reports, CSV export

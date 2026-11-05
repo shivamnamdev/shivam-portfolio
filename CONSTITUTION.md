@@ -89,6 +89,7 @@ Invariants:
 - Escape/sanitize user input in HTML, emails, and share pages.
 - Never commit or push unless asked; never touch `.env*`, `agents/` submodule, or unrelated files.
 - **Never install anything without telling the owner first.** Before running `npm install`/`npm i`/`npx` of a package not already in `package.json`, `pip install`, `brew install`, or any tool/package/global/submodule download, stop and say what it is, why it is needed and what it changes (e.g. `package.json`, lock file); proceed only after the owner agrees. Lock-file repairs from the existing `package.json` (`npm ci`) are the only exception, and must still be reported.
+- **Unit tests ship with the code.** Every new or changed piece of logic (a `lib/` or `data/` function, validator, calculation, route handler rule) gets unit tests in `tests/unit/` in the same change, and they must pass before the work is called done or any later layer (routes, UI, integration tests) is built on top. Cover the happy path, the boundaries and the refusals. If something genuinely cannot be unit-tested (pure markup, a config value), say so in the summary and name what covers it instead.
 - Prefer small, reviewable diffs; no speculative abstractions.
 - Self-healing: when something fails, read the error, fix the cause, re-run the check, and log the failure and fix in `progress.md`. Do not retry blindly or paper over with try/catch.
 - Report faithfully: failing tests and skipped steps are stated plainly.
@@ -110,7 +111,7 @@ Invariants:
 - [ ] Blueprint approved (non-trivial tasks) and `docs/blast/` files updated
 - [ ] Data shapes defined and docs synced
 - [ ] Link verified for any external service
-- [ ] Logic lives in testable units; tests added/updated (`npm test` / Playwright per [tests/README.md](tests/README.md))
+- [ ] Logic lives in testable units; unit tests added/updated in `tests/unit/` and passing (§7), plus API/UI tests where relevant (`npm test` / Playwright per [tests/README.md](tests/README.md))
 - [ ] Type-check and lint pass
 - [ ] PRD §13 known issues checked, no regression
 - [ ] UI changes shown to the user
@@ -128,3 +129,10 @@ Append one line per significant change to architecture, schema, or integrations:
 - 2026-10-30 — Added PRD 08 (Admin Portal) and workbooks for PRDs 07 and 08 to docs/testing — all UI PRDs now have manual cases
 - 2026-11-03 — Added the "inform before installing" rule (§7) — a `--legacy-peer-deps` install broke the CI lock file
 - 2026-11-03 — Security response headers in `next.config.mjs` (CSP report-only) — PRD 16 SEC-HDR defects
+- 2026-11-04 — Admin portal epic plan added (docs/architecture/admin-portal-plan.md, branch epic/admin-portal) — proposed only, awaiting approval
+- 2026-11-04 — Admin portal Blueprint approved; PRD 17 (admin API) written — phase 1 starts
+- 2026-11-04 — Added the "unit tests ship with the code" rule (§7, §10) — owner wants unit-level certainty while building
+- 2026-11-04 — Phase 2 Content API (curriculum of a cohort in `content_docs`, no new table) — blueprint approved, built with unit tests
+- 2026-11-05 — Phase 3a Engagement API (banners, settings, e-mail templates in `content_docs`, no new table) — blueprint approved, built with unit tests
+- 2026-11-05 — Phase 3b notifications: tables `notifications`, `notification_reads` and function `rate_limit_take` (`docs/testing/sql/step8-notifications.sql`, not yet run); e-mail send is owner only and fails closed on the daily budget — blueprint approved
+

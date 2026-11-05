@@ -56,6 +56,8 @@ Enrollment-dependent specs need the QA persona state. With `E2E_SEED_PERSONAS=1`
 PORT=3100 E2E_SEED_PERSONAS=1 npx playwright test --project=chromium
 # with the QA fixture course/coupon as well
 PORT=3100 E2E_SEED_PERSONAS=1 NEXT_PUBLIC_QA_FIXTURES=1 NEXT_PUBLIC_QA_FREE_COUPON_USERS="<clerk ids>" npx playwright test --project=chromium
+# admin API (unit + API specs): one worker, because the four specs share the qa-aapi / QAAPI data prefix and their cleanups would delete each other's data in parallel
+npm run test:admin-api
 # failure report (Allure 3, Node only, no Java)
 npm run report:allure && npm run report:allure:open
 # which manual cases are automated (rewrites docs/testing/COVERAGE.md)

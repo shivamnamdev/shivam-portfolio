@@ -11,6 +11,7 @@
     "test:all": "playwright test",
     "report:allure": "allure generate allure-results --clean -o allure-report",
     "report:allure:open": "allure open allure-report",
+    "test:admin-api": "E2E_SEED_PERSONAS=1 playwright test tests/unit/admin-api tests/api/admin-api --project=chromium --workers=1",
     "test:seeded": "E2E_SEED_PERSONAS=1 playwright test --project=chromium"
   },
   "dependencies": {
