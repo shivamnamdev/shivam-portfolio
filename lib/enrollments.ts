@@ -11,6 +11,7 @@ type GrantInput = {
   userName: string;
   userEmail: string;
   couponUsed?: string | null;
+  planId?: string | null;   // only the admin API sets it; the column exists on databases that sell plans
   activityMessage: string;
 };
 
@@ -35,6 +36,7 @@ export async function grantEnrollment(input: GrantInput): Promise<{ created: boo
     coupon_used: input.couponUsed || null,
     user_name: input.userName,
     user_email: input.userEmail,
+    ...(input.planId ? { plan_id: input.planId } : {}),
   }]);
   if (error) {
     // Two requests can pass the check above together. The unique rule (user_id, course_slug) then refuses the second insert,

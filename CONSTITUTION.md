@@ -135,4 +135,4 @@ Append one line per significant change to architecture, schema, or integrations:
 - 2026-11-04 — Phase 2 Content API (curriculum of a cohort in `content_docs`, no new table) — blueprint approved, built with unit tests
 - 2026-11-05 — Phase 3a Engagement API (banners, settings, e-mail templates in `content_docs`, no new table) — blueprint approved, built with unit tests
 - 2026-11-05 — Phase 3b notifications: tables `notifications`, `notification_reads` and function `rate_limit_take` (`docs/testing/sql/step8-notifications.sql`, not yet run); e-mail send is owner only and fails closed on the daily budget — blueprint approved
-
+- 2026-11-05 — Phase 3c enrolments, count-only reports and CSV export (no SQL; revoke protects non-admin-granted rows) — blueprint approved, built with unit tests

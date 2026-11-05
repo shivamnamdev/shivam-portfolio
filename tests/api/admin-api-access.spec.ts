@@ -34,7 +34,7 @@ test.describe('AAPI access @regression', () => {
   test.beforeAll(async ({ browser }) => { admin = await sessionFor(browser, EMAIL.admin); learner = await sessionFor(browser, EMAIL.mavish); });
   test.afterAll(async () => { await cleanupAdminApi(); await admin?.close(); await learner?.close(); });
 
-  const concrete = (p: string) => p.replace('{slug}', 'qa-aapi-none').replace('{cohort}', 'qa-aapi-none').replace('{moduleId}', 'm-aaaaaaaa').replace('{lessonId}', 'abcdefghijk').replace('{code}', 'QAAPI-NONE').replace('{id}', 'aaaaaaaaaaaa').replace('{key}', 'welcome');
+  const concrete = (p: string) => p.replace('{slug}', 'qa-aapi-none').replace('{cohort}', 'qa-aapi-none').replace('{moduleId}', 'm-aaaaaaaa').replace('{lessonId}', 'abcdefghijk').replace('{code}', 'QAAPI-NONE').replace('{id}', 'aaaaaaaaaaaa').replace('{key}', 'welcome').replace('{name}', 'coupon-usage').replace('{file}', 'enrolments.csv');
 
   test('[AAPI-AUTH-001] a visitor is refused on every admin route (401)', async ({ request }) => {
     for (const r of routes()) {

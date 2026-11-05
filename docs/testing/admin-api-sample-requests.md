@@ -261,3 +261,18 @@ Needs the step 8 SQL. `POST /notifications` (it only creates the in-app notifica
 - `POST /notifications/{id}/send-email` (owner only, no body): sends now, once. Refused (422) above `announcement-email-cap` (default 50) or when today's `daily-email-cap` would pass; a second call is 409. **Run it only on a test cohort with your own test accounts.** Answer: `{ "sent": 2, "failed": 0, "skipped": 0, "notification": { … } }`.
 
 Must be refused: HTML in the title (400); marketing or progress with `email` (422); a scheduled notification with `email` (422); a cohort that does not exist (422); `recipients` in the body (400); an admin key calling send-email (403).
+
+## 11. Enrolments, reports and exports (phase 3, slice 3c)
+
+No SQL. Enrol a signed-up learner (offline payment, scholarship): `POST /enrolments`
+```json
+{ "cohortSlug": "demo-python-b1", "email": "learner@example.com" }
+```
+Send `userId` (a Clerk id, `user_…`) instead of `email`, never both. Optional `planId` (a plan of that cohort; needs the `user_enrollments.plan_id` column, a clear 422 where it is missing). Already enrolled is 409.
+- `GET /enrolments?cohortSlug=…&userId=…&q=…` newest first, page with `cursor`.
+- `DELETE /enrolments/{id}`: removes an enrolment **this API granted**. Anything else (paid, coupon, older manual) is 409 unless you add `?force=true` while signed in as the owner (an admin key gets 403). Progress is kept.
+- `GET /reports/enrolments-per-cohort`, `/reports/signups-per-day?days=30`, `/reports/coupon-usage`: counts only.
+- `GET /exports/enrolments.csv`, `/exports/learners.csv`: owner or admin key; every export is audited; a text cell that starts with `=`, `+`, `-` or `@` is prefixed with `'`.
+
+Must be refused: both `userId` and `email` (400); an unknown cohort (422); a plan the cohort does not have (400); a second enrolment (409); removing a paid enrolment without `force` (409); `force` from an admin key (403); a staff key exporting or enrolling (403); `days=0` (400).
+
