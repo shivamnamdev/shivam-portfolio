@@ -21,3 +21,22 @@ The admin shell under `/admin/(shell)`: sidebar, the two-way portal toggle, and 
 
 ## 4. Known limits
 The classic `/admin` page keeps its own client-side guard until slice 4e replaces it; the learner CRM link in the sidebar points to it.
+
+---
+
+## 5. Slice 4b: courses and cohorts
+Screens: `/admin/courses` (list, filters, create), `/admin/courses/{slug}` (edit, life cycle, duplicate, delete, its cohorts), `/admin/cohorts` (list, filters, create with pricing), `/admin/cohorts/{slug}` (edit, pricing, open/close enrolment, private links, life cycle, delete). Only `/api/admin/v1/courses|cohorts` is called.
+
+**Rules under test:**
+* **Slug** is suggested from the title (lower case, dashes) until the owner edits it; it cannot change later (the API has no rename), and the form says so. An invalid slug disables Create.
+* **Edit sends only what changed** (PATCH with `If-Match` = the loaded version). Nothing changed is shown as a message, not sent. An emptied optional text or date box is not sent (the API cannot clear them) and the screen says so. A stale save (409) shows the server message and a "Reload the latest version" button.
+* **Course sales-page content** is a JSON box for now (a structured editor is a later improvement). Broken JSON or a non-object disables Save with an explanation.
+* **Life cycle** buttons are exactly the server's transitions (a unit test compares the table with `COURSE_ACTIONS`): draft publish or archive, published move back or archive, archived restore. Each asks first and names the item; Cancel changes nothing.
+* **Pricing editor:** one price (INR, optional USD) or plans (1 to 6). Early hints mirror the server (minimum 1 in the currency for anything above zero, original not below price, plan ids unique and valid, a plan needs a name); a bad number is flagged on the box and linked with `aria-describedby`. A price of 0 shows a "free to join" notice (never blocked). Hints inform and the server decides, so a refusal comes back inline.
+* **Private links** (WhatsApp, live class) load from the separate links route, are https only, and save through the same versioned PATCH.
+* **Delete** asks first; a course with cohorts or a cohort with learners is refused by the server and the message is shown inline; duplicate asks for the new slug and title and reports a taken slug inline.
+
+**Unit (`tests/unit/admin-ui-forms.spec.ts`, 9 tests):** `ADMUI-UNIT-LIFE-001`, `SLUG-001`, `PITCH-001`, `DATE-001`, `PRICE-001` to `003`, `COH-001`, `COH-002`.
+**UI (`tests/ui/admin/admin-courses-cohorts.spec.ts`, 9 tests):** `ADMUI-COURSE-001` to `005`, `ADMUI-COHORT-001` to `004`. Everything they make is named `qa-admui-...` and removed afterwards.
+**Not automated:** the visual look of the pricing editor (shown to the owner before the slice is finalised).
+

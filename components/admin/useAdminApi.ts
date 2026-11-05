@@ -40,3 +40,23 @@ export function useAdminGet<T>(path: string | null) {
   useEffect(() => { void load(); }, [load]);
   return { data, failure, loading, reload: load };
 }
+
+// A paged list: the first page, "load more" along the cursor, and a reload. Changing `path` (filters) starts again from the first page.
+export function useAdminList<T>(path: string) {
+  const [items, setItems] = useState<T[]>([]);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [failure, setFailure] = useState<Failure | null>(null);
+  const [loading, setLoading] = useState(true);
+  const latest = useRef(0);
+  const fetchPage = useCallback(async (from: string | null) => {
+    const mine = ++latest.current;
+    setLoading(true);
+    const sep = path.includes('?') ? '&' : '?';
+    const r = await adminFetch<{ items: T[]; nextCursor: string | null }>(from ? `${path}${sep}cursor=${encodeURIComponent(from)}` : path);
+    if (mine !== latest.current) return;
+    if (r.ok) { setItems((prev) => (from ? [...prev, ...r.data.items] : r.data.items)); setCursor(r.data.nextCursor); setFailure(null); } else setFailure(r.failure);
+    setLoading(false);
+  }, [path]);
+  useEffect(() => { void fetchPage(null); }, [fetchPage]);
+  return { items, hasMore: cursor !== null, failure, loading, loadMore: () => (cursor ? fetchPage(cursor) : Promise.resolve()), reload: () => fetchPage(null) };
+}
