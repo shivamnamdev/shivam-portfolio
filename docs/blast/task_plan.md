@@ -235,3 +235,9 @@ Plan: `docs/architecture/admin-portal-plan.md` (branch `epic/admin-portal`). Pha
 - [x] Store helper, 11 routes, OpenAPI, 7 API tests, PRD 18 + cases, sample requests (2026-11-04). `npm run test:admin-api`: all pass
 - [ ] Owner review, PR into `epic/admin-portal`
 - [x] Curriculum import (2026-11-04): endpoint `POST /import/curriculum` (dry run default, owner only) instead of a script: the repo has no TypeScript runner. Courses, cohorts and coupons import waits for course-cta-update-3.
+
+### Phase 3 progress (Engagement and operations API, branch `admin-portal/p3-engagement-api`)
+- [x] Blueprint approved by the owner 2026-11-05 (`docs/architecture/admin-portal-phase3-engagement-api.md`, recommended option on all five decisions: three slices and three PRs, plain-text e-mail templates, immediate explicit e-mail sends only, four settings, revoking a paid enrolment refused unless `force` by the owner session).
+- [x] Slice 3a (2026-11-05): banners (CRUD, life cycle, `visibleBanners`), settings (4 keys, S2 rule), e-mail templates (plain text, safe render, preview); 20 unit and 8 API tests; PRD 19 and cases; OpenAPI. No SQL. Setting keys are kebab-case (`announcement-email-cap`, `daily-email-cap`, `support-phone`, `support-email`) because `content_docs.key` only allows lower case.
+- [ ] Slice 3b: notifications (needs `step8-notifications.sql` run by the owner on QA first)
+- [ ] Slice 3c: enrolments, reports, CSV export

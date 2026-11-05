@@ -133,3 +133,5 @@ Append one line per significant change to architecture, schema, or integrations:
 - 2026-11-04 — Admin portal Blueprint approved; PRD 17 (admin API) written — phase 1 starts
 - 2026-11-04 — Added the "unit tests ship with the code" rule (§7, §10) — owner wants unit-level certainty while building
 - 2026-11-04 — Phase 2 Content API (curriculum of a cohort in `content_docs`, no new table) — blueprint approved, built with unit tests
+- 2026-11-05 — Phase 3a Engagement API (banners, settings, e-mail templates in `content_docs`, no new table) — blueprint approved, built with unit tests
+

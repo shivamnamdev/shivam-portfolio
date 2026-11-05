@@ -215,3 +215,33 @@ Apply one course:
 Apply all three (`python-beginners`, `python-beginners-batch-2`, `git-beginner-batch-1`): `{ "apply": true }`.
 Run it again: every course says `unchanged`. If someone edited a curriculum in the admin API, the import says `differs` and leaves it; `{ "apply": true, "overwrite": true }` replaces it with the files.
 Imported curricula are published. An API key cannot run it (403), only the signed-in owner.
+
+## 9. Banners, settings, e-mail templates (phase 3, slice 3a)
+
+Banner text is **plain text** (no `<` or `>`). The link is `https://…` or a path such as `/courses`. `POST /banners`:
+```json
+{ "slug": "demo-diwali", "purpose": "offer", "message": "Diwali offer: 20% off every batch until Sunday", "placement": "courses",
+  "ctaLabel": "See batches", "ctaUrl": "/courses", "style": "urgent", "priority": 10,
+  "audience": { "kind": "visitors" }, "startsAt": "2026-11-10T00:00:00Z", "endsAt": "2026-11-16T23:59:59Z", "countdownTo": "2026-11-16T23:59:59Z" }
+```
+- `purpose`: announcement, offer, course-promo, learner-notice, maintenance. `placement`: site-top, courses, course-page, learning, dashboard. `style`: info, urgent, success, warning.
+- `audience`: `{ "kind": "all" | "visitors" | "learners" }`, `{ "kind": "cohort", "cohortSlug": "demo-python-b1" }` (the cohort must exist), `{ "kind": "plan", "planId": "personal" }`.
+- It starts as a draft. `POST /banners/demo-diwali/publish`, `/unpublish`, `/archive`, `/restore`. A published banner cannot be deleted.
+- `PATCH /banners/demo-diwali` with `If-Match: <version>`: `{ "message": "New text", "ctaLabel": null, "ctaUrl": null }` (null removes the link; send both or neither).
+- One banner per placement shows (the best `priority`), unless it has `"allowMultiple": true`; then every banner that allows several shows.
+
+Settings (`GET /settings`, then `PUT /settings/{key}`; the first save of a key needs no `If-Match`, later saves do):
+```json
+{ "value": 100 }
+```
+Keys: `announcement-email-cap` (1 to 200, default 50), `daily-email-cap` (1 to 500, default 200), `support-phone` (`"+91 98765 43210"` or `null`), `support-email` (`"help@example.com"` or `null`). The announcement cap cannot be higher than the daily cap (422).
+
+E-mail templates (`welcome`, `payment-receipt`, `free-enrolment`), `PUT /email-templates/welcome`:
+```json
+{ "subject": "Welcome to {{course}}", "body": "Hi {{name}},\n\nWelcome to **{{course}}**.\n\nOpen your dashboard: [My courses](https://shivamnamdev.com/dashboard)" }
+```
+Placeholders: `welcome` and `free-enrolment`: `{{name}}`, `{{course}}`; `payment-receipt`: also `{{amount}}`, `{{orderId}}`. Plain text only: blank line = new paragraph, `**bold**`, `[label](https://…)`. `POST /email-templates/welcome/preview` (empty body = the saved text) or `{ "subject": "…", "body": "…" }` shows the result with sample values; it sends and saves nothing.
+
+Must be refused: HTML in a banner or template (banner 400; in a template it is shown as text); a `javascript:` or `//` link (400); a template placeholder the template does not have (400); `announcement-email-cap` above `daily-email-cap` (422); a banner for a cohort that does not exist (422); deleting a published banner (422).
+
+Clean up: DELETE each demo banner after unpublishing it. Settings and templates cannot be deleted (they fall back to the built-in text only if you remove the row in Supabase).

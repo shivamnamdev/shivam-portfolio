@@ -6,7 +6,7 @@ import { conflict, notFound } from "./envelope";
 import type { ListParams } from "./request";
 import { likeSafe } from "./request";
 
-export type DocKind = "course" | "cohort" | "curriculum";
+export type DocKind = "course" | "cohort" | "curriculum" | "banner" | "setting" | "email_template";
 type Row = { kind: string; key: string; status: string; version: number; doc: Record<string, unknown>; created_by: string; updated_by: string; created_at: string; updated_at: string };
 
 // Never returns the `private` part of a document (cohort links): that is only served by the dedicated links route.
@@ -37,9 +37,9 @@ export async function listRows(kind: DocKind, p: ListParams, extra?: (q: any) =>
   return { rows: rows.slice(0, p.limit), next: more ? rows[p.limit - 1].key : null };
 }
 
-export async function insertRow(kind: DocKind, key: string, doc: Record<string, unknown>, actorId: string): Promise<Row> {
+export async function insertRow(kind: DocKind, key: string, doc: Record<string, unknown>, actorId: string, status: "draft" | "published" = "draft"): Promise<Row> {
   const { data, error } = await supabaseAdmin.from("content_docs")
-    .insert([{ kind, key, doc, status: "draft", created_by: actorId, updated_by: actorId }]).select(COLS).single();
+    .insert([{ kind, key, doc, status, created_by: actorId, updated_by: actorId }]).select(COLS).single();
   if (error) {
     if (error.code === "23505") throw conflict(`A ${kind} with the slug "${key}" already exists`);
     throw error;
