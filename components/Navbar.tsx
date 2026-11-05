@@ -3,18 +3,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
+import { SignInButton, SignedIn, SignedOut, UserButton, useUser } from '@clerk/nextjs';
 import { Bell, Sparkles, Calendar, AlertCircle, Menu, X, ShieldAlert, Code } from 'lucide-react';
 import { platformNotifications } from '@/data/notifications';
 import { supabase } from '@/lib/supabaseClient';
 
-import { ADMIN_EMAIL } from '@/lib/admin';
+import { ADMIN_EMAIL, isAdminEmail } from '@/lib/admin';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { user } = useUser();
+  const isAdmin = isAdminEmail(user?.primaryEmailAddress?.emailAddress);   // only decides whether the link is shown; /admin checks the admin on the server
   const notifRef = useRef<HTMLDivElement>(null);
 
   const [unreadCount, setUnreadCount] = useState(0);
@@ -126,6 +128,11 @@ export default function Navbar() {
           </SignedOut>
           
           <SignedIn>
+            {isAdmin && (
+              <Link href="/admin/overview" className="hidden md:block px-4 py-2 rounded-full border border-amber-500/50 text-amber-400 font-bold text-sm hover:bg-amber-500/10 transition-colors">
+                Switch to admin portal
+              </Link>
+            )}
             <Link href="/learning" className="hidden md:block px-5 py-2 rounded-full bg-white text-black font-bold text-sm hover:bg-stone-200 transition-colors">
               Dashboard
             </Link>
@@ -152,6 +159,10 @@ export default function Navbar() {
                 <SignedIn>
                   <div className="h-px w-full bg-white/10"></div>
                   <Link href="/learning" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between text-lg font-bold text-amber-500">My Dashboard <span className="text-xl">➔</span></Link>
+                  {isAdmin && (<>
+                    <div className="h-px w-full bg-white/10"></div>
+                    <Link href="/admin/overview" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between text-lg font-bold text-amber-500">Switch to admin portal <span className="text-xl">➔</span></Link>
+                  </>)}
                 </SignedIn>
               </div>
             </motion.div>

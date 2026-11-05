@@ -243,3 +243,9 @@ Plan: `docs/architecture/admin-portal-plan.md` (branch `epic/admin-portal`). Pha
 - [ ] Owner runs `docs/testing/sql/step8-notifications.sql` on QA, then the 6 API tests (`AAPI-NTF-001` to `006`) run; manual real-send case `AAPI-NTF-M-001`
 - [x] Slice 3c code (2026-11-05, branch `admin-portal/p3c-operations-api`): `lib/adminApi/enrolments.ts` (pure rules), `enrolmentStore.ts`, routes `enrolments`, `enrolments/{id}`, `reports/{name}`, `exports/{file}`, OpenAPI, PRD 19 section 7, 9 unit and 7 API tests. No SQL. Decision (asked, answered): revoke protects everything the admin API did not grant itself (no `source` column), matched by the exact enrolment id in the grant audit entry.
 - [ ] Manual case `AAPI-ENR-M-001` (CSV in a spreadsheet)
+
+### Phase 4 progress (Admin portal UI, branch `admin-portal/p4-admin-ui`)
+- [x] Blueprint approved by the owner 2026-11-05 (`docs/architecture/admin-portal-phase4-admin-ui.md`; recommended option on all four decisions: five slices and five PRs, old `/admin` page kept until 4e, dark theme, admin-only read-only preview in 4c).
+- [x] Slice 4a code (2026-11-05): `lib/adminUi/{client,nav}.ts` (pure helpers), `components/admin/{AdminShell,ui,useAdminApi}`, server-guarded group `app/admin/(shell)/` with Overview, Audit log and API keys, the "Switch to admin portal" link in `Navbar` (closes SCP-41), 5 unit and 9 UI tests. The classic `/admin` page and its tests are untouched; its server guard comes with 4e. Step 8 SQL confirmed applied by the owner.
+- [ ] Slices 4b (courses and cohorts), 4c (curriculum), 4d (engagement), 4e (people), 4f (student progress and code submissions, added later at the owner's request; needs a small read-only API first; the classic `/admin` page stays until 4f is done)
+

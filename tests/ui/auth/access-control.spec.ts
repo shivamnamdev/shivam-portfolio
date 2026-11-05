@@ -207,7 +207,8 @@ test.describe('PRD01 Navigation by role and cache behaviour @regression', () => 
   test('[AUTH-UI-004][AUTH-UI-008] the admin sees the same navigation, and the admin controls only on /admin', async ({ page }) => {
     await signInAs(page, AUTH.A1);
     await expect(page.getByRole('link', { name: 'Dashboard' }).first()).toBeVisible();
-    await expectNoAdminLink(page); // finding: there is no admin link in the navigation, even for the admin
+    // SCP-41 closed in phase 4a: the admin (and only the admin, see AUTH-ADMIN-011 above) gets "Switch to admin portal" in the navigation
+    await expect(page.getByRole('link', { name: 'Switch to admin portal' }).first()).toBeVisible();
     await expectAdminPage(page);
   });
 
