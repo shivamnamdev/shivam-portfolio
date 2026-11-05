@@ -138,3 +138,4 @@ Append one line per significant change to architecture, schema, or integrations:
 - 2026-11-05 — Phase 3c enrolments, count-only reports and CSV export (no SQL; revoke protects non-admin-granted rows) — blueprint approved, built with unit tests
 - 2026-11-05 — Phase 4 Admin portal UI Blueprint approved (five slices); slice 4a shell, overview, audit log and API keys screens, portal toggle — no SQL, no new package
 - 2026-11-05 — Phase 4b courses and cohorts screens (pricing editor, life cycle, private links) — no SQL, no new package
+- 2026-11-05 — Phase 4c curriculum editor (modules, lessons, assignments, resources, publish, discard, outline preview, import helper) — no SQL, no new package

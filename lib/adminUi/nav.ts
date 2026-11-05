@@ -6,7 +6,7 @@ export const NAV: NavItem[] = [
   { href: "/admin/overview", label: "Overview", group: "Overview", ready: true, slice: "4a" },
   { href: "/admin/courses", label: "Courses", group: "Content", ready: true, slice: "4b" },
   { href: "/admin/cohorts", label: "Cohorts", group: "Content", ready: true, slice: "4b" },
-  { href: "/admin/curriculum", label: "Curriculum", group: "Content", ready: false, slice: "4c" },
+  { href: "/admin/curriculum", label: "Curriculum", group: "Content", ready: true, slice: "4c" },
   { href: "/admin/coupons", label: "Coupons", group: "Engagement", ready: false, slice: "4d" },
   { href: "/admin/banners", label: "Banners", group: "Engagement", ready: false, slice: "4d" },
   { href: "/admin/notifications", label: "Notifications", group: "Engagement", ready: false, slice: "4d" },

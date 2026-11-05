@@ -40,3 +40,24 @@ Screens: `/admin/courses` (list, filters, create), `/admin/courses/{slug}` (edit
 **UI (`tests/ui/admin/admin-courses-cohorts.spec.ts`, 9 tests):** `ADMUI-COURSE-001` to `005`, `ADMUI-COHORT-001` to `004`. Everything they make is named `qa-admui-...` and removed afterwards.
 **Not automated:** the visual look of the pricing editor (shown to the owner before the slice is finalised).
 
+---
+
+## 6. Slice 4c: curriculum editor
+Screens: `/admin/curriculum` (every cohort with its curriculum, "Create curriculum", and the owner's import helper) and `/admin/curriculum/{cohort}` (the editor). Only `/api/admin/v1/curriculum/**` and `/import/curriculum` are called.
+
+**Layout (owner decision, 2026-11-05):** one page per cohort. Modules are cards with their lessons listed; a lesson opens in a side panel. Publish, discard and the "changes not published yet" banner sit at the top. Reordering is done with up and down buttons and a "Move to…" list (no drag and drop, so no new package and it works from the keyboard).
+
+**Rules under test:**
+* **The screen never edits its own copy.** Every curriculum call returns the whole updated curriculum; the screen replaces its state with the answer. A refusal leaves the last good copy on screen with the server message next to what was attempted. A stale edit (409) shows a "Reload the latest version" button.
+* **Lesson ids** come from a pasted YouTube link (watch, youtu.be, embed, shorts, live), a bare 11-character id, or a `doc-` id; anything else disables "Add lesson". A duplicate id is refused by the server and shown.
+* **Moving** builds exactly the lists the reorder endpoints accept (a unit test runs them through the server's own `reorderModules` and `reorderLessons`); the first and last items cannot move further; a lesson can move to the end of another module.
+* **Lesson panel:** title, description (500), assignment (python or git lab, only that lab type's links are sent, empty boxes left out, links must be https on `raw.githubusercontent.com`), resources (up to 20, https on the allowed hosts, title and link required). Only changed parts are sent. **The exam flags (`isExam`, `serverGraded`, `expectedOutcomeUrl`) are read-only**: the panel never sends them, shows a notice, and an exam lesson's assignment cannot be removed. Hints inform; the server decides.
+* **Publish and discard** ask first. Publish is off when the curriculum is empty or nothing changed; discard is off when nothing is published. The banner says whether the published copy matches.
+* **Delete** (module or lesson) asks first; the server refuses while learners have progress on a lesson (message shown, lesson stays).
+* **Preview as learner:** a read-only outline of the working copy (modules in order, lessons numbered per module, advanced modules, assignments, exam, resources). It writes nothing and calls no learner API. The true learner-page preview comes with phase 5.
+* **Import helper (owner only):** "Check" writes nothing and shows per cohort what would be created, left alone or replaced, with the entries the importer drops; "Apply" is only enabled after a check and asks first (a stronger warning when replacing existing curricula).
+
+**Unit (`tests/unit/admin-ui-curriculum.spec.ts`, 8 tests):** `ADMUI-UNIT-CUR-001` to `008`, including drift guards against the server's host lists, limits, reorder and patch logic.
+**UI (`tests/ui/admin/admin-curriculum.spec.ts`, 8 tests):** `ADMUI-CUR-001` to `008`. The course and cohort are made through the API and everything is named `qa-admui-cur...` and removed afterwards.
+**Not automated:** the visual look of the editor and a screen-reader pass (shown to the owner before the slice is finalised); the import "Apply" path (it changes real curricula, so it is a manual case).
+
