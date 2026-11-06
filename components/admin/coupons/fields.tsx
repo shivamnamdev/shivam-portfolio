@@ -41,7 +41,7 @@ export function ScopeFields({ cohorts, selected, onSelected, planIds, onPlanIds 
 }
 
 // Finds signed-up learners by name or e-mail and adds the chosen address to the list. Only signed-up users can be on a selected-students coupon.
-export function LearnerPicker({ onPick }: { onPick: (email: string) => void }) {
+export function LearnerPicker({ onPick, actionLabel = 'Add' }: { onPick: (email: string) => void; actionLabel?: string }) {
   const [q, setQ] = useState('');
   const [found, setFound] = useState<Array<{ id: string; email: string | null; name: string }> | null>(null);
   const [busy, setBusy] = useState(false);
@@ -62,7 +62,7 @@ export function LearnerPicker({ onPick }: { onPick: (email: string) => void }) {
       {found && found.length > 0 && (
         <ul className="mt-2 divide-y divide-white/5 text-sm">
           {found.map((l) => <li key={l.id} className="flex items-center justify-between gap-2 py-1.5"><span className="min-w-0 truncate">{l.name || '(no name)'} <span className="text-xs text-stone-500">{l.email}</span></span>
-            {l.email && <button type="button" className="text-xs font-semibold text-amber-400 hover:text-amber-300" onClick={() => onPick(l.email as string)}>Add</button>}</li>)}
+            {l.email && <button type="button" className="text-xs font-semibold text-amber-400 hover:text-amber-300" onClick={() => onPick(l.email as string)}>{actionLabel}</button>}</li>)}
         </ul>
       )}
     </div>

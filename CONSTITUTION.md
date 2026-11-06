@@ -141,3 +141,5 @@ Append one line per significant change to architecture, schema, or integrations:
 - 2026-11-05 — Phase 4c curriculum editor (modules, lessons, assignments, resources, publish, discard, outline preview, import helper) — no SQL, no new package
 - 2026-11-06 — Phase 4d-1 coupons (create, generate, change) and settings screens — no SQL, no new package
 - 2026-11-06 — Phase 4d-2 banners, notifications (explicit e-mail send dialog) and e-mail template screens — no SQL, no new package
+- 2026-11-06 — Phase 4e enrolments (grant, two-step remove, CSV downloads) and reports screens — no SQL, no new package
+

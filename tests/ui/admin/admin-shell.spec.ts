@@ -35,7 +35,7 @@ test.describe('ADMUI shell @regression', () => {
     const nav = sidebar(page);
     for (const label of ['Overview', 'Learner CRM (classic)', 'Audit log', 'API keys', 'API docs']) await expect(nav.getByRole('link', { name: label })).toBeVisible();
     await expect(nav.getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
-    for (const label of ['Enrolments', 'Student progress', 'Code submissions']) {
+    for (const label of ['Student progress', 'Code submissions']) {
       await expect(nav.getByText(label, { exact: false }).first()).toHaveAttribute('aria-disabled', 'true');
       await expect(nav.getByRole('link', { name: label })).toHaveCount(0);
     }

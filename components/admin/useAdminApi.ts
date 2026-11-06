@@ -60,3 +60,17 @@ export function useAdminList<T>(path: string) {
   useEffect(() => { void fetchPage(null); }, [fetchPage]);
   return { items, hasMore: cursor !== null, failure, loading, loadMore: () => (cursor ? fetchPage(cursor) : Promise.resolve()), reload: () => fetchPage(null) };
 }
+
+// Downloads a file the API answers with (the CSV exports). A failure comes back as the usual envelope; a file is returned as a Blob.
+export async function adminDownload(path: string): Promise<{ ok: true; blob: Blob; truncated: boolean } | { ok: false; failure: Failure }> {
+  let res: Response;
+  try { res = await fetch(`${BASE}${path}`, { credentials: 'same-origin' }); } catch { return { ok: false, failure: networkFailure() }; }
+  if (!res.ok) {
+    let body: unknown = null;
+    try { body = JSON.parse(await res.text()); } catch { /* not JSON */ }
+    const r = parseEnvelope<unknown>(res.status, body);
+    if (!r.ok && failureAction(r.failure) === 'sign-in') window.location.assign('/');
+    return r.ok ? { ok: false, failure: networkFailure() } : { ok: false, failure: r.failure };
+  }
+  return { ok: true, blob: await res.blob(), truncated: res.headers.get('X-Export-Truncated') === 'true' };
+}
