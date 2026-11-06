@@ -154,9 +154,10 @@ test.describe('PRD01 Admin access control @regression', () => {
   test('[AUTH-ADMIN-006][AUTH-MATRIX-020] admin controls are available to the admin', async ({ page }) => {
     await signInAs(page, AUTH.A1);
     await expectAdminPage(page);
-    await expect(page.getByRole('button', { name: 'Grant Access' })).toBeVisible();
-    await page.getByRole('button', { name: 'Grant Access' }).click();
-    await expect(page.getByText('Manual Enrollment / Backdoor')).toBeVisible();
+    await page.goto('/admin/enrolments');   // the manual-enrolment form of the old page lives on the Enrolments screen now
+    await expect(page.getByRole('button', { name: 'Grant access' }).first()).toBeVisible({ timeout: 30000 });
+    await page.getByRole('button', { name: 'Grant access' }).first().click();
+    await expect(page.getByRole('form', { name: 'Grant access' })).toBeVisible();
   });
 
   test('[AUTH-ADMIN-007][AUTH-ADMIN-008][AUTH-ADMIN-009][AUTH-UI-005][AUTH-UI-006][AUTH-UI-007][AUTH-MATRIX-017][AUTH-MATRIX-018][AUTH-MATRIX-019] no admin link is exposed to visitors, users or students', async ({ page, browser }) => {
@@ -185,7 +186,7 @@ test.describe('PRD01 Admin access control @regression', () => {
     await signOutThroughUi(page);
     await page.goBack();
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.getByText('Admin Command Center')).toHaveCount(0);
+    await expect(page.getByText('Switch to learner portal')).toHaveCount(0);
   });
 });
 

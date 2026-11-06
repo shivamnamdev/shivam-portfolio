@@ -12,19 +12,19 @@ export const NAV: NavItem[] = [
   { href: "/admin/notifications", label: "Notifications", group: "Engagement", ready: true, slice: "4d" },
   { href: "/admin/email-templates", label: "E-mail templates", group: "Engagement", ready: true, slice: "4d" },
   { href: "/admin/settings", label: "Settings", group: "Engagement", ready: true, slice: "4d" },
+  { href: "/admin/learners", label: "Learners", group: "People", ready: true, slice: "4f" },
   { href: "/admin/enrolments", label: "Enrolments", group: "People", ready: true, slice: "4e" },
   { href: "/admin/reports", label: "Reports", group: "People", ready: true, slice: "4e" },
   { href: "/admin/progress", label: "Student progress", group: "People", ready: true, slice: "4f" },
   { href: "/admin/submissions", label: "Code submissions", group: "People", ready: true, slice: "4f" },
   { href: "/admin/engagement", label: "Engagement", group: "People", ready: true, slice: "4f" },
-  { href: "/admin", label: "Learner CRM (classic)", group: "People", ready: true, slice: "4a" },
   { href: "/admin/audit", label: "Audit log", group: "System", ready: true, slice: "4a" },
   { href: "/admin/api-keys", label: "API keys", group: "System", ready: true, slice: "4a" },
   { href: "/admin/api-docs", label: "API docs", group: "System", ready: true, slice: "4a", external: true },
 ];
 export const NAV_GROUPS = ["Overview", "Content", "Engagement", "People", "System"] as const;
 
-// The classic page lives at exactly /admin; every other entry matches its own path and anything below it (never a look-alike such as /admin/audit-x).
+// /admin itself only redirects to the Overview now; the special case stays so the old address is never "active" on other screens. Every other entry matches its own path and anything below it (never a look-alike such as /admin/audit-x).
 export function isActive(pathname: string, href: string): boolean {
   const p = pathname.replace(/\/+$/, "") || "/";
   if (href === "/admin") return p === "/admin";

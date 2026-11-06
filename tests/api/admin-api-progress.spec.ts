@@ -115,6 +115,24 @@ test.describe('AAPI progress @regression', () => {
     expect((await request.post(`${BASE}/progress`, { headers: staff, data: {} })).status()).toBeGreaterThanOrEqual(400);   // read only: no write verb exists
   });
 
+  test('[AAPI-LRN-001] the learners directory: newest first, each with a join date, enrolment count and status; paging by position; the picker fields are still there; staff may read', async ({ request }) => {
+    const found = (await data(`/learners?q=${FRAGMENT}`)).items.find((l: { id: string }) => l.id === learnerId);
+    expect(found).toEqual({ id: learnerId, email: LEARNER, name: expect.any(String), joinedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/), enrolments: 2, status: 'enrolled' });   // the two cohorts seeded above
+    expect(Object.keys(found).sort()).toEqual(['email', 'enrolments', 'id', 'joinedAt', 'name', 'status']);
+    const first = await data('/learners?limit=1');
+    expect(first.items).toHaveLength(1);
+    if (first.nextCursor) {
+      expect(first.nextCursor).toBe('1');
+      expect((await data('/learners?limit=1&cursor=1')).items[0].id).not.toBe(first.items[0].id);
+    }
+    const all = (await data('/learners?limit=100')).items as Array<{ joinedAt: string }>;
+    expect(all.map((l) => l.joinedAt)).toEqual([...all.map((l) => l.joinedAt)].sort().reverse());   // newest first
+    expect((await data('/learners?q=zzz-nobody-zzz')).items).toEqual([]);
+    for (const bad of ['cursor=-1', 'cursor=abc', 'limit=0', 'limit=101']) expect((await get(`/learners?${bad}`)).status(), bad).toBe(400);
+    expect((await request.get(`${BASE}/learners?limit=2`, { headers: await keyHeaders('staff') })).status()).toBe(200);
+    expect((await request.get(`${BASE}/learners`, { headers: { 'User-Agent': API_UA } })).status()).toBe(401);
+  });
+
   test('[AAPI-PRG-006] engagement: time, streak and last active day per learner, most time first; search, paging by position, and bad cursors', async () => {
     const top = await data('/engagement?limit=1');
     expect(top.items[0]).toEqual({ userId: learnerId, name: expect.any(String), email: LEARNER, totalTimeSeconds: 99999999, currentStreak: 7, lastActiveDate: expect.any(String) });

@@ -499,3 +499,32 @@ AD-01 … AD-03 already run (PRD 01). Tabs, directory, enrollments, the empty-st
 * Related PRDs: [01](01-ui-authentication-access-control.md), [05](05-ui-free-enrollment-flow.md), [06](06-ui-student-dashboard-course-access.md), [07](07-ui-learning-experience.md)
 * Existing automation: [tests/ui/auth/access-control.spec.ts](../../../tests/ui/auth/access-control.spec.ts), [tests/support/db.ts](../../../tests/support/db.ts)
 * Jira: SCP-39 (server-side access), SCP-40 (admin-course-manager routes), SCP-41 (admin link)
+
+---
+
+## **12. Retirement of the classic page (SCP-89, phase 4f, 2026-11-06)**
+
+The classic "Admin Command Center" (`app/admin/page.tsx`, five tabs, three KPI cards, the manual enrolment form and the code modal) was replaced by the admin portal and **no longer exists**. `/admin` is now a redirect to `/admin/overview`. What stayed: the three routes the old page used (`GET /api/get-all-users`, `GET /api/admin/dashboard-data`, `POST /api/admin/enroll`) remain admin-only and are still tested (ADM-GATE-002, 006 to 010); they are to be deleted in a later clean-up change (owner decision, kept for now so nothing else breaks and the change is easy to roll back).
+
+Every case below drove the old page. The automated ones were retired with it; this table says what replaced each. The CSV in `cases/prd08-admin-portal.csv` is kept as history and its manual wording describes the old page.
+
+| Old cases | Now |
+| --- | --- |
+| ADM-GATE-001 (admin opens the portal) | Kept, rewritten: the admin who opens `/admin` lands on the Overview (`ADM-GATE-001` in `admin-readonly.spec.ts`; `ADMUI-SHELL-001`) |
+| ADM-GATE-002, 003, 006 to 010, 011 (fixme) | **Kept as they were** in `admin-readonly.spec.ts` (a learner and a visitor are turned away; the three old routes refuse them) |
+| ADM-GATE-004 (spinner), 005 (no uncaught errors) | Retired. Every portal screen shows a "Loading" status and the shell loads without errors in `admin-shell.spec.ts` |
+| ADM-GATE-012 (no Admin link anywhere) | Retired and **reversed**: the admin now sees "Switch to admin portal" in the learner navigation. Covered by `AUTH-UI-004` and `ADMUI-SHELL-002` |
+| ADM-KPI-001 to 007 (three cards) | Retired. Counts live on the Overview and Reports screens: `ADMUI-PPL-005`, `AAPI-RPT-001`; "unchanged after a failed grant": `ADMUI-PPL-001` |
+| ADM-TBL-001 to 011 (directory and enrolments tables) | Retired. Directory: `ADMUI-PRG-004`, `AAPI-LRN-001`. Enrolments table: `ADMUI-PPL-001` to `004`, `AAPI-ENR-*` |
+| ADM-PRG-001 to 003 (progress) | `ADMUI-PRG-001`, `AAPI-PRG-001`, `AAPI-PRG-002`, `AAPI-UNIT-PRG-001` to `006` |
+| ADM-ASG-001 to 008 (submissions and code modal) | `ADMUI-PRG-002`, `AAPI-PRG-003`, `AAPI-PRG-004`, `AAPI-UNIT-PRG-007` (an empty submission reads "This submission has no code.") |
+| ADM-ENG-001 to 004 (engagement) | `ADMUI-PRG-003`, `AAPI-PRG-006`, `ADMUI-UNIT-PRV-002` |
+| ADM-ENR-001 to 019 (manual enrolment form) | `ADMUI-PPL-001` to `003`, `ADMUI-UNIT-PPL-001`, `002`, `AAPI-ENR-001` to `004`. **Difference:** the new Grant form picks from cohorts made in the admin portal and finds the learner by e-mail; the old form took a Clerk id and the static course list (the API still accepts both) |
+| ADM-RSL-001 to 006 (resilience) | Retired. One shared error path serves every screen: `ADMUI-UNIT-ENV-001`, `002` (network, expired session, refusals) |
+| ADM-RSL-007 | Still `fixme` (known gap R-AD-1, SCP-39) |
+| ADM-MOB-001 to 006 (phone, keyboard, other browsers) | **Retired with no replacement yet. Open gap:** the portal's phone layout and keyboard use are not automated; to be re-created as cases for the new screens |
+| ADM-E2E-001, 002, 006 | `ADMUI-PPL-001`, `ADMUI-PRG-002` |
+| ADM-E2E-003, 004 | Kept, rewritten: a real paid or free (QA100) enrolment appears on the Enrolments screen with its coupon (`admin-enroll-writes.spec.ts`; needs the QA fixture server) |
+| ADM-E2E-005 | Kept (inside ADM-GATE-002) |
+| PRF-PGE-007 (performance) | Retargeted to `/admin/enrolments`. PRF-UIX-002 (tab switch) is `fixme`: the tabs no longer exist |
+

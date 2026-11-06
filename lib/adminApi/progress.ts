@@ -95,6 +95,15 @@ export function parseFilters(u: URL): { cohortSlug: string | null; userId: strin
   return { cohortSlug: cohortSlug || null, userId: userId || null };
 }
 
+// One signed-up person in the directory: who they are, when they joined, how many enrolments they hold, and whether that makes them a learner
+// (at least one enrolment) or a lead (none yet). Counts only: no payment, coupon or link field.
+export type DirectoryRow = { id: string; name: string; email: string | null; joinedAt: string | null; enrolments: number; status: "enrolled" | "lead" };
+export function directoryRow(ref: { id: string; name: string; email: string | null }, createdAtMs: number | null | undefined, enrolments: number): DirectoryRow {
+  const n = Math.max(0, Math.floor(enrolments) || 0);
+  const t = typeof createdAtMs === "number" && Number.isFinite(createdAtMs) ? new Date(createdAtMs).toISOString() : null;
+  return { id: ref.id, name: ref.name || "Unknown student", email: ref.email, joinedAt: t, enrolments: n, status: n > 0 ? "enrolled" : "lead" };
+}
+
 // Engagement pages by position (the list is ordered by time spent, which has no stable key to continue from).
 export function offsetCursor(raw: string | null): number {
   if (raw === null) return 0;

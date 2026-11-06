@@ -33,11 +33,12 @@ test.describe('ADMUI shell @regression', () => {
     await page.goto('/admin/overview');
     await expect(page.getByRole('heading', { name: 'Overview', level: 1 })).toBeVisible({ timeout: 30000 });
     const nav = sidebar(page);
-    for (const label of ['Overview', 'Learner CRM (classic)', 'Audit log', 'API keys', 'API docs']) await expect(nav.getByRole('link', { name: label })).toBeVisible();
+    for (const label of ['Overview', 'Audit log', 'API keys', 'API docs']) await expect(nav.getByRole('link', { name: label })).toBeVisible();
     await expect(nav.getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
-    for (const label of ['Student progress', 'Code submissions', 'Engagement', 'Enrolments', 'Reports']) await expect(nav.getByRole('link', { name: label })).toBeVisible();
+    for (const label of ['Student progress', 'Code submissions', 'Engagement', 'Learners', 'Enrolments', 'Reports']) await expect(nav.getByRole('link', { name: label })).toBeVisible();
     await expect(nav.locator('[aria-disabled=true]')).toHaveCount(0);   // every screen is built
     await expect(page.getByText(`Signed in as ${EMAIL.admin}`)).toBeVisible();
+    await expect(page.locator('aside .cl-userButtonTrigger')).toBeVisible({ timeout: 20000 });   // the account button (sign out) is in the portal too
     await page.getByRole('link', { name: 'Switch to learner portal' }).click();
     await expectOnPath(page, '/learning');
   });

@@ -31,5 +31,9 @@ export function codeSizeText(chars: number): string {
   if (chars < 1000) return `${chars} character${chars === 1 ? "" : "s"}`;
   return `${(chars / 1000).toFixed(1)}k characters`;
 }
+export type DirectoryItem = { id: string; name: string; email: string | null; joinedAt: string | null; enrolments: number; status: "enrolled" | "lead" };
+// "Enrolled in 2 cohorts", "Enrolled in 1 cohort", "Lead (not enrolled yet)".
+export const statusText = (d: Pick<DirectoryItem, "status" | "enrolments">): string => (d.status === "lead" ? "Lead (not enrolled yet)" : `Enrolled in ${d.enrolments} cohort${d.enrolments === 1 ? "" : "s"}`);
+export const joinedText = (iso: string | null): string => (iso ? iso.slice(0, 10) : "—");
 export const learnerLine = (p: { name: string; email: string | null; userId: string }): string => `${p.name || "Unknown student"} (${p.email ?? p.userId})`;
 export const submittedText = (iso: string | null): string => (iso ? iso.slice(0, 16).replace("T", " ") + " UTC" : "—");

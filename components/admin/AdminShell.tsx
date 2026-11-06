@@ -3,10 +3,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { Menu, X, ShieldAlert, ArrowLeftRight } from 'lucide-react';
+import { UserButton } from '@clerk/nextjs';
 import { NAV, NAV_GROUPS, isActive } from '@/lib/adminUi/nav';
 
 // The admin chrome: sidebar (collapsible on phones), the portal toggle and who is signed in. Rendered only inside the server-guarded layout,
-// so it is never sent to anyone who is not the admin. Entries for later slices are shown but disabled, so the whole map is visible.
+// so it is never sent to anyone who is not the admin. The account button (sign out) is Clerk's, as in the learner navigation.
 export default function AdminShell({ email, children }: { email: string; children: React.ReactNode }) {
   const pathname = usePathname() ?? '';
   const [open, setOpen] = useState(false);
@@ -42,7 +43,7 @@ export default function AdminShell({ email, children }: { email: string; childre
         {nav}
         <div className="mt-6 border-t border-white/10 pt-4">
           <Link href="/learning" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-stone-300 hover:bg-white/5 hover:text-white"><ArrowLeftRight size={14} />Switch to learner portal</Link>
-          <p className="mt-3 break-all px-3 text-[11px] text-stone-500">Signed in as {email}</p>
+          <div className="mt-3 flex items-center gap-3 px-3"><UserButton afterSignOutUrl="/" /><p className="min-w-0 break-all text-[11px] text-stone-500">Signed in as {email}</p></div>
         </div>
       </aside>
       <main className="min-w-0 flex-1 px-4 py-6 md:px-8">{children}</main>

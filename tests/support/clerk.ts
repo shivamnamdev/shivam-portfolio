@@ -77,5 +77,7 @@ export async function signInAs(page: Page, email: string): Promise<void> {
 }
 
 export async function signOutViaClerk(page: Page): Promise<void> {
+  // Pages that render on the server (the admin portal) show their content before Clerk's script has loaded: wait for it.
+  await page.waitForFunction(() => !!(window as any).Clerk?.loaded, null, { timeout: 30000 });
   await page.evaluate(async () => { await (window as any).Clerk.signOut(); });
 }

@@ -81,4 +81,5 @@ No SQL, no writes, no audit entries. Reads `user_enrollments`, `video_progress`,
 
 **Unit (`tests/unit/admin-api-progress.spec.ts`, 11 tests):** `AAPI-UNIT-PRG-001` to `010` and `AAPI-UNIT-PERM-005`.
 **API (`tests/api/admin-api-progress.spec.ts`, 6 tests):** `AAPI-PRG-001` to `006`. A published curriculum and progress rows are made under `qa-aapi-pg-*` cohorts for the edu persona; the persona's `user_stats` row is saved and restored.
+* `/learners?q&limit&cursor` (extended in 4f(c)) -> `{ id, name, email, joinedAt|null, enrolments, status }` per signed-up person, **newest first**, plus `nextCursor` (a position). `status` is `enrolled` (one enrolment or more) or `lead`. Counts only, no payment, coupon or link field. Still the picker for selected-students coupons (it still returns `id`, `email` and `name`). Permission `learners:read` (staff keys may read). Tests: `AAPI-UNIT-PRG-011`, `AAPI-LRN-001`.
 

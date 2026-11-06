@@ -94,6 +94,22 @@ test.describe('ADMUI progress, submissions, engagement @regression', () => {
     await expect(dialog(page)).toHaveCount(0);
   });
 
+  test('[ADMUI-PRG-004] the learners directory finds a person by e-mail and shows the user id, join date and enrolment count; no match says so', async ({ page }) => {
+    await signInAs(page, EMAIL.admin);
+    await page.goto('/admin/learners');
+    await expect(page.getByRole('heading', { name: 'Learners', level: 1 })).toBeVisible({ timeout: 30000 });
+    await page.getByLabel(/^Search/).fill(FRAGMENT);
+    await page.getByRole('button', { name: 'Search' }).click();
+    const r = page.locator('tbody tr', { hasText: learnerId });
+    await expect(r).toHaveCount(1, { timeout: 30000 });
+    await expect(r).toContainText(EMAIL.edu);
+    await expect(r).toContainText('Enrolled in 2 cohorts');
+    await expect(r).toContainText(/\d{4}-\d{2}-\d{2}/);
+    await page.getByLabel(/^Search/).fill('zzz-nobody-zzz');
+    await page.getByRole('button', { name: 'Search' }).click();
+    await expect(page.getByText('Nobody matches.')).toBeVisible({ timeout: 30000 });
+  });
+
   test('[ADMUI-PRG-003] engagement shows time as hours and minutes, the streak and the last day, most time first, and searches by name', async ({ page }) => {
     await signInAs(page, EMAIL.admin);
     await page.goto('/admin/engagement');

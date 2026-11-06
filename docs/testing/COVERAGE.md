@@ -159,14 +159,10 @@ Not yet automated: LRN-PY-012, LRN-PY-016, LRN-GIT-010
 
 | Sheet | Cases | Automated | Blocked | Not yet |
 | --- | --- | --- | --- | --- |
-| Admin Gate and Page Load | 12 | 11 | 1 | 0 |
-| KPI Cards | 7 | 7 | 0 | 0 |
-| Directory and Enrollments | 11 | 11 | 0 | 0 |
-| Progress Assignments and Engagement | 15 | 15 | 0 | 0 |
-| Manual Enrollment | 19 | 19 | 0 | 0 |
-| Resilience and Empty States | 7 | 6 | 1 | 0 |
-| Mobile Keyboard and Browsers | 6 | 6 | 0 | 0 |
-| End-to-End Business-Critical | 6 | 6 | 0 | 0 |
+| Admin Gate and Page Load | 12 | 6 kept (002, 003, 006 to 010 and a rewritten 001) | 1 (011) | 5 retired (004, 005, 012 and the pages they drove) |
+| All other sheets (KPI, tables, progress, manual enrolment, resilience, mobile, end-to-end) | 71 | 2 kept and rewritten (E2E-003, 004) | 1 (RSL-007) | **retired with the classic page**: see PRD 08 section 12; the portal's own cases are `ADMUI-*` and `AAPI-*` |
+
+**Open gap:** phone layout and keyboard of the new admin portal screens (the old ADM-MOB cases) are not automated.
 
 Not yet automated: ADM-GATE-011, ADM-RSL-007
 

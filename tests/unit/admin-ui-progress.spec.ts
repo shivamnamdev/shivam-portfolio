@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { barPercent, codeSizeText, countText, formatDuration, lastActivityText, learnerLine, percentText, streakText, submittedText } from '../../lib/adminUi/progressView';
+import { barPercent, codeSizeText, countText, formatDuration, joinedText, lastActivityText, learnerLine, percentText, statusText, streakText, submittedText } from '../../lib/adminUi/progressView';
 import { NAV } from '../../lib/adminUi/nav';
 import { percentOf } from '../../lib/adminApi/progress';
 
@@ -48,8 +48,16 @@ test.describe('Admin UI progress helpers @regression', () => {
     expect(learnerLine({ name: '', email: null, userId: 'user_1' })).toBe('Unknown student (user_1)');
   });
 
+  test('[ADMUI-UNIT-PRV-005] the directory wording: enrolled in n cohorts (singular for one), lead, and the join date', () => {
+    expect(statusText({ status: 'lead', enrolments: 0 })).toBe('Lead (not enrolled yet)');
+    expect(statusText({ status: 'enrolled', enrolments: 1 })).toBe('Enrolled in 1 cohort');
+    expect(statusText({ status: 'enrolled', enrolments: 3 })).toBe('Enrolled in 3 cohorts');
+    expect(joinedText('2026-11-01T10:00:00.000Z')).toBe('2026-11-01');
+    expect(joinedText(null)).toBe('—');
+  });
+
   test('[ADMUI-UNIT-PRV-004] the sidebar offers Student progress, Code submissions and Engagement, and nothing is left "coming later"', () => {
-    for (const href of ['/admin/progress', '/admin/submissions', '/admin/engagement']) expect(NAV.find((n) => n.href === href)?.ready, href).toBe(true);
+    for (const href of ['/admin/progress', '/admin/submissions', '/admin/engagement', '/admin/learners']) expect(NAV.find((n) => n.href === href)?.ready, href).toBe(true);
     expect(NAV.filter((n) => !n.ready)).toEqual([]);
   });
 });

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {
-  engagementRow, laterOf, layoutFor, lessonTitle, offsetCursor, parseFilters, percentOf, progressRow, submissionRow, submissionWithCode, tally, tallyKey, totalsOf, whoOf, type Layout,
+  directoryRow, engagementRow, laterOf, layoutFor, lessonTitle, offsetCursor, parseFilters, percentOf, progressRow, submissionRow, submissionWithCode, tally, tallyKey, totalsOf, whoOf, type Layout,
 } from '../../lib/adminApi/progress';
 import { roleCan } from '../../lib/adminApi/permissions';
 import { OPERATIONS } from '../../lib/adminApi/openapi';
@@ -104,6 +104,18 @@ test.describe('AAPI progress rules @regression', () => {
     expect(offsetCursor(null)).toBe(0);
     expect(offsetCursor('50')).toBe(50);
     for (const bad of ['-1', '1.5', 'abc', '2000000']) expect(refusal(() => offsetCursor(bad)).status, bad).toBe(400);
+  });
+
+  test('[AAPI-UNIT-PRG-011] a directory row is a learner with one enrolment or more and a lead with none; the join date is a real date or null; counts are never negative', () => {
+    const who = { id: 'user_a', name: 'Asha', email: 'a@x.com' };
+    expect(directoryRow(who, Date.parse('2026-11-01T10:00:00Z'), 2)).toEqual({ id: 'user_a', name: 'Asha', email: 'a@x.com', joinedAt: '2026-11-01T10:00:00.000Z', enrolments: 2, status: 'enrolled' });
+    expect(directoryRow(who, Date.parse('2026-11-01T10:00:00Z'), 0).status).toBe('lead');
+    expect(directoryRow(who, undefined, 1).joinedAt).toBeNull();
+    expect(directoryRow(who, NaN, 1).joinedAt).toBeNull();
+    expect(directoryRow({ ...who, name: '' }, null, 0).name).toBe('Unknown student');
+    expect(directoryRow(who, null, -3)).toMatchObject({ enrolments: 0, status: 'lead' });
+    expect(directoryRow(who, null, 2.9).enrolments).toBe(2);
+    expect(Object.keys(directoryRow(who, null, 1)).sort()).toEqual(['email', 'enrolments', 'id', 'joinedAt', 'name', 'status']);   // no payment, coupon or link field
   });
 
   test('[AAPI-UNIT-PERM-005] permissions: staff keys may list progress, submissions and engagement but never read code; admin keys and the owner may', () => {
