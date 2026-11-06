@@ -50,7 +50,7 @@ export function DataTable<T>({ columns, rows, rowKey, empty }: { columns: Column
 }
 
 // A confirmation that names the thing being changed. Escape and the Cancel button close it; focus goes to Cancel first so Enter never confirms by accident.
-export function ConfirmDialog({ title, body, confirmLabel, danger, busy, onConfirm, onCancel }: { title: string; body: React.ReactNode; confirmLabel: string; danger?: boolean; busy?: boolean; onConfirm: () => void; onCancel: () => void }) {
+export function ConfirmDialog({ title, body, confirmLabel, danger, busy, confirmDisabled, onConfirm, onCancel }: { title: string; body: React.ReactNode; confirmLabel: string; danger?: boolean; busy?: boolean; confirmDisabled?: boolean; onConfirm: () => void; onCancel: () => void }) {
   const cancel = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     cancel.current?.focus();
@@ -65,7 +65,7 @@ export function ConfirmDialog({ title, body, confirmLabel, danger, busy, onConfi
         <div className="mt-2 text-sm text-stone-300">{body}</div>
         <div className="mt-6 flex justify-end gap-2">
           <button ref={cancel} type="button" onClick={onCancel} className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-stone-200 hover:bg-white/10">Cancel</button>
-          <button type="button" disabled={busy} onClick={onConfirm} className={`rounded-lg px-4 py-2 text-sm font-bold disabled:opacity-50 ${danger ? 'bg-red-600 text-white hover:bg-red-500' : 'bg-amber-500 text-black hover:bg-amber-400'}`}>{busy ? 'Working…' : confirmLabel}</button>
+          <button type="button" disabled={busy || confirmDisabled} onClick={onConfirm} className={`rounded-lg px-4 py-2 text-sm font-bold disabled:opacity-50 ${danger ? 'bg-red-600 text-white hover:bg-red-500' : 'bg-amber-500 text-black hover:bg-amber-400'}`}>{busy ? 'Working…' : confirmLabel}</button>
         </div>
       </div>
     </div>

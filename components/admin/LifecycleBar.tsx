@@ -7,7 +7,7 @@ import type { Failure } from '@/lib/adminUi/client';
 
 // The status badge and the life-cycle buttons of a course or cohort. Which buttons show is the server's transition table (checked by a unit test);
 // the server still refuses a bad transition. Every action asks first and names the item.
-export default function LifecycleBar<T>({ kind, slug, status, onChanged }: { kind: 'courses' | 'cohorts'; slug: string; status: string; onChanged: (updated: T) => void }) {
+export default function LifecycleBar<T>({ kind, slug, status, onChanged }: { kind: 'courses' | 'cohorts' | 'banners'; slug: string; status: string; onChanged: (updated: T) => void }) {
   const [pending, setPending] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
