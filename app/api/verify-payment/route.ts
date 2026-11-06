@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import Razorpay from "razorpay";
 import nodemailer from "nodemailer";
+import { savedMail } from "@/lib/catalog/engagement";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { activeCourses } from "@/data/courses";
 import { grantEnrollment } from "@/lib/enrollments";
@@ -80,7 +81,11 @@ export async function POST(req: NextRequest) {
           auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
         });
 
-        const mailOptions = {
+        // A template saved in the admin portal replaces today's mail (PORTAL_ENGAGEMENT=database and a saved 'payment-receipt'); otherwise nothing changes.
+        const custom = await savedMail("payment-receipt", { name: userName, course: courseObj.title, amount: amountPaid, orderId: razorpay_order_id });
+        const mailOptions = custom ? {
+          from: `Shivam Academy <${process.env.GMAIL_USER}>`, to: userEmail, bcc: process.env.GMAIL_USER, subject: custom.subject, text: custom.text, html: custom.html,
+        } : {
           from: `Shivam Academy <${process.env.GMAIL_USER}>`,
           to: userEmail,
           bcc: process.env.GMAIL_USER,

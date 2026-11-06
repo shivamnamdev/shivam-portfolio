@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { BookOpen, Video, FileText, CheckCircle2, PlayCircle, Loader2, Flame, Trophy } from 'lucide-react';
 import SpotlightCard from '@/components/SpotlightCard';
+import Banners from '@/components/Banners';
 
 export default function LearningDashboard() {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -74,6 +75,7 @@ export default function LearningDashboard() {
       <Navbar />
       
       <main className="flex-grow max-w-7xl mx-auto px-6 py-20 w-full relative z-10">
+        <Banners placement="dashboard" />
         <div className="mb-12 border-b border-white/10 pb-8 flex justify-between items-end">
           <div>
             <h1 className="text-4xl md:text-5xl font-display font-black text-white mb-2 drop-shadow-md">Welcome back, {firstName}! 👋</h1>

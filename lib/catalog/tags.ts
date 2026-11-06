@@ -2,6 +2,7 @@
 // Cache tags of the learner-facing reads and which admin writes must refresh them. Pure; the revalidation call itself is in lib/adminApi/audit.ts.
 export const CATALOG_TAG = "catalog";
 export const LEARNING_TAG = "learning";
+export const BANNERS_TAG = "banners";
 
 // The admin resources whose change alters what the course list or a sales page shows (courses and cohorts, and the settings that hold the support
 // phone and e-mail). Curriculum, banners and notifications have their own tags in later slices.
@@ -14,3 +15,6 @@ export const touchesCatalog = (resource: string, action: string): boolean => CAT
 // links) and its course. The audit log is only written for changes, so any entry on these resources means something a learner reads may have changed.
 const LEARNING_RESOURCES = new Set(["curriculum", "cohort", "course"]);
 export const touchesLearning = (resource: string): boolean => LEARNING_RESOURCES.has(resource);
+
+// Banners shown on the pages: any audited change to a banner (create, edit, publish, unpublish, archive, delete) refreshes the cached list.
+export const touchesBanners = (resource: string): boolean => resource === "banner";

@@ -3,7 +3,7 @@
 // (the caller awaits this BEFORE reporting success), so a change never exists without its history.
 import { revalidateTag } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { CATALOG_TAG, LEARNING_TAG, touchesCatalog, touchesLearning } from "@/lib/catalog/tags";
+import { BANNERS_TAG, CATALOG_TAG, LEARNING_TAG, touchesBanners, touchesCatalog, touchesLearning } from "@/lib/catalog/tags";
 import { ApiError } from "./envelope";
 import type { Actor } from "./guard";
 
@@ -34,5 +34,9 @@ export async function writeAudit(entry: { actor: Actor; action: string; resource
   // The same for what the learning area reads (curriculum, cohort, course).
   if (touchesLearning(entry.resource)) {
     try { revalidateTag(LEARNING_TAG); } catch (e) { console.error("learning revalidation failed:", (e as Error).message?.slice(0, 80)); }
+  }
+  // And the banners shown on the pages.
+  if (touchesBanners(entry.resource)) {
+    try { revalidateTag(BANNERS_TAG); } catch (e) { console.error("banner revalidation failed:", (e as Error).message?.slice(0, 80)); }
   }
 }

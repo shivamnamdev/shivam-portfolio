@@ -3,6 +3,7 @@ import Footer from "@/components/Footer";
 import Link from "next/link";
 import { isQaFixture } from "@/data/courses";
 import { getCatalog } from "@/lib/catalog/catalog";
+import Banners from "@/components/Banners";
 import { ChevronRight, Calendar } from "lucide-react";
 import SpotlightCard from "@/components/SpotlightCard";
 
@@ -22,6 +23,8 @@ export default async function CoursesPage() {
         <p className="text-xl text-stone-400 max-w-2xl text-center mb-16">
           Browse my live cohorts and self-paced programs. Master the skills needed to lead in 2026.
         </p>
+
+        <div className="w-full max-w-5xl"><Banners placement="courses" /></div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl">
           {catalog.filter((course) => !isQaFixture(course.slug) && course.listed !== false).map((course) => (

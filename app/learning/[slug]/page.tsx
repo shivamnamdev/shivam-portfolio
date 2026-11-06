@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useUser, UserButton } from '@clerk/nextjs';
 import Navbar from '@/components/Navbar';
+import Banners from '@/components/Banners';
 
 declare global {
   interface Window {
@@ -1479,7 +1480,7 @@ sys.settrace(_trace_calls)
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-[#0d1117] text-white font-sans">
-      
+      <Banners placement="learning" />
       <header className="z-50 flex h-16 shrink-0 items-center justify-between border-b border-white/10 bg-[#161b22] px-3 md:px-4">
         <div className="flex items-center gap-3">
           <Link href="/learning" className="flex items-center gap-2 text-sm font-bold text-stone-400 transition-colors hover:text-amber-500">

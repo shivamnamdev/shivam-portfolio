@@ -3,6 +3,7 @@ import { Webhook } from 'svix';
 import { headers } from 'next/headers';
 import { WebhookEvent } from '@clerk/nextjs/server';
 import nodemailer from 'nodemailer';
+import { savedMail } from '@/lib/catalog/engagement';
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { escapeHtml } from '@/lib/escapeHtml';
@@ -71,7 +72,11 @@ export async function POST(req: Request) {
           auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
         });
 
-        const studentMailOptions = {
+        // A template saved in the admin portal replaces today's welcome mail (PORTAL_ENGAGEMENT=database and a saved 'welcome'); otherwise nothing changes.
+        const customWelcome = await savedMail("welcome", { name: firstName, course: "Shivam Academy" });
+        const studentMailOptions = customWelcome ? {
+          from: `Shivam Academy <${process.env.GMAIL_USER}>`, to: email, subject: customWelcome.subject, text: customWelcome.text, html: customWelcome.html,
+        } : {
           from: `Shivam Academy <${process.env.GMAIL_USER}>`,
           to: email,
           subject: `Welcome to Shivam Academy! 🚀`,
