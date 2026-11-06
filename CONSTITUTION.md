@@ -148,4 +148,5 @@ Append one line per significant change to architecture, schema, or integrations:
 - 2026-11-06 — Phase 4f(c) Learners directory screen (`GET /learners` gains joinedAt, enrolments, status, paging) and retirement of the classic admin page (`/admin` redirects to the portal; PRD 08 specs mapped in section 12) — no SQL, no new package
 - 2026-11-06 — Phase 5 Blueprint approved (learner portal reads the database behind four per-slice flags; 5a catalog first, payments last) — `docs/architecture/admin-portal-phase5-learner-portal.md`
 - 2026-11-06 — Phase 5a catalog: `PORTAL_CATALOG` flag, `lib/catalog`, course list and sales pages read published portal content (price and closed flag follow the payment source until 5d); `enroll-free` reply carries the WhatsApp link — no SQL, no new package
+- 2026-11-06 — Phase 5b learning content: `PORTAL_LEARNING` flag, routes `/api/learning/content`, `/links`, `/my-courses`; lesson list and private links leave the page bundles (access checked on the server, SCP-45) — no SQL, no new package
 

@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { BookOpen, Video, FileText, CheckCircle2, PlayCircle, Loader2, Flame, Trophy } from 'lucide-react';
-import { activeCourses } from '@/data/courses';
 import SpotlightCard from '@/components/SpotlightCard';
 
 export default function LearningDashboard() {
@@ -24,13 +23,9 @@ export default function LearningDashboard() {
     async function fetchDashboardData() {
       if (!isLoaded || !user) return;
       try {
-        const enrollRes = await fetch('/api/learning/enrollments');
+        const enrollRes = await fetch('/api/learning/my-courses');
         const enrollData = await enrollRes.json();
-        if (enrollData.success) {
-          const purchasedSlugs: string[] = enrollData.slugs;
-          const myCourses = activeCourses.filter(c => purchasedSlugs.includes(c.slug));
-          setEnrolledCourses(myCourses);
-        }
+        if (enrollData.success) setEnrolledCourses(enrollData.courses);
 
         // Streak and stats live on the server (the browser has no access to the stats table).
         const statsRes = await fetch('/api/learning/stats', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }) });

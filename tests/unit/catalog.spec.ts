@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { chooseSource, readWithFallback } from '../../lib/catalog/source';
 import { CATALOG_TAG, touchesCatalog } from '../../lib/catalog/tags';
-import { PITCH_KEYS, buildCourse, formatMoney, pricingFromCohort, savingsText, whatsappNumber, FALLBACK_WHATSAPP_NUMBER, type CohortView, type CourseView, type PricingView } from '../../lib/catalog/mapping';
+import { PITCH_KEYS, PRIVATE_FIELDS, withoutPrivateLinks, buildCourse, formatMoney, pricingFromCohort, savingsText, whatsappNumber, FALLBACK_WHATSAPP_NUMBER, type CohortView, type CourseView, type PricingView } from '../../lib/catalog/mapping';
 import { activeCourses, isQaFixture } from '../../data/courses';
+import { courseCurriculumMap } from '../../data/learning-content';
+import { lessonIn } from '../../lib/catalog/lessons';
 
 // Unit level (phase 5, slice 5a): the source flag, the cache tag rule and the mapping from the portal's documents to the sales-page object.
 // No database, no network. The last test compares what the portal would build from today's data files with the files themselves (drift guard).
@@ -89,6 +91,18 @@ test.describe('Catalog source and mapping @regression', () => {
     expect(buildCourse(cohort(), { slug: 'python', title: 'Python' }, 'database', undefined).slug).toBe('py-1');   // a course with no pitch at all
   });
 
+  test('[CAT-UNIT-MAP-007] a page object never carries the private links, whichever source it came from; everything else is kept', () => {
+    const entry = { id: 'a', slug: 'a', title: 'T', liveLink: 'https://meet.google.com/x', whatsappLink: 'https://chat.whatsapp.com/x', modules: [1] };
+    const clean = withoutPrivateLinks(entry);
+    expect(clean).toEqual({ id: 'a', slug: 'a', title: 'T', modules: [1] });
+    for (const k of PRIVATE_FIELDS) expect(Object.keys(clean), k).not.toContain(k);
+    expect(entry.liveLink).toBe('https://meet.google.com/x');   // the original object is not changed
+    expect(withoutPrivateLinks({ title: 'no links here' })).toEqual({ title: 'no links here' });
+    const real = (activeCourses as unknown as Array<Record<string, unknown>>).find((c) => c.whatsappLink);
+    expect(real, 'at least one file course has a private link, so this test is not vacuous').toBeTruthy();
+    expect(JSON.stringify(withoutPrivateLinks(real!))).not.toMatch(/chat\.whatsapp|meet\.google/);
+  });
+
   test('[CAT-UNIT-MAP-004] price and open or closed follow the payment source: files price a cohort that exists in the files; a portal-only cohort is closed until the database prices orders', () => {
     const inFiles = buildCourse(cohort(), course(), 'files', fileEntry());
     expect(inFiles.pricing.inr.currentPrice).toBe('₹1,499');          // the file's price, not the portal's ₹1,999
@@ -114,6 +128,31 @@ test.describe('Catalog source and mapping @regression', () => {
     expect(whatsappNumber('12345')).toBeNull();
     expect(whatsappNumber('1'.repeat(16))).toBeNull();
     expect(FALLBACK_WHATSAPP_NUMBER).toBe('917057034840');
+  });
+
+  test('[CAT-UNIT-LES-001] the lesson lookup behind the share page names the same course and title as the original code did, for every lesson in the data files; an unknown id is nothing', () => {
+    // the original lookup, copied verbatim, as the reference
+    const original = (videoId: string) => {
+      for (const slug in courseCurriculumMap) {
+        for (const module of courseCurriculumMap[slug]) {
+          const vIndex = module.videoIds.indexOf(videoId);
+          if (vIndex !== -1) {
+            let title = `Lesson ${vIndex + 1}`;
+            if (module.githubAssignments && module.githubAssignments[videoId]) title = module.githubAssignments[videoId].title;
+            return { slug, title };
+          }
+        }
+      }
+      return null;
+    };
+    const layouts = Object.keys(courseCurriculumMap).map((slug) => ({ slug, layout: courseCurriculumMap[slug] as never }));
+    let checked = 0;
+    for (const slug in courseCurriculumMap) for (const m of courseCurriculumMap[slug]) for (const id of m.videoIds as string[]) { expect(lessonIn(layouts, id), id).toEqual(original(id)); checked++; }
+    expect(checked).toBeGreaterThan(20);
+    expect(lessonIn(layouts, 'no-such-video')).toBeNull();
+    expect(lessonIn([], 'x')).toBeNull();
+    expect(lessonIn([{ slug: 'a', layout: [{ moduleTitle: 'M', videoIds: ['v1', 'v2'], githubAssignments: { v2: { title: 'Do it' } } }] }], 'v2')).toEqual({ slug: 'a', title: 'Do it' });
+    expect(lessonIn([{ slug: 'a', layout: [{ moduleTitle: 'M', videoIds: ['v1', 'v2'] }] }], 'v2')).toEqual({ slug: 'a', title: 'Lesson 2' });
   });
 
   test('[CAT-UNIT-DRIFT-001] what the portal would build from every real course in the data files equals the files: sales blocks, texts and price strings (links are not carried)', () => {

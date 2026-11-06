@@ -32,6 +32,7 @@ A flag set to `database` that **cannot read its rows** (error, or nothing publis
 ### 5b Learning content and private links (SCP-45)
 - The learning page (1,977 lines, client) receives the **published curriculum** as a prop from a small server wrapper instead of importing `courseCurriculumMap`; the same conversion (`toLegacy`) already used by the admin import keeps the shape identical. `app/share/[videoId]`, `lib/certificateEligibility.ts` and the admin progress totals use the same catalog reader.
 - **Links after the access check:** `liveLink` and `whatsappLink` leave the page bundles. New `GET /api/learning/links/{slug}` returns them only to a signed-in learner enrolled in that cohort (or the admin); `/live/{slug}` and the learning page fetch it after load; the payment success reply keeps returning the WhatsApp link to the buyer.
+- **Refinements made while building (2026-11-06):** the lesson page, live lobby and dashboard fetch from three small routes (`/api/learning/content/{slug}`, `/links/{slug}`, `/my-courses`) instead of receiving props from a server wrapper: the page body is not touched except its data source. The routes use the existing `hasCourseAccess` (enrolled or admin). Sales-page props carry no link in either source. A cohort's lessons and links stay available to its enrolled learners after the cohort is archived (only the published curriculum counts, not the cohort's status).
 - Assignment fields marked protected (`isExam`, `serverGraded`, `expectedOutcomeUrl`) stay server-side exactly as today.
 
 ### 5c Banners, notifications, templates

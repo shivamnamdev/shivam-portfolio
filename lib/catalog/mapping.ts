@@ -73,6 +73,13 @@ export function buildCourse(cohort: CohortView, course: CourseView, priceFrom: S
   };
 }
 
+// The private fields a page object must never carry (links go through the access-checked route /api/learning/links/{slug}).
+export const PRIVATE_FIELDS = ["liveLink", "whatsappLink"] as const;
+export function withoutPrivateLinks<T extends Record<string, unknown>>(entry: T): Omit<T, (typeof PRIVATE_FIELDS)[number]> {
+  const { liveLink: _live, whatsappLink: _chat, ...rest } = entry;
+  return rest as never;
+}
+
 // Support phone for the "chat with us" button: digits only, with India's 91 added to a plain 10-digit number. null when there is nothing usable (empty, too short or long, or starting with 0).
 export const FALLBACK_WHATSAPP_NUMBER = "917057034840";
 export function whatsappNumber(phone: string | null | undefined): string | null {

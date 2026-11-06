@@ -13,8 +13,6 @@ declare global {
 import Footer from '@/components/Footer';
 import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, Code2, BookOpen, Download, TerminalSquare, Award, FileCheck, Eye, RefreshCw, X, Plus, FileText, ThumbsUp, Share2 } from 'lucide-react';
 import Link from 'next/link';
-import { courseCurriculumMap } from '@/data/learning-content';
-import { activeCourses } from '@/data/courses';
 import Editor from '@monaco-editor/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GitGraphVisualizer from '@/components/GitGraphVisualizer';
@@ -176,7 +174,8 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   const [pyodide, setPyodide] = useState<any>(null);
   const [isPyodideLoading, setIsPyodideLoading] = useState(true);
 
-  const courseDetails = activeCourses.find(c => c.slug === params.slug);
+  // The title and whether a live class exists come from the server with the lessons (the live link itself never reaches this page).
+  const [courseDetails, setCourseDetails] = useState<{ title: string; hasLiveLink: boolean } | null>(null);
   const activeAssignment = activeVideo?.githubAssignment;
   const activeLabType = activeAssignment?.labType === "git" ? "git" : "python";
   const isGitLab = activeLabType === "git";
@@ -540,7 +539,11 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     async function loadCourseData() {
       if (!isLoaded || !user?.id || isVerifying || !hasAccess) return;
       try {
-        const courseModules = courseCurriculumMap[params.slug] ||[];
+        const contentRes = await fetch(`/api/learning/content/${encodeURIComponent(params.slug)}`);
+        const content = await contentRes.json();
+        if (!content.success) throw new Error(content.error || 'Could not load the course');
+        setCourseDetails({ title: content.title, hasLiveLink: !!content.hasLiveLink });
+        const courseModules: any[] = content.modules || [];
         const allVideoIds = courseModules.flatMap(m => m.videoIds ||[]);
         const allItemIds = courseModules.flatMap(m => m.videoIds ||[]);
         
@@ -1655,7 +1658,7 @@ sys.settrace(_trace_calls)
                   <Clock size={40} className="text-amber-500" />
                 </div>
                 <h2 className="text-3xl font-black text-white mb-4">Live Classes Starting Soon</h2>
-                {courseDetails?.liveLink ? (
+                {courseDetails?.hasLiveLink ? (
                   <Link href={`/live/${params.slug}`} className="px-8 py-4 rounded-full bg-amber-500 text-stone-900 font-bold text-lg flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors shadow-lg mt-4">
                     <PlayCircle size={20} /> Enter Live Classroom
                   </Link>

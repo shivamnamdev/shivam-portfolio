@@ -5,8 +5,6 @@ import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import { Loader2, ChevronLeft, ShieldAlert, Video, ExternalLink, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
-import { activeCourses } from '@/data/courses';
-import { isAdminEmail } from '@/lib/admin';
 
 export default function LiveClassLobby({ params }: { params: { slug: string } }) {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -14,24 +12,20 @@ export default function LiveClassLobby({ params }: { params: { slug: string } })
   const [hasAccess, setHasAccess] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
 
-  const courseDetails = activeCourses.find(c => c.slug === params.slug);
+  // Title and live link come from the server after it has checked this learner is enrolled (the link is no longer bundled with the page).
+  const [courseDetails, setCourseDetails] = useState<{ title: string; liveLink: string } | null>(null);
 
   // Security Check: Ensure they bought the course!
   useEffect(() => {
     async function verifyAccess() {
       if (!isLoaded || !isSignedIn || !user) return;
       
-      // Admin backdoor access
-      if (isAdminEmail(user.primaryEmailAddress?.emailAddress)) {
-        setHasAccess(true);
-        setIsVerifying(false);
-        return;
-      }
-
       try {
-        const res = await fetch('/api/learning/enrollments');
+        // The server answers 200 for an enrolled learner (and the admin) and 403 otherwise; that is the access check.
+        const res = await fetch(`/api/learning/links/${encodeURIComponent(params.slug)}`);
         const data = await res.json();
-        if (data.success && data.slugs.includes(params.slug)) {
+        if (data.success) {
+          setCourseDetails({ title: data.title, liveLink: data.liveLink });
           setHasAccess(true);
         }
       } catch (err) {

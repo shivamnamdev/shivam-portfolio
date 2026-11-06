@@ -4,14 +4,16 @@
 // lesson that has an assignment.
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { courseCurriculumMap } from "@/data/learning-content";
+import { getLayout } from "@/lib/catalog/learning";
 
 export const CERTIFICATE_MIN_PERCENT = 80;
 
 export type Eligibility = { eligible: boolean; percent: number; examPassed: boolean; hasCourse: boolean };
 
-// Pure part: easy to unit-test.
-export function certificatePercent(slug: string, doneVideos: string[], doneAssignments: string[]): number {
-  const modules = (courseCurriculumMap[slug] ?? []) as Array<{ videoIds?: string[]; githubAssignments?: Record<string, unknown> }>;
+type Modules = Array<{ videoIds?: string[]; githubAssignments?: Record<string, unknown> }>;
+// Pure part: easy to unit-test. `layout` is the course's lessons (the data files unless the caller passes the portal's published curriculum).
+export function certificatePercent(slug: string, doneVideos: string[], doneAssignments: string[], layout?: Modules | null): number {
+  const modules = (layout ?? courseCurriculumMap[slug] ?? []) as Modules;
   const lessons = new Set(modules.flatMap(m => m.videoIds ?? []));
   const assignments = new Set(modules.flatMap(m => Object.keys(m.githubAssignments ?? {})).filter(id => lessons.has(id)));
   const total = lessons.size + assignments.size;
@@ -21,7 +23,8 @@ export function certificatePercent(slug: string, doneVideos: string[], doneAssig
 }
 
 export async function certificateEligibility(userId: string, slug: string): Promise<Eligibility> {
-  if (!courseCurriculumMap[slug]) return { eligible: false, percent: 0, examPassed: false, hasCourse: false };
+  const layout = await getLayout(slug);
+  if (!layout) return { eligible: false, percent: 0, examPassed: false, hasCourse: false };
   const [v, a, e] = await Promise.all([
     supabaseAdmin.from("video_progress").select("video_id").eq("user_id", userId).eq("course_slug", slug),
     supabaseAdmin.from("assignment_progress").select("video_id").eq("user_id", userId).eq("course_slug", slug),
@@ -30,7 +33,7 @@ export async function certificateEligibility(userId: string, slug: string): Prom
   if (v.error) throw v.error;
   if (a.error) throw a.error;
   if (e.error) throw e.error;
-  const percent = certificatePercent(slug, [...new Set((v.data ?? []).map(r => r.video_id as string))], [...new Set((a.data ?? []).map(r => r.video_id as string))]);
+  const percent = certificatePercent(slug, [...new Set((v.data ?? []).map(r => r.video_id as string))], [...new Set((a.data ?? []).map(r => r.video_id as string))], layout);
   const examPassed = !!e.data?.is_passed;
   return { eligible: percent >= CERTIFICATE_MIN_PERCENT && examPassed, percent, examPassed, hasCourse: true };
 }
