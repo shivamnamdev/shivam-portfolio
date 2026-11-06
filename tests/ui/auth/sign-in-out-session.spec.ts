@@ -167,10 +167,10 @@ test.describe('PRD01 Session persistence @regression', () => {
 
   test('[AUTH-SESS-005][AUTH-ADMIN-014] an admin session persists on /admin after a refresh', async ({ page }) => {
     await signInAs(page, AUTH.A1);
-    await page.goto('/admin');
-    await expect(page.getByText('Admin Command Center')).toBeVisible({ timeout: 25000 });
+    await page.goto('/admin');   // redirects to the admin portal overview
+    await expect(page.getByRole('heading', { name: 'Overview', level: 1 })).toBeVisible({ timeout: 25000 });
     await page.reload();
-    await expect(page.getByText('Admin Command Center')).toBeVisible({ timeout: 25000 });
+    await expect(page.getByRole('heading', { name: 'Overview', level: 1 })).toBeVisible({ timeout: 25000 });
   });
 
   test('[AUTH-SESS-010] reopening a protected URL in a new tab of the same browser keeps the session', async ({ context }) => {

@@ -41,7 +41,8 @@ test.describe('LRN learner routes @regression', () => {
     const h = { 'User-Agent': API_UA };
     for (const [m, p] of [['GET', `/api/learning/progress?courseSlug=${SLUG}`], ['GET', `/api/learning/social?videoId=${VIDEO}`], ['GET', '/api/learning/leaderboard'],
       ['POST', '/api/learning/complete-video'], ['POST', '/api/learning/submit-assignment'], ['POST', '/api/learning/exam-result'], ['POST', '/api/learning/exam-grade'],
-      ['POST', '/api/learning/comment'], ['POST', '/api/learning/like'], ['POST', '/api/learning/stats']]) {
+      ['POST', '/api/learning/comment'], ['POST', '/api/learning/like'], ['POST', '/api/learning/stats'],
+      ['GET', `/api/learning/content/${SLUG}`], ['GET', `/api/learning/links/${SLUG}`], ['GET', '/api/learning/my-courses']]) {
       const res = m === 'GET' ? await request.get(p, { headers: h }) : await request.post(p, { data: {}, headers: h });
       expect(res.status(), `${m} ${p}`).toBe(401);
     }

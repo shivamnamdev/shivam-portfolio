@@ -211,3 +211,75 @@ Blueprint (owner: "do it yourself" after the like-button PR merged): input `GET 
 
 - [x] 2026-11-02 server-side exam grading built on `feat/server-side-exam-grading`: `lib/examGraders.ts`, `lib/examWorker.mjs`, `lib/runExam.ts`, `app/api/learning/exam-grade`, page change, 10 new tests. 30 tests pass locally; `next build` traces Pyodide into the route.
 - [ ] Owner: open the PR, check the Vercel preview (cold start and memory of `/api/learning/exam-grade`), then merge. Follow-up task: rewrite the grader (it scores printed text and name checks, and shares one Python session with the learner).
+
+## 2026-11-04 · Admin portal and learner portal epic (Blueprint proposed, awaiting approval)
+Plan: `docs/architecture/admin-portal-plan.md` (branch `epic/admin-portal`). Phases: 0 Blueprint, 1 Admin API + Swagger, 2 Content API, 3 Engagement and operations API, 4 Admin portal UI, 5 Learner portal reads the database, 6 Hardening and cutover. Decisions D1 to D8 answered 2026-11-04 (section 11.1 of the plan); new questions Q1 to Q8 in 11.2. **Halt rule: no implementation code until the owner approves this Blueprint (Q8).**
+- [x] Owner answers D1 to D8; D7 = no new packages (hand-written validators and OpenAPI), swagger-ui-react upgrade only
+- [x] Coupons: three kinds (open, selected students, one-time), mandatory expiry; existing coupons kept aside
+- [x] Q7 approved 2026-11-04: a price or discount result above zero and below the payment minimum is refused at creation
+- [x] **Q8 Blueprint approved by the owner on 2026-11-04** (phases 0 to 6 as written in the plan, incl. three coupon kinds, no new packages)
+- [ ] Approval recorded here
+- [x] PRD 17 (admin API) case list written (`docs/testing/prd/17-admin-api.md`, 46 cases)
+- [ ] Jira tasks created per phase
+
+### Phase 1 progress (SCP-89, branch `admin-portal/p1-api-foundation`)
+- [x] Slice 1 (2026-11-04): SQL for the 4 tables (`docs/testing/sql/step7-admin-api-tables.sql`, **not run**), `lib/adminApi/` core (permissions, envelope, hand-written validators, payment minimum, API keys, guard, audit), middleware entry for `/api/admin/v1`, 9 unit cases passing.
+- [x] Owner ran step7 SQL on QA (2026-11-04).
+- [x] Slice 2 (2026-11-04): routes for courses (CRUD, publish, unpublish, archive, restore, duplicate), cohorts (single and plan pricing, links, open and close enrolment, status), coupons (everyone, selected students by e-mail, one-time; generate up to 200; list states; payment-minimum rule both ways), learners picker, audit (read only), API keys, OpenAPI 3 document and `/admin/api-docs`, contract test, write rate limit, redemption library for one-time codes. 47 PRD cases written; automated specs in `tests/api/admin-api-*.spec.ts`, `tests/db/admin-coupon-redemption.spec.ts`, `tests/unit/admin-api-core.spec.ts`.
+- [ ] Owner manual test (`docs/testing/admin-api-manual-guide.md`), PR, step7 SQL on production, then import script (after `course-cta-update-3`), then phase 2.
+
+
+### Phase 2 progress (Content API, branch `admin-portal/p2-content-api`)
+- [x] Blueprint approved by the owner 2026-11-04 (`docs/architecture/admin-portal-phase2-content-api.md`, recommended option on all five decisions). Keyed by cohort slug.
+- [x] Core library `lib/adminApi/curriculum.ts` + 17 unit tests (2026-11-04)
+- [x] Store helper, 11 routes, OpenAPI, 7 API tests, PRD 18 + cases, sample requests (2026-11-04). `npm run test:admin-api`: all pass
+- [ ] Owner review, PR into `epic/admin-portal`
+- [x] Curriculum import (2026-11-04): endpoint `POST /import/curriculum` (dry run default, owner only) instead of a script: the repo has no TypeScript runner. Courses, cohorts and coupons import waits for course-cta-update-3.
+
+### Phase 3 progress (Engagement and operations API, branch `admin-portal/p3-engagement-api`)
+- [x] Blueprint approved by the owner 2026-11-05 (`docs/architecture/admin-portal-phase3-engagement-api.md`, recommended option on all five decisions: three slices and three PRs, plain-text e-mail templates, immediate explicit e-mail sends only, four settings, revoking a paid enrolment refused unless `force` by the owner session).
+- [x] Slice 3a (2026-11-05): banners (CRUD, life cycle, `visibleBanners`), settings (4 keys, S2 rule), e-mail templates (plain text, safe render, preview); 20 unit and 8 API tests; PRD 19 and cases; OpenAPI. No SQL. Setting keys are kebab-case (`announcement-email-cap`, `daily-email-cap`, `support-phone`, `support-email`) because `content_docs.key` only allows lower case.
+- [x] Slice 3b code (2026-11-05): `lib/adminApi/notifications.ts` (pure rules), `notificationStore.ts`, 6 routes under `notifications/`, `rate_limit_take`, OpenAPI, PRD 19 section 6, 11 unit tests passing. `notifications:send` is owner only.
+- [ ] Owner runs `docs/testing/sql/step8-notifications.sql` on QA, then the 6 API tests (`AAPI-NTF-001` to `006`) run; manual real-send case `AAPI-NTF-M-001`
+- [x] Slice 3c code (2026-11-05, branch `admin-portal/p3c-operations-api`): `lib/adminApi/enrolments.ts` (pure rules), `enrolmentStore.ts`, routes `enrolments`, `enrolments/{id}`, `reports/{name}`, `exports/{file}`, OpenAPI, PRD 19 section 7, 9 unit and 7 API tests. No SQL. Decision (asked, answered): revoke protects everything the admin API did not grant itself (no `source` column), matched by the exact enrolment id in the grant audit entry.
+- [ ] Manual case `AAPI-ENR-M-001` (CSV in a spreadsheet)
+
+### Phase 4 progress (Admin portal UI, branch `admin-portal/p4-admin-ui`)
+- [x] Blueprint approved by the owner 2026-11-05 (`docs/architecture/admin-portal-phase4-admin-ui.md`; recommended option on all four decisions: five slices and five PRs, old `/admin` page kept until 4e, dark theme, admin-only read-only preview in 4c).
+- [x] Slice 4a code (2026-11-05): `lib/adminUi/{client,nav}.ts` (pure helpers), `components/admin/{AdminShell,ui,useAdminApi}`, server-guarded group `app/admin/(shell)/` with Overview, Audit log and API keys, the "Switch to admin portal" link in `Navbar` (closes SCP-41), 5 unit and 9 UI tests. The classic `/admin` page and its tests are untouched; its server guard comes with 4e. Step 8 SQL confirmed applied by the owner.
+- [x] Slice 4b code (2026-11-05): `lib/adminUi/forms.ts` (pure), `LifecycleBar`, `PricingEditor`, `useAdminList`, screens `courses`, `courses/{slug}`, `cohorts`, `cohorts/{slug}`; 9 unit and 9 UI tests; PRD 20 section 5. Course pitch is a JSON box for now. No SQL, no new package.
+- [x] Slice 4c code (2026-11-05): `lib/adminUi/curriculum.ts` (pure), `components/admin/curriculum/{useCurriculum,LessonPanel,OutlinePreview,ImportPanel}`, screens `curriculum` and `curriculum/{cohort}`; 8 unit and 8 UI tests; PRD 20 section 6. Layout and reorder (buttons, no package) chosen by the owner. The import "Apply" path is a manual case.
+- [x] Slice 4d-1 code (2026-11-06): `lib/adminUi/{coupons,settings}.ts` (pure), `components/admin/coupons/fields`, screens `coupons`, `coupons/{code}`, `settings`; 9 unit and 6 UI tests; PRD 20 section 7. 4d is delivered in two parts (owner decision). Found and fixed: JSON compared with a key order the database does not keep (coupons, cohort pricing, lesson resources).
+- [x] Slice 4d-2 code (2026-11-06): `lib/adminUi/engagement.ts` (pure), `components/admin/engagement/{BannerFields,SendEmailDialog}`, screens `banners`, `banners/{slug}`, `notifications`, `notifications/{id}`, `email-templates`, `email-templates/{key}`; 9 unit and 7 UI tests; PRD 20 section 8. The send dialog shows count, a sample of at most 5 and both caps and needs a tick; no e-mail is sent by any test.
+- [x] Slice 4e code (2026-11-06): `lib/adminUi/people.ts` (pure), `adminDownload` helper, screens `enrolments` and `reports`, nav Reports entry; 5 unit and 5 UI tests; PRD 20 section 9. Classic page features are not removed here (retired as a whole after 4f).
+- [ ] 4e follow-up: none. Next:, 4f (student progress and code submissions, added later at the owner's request; needs a small read-only API first; the classic `/admin` page stays until 4f is done)
+
+## 2026-11-06 Slice 4f Blueprint (PROPOSED, awaiting owner approval): student progress, code submissions, engagement
+
+**Owner decisions so far:** scope is three screens (progress, submissions, engagement) so the classic `/admin` page can be retired; code is returned only for one opened submission, never in a list, to the owner and admin keys only, and opening is not audited; at the end of 4f `/admin` becomes a redirect to `/admin/overview` and the PRD 08 specs that drive the classic page are retired or rewritten in the same change.
+
+1. **North Star:** an admin sees how each learner is doing (progress, submitted code, time spent) from the new portal, with the same numbers the classic page shows, and the classic page goes away.
+2. **Integrations:** Supabase only (service role, server side): `user_enrollments`, `video_progress`, `assignment_progress`, `user_stats`; Clerk for names and e-mail (display). No new keys, no SQL, no new package.
+3. **Source of truth:** the four tables above. Lesson totals per cohort come from the cohort's **published** curriculum document when it has one, otherwise from the static curriculum map in `data/` (what the classic page uses). If neither knows the cohort, totals and percent are `null` (shown as a dash), never guessed.
+4. **Delivery payload (read-only, admin API v1, all lists paged by cursor, `limit` 1 to 100):**
+   * `GET /progress?cohortSlug&userId&q` -> `{ items: [{ userId, name, email, cohortSlug, videosDone, totalVideos|null, assignmentsDone, totalAssignments|null, percent|null, lastActivityAt|null }], nextCursor }`. One row per enrolment. `percent = round((videosDone + assignmentsDone) / (totalVideos + totalAssignments) * 100)`, capped at 100, `null` when the total is unknown or 0.
+   * `GET /submissions?cohortSlug&userId&q` -> `{ items: [{ id, userId, name, email, cohortSlug, lessonId, lessonTitle, completedAt, codeLength }], nextCursor }`. **No code in a list.**
+   * `GET /submissions/{id}` -> the same fields plus `submittedCode` (text). Permission `submissions:read-code` (owner and admin keys; **not** staff keys). A staff key gets 403.
+   * `GET /engagement?q` -> `{ items: [{ userId, name, email, totalTimeSeconds, currentStreak, lastActiveDate }], nextCursor }`, most time first.
+   * Permissions: `progress:read` and `engagement:read` (read-only roles, so staff keys may read them), `submissions:read` (list, staff may read) and `submissions:read-code` (owner and admin keys). OpenAPI and the contract test are extended; PRD 19 gets a section for these routes.
+5. **Behavioural rules / Do Not:** read-only (no writes, no audit entries); the list routes never return code or any payment, token or link field (only the named columns are selected); `q` searches name and e-mail with the existing safe pattern; an unknown id is 404; counts are computed on the server by one pure function with unit tests (`lib/adminApi/progress.ts`): percent, lesson title lookup, totals source. The UI shows a lesson title, never a raw video id, and shows code in a read-only box (escaped, never as HTML).
+6. **UI (slice 4f, after the API):** screens `/admin/progress`, `/admin/submissions` (a "View code" dialog that loads the code on open, with a copy button), `/admin/engagement`; nav entries become ready. Then `/admin` redirects to `/admin/overview`, the "Learner CRM (classic)" nav entry is removed, and the classic page and its `dashboard-data` route are deleted only after the new screens cover every tab (the enrolment form, directory, progress, submissions, engagement).
+7. **Tests that ship with it:** unit (`tests/unit/admin-api-progress.spec.ts`: percent, totals source, title lookup, row shaping, permissions; `tests/unit/admin-ui-progress.spec.ts` for the screen helpers with drift guards); API (`tests/api/admin-api-progress.spec.ts`: lists, filters, paging, no code in a list, 403 for a staff key on code, 404 on a bad id, no stray columns); UI (`tests/ui/admin/admin-progress.spec.ts`). The classic-page specs (PRD 08) that cover things now in the new portal are mapped one by one (kept, rewritten against the new screen, or retired with a reason in `docs/testing`).
+8. **Order of work:** (a) API and its tests, shown to you; (b) the three screens, shown to you; (c) retire the classic page, separate commit. Each is committed only when you ask.
+- [x] Slice 4f(a) API (2026-11-06, Blueprint approved): `lib/adminApi/{progress,progressStore}.ts`, routes `progress`, `submissions`, `submissions/{id}`, `engagement`, 4 permissions, OpenAPI, PRD 19 section 8; 11 unit and 6 API tests passing. Next: 4f(b) screens, then 4f(c) retire the classic page.
+- [x] Slice 4f(b) screens (2026-11-06): `lib/adminUi/progressView.ts`, `components/admin/{useCohortSlugs,progress/CodeDialog}`, screens `progress`, `submissions`, `engagement`; all nav entries ready; 4 unit and 3 UI tests; PRD 20 section 10. Cohort filters now list cohorts that have enrolments (also on Enrolments). Next: 4f(c) retire the classic page.
+- [x] Slice 4f(c) (2026-11-06): Learners directory (`GET /learners` extended with joinedAt, enrolments, status and paging; screen `/admin/learners`), classic `/admin` page retired (redirect to `/admin/overview`, sidebar entry removed), PRD 08 specs retired or rewritten with a mapping (PRD 08 section 12). The routes `get-all-users`, `dashboard-data` and `admin/enroll` are kept for now (owner decision) and deleted in a later clean-up.
+
+## 2026-11-06 Phase 5 Blueprint (APPROVED 2026-11-06): the learner portal reads the database
+Full text: `docs/architecture/admin-portal-phase5-learner-portal.md`. Owner decisions given: one server flag per slice (`PORTAL_CATALOG`, `PORTAL_LEARNING`, `PORTAL_ENGAGEMENT`, `PORTAL_COUPONS`, default `files`, per-request fallback to the data files); non-payment slices first, payments (5d) after `course-cta-update-3` merges; the four old coupons are not imported (recreate what is needed before turning `PORTAL_COUPONS` on); the bell starts empty.
+- [x] 5a Catalog (2026-11-06, built, shown for review; see PRD 21): `lib/catalog` (server only), sales pages and home read published courses and cohorts without private links, support phone and e-mail from settings, tag revalidation.
+- [x] 5b Learning content and private links (2026-11-06, built, shown for review; see PRD 21 section 3): published curriculum into the learning, share and certificate code; `liveLink` and `whatsappLink` leave the client bundle and are served by `GET /api/learning/links/{slug}` after the enrolment check (SCP-45).
+- [x] 5c Banners, notification bell (2026-11-06, built, shown for review; see PRD 21 section 4) (`GET /api/learning/notifications`, `POST .../read`), e-mail templates in the mails; the unused `UrgencyBanner` is removed.
+- [ ] 5d Prices and coupons from the database with reservation and expiry (SCP-53), plans; after `course-cta-update-3`.
+Exit: the learner suites pass with every flag on `files` and on `database`; a bundle test shows no private link, coupon code or flag name in client JavaScript.
+

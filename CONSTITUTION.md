@@ -89,6 +89,7 @@ Invariants:
 - Escape/sanitize user input in HTML, emails, and share pages.
 - Never commit or push unless asked; never touch `.env*`, `agents/` submodule, or unrelated files.
 - **Never install anything without telling the owner first.** Before running `npm install`/`npm i`/`npx` of a package not already in `package.json`, `pip install`, `brew install`, or any tool/package/global/submodule download, stop and say what it is, why it is needed and what it changes (e.g. `package.json`, lock file); proceed only after the owner agrees. Lock-file repairs from the existing `package.json` (`npm ci`) are the only exception, and must still be reported.
+- **Unit tests ship with the code.** Every new or changed piece of logic (a `lib/` or `data/` function, validator, calculation, route handler rule) gets unit tests in `tests/unit/` in the same change, and they must pass before the work is called done or any later layer (routes, UI, integration tests) is built on top. Cover the happy path, the boundaries and the refusals. If something genuinely cannot be unit-tested (pure markup, a config value), say so in the summary and name what covers it instead.
 - Prefer small, reviewable diffs; no speculative abstractions.
 - Self-healing: when something fails, read the error, fix the cause, re-run the check, and log the failure and fix in `progress.md`. Do not retry blindly or paper over with try/catch.
 - Report faithfully: failing tests and skipped steps are stated plainly.
@@ -110,7 +111,7 @@ Invariants:
 - [ ] Blueprint approved (non-trivial tasks) and `docs/blast/` files updated
 - [ ] Data shapes defined and docs synced
 - [ ] Link verified for any external service
-- [ ] Logic lives in testable units; tests added/updated (`npm test` / Playwright per [tests/README.md](tests/README.md))
+- [ ] Logic lives in testable units; unit tests added/updated in `tests/unit/` and passing (§7), plus API/UI tests where relevant (`npm test` / Playwright per [tests/README.md](tests/README.md))
 - [ ] Type-check and lint pass
 - [ ] PRD §13 known issues checked, no regression
 - [ ] UI changes shown to the user
@@ -128,3 +129,25 @@ Append one line per significant change to architecture, schema, or integrations:
 - 2026-10-30 — Added PRD 08 (Admin Portal) and workbooks for PRDs 07 and 08 to docs/testing — all UI PRDs now have manual cases
 - 2026-11-03 — Added the "inform before installing" rule (§7) — a `--legacy-peer-deps` install broke the CI lock file
 - 2026-11-03 — Security response headers in `next.config.mjs` (CSP report-only) — PRD 16 SEC-HDR defects
+- 2026-11-04 — Admin portal epic plan added (docs/architecture/admin-portal-plan.md, branch epic/admin-portal) — proposed only, awaiting approval
+- 2026-11-04 — Admin portal Blueprint approved; PRD 17 (admin API) written — phase 1 starts
+- 2026-11-04 — Added the "unit tests ship with the code" rule (§7, §10) — owner wants unit-level certainty while building
+- 2026-11-04 — Phase 2 Content API (curriculum of a cohort in `content_docs`, no new table) — blueprint approved, built with unit tests
+- 2026-11-05 — Phase 3a Engagement API (banners, settings, e-mail templates in `content_docs`, no new table) — blueprint approved, built with unit tests
+- 2026-11-05 — Phase 3b notifications: tables `notifications`, `notification_reads` and function `rate_limit_take` (`docs/testing/sql/step8-notifications.sql`, not yet run); e-mail send is owner only and fails closed on the daily budget — blueprint approved
+- 2026-11-05 — Phase 3c enrolments, count-only reports and CSV export (no SQL; revoke protects non-admin-granted rows) — blueprint approved, built with unit tests
+- 2026-11-05 — Phase 4 Admin portal UI Blueprint approved (five slices); slice 4a shell, overview, audit log and API keys screens, portal toggle — no SQL, no new package
+- 2026-11-05 — Phase 4b courses and cohorts screens (pricing editor, life cycle, private links) — no SQL, no new package
+- 2026-11-05 — Phase 4c curriculum editor (modules, lessons, assignments, resources, publish, discard, outline preview, import helper) — no SQL, no new package
+- 2026-11-06 — Phase 4d-1 coupons (create, generate, change) and settings screens — no SQL, no new package
+- 2026-11-06 — Phase 4d-2 banners, notifications (explicit e-mail send dialog) and e-mail template screens — no SQL, no new package
+- 2026-11-06 — Phase 4e enrolments (grant, two-step remove, CSV downloads) and reports screens — no SQL, no new package
+- 2026-11-06 — Sign-ups report window raised from 90 to 365 days (screen offers 7, 30, 90, 180, 365; Clerk read cap 2,500 to 5,000 people) — owner request
+- 2026-11-06 — Phase 4f(a) read-only admin API for progress, submissions (code only per opened submission, owner and admin keys) and engagement — no SQL, no new package
+- 2026-11-06 — Phase 4f(b) student progress, code submissions (code opened one at a time, shown as text) and engagement screens — no SQL, no new package
+- 2026-11-06 — Phase 4f(c) Learners directory screen (`GET /learners` gains joinedAt, enrolments, status, paging) and retirement of the classic admin page (`/admin` redirects to the portal; PRD 08 specs mapped in section 12) — no SQL, no new package
+- 2026-11-06 — Phase 5 Blueprint approved (learner portal reads the database behind four per-slice flags; 5a catalog first, payments last) — `docs/architecture/admin-portal-phase5-learner-portal.md`
+- 2026-11-06 — Phase 5a catalog: `PORTAL_CATALOG` flag, `lib/catalog`, course list and sales pages read published portal content (price and closed flag follow the payment source until 5d); `enroll-free` reply carries the WhatsApp link — no SQL, no new package
+- 2026-11-06 — Phase 5b learning content: `PORTAL_LEARNING` flag, routes `/api/learning/content`, `/links`, `/my-courses`; lesson list and private links leave the page bundles (access checked on the server, SCP-45) — no SQL, no new package
+- 2026-11-06 — Phase 5c engagement: `PORTAL_ENGAGEMENT` flag, banners on the pages, the notification bell reads the portal's notifications with per-learner read state, saved e-mail templates replace today's mails only when saved — no SQL, no new package
+

@@ -95,7 +95,7 @@ test.describe('PRD06 student dashboard: enrolled learners @regression', () => {
 
   test('[DSH-LOB-001] lobby shows only a spinner while enrolments are being verified', async ({ page }) => {
     await signInAs(page, S2);
-    await slowRoute(page, '**/api/learning/enrollments', 2500);
+    await slowRoute(page, '**/api/learning/links/*', 2500);   // the lobby's access check is the links route now (it returns the link only to an enrolled learner)
     await page.goto(`/live/${COURSE.A}`);
     await expect(page.locator('.animate-spin').first()).toBeVisible();
     await expect(lobby(page)).toHaveCount(0);
@@ -105,7 +105,7 @@ test.describe('PRD06 student dashboard: enrolled learners @regression', () => {
 
   test('[DSH-LOB-011] a failed enrolment lookup shows Access Denied (documents R-SD-4)', async ({ page }) => {
     await signInAs(page, S2);
-    await failRoute(page, '**/api/learning/enrollments');
+    await failRoute(page, '**/api/learning/links/*');
     await page.goto(`/live/${COURSE.A}`);
     await expect(denied(page)).toBeVisible({ timeout: 25000 });
   });
@@ -119,7 +119,7 @@ test.describe('PRD06 student dashboard: enrolled learners @regression', () => {
 
   test('[DSH-STATE-001][DSH-STATE-002] loading state is a spinner, never "No courses yet!", and ends in the course list', async ({ page }) => {
     await signInAs(page, S2);
-    await slowRoute(page, '**/api/learning/enrollments', 2500);
+    await slowRoute(page, '**/api/learning/my-courses', 2500);   // the dashboard cards come from my-courses now
     await page.goto('/learning');
     await expect(page.getByText('Loading your dashboard...')).toBeVisible();
     await expect(emptyState(page)).toHaveCount(0);
@@ -130,7 +130,7 @@ test.describe('PRD06 student dashboard: enrolled learners @regression', () => {
   test('[DSH-ERR-001] a failed enrolment request tells the learner something went wrong instead of "No courses yet!" (SCP-46)', async ({ page }) => {
     test.fixme(true, 'SCP-46: dashboard shows the empty state when the enrolment request fails');
     await signInAs(page, S2);
-    await failRoute(page, '**/api/learning/enrollments');
+    await failRoute(page, '**/api/learning/my-courses');
     await page.goto('/learning');
     await expect(page.getByText('My Enrolled Courses')).toBeVisible({ timeout: 25000 });
     await expect(emptyState(page)).toHaveCount(0);

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { activeCourses } from '@/data/courses';
+import { getCourse, getSupport } from '@/lib/catalog/catalog';
 import { formatPrice, parsePrice } from '@/lib/pricing';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -15,12 +15,13 @@ import ActiveCohorts from "@/components/ActiveCohorts";
 import StickyEnrollBar from "@/components/StickyEnrollBar";
 import FAQ from "@/components/FAQ";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
+import Banners from "@/components/Banners";
 import SpotlightCard from '@/components/SpotlightCard';
 import { ChevronRight, Quote } from 'lucide-react';
 
-export default function CourseSalesPage({ params }: { params: { slug: string } }) {
-
-  const course = activeCourses.find((c) => c.slug === params.slug);
+export default async function CourseSalesPage({ params }: { params: { slug: string } }) {
+  const course = await getCourse(params.slug);
+  const support = await getSupport();
 
   if (!course) {
     notFound();
@@ -40,6 +41,7 @@ export default function CourseSalesPage({ params }: { params: { slug: string } }
 
       <main className="flex flex-col items-center max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 pb-24 md:pb-10 space-y-20 md:space-y-28 relative z-10">
 
+        <div className="w-full pt-6"><Banners placement="course-page" /></div>
         <HeroVSL course={course} />
         <InstructorStory />
         <PainPoints painPoints={course.painPoints} />
@@ -101,7 +103,7 @@ export default function CourseSalesPage({ params }: { params: { slug: string } }
       </main>
 
       <Footer />
-      <WhatsAppWidget topic={`the ${course.title.replace(/\s*\(Batch\s*\d+\)/i, '')}`} liftOnMobile={!course.enrollmentClosed} />
+      <WhatsAppWidget number={support.whatsappNumber} topic={`the ${course.title.replace(/\s*\(Batch\s*\d+\)/i, '')}`} liftOnMobile={!course.enrollmentClosed} />
       {!course.enrollmentClosed && <StickyEnrollBar targetId={enrollTarget} priceLabel={startingPrice} />}
     </div>
   );

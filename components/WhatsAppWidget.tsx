@@ -11,7 +11,7 @@ const WhatsAppIcon = () => (
 
 // `topic` personalises the bubble and the pre-filled message (e.g. the course title on sales pages).
 // `liftOnMobile` keeps the button clear of the mobile StickyEnrollBar on open course pages.
-export default function WhatsAppWidget({ topic = "the Python Cohort", liftOnMobile = false }: { topic?: string; liftOnMobile?: boolean }) {
+export default function WhatsAppWidget({ topic = "the Python Cohort", liftOnMobile = false, number = '917057034840' }: { topic?: string; liftOnMobile?: boolean; number?: string }) {
   const message = encodeURIComponent(`Hi Shivam, I have a question about ${topic}!`);
   const [showTooltip, setShowTooltip] = useState(true);
 
@@ -48,7 +48,7 @@ export default function WhatsAppWidget({ topic = "the Python Cohort", liftOnMobi
 
       {/* Floating Button */}
       <a 
-        href={`https://wa.me/917057034840?text=${message}`} 
+        href={`https://wa.me/${number}?text=${message}`} 
         target="_blank" 
         rel="noreferrer"
         onMouseEnter={() => setShowTooltip(true)}
