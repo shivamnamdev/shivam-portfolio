@@ -61,3 +61,22 @@ Screens: `/admin/curriculum` (every cohort with its curriculum, "Create curricul
 **UI (`tests/ui/admin/admin-curriculum.spec.ts`, 8 tests):** `ADMUI-CUR-001` to `008`. The course and cohort are made through the API and everything is named `qa-admui-cur...` and removed afterwards.
 **Not automated:** the visual look of the editor and a screen-reader pass (shown to the owner before the slice is finalised); the import "Apply" path (it changes real curricula, so it is a manual case).
 
+---
+
+## 7. Slice 4d-1: coupons and settings
+Screens: `/admin/coupons` (list, filters, "New coupon", "Generate one-time codes"), `/admin/coupons/{code}` (change, activate or deactivate, delete) and `/admin/settings` (the four site settings). Only `/api/admin/v1/coupons/**`, `/learners` (the picker) and `/settings/**` are called. 4d is delivered in two parts (owner decision, 2026-11-06): 4d-1 is this section, 4d-2 is banners, notifications and e-mail templates.
+
+**Rules under test:**
+* **Create:** the code is 4 to 40 letters, numbers, `-` or `_` (stored upper case); kind is *everyone* (optional total limit) or *selected students*; **every coupon needs an expiry in the future** (30 days ahead is pre-filled). Early hints list every problem; the server's refusals (taken code, minimum-price rule, unknown e-mail) come back inline.
+* **Discount:** percentage (above 0, up to 100) or fixed (INR, USD or both, above 0). The minimum-price rule against real cohort prices is the server's (a refusal is shown), not duplicated on screen.
+* **Selected students:** a pasted list (split on spaces, commas, semicolons and lines, lower-cased, de-duplicated, at most 200) plus a learner picker that searches signed-up users by name or e-mail and adds the address. Someone who has not signed up is named by the server.
+* **Works for:** tick cohorts and/or type plan ids; nothing means every cohort and plan.
+* **Generate:** 1 to 200 one-time codes in one call with an `Idempotency-Key` (a double submit returns the same batch); the codes are shown once for copying.
+* **Change:** only what changed is sent; a limit cannot be removed once set and a one-time code stays one use (the API rules, shown as such); the code, kind and scope are not editable. JSON is compared ignoring key order (the database returns its own order), so an unchanged coupon is "Nothing has changed", not a needless save.
+* **Used one-time code:** read-only, no form and no delete (the server refuses both). A used coupon of any kind can only be deactivated. Delete asks first.
+* **Settings:** four fixed settings with their defaults; a typed value is checked like the server (whole numbers in range; phone and e-mail formats); the announcement limit may equal but not exceed the daily limit (the Save button stays off and says why); the first save of a key needs no version, later saves carry `If-Match`; the two text settings can be cleared.
+
+**Unit (`tests/unit/admin-ui-coupons.spec.ts`, 9 tests; `admin-ui-forms.spec.ts` gains `ADMUI-UNIT-JSON-001`):** `ADMUI-UNIT-CPN-001` to `007`, `ADMUI-UNIT-SET-001` and `002`. They run the screen's output through the server's own validators (`couponCreateShape`, `generateShape`, `couponUpdateShape`, `checkSettingValue`, `assertSettingsConsistent`) so the hints cannot drift.
+**UI (`tests/ui/admin/admin-coupons-settings.spec.ts`, 6 tests):** `ADMUI-CPN-001` to `005`, `ADMUI-SET-001`. Coupons are named `QAADMUI...`; generated codes are removed by who made them and when; the QA settings are saved before and restored after.
+**Not automated:** the visual look (shown to the owner before the slice is finalised) and a real redemption at checkout (phase 5 switches the learner portal to these coupons).
+

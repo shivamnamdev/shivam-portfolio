@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {
-  LIFECYCLE, availableActions, cohortChanges, freeNotice, cohortToForm, emptyPlan, isSlug, isoToLocalInput, localInputToIso, parseMoney, parsePitch, pitchText, pricingHints, slugify,
+  LIFECYCLE, availableActions, canonicalJson, cohortChanges, freeNotice, sameJson, cohortToForm, emptyPlan, isSlug, isoToLocalInput, localInputToIso, parseMoney, parsePitch, pitchText, pricingHints, slugify,
   type CohortForm, type Pricing,
 } from '../../lib/adminUi/forms';
 import { COURSE_ACTIONS } from '../../lib/adminApi/courses';
@@ -101,5 +101,22 @@ test.describe('Admin UI forms @regression', () => {
     expect(freeNotice({ kind: 'single', inr: { amount: 999 }, usd: { amount: 0 } })).toMatch(/free/);
     expect(freeNotice(plans)).toBeNull();
     expect(freeNotice({ kind: 'plans', currency: 'INR', plans: [{ ...emptyPlan(1), id: 'gift' }, { ...emptyPlan(2), id: 'paid', price: { amount: 10 } }] })).toBe('Free to join: gift (price 0).');
+  });
+
+  test('[ADMUI-UNIT-JSON-001] comparing JSON ignores key order (the database returns its own order), but sees every real difference', () => {
+    expect(sameJson({ type: 'fixed', inr: 300 }, { inr: 300, type: 'fixed' })).toBe(true);
+    expect(sameJson({ a: { b: 1, c: [1, { y: 1, x: 2 }] } }, { a: { c: [1, { x: 2, y: 1 }], b: 1 } })).toBe(true);
+    expect(sameJson({ a: 1 }, { a: 2 })).toBe(false);
+    expect(sameJson([1, 2], [2, 1])).toBe(false);   // array order is real
+    expect(sameJson({ a: undefined, b: 1 }, { b: 1 })).toBe(true);   // an absent key equals an undefined one
+    expect(sameJson({ a: null }, {})).toBe(false);
+    expect(sameJson(undefined, undefined)).toBe(true);
+    expect(sameJson([], [])).toBe(true);
+    expect(canonicalJson({ b: 1, a: 2 })).toBe('{"a":2,"b":1}');
+    // the real cases: a price written by the database and the same price built by the form, and a resource list
+    const fromDb: Pricing = JSON.parse('{"inr":{"amount":1999,"original":2499},"kind":"single"}');
+    const fromForm: Pricing = { kind: 'single', inr: { original: 2499, amount: 1999 } };
+    expect(cohortChanges(cohortToForm({ title: 'T', pricing: fromDb }), { ...cohortToForm({ title: 'T', pricing: fromDb }), pricing: fromForm })).toEqual({});
+    expect(sameJson([{ title: 'A', type: 'PDF', url: 'https://github.com/x' }], [{ title: 'A', url: 'https://github.com/x', type: 'PDF' }])).toBe(true);
   });
 });

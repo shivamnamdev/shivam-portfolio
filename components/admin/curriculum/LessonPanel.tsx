@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { ErrorNote, buttonClass, ghostButtonClass, inputClass } from '../ui';
 import type { Failure } from '@/lib/adminUi/client';
+import { sameJson } from '@/lib/adminUi/forms';
 import {
   LIMITS, assignmentProblems, assignmentToForm, cleanResources, formToAssignment, lessonLabel, resourceProblems, urlFieldsFor, type AssignmentForm, type Lesson, type Resource,
 } from '@/lib/adminUi/curriculum';
@@ -30,9 +31,9 @@ export default function LessonPanel({ lesson, busy, failure, onSave, onClose }: 
     if (description.trim() && description.trim() !== (lesson.description ?? '')) patch.description = description.trim();
     const was = lesson.assignment;
     if (!hasAssignment && was) patch.assignment = null;
-    else if (hasAssignment) { const next = formToAssignment(form); const prev = was ? formToAssignment(assignmentToForm(was)) : null; if (JSON.stringify(next) !== JSON.stringify(prev)) patch.assignment = next; }
+    else if (hasAssignment) { const next = formToAssignment(form); const prev = was ? formToAssignment(assignmentToForm(was)) : null; if (!sameJson(next, prev)) patch.assignment = next; }
     const nextRes = cleanResources(resources);
-    if (JSON.stringify(nextRes) !== JSON.stringify(lesson.resources ?? [])) patch.resources = nextRes;
+    if (!sameJson(nextRes, lesson.resources ?? [])) patch.resources = nextRes;
     if (!Object.keys(patch).length) { onClose(); return; }
     onSave(patch);
   }

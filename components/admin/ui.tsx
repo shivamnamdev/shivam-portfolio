@@ -15,6 +15,7 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
 
 const BADGE: Record<string, string> = {
   draft: 'bg-stone-500/20 text-stone-300', published: 'bg-emerald-500/20 text-emerald-300', archived: 'bg-stone-700/40 text-stone-400',
+  unused: 'bg-emerald-500/20 text-emerald-300', reserved: 'bg-sky-500/20 text-sky-300', redeemed: 'bg-purple-500/20 text-purple-300', expired: 'bg-red-500/20 text-red-300', voided: 'bg-stone-700/40 text-stone-400', inactive: 'bg-stone-700/40 text-stone-400', everyone: 'bg-sky-500/20 text-sky-300', selected: 'bg-purple-500/20 text-purple-300', 'single-use': 'bg-amber-500/20 text-amber-300',
   admin: 'bg-amber-500/20 text-amber-300', staff: 'bg-sky-500/20 text-sky-300', active: 'bg-emerald-500/20 text-emerald-300', revoked: 'bg-red-500/20 text-red-300',
 };
 export function StatusBadge({ value }: { value: string }) {

@@ -74,7 +74,14 @@ export function pricingHints(p: Pricing): string[] {
 }
 
 export const emptyPlan = (n: number): Plan => ({ id: `plan-${n}`, name: "", price: { amount: 0 }, features: [] });
-export const samePricing = (a: Pricing | undefined, b: Pricing | undefined): boolean => JSON.stringify(a) === JSON.stringify(b);
+// Equality that ignores the order of object keys (the database hands JSON back in its own key order, not the order a form builds it in).
+export function canonicalJson(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(canonicalJson).join(",")}]`;
+  if (v && typeof v === "object") return `{${Object.keys(v as object).sort().filter((k) => (v as Record<string, unknown>)[k] !== undefined).map((k) => `${JSON.stringify(k)}:${canonicalJson((v as Record<string, unknown>)[k])}`).join(",")}}`;
+  return JSON.stringify(v) ?? "null";
+}
+export const sameJson = (a: unknown, b: unknown): boolean => canonicalJson(a) === canonicalJson(b);
+export const samePricing = (a: Pricing | undefined, b: Pricing | undefined): boolean => sameJson(a, b);
 
 // ---- cohort form -------------------------------------------------------------------------------------------------------------------------
 export type CohortForm = {
