@@ -43,4 +43,4 @@ export const EXPORT_FILES = ["enrolments.csv", "learners.csv"] as const;
 export type ExportFile = (typeof EXPORT_FILES)[number];
 // enrolments.csv -> enrolments-2026-11-06.csv (the day the file was made, in UTC)
 export const exportFilename = (file: ExportFile, now: Date): string => file.replace(/\.csv$/, `-${now.toISOString().slice(0, 10)}.csv`);
-export const SIGNUP_WINDOWS = [7, 30, 90] as const;
+export const SIGNUP_WINDOWS = [7, 30, 90, 180, 365] as const;

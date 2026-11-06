@@ -91,7 +91,7 @@ export const REPORTS = ["enrolments-per-cohort", "signups-per-day", "coupon-usag
 export type ReportName = (typeof REPORTS)[number];
 export const isReport = (s: string): s is ReportName => (REPORTS as readonly string[]).includes(s);
 
-export const REPORT_DAYS = { min: 1, max: 90, default: 30 };
+export const REPORT_DAYS = { min: 1, max: 365, default: 30 };
 
 export function countByCohort(slugs: string[]): Array<{ cohortSlug: string; enrolments: number }> {
   const m = new Map<string, number>();

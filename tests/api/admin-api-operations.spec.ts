@@ -122,7 +122,9 @@ test.describe('AAPI operations @regression', () => {
     for (const body of [per, days, coupons]) expect(JSON.stringify(body)).not.toContain(LEARNER);
     expect((await read('learners')).status()).toBe(404);
     expect((await read('signups-per-day?days=0')).status()).toBe(400);
-    expect((await read('signups-per-day?days=91')).status()).toBe(400);
+    expect((await read('signups-per-day?days=366')).status()).toBe(400);
+    expect((await read('signups-per-day?days=365')).status()).toBe(200);
+    expect((await read('signups-per-day?days=91')).status()).toBe(200);   // longer windows are allowed since 2026-11-06 (180 days and a year)
   });
 
   test('[AAPI-CSV-001] the enrolments export is a CSV attachment, neutralises a hostile name, is audited, and is refused to a staff key', async ({ request }) => {

@@ -118,7 +118,9 @@ test.describe('AAPI operations @regression', () => {
     expect(reportDays(null)).toBe(30);
     expect(reportDays('7')).toBe(7);
     expect(reportDays('90')).toBe(90);
-    for (const bad of ['0', '91', '2.5', 'abc', '-1']) expect(refusal(() => reportDays(bad)).status, bad).toBe(400);
+    expect(reportDays('180')).toBe(180);
+    expect(reportDays('365')).toBe(365);
+    for (const bad of ['0', '366', '2.5', 'abc', '-1']) expect(refusal(() => reportDays(bad)).status, bad).toBe(400);
   });
 
   test('[AAPI-UNIT-PERM-004] permissions: staff keys read enrolments and counts but cannot change them or export; admin keys can export; only the owner is sure to force', () => {

@@ -48,6 +48,7 @@ test.describe('Admin UI people helpers @regression', () => {
 
   test('[ADMUI-UNIT-PPL-004] export names and windows equal the server\'s; the file name carries the UTC day', () => {
     expect([...EXPORT_FILES]).toEqual([...EXPORTS]);
+    expect([...SIGNUP_WINDOWS]).toEqual([7, 30, 90, 180, 365]);
     for (const d of SIGNUP_WINDOWS) expect(d >= REPORT_DAYS.min && d <= REPORT_DAYS.max, String(d)).toBe(true);
     expect(exportFilename('enrolments.csv', new Date('2026-11-06T23:59:00Z'))).toBe('enrolments-2026-11-06.csv');
     expect(exportFilename('learners.csv', new Date('2026-01-02T00:00:00Z'))).toBe('learners-2026-01-02.csv');

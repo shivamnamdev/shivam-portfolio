@@ -55,11 +55,30 @@ No SQL. Enrolments live in the existing `user_enrollments`; reports read it, `co
 * **O1 Grant:** `POST /enrolments` with `cohortSlug` and exactly one of `userId` or `email` (signed-up users only; unknown id 404, unknown e-mail 400). The cohort must exist (an admin-API cohort or a course of the older static list; otherwise 422). A `planId` must be a plan of that cohort (400); recording it needs the `user_enrollments.plan_id` column (a clear 422 where it is missing, as on production today). Reuses `grantEnrollment` (idempotent, activity log). Already enrolled is 409. Audited as `grant`.
 * **O1 Revoke:** `DELETE /enrolments/{id}`. `user_enrollments` has no "source" column, so **everything the admin API did not grant itself (paid, coupon, older manual) is protected**: refused with 409 unless `?force=true` from the **owner session** (an admin key with `force` gets 403). An enrolment counts as admin-granted only when a `grant` audit entry names that exact row id, so a later purchase of the same course never inherits an old grant. Only the enrolment row is removed; progress and submissions stay. Audited as `revoke` with `forced`.
 * **O2 CSV:** `GET /exports/enrolments.csv` and `/exports/learners.csv`. Owner or admin key only (a staff key is 403), counted against the write limit, every export audited (`export`, with the row count). Every cell is quoted; a text cell starting with `=`, `+`, `-`, `@`, tab or CR gets a leading `'` so it cannot run as a spreadsheet formula. Fixed columns; no payment ids, tokens or private links are ever selected. `Cache-Control: no-store`, `Content-Disposition: attachment`. At most 20,000 rows (`X-Export-Truncated: true` if cut).
-* **O3 Reports:** `GET /reports/{enrolments-per-cohort|signups-per-day|coupon-usage}`: counts only, no name, e-mail or id of a person. `signups-per-day` takes `days` (1 to 90, default 30; zero-filled UTC days, from Clerk, at most 2,500 people read). `truncated` says when data was cut at a safe limit.
+* **O3 Reports:** `GET /reports/{enrolments-per-cohort|signups-per-day|coupon-usage}`: counts only, no name, e-mail or id of a person. `signups-per-day` takes `days` (1 to 365, default 30; zero-filled UTC days, from Clerk, at most 5,000 people read; the screen offers 7, 30, 90, 180 and 365). `truncated` says when data was cut at a safe limit.
 **Decision recorded:** protect-all-but-admin-granted for revoke (chosen over adding a `source` column, which would touch the payment routes and need SQL). A `source` column can replace the audit lookup later without changing the endpoint.
 
 **Unit (`tests/unit/admin-api-operations.spec.ts`, 9 tests):** `AAPI-UNIT-ENR-001` to `003`, `AAPI-UNIT-CSV-001` to `003`, `AAPI-UNIT-RPT-001` and `002`, `AAPI-UNIT-PERM-004`.
 **API (QA, `tests/api/admin-api-operations.spec.ts`, 7 tests):** `AAPI-ENR-001` to `004`, `AAPI-RPT-001`, `AAPI-CSV-001` and `002`. They use the edu persona and remove every row they make.
 Permissions: `enrolments:read|write`, `reports:read`, `exports:run` (owner and admin keys have all; a staff key reads enrolments and reports only).
 Endpoints: `enrolments` (GET with `cohortSlug`, `userId`, `q`, `cursor`; POST), `enrolments/{id}` (DELETE), `reports/{name}` (GET), `exports/{file}` (GET).
+
+## 8. Slice 4f: progress, submissions and engagement (read only)
+No SQL, no writes, no audit entries. Reads `user_enrollments`, `video_progress`, `assignment_progress`, `user_stats` (service role, only the named columns) and Clerk (display names). Blueprint approved 2026-11-06 (`docs/blast/task_plan.md`).
+
+**Routes** (all `GET`, cursor paging, `limit` 1 to 100):
+* `/progress?cohortSlug&userId&q` -> `{ userId, name, email, cohortSlug, videosDone, totalVideos|null, assignmentsDone, totalAssignments|null, percent|null, lastActivityAt|null }` per enrolment, newest enrolment first. Permission `progress:read`.
+* `/submissions?cohortSlug&userId&q` -> `{ id, userId, name, email, cohortSlug, lessonId, lessonTitle, completedAt, codeLength }`, newest first. **The code is never in a list.** Permission `submissions:read`.
+* `/submissions/{id}` -> the same plus `submittedCode`. Permission `submissions:read-code`: owner and admin keys; **a staff key gets 403**. Opening is not audited (owner decision). A bad or unknown id is 404.
+* `/engagement?q` -> `{ userId, name, email, totalTimeSeconds, currentStreak, lastActiveDate }`, most time first; the cursor is a position (`"1"`, `"2"`...). Permission `engagement:read`.
+
+**Rules under test:**
+* **Totals:** a cohort's lessons are its **published** curriculum when it has one, otherwise the older static list in `data/learning-content.ts`, otherwise unknown. Totals count every lesson (videos) and every lesson with an assignment. `percent = round((videosDone + assignmentsDone) / (videos + assignments) * 100)`, never above 100, `null` when the total is unknown or zero: nothing is guessed.
+* **Lesson title:** the assignment's title, else "<module> (Lesson n)", else "Unknown lesson".
+* **Names:** the sign-in provider's name and e-mail first, then what the row stored, then "Unknown student".
+* **Filters:** `cohortSlug` is a slug and `userId` a Clerk id (400 otherwise); `q` searches name and e-mail (submissions and engagement look the people up in Clerk, at most 50).
+* **Leaks:** no code, payment id, token or link field in any list; a staff key cannot read code.
+
+**Unit (`tests/unit/admin-api-progress.spec.ts`, 11 tests):** `AAPI-UNIT-PRG-001` to `010` and `AAPI-UNIT-PERM-005`.
+**API (`tests/api/admin-api-progress.spec.ts`, 6 tests):** `AAPI-PRG-001` to `006`. A published curriculum and progress rows are made under `qa-aapi-pg-*` cohorts for the edu persona; the persona's `user_stats` row is saved and restored.
 

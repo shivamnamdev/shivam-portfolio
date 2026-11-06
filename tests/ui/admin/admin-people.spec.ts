@@ -130,6 +130,11 @@ test.describe('ADMUI enrolments and reports @regression', () => {
     await expect(page.getByTestId('signup-bars').locator('div')).toHaveCount(30);
     await page.getByLabel('Window').selectOption('7');
     await expect(page.getByTestId('signup-bars').locator('div')).toHaveCount(7, { timeout: 30000 });
+    await page.getByLabel('Window').selectOption('180');
+    await expect(page.getByTestId('signup-bars').locator('div')).toHaveCount(180, { timeout: 30000 });
+    await page.getByLabel('Window').selectOption('365');
+    await expect(page.getByTestId('signup-bars').locator('div')).toHaveCount(365, { timeout: 30000 });
+    await expect(page.getByTestId('signup-bars')).toHaveAttribute('aria-label', /last 365 days/);
     await expect(page.getByRole('heading', { name: 'Coupon usage' })).toBeVisible();
     const text = (await page.locator('section').allInnerTexts()).join('\n');   // the three report cards (the sidebar shows who is signed in)
     expect(text).toContain('Enrolments per cohort');

@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { adminDownload, adminFetch, useAdminGet, useAdminList } from '@/components/admin/useAdminApi';
+import { useCohortSlugs } from '@/components/admin/useCohortSlugs';
 import { LearnerPicker } from '@/components/admin/coupons/fields';
 import { ConfirmDialog, DataTable, ErrorNote, PageHeader, Spinner, buttonClass, ghostButtonClass, inputClass } from '@/components/admin/ui';
 import { emptyGrantForm, exportFilename, grantBody, grantProblems, needsForce, revokePath, type ExportFile, type GrantForm, type PlanLite } from '@/lib/adminUi/people';
@@ -13,6 +14,7 @@ const label = 'text-xs font-semibold text-stone-400';
 
 export default function EnrolmentsPage() {
   const cohorts = useAdminGet<{ items: CohortLite[] }>('/cohorts?limit=100');
+  const { slugs: cohortSlugs, reload: reloadSlugs } = useCohortSlugs();
   const [cohort, setCohort] = useState('');
   const [q, setQ] = useState('');
   const [appliedQ, setAppliedQ] = useState('');
@@ -39,13 +41,13 @@ export default function EnrolmentsPage() {
     setBusy(true); setFailure(null); setGranted(null);
     const r = await adminFetch<Enrolment>('/enrolments', { method: 'POST', body: grantBody(form) });
     setBusy(false);
-    if (r.ok) { setGranted(r.data); setForm({ ...emptyGrantForm(), cohortSlug: form.cohortSlug }); void list.reload(); } else setFailure(r.failure);
+    if (r.ok) { setGranted(r.data); setForm({ ...emptyGrantForm(), cohortSlug: form.cohortSlug }); void list.reload(); void reloadSlugs(); } else setFailure(r.failure);
   }
   async function doRemove(en: Enrolment, force: boolean) {
     setBusy(true); setRemoveFailure(null);
     const r = await adminFetch(revokePath(en.id, force), { method: 'DELETE' });
     setBusy(false);
-    if (r.ok) { setTarget(null); setForceFor(null); setUnderstood(false); setRemoved(`${en.name || en.email || en.userId} was removed from ${en.cohortSlug}`); void list.reload(); return; }
+    if (r.ok) { setTarget(null); setForceFor(null); setUnderstood(false); setRemoved(`${en.name || en.email || en.userId} was removed from ${en.cohortSlug}`); void list.reload(); void reloadSlugs(); return; }
     if (!force && needsForce(r.failure)) { setTarget(null); setForceFor(en); setUnderstood(false); return; }   // paid, coupon or older: the owner decides
     setRemoveFailure(r.failure);
   }
@@ -97,7 +99,7 @@ export default function EnrolmentsPage() {
 
       <form className="mb-4 flex flex-wrap items-end gap-3" aria-label="Filter enrolments" onSubmit={(e) => { e.preventDefault(); setAppliedQ(q); }}>
         <label className={label}>Search by name or e-mail<input value={q} maxLength={100} onChange={(e) => setQ(e.target.value)} className={`${inputClass} mt-1 font-normal`} /></label>
-        <label className={label}>Cohort<select value={cohort} onChange={(e) => setCohort(e.target.value)} className={`${inputClass} mt-1 font-normal`}><option value="">All</option>{(cohorts.data?.items ?? []).map((c) => <option key={c.slug} value={c.slug}>{c.slug}</option>)}</select></label>
+        <label className={label}>Cohort<select value={cohort} onChange={(e) => setCohort(e.target.value)} className={`${inputClass} mt-1 font-normal`}><option value="">All</option>{cohortSlugs.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
         <button type="submit" className={ghostButtonClass}>Search</button>
       </form>
       <ErrorNote failure={list.failure} />

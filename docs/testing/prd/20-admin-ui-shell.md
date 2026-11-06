@@ -101,10 +101,24 @@ Screens: `/admin/enrolments` (list, filters, "Grant access", remove, two CSV dow
 * **Grant:** a cohort plus the learner's e-mail (they must have signed up; a picker finds them by name or e-mail). A plan can be recorded only when the chosen cohort sells plans, and only one of its plans. Hints mirror the server's; a repeat grant comes back as an inline "already enrolled".
 * **Remove, two steps:** the first dialog names the learner and cohort and says progress is kept; it calls `DELETE` without `force`. Only a **409** (the server says the enrolment was not granted through the admin API, so it may be paid or from a coupon) opens the second, stronger dialog: it needs a tick ("I understand this learner may have paid") before "Remove anyway", which repeats the call with `?force=true` (owner session only; the server refuses it for any admin key). Any other failure is shown as it is. A forced removal is recorded in the audit log as forced.
 * **CSV downloads:** `enrolments.csv` and `learners.csv` are fetched with the session and saved as `enrolments-YYYY-MM-DD.csv` (UTC day). A failure shows the usual message; a cut file (20,000 rows) is said so. Cells are quoted and formula starters neutralised by the server; every download writes an `export` audit entry.
-* **Reports:** counts only (per cohort with bars, sign-ups per day for 7, 30 or 90 days, coupon usage). No name, e-mail or id appears in a report card.
+* **Reports:** counts only (per cohort with bars, sign-ups per day for 7, 30, 90, 180 days or a year (365), coupon usage). No name, e-mail or id appears in a report card.
 
 **Unit (`tests/unit/admin-ui-people.spec.ts`, 5 tests):** `ADMUI-UNIT-PPL-001` to `005`. The grant form runs through the server's `grantShape`, `assertGrantTarget` and `assertPlanFits` so hints cannot drift; export names and the window equal the server's.
 **UI (`tests/ui/admin/admin-people.spec.ts`, 5 tests):** `ADMUI-PPL-001` to `005`. A QA course and cohort `qaadmui-people-*` with plans; the QA learner persona is enrolled in that cohort only; everything is removed afterwards.
 **Not automated:** the CSV opened in a real spreadsheet (existing manual case `AAPI-ENR-M-001`), the visual look.
 **Decision (2026-11-06):** the enrolment and learner features of the classic `/admin` page are **not removed in this slice**. The older PRD 08 specs still drive that page, and it also holds student progress and code submissions (slice 4f), so the whole classic page is retired when 4f is done.
+
+## 10. Slice 4f(b): student progress, code submissions, engagement
+Screens: `/admin/progress`, `/admin/submissions` (with a "View code" dialog) and `/admin/engagement`. Only `/api/admin/v1/progress`, `/submissions`, `/submissions/{id}`, `/engagement` and `/reports/enrolments-per-cohort` (the cohort filter) are called. After this slice nothing in the sidebar is greyed out. The classic `/admin` page is retired in 4f(c).
+
+**Rules under test:**
+* **Progress:** one row per enrolment with videos and assignments done over the course totals, a bar and a percent. The numbers are the server's (published curriculum, else the older static list). **A dash means the lessons are not known**: no percentage and no bar value is shown, and nothing is guessed. Last activity reads "just now", "3 days ago" and so on, or "No activity yet".
+* **Submissions:** the list shows learner, lesson title (never a raw video id; "Unknown lesson" when the curriculum does not know it), cohort, time and code size, and **never the code**. "View code" opens a dialog that loads that one submission and draws the code as **text in a read-only box** (a script or image tag in a learner's code stays inert). Escape and Close shut it; "Copy code" copies it. Opening is not audited (owner decision).
+* **Engagement:** time spent as hours and minutes, streak in days, last active day; most time first; search by name or e-mail.
+* **Cohort filter:** the options are the cohorts that have enrolments (from the enrolments-per-cohort report), so courses of the older static list can be filtered too. This also replaced the filter on the Enrolments screen. **Grant access** still picks from real cohorts only.
+* **Names:** the sign-in provider's name and e-mail first, then what the row stored.
+
+**Unit (`tests/unit/admin-ui-progress.spec.ts`, 4 tests):** `ADMUI-UNIT-PRV-001` to `004` (wording of counts, percent, time, streak, code size and times; the sidebar has nothing left "coming later").
+**UI (`tests/ui/admin/admin-progress.spec.ts`, 3 tests):** `ADMUI-PRG-001` to `003`. A published curriculum, progress rows and two submissions (one with hostile code) are made for the edu persona under `qaadmui-pg-*`; the persona's `user_stats` row is saved and restored.
+**Not automated:** the visual look; the look of a very long code listing.
 

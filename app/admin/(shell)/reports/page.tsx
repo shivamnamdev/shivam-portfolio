@@ -28,8 +28,8 @@ function Signups() {
   const rows = r.data?.rows ?? [];
   const bars = barWidths(rows.map((x) => x.count));
   return (
-    <Card title="New sign-ups per day" note="Days are UTC. Taken from the sign-in provider; at most the newest 2,500 people are counted.">
-      <label className="mb-3 block max-w-[10rem] text-xs font-semibold text-stone-400">Window<select value={days} onChange={(e) => setDays(Number(e.target.value))} className={`${inputClass} mt-1 font-normal`}>{SIGNUP_WINDOWS.map((d) => <option key={d} value={d}>Last {d} days</option>)}</select></label>
+    <Card title="New sign-ups per day" note="Days are UTC. Taken from the sign-in provider; at most the newest 5,000 people are counted.">
+      <label className="mb-3 block max-w-[10rem] text-xs font-semibold text-stone-400">Window<select value={days} onChange={(e) => setDays(Number(e.target.value))} className={`${inputClass} mt-1 font-normal`}>{SIGNUP_WINDOWS.map((d) => <option key={d} value={d}>{d === 365 ? 'Last year (365 days)' : `Last ${d} days`}</option>)}</select></label>
       <ErrorNote failure={r.failure} />
       {r.loading && !r.data ? <Spinner /> : <>
         <div data-testid="signup-bars" className="flex h-24 items-end gap-px" role="img" aria-label={`Sign-ups per day, last ${days} days, ${r.data?.total ?? 0} in total`}>

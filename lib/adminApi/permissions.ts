@@ -14,6 +14,8 @@ export const PERMISSIONS = [
   "notifications:read", "notifications:write", "notifications:send",
   "enrolments:read", "enrolments:write",
   "reports:read",
+  "progress:read", "engagement:read",
+  "submissions:read", "submissions:read-code",
   "exports:run",
   "audit:read",
   "learners:read",

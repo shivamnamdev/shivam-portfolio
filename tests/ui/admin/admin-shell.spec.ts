@@ -28,17 +28,15 @@ test.describe('ADMUI shell @regression', () => {
     }
   });
 
-  test('[ADMUI-SHELL-001] the admin sees the sidebar, later screens are disabled with their slice, and can switch to the learner portal', async ({ page }) => {
+  test('[ADMUI-SHELL-001] the admin sees the full sidebar (no greyed-out entries) and can switch to the learner portal', async ({ page }) => {
     await signInAs(page, EMAIL.admin);
     await page.goto('/admin/overview');
     await expect(page.getByRole('heading', { name: 'Overview', level: 1 })).toBeVisible({ timeout: 30000 });
     const nav = sidebar(page);
     for (const label of ['Overview', 'Learner CRM (classic)', 'Audit log', 'API keys', 'API docs']) await expect(nav.getByRole('link', { name: label })).toBeVisible();
     await expect(nav.getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
-    for (const label of ['Student progress', 'Code submissions']) {
-      await expect(nav.getByText(label, { exact: false }).first()).toHaveAttribute('aria-disabled', 'true');
-      await expect(nav.getByRole('link', { name: label })).toHaveCount(0);
-    }
+    for (const label of ['Student progress', 'Code submissions', 'Engagement', 'Enrolments', 'Reports']) await expect(nav.getByRole('link', { name: label })).toBeVisible();
+    await expect(nav.locator('[aria-disabled=true]')).toHaveCount(0);   // every screen is built
     await expect(page.getByText(`Signed in as ${EMAIL.admin}`)).toBeVisible();
     await page.getByRole('link', { name: 'Switch to learner portal' }).click();
     await expectOnPath(page, '/learning');

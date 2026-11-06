@@ -142,4 +142,7 @@ Append one line per significant change to architecture, schema, or integrations:
 - 2026-11-06 — Phase 4d-1 coupons (create, generate, change) and settings screens — no SQL, no new package
 - 2026-11-06 — Phase 4d-2 banners, notifications (explicit e-mail send dialog) and e-mail template screens — no SQL, no new package
 - 2026-11-06 — Phase 4e enrolments (grant, two-step remove, CSV downloads) and reports screens — no SQL, no new package
+- 2026-11-06 — Sign-ups report window raised from 90 to 365 days (screen offers 7, 30, 90, 180, 365; Clerk read cap 2,500 to 5,000 people) — owner request
+- 2026-11-06 — Phase 4f(a) read-only admin API for progress, submissions (code only per opened submission, owner and admin keys) and engagement — no SQL, no new package
+- 2026-11-06 — Phase 4f(b) student progress, code submissions (code opened one at a time, shown as text) and engagement screens — no SQL, no new package
 
