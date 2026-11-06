@@ -7,7 +7,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getPrimaryEmail } from "@/lib/serverAuth";
 import { isAdminEmail } from "@/lib/admin";
 
-const SLUG = /^[a-z0-9-]{1,100}$/;
+const SLUG = /^[a-z0-9_-]{1,100}$/;   // the same characters the admin portal allows in a cohort slug
 const ITEM_ID = /^[\w-]{1,100}$/;
 
 export const isSlug = (v: unknown): v is string => typeof v === "string" && SLUG.test(v);

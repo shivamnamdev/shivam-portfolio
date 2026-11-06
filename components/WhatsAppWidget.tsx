@@ -9,7 +9,7 @@ const WhatsAppIcon = () => (
   </svg>
 );
 
-export default function WhatsAppWidget() {
+export default function WhatsAppWidget({ number = '917057034840' }: { number?: string }) {
   const [showTooltip, setShowTooltip] = useState(true);
 
   // Auto-hide the tooltip after 5 seconds so it doesn't block the screen forever
@@ -45,7 +45,7 @@ export default function WhatsAppWidget() {
 
       {/* Floating Button */}
       <a 
-        href="https://wa.me/917057034840?text=Hi%20Shivam,%20I%20have%20a%20question%20about%20the%20Python%20Live%20Session!" 
+        href={`https://wa.me/${number}?text=Hi%20Shivam,%20I%20have%20a%20question%20about%20the%20Python%20Live%20Session!`}
         target="_blank" 
         rel="noreferrer"
         onMouseEnter={() => setShowTooltip(true)}

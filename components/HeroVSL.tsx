@@ -1,7 +1,6 @@
 'use client';
 import { motion } from 'framer-motion';
 import { PlayCircle, ChevronRight, Star } from 'lucide-react';
-import { activeCourses } from '@/data/courses';
 
 interface HeroVSLProps {
   course: any;

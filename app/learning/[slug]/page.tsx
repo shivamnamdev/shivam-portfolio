@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useUser, UserButton } from '@clerk/nextjs';
 import Navbar from '@/components/Navbar';
+import Banners from '@/components/Banners';
 
 declare global {
   interface Window {
@@ -13,8 +14,6 @@ declare global {
 import Footer from '@/components/Footer';
 import { PlayCircle, CheckCircle, CheckCircle2, Lock, ChevronLeft, ChevronRight, Loader2, Clock, MessageCircle, AlignLeft, Send, Code, Code2, BookOpen, Download, TerminalSquare, Award, FileCheck, Eye, RefreshCw, X, Plus, FileText, ThumbsUp, Share2 } from 'lucide-react';
 import Link from 'next/link';
-import { courseCurriculumMap } from '@/data/learning-content';
-import { activeCourses } from '@/data/courses';
 import Editor from '@monaco-editor/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GitGraphVisualizer from '@/components/GitGraphVisualizer';
@@ -176,7 +175,8 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
   const [pyodide, setPyodide] = useState<any>(null);
   const [isPyodideLoading, setIsPyodideLoading] = useState(true);
 
-  const courseDetails = activeCourses.find(c => c.slug === params.slug);
+  // The title and whether a live class exists come from the server with the lessons (the live link itself never reaches this page).
+  const [courseDetails, setCourseDetails] = useState<{ title: string; hasLiveLink: boolean } | null>(null);
   const activeAssignment = activeVideo?.githubAssignment;
   const activeLabType = activeAssignment?.labType === "git" ? "git" : "python";
   const isGitLab = activeLabType === "git";
@@ -540,7 +540,11 @@ export default function CoursePlayerPage({ params }: { params: { slug: string } 
     async function loadCourseData() {
       if (!isLoaded || !user?.id || isVerifying || !hasAccess) return;
       try {
-        const courseModules = courseCurriculumMap[params.slug] ||[];
+        const contentRes = await fetch(`/api/learning/content/${encodeURIComponent(params.slug)}`);
+        const content = await contentRes.json();
+        if (!content.success) throw new Error(content.error || 'Could not load the course');
+        setCourseDetails({ title: content.title, hasLiveLink: !!content.hasLiveLink });
+        const courseModules: any[] = content.modules || [];
         const allVideoIds = courseModules.flatMap(m => m.videoIds ||[]);
         const allItemIds = courseModules.flatMap(m => m.videoIds ||[]);
         
@@ -1476,7 +1480,7 @@ sys.settrace(_trace_calls)
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-[#0d1117] text-white font-sans">
-      
+      <Banners placement="learning" />
       <header className="z-50 flex h-16 shrink-0 items-center justify-between border-b border-white/10 bg-[#161b22] px-3 md:px-4">
         <div className="flex items-center gap-3">
           <Link href="/learning" className="flex items-center gap-2 text-sm font-bold text-stone-400 transition-colors hover:text-amber-500">
@@ -1655,7 +1659,7 @@ sys.settrace(_trace_calls)
                   <Clock size={40} className="text-amber-500" />
                 </div>
                 <h2 className="text-3xl font-black text-white mb-4">Live Classes Starting Soon</h2>
-                {courseDetails?.liveLink ? (
+                {courseDetails?.hasLiveLink ? (
                   <Link href={`/live/${params.slug}`} className="px-8 py-4 rounded-full bg-amber-500 text-stone-900 font-bold text-lg flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors shadow-lg mt-4">
                     <PlayCircle size={20} /> Enter Live Classroom
                   </Link>

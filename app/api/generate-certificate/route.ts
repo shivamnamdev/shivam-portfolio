@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { activeCourses } from "@/data/courses";
+import { getLearningCourse } from "@/lib/catalog/learning";
 import { certificateEligibility } from "@/lib/certificateEligibility";
 import { getDisplayName, getPrimaryEmail } from "@/lib/serverAuth";
 import { isAdminEmail } from "@/lib/admin";
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => null);
     const courseSlug = typeof body?.courseSlug === "string" ? body.courseSlug : "";
-    const course = activeCourses.find(c => c.slug === courseSlug);
+    const course = courseSlug ? await getLearningCourse(courseSlug) : null;
     if (!course) return NextResponse.json({ error: "Missing data" }, { status: 400 });
 
     const user = await currentUser();

@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { BookOpen, Video, FileText, CheckCircle2, PlayCircle, Loader2, Flame, Trophy } from 'lucide-react';
-import { activeCourses } from '@/data/courses';
 import SpotlightCard from '@/components/SpotlightCard';
+import Banners from '@/components/Banners';
 
 export default function LearningDashboard() {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -24,13 +24,9 @@ export default function LearningDashboard() {
     async function fetchDashboardData() {
       if (!isLoaded || !user) return;
       try {
-        const enrollRes = await fetch('/api/learning/enrollments');
+        const enrollRes = await fetch('/api/learning/my-courses');
         const enrollData = await enrollRes.json();
-        if (enrollData.success) {
-          const purchasedSlugs: string[] = enrollData.slugs;
-          const myCourses = activeCourses.filter(c => purchasedSlugs.includes(c.slug));
-          setEnrolledCourses(myCourses);
-        }
+        if (enrollData.success) setEnrolledCourses(enrollData.courses);
 
         // Streak and stats live on the server (the browser has no access to the stats table).
         const statsRes = await fetch('/api/learning/stats', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }) });
@@ -79,6 +75,7 @@ export default function LearningDashboard() {
       <Navbar />
       
       <main className="flex-grow max-w-7xl mx-auto px-6 py-20 w-full relative z-10">
+        <Banners placement="dashboard" />
         <div className="mb-12 border-b border-white/10 pb-8 flex justify-between items-end">
           <div>
             <h1 className="text-4xl md:text-5xl font-display font-black text-white mb-2 drop-shadow-md">Welcome back, {firstName}! 👋</h1>

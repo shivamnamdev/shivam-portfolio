@@ -128,15 +128,15 @@ export async function enrolmentsPerCohort() {
   return { rows: countByCohort(rows.map((r) => r.cohortSlug)), total: rows.length, truncated };
 }
 
-// New signups per UTC day from Clerk, newest first, stopping once the window is passed. At most 5 pages of 500 (2,500 people).
+// New signups per UTC day from Clerk, newest first, stopping once the window is passed. At most 10 pages of 500 (5,000 people).
 export async function signupsPerDay(days: number, now: Date) {
   const since = now.getTime() - days * 86_400_000;
   const stamps: number[] = []; let truncated = false;
-  for (let page = 0; page < 5; page++) {
+  for (let page = 0; page < 10; page++) {
     const users = await clerkClient.users.getUserList({ orderBy: "-created_at", limit: 500, offset: page * 500 });
     stamps.push(...users.map((u) => u.createdAt));
     if (users.length < 500 || users[users.length - 1].createdAt < since) break;
-    if (page === 4) truncated = true;
+    if (page === 9) truncated = true;
   }
   const rows = countPerDay(stamps, days, now);
   return { rows, total: rows.reduce((n, r) => n + r.count, 0), truncated };

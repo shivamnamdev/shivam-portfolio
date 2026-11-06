@@ -1,7 +1,7 @@
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
 
 // Strings that only appear when protected UI is actually rendered.
-export const PROTECTED_MARKERS = ['My Enrolled Courses', 'Admin Command Center', 'Welcome back,'];
+export const PROTECTED_MARKERS = ['My Enrolled Courses', 'Switch to learner portal', 'Welcome back,'];   // learner dashboard, admin portal sidebar, welcome line
 
 export async function expectNoProtectedContent(page: Page) {
   for (const text of PROTECTED_MARKERS) await expect(page.getByText(text, { exact: false })).toHaveCount(0);
@@ -10,7 +10,8 @@ export async function expectNoProtectedContent(page: Page) {
 // A visitor must not stay on the protected URL: Clerk middleware sends them to sign-in, or the page sends them home.
 export async function expectDeniedForVisitor(page: Page, pathWithQuery: string) {
   const wanted = new URL(pathWithQuery, 'http://x').pathname.replace(/\/$/, '') || '/';
-  await page.goto(pathWithQuery, { waitUntil: 'domcontentloaded' });
+  // Clerk's own redirect after sign-out can land at the same moment and abort this navigation: retry once (as sign-in does in support/clerk.ts).
+  await page.goto(pathWithQuery, { waitUntil: 'domcontentloaded' }).catch(async () => { await page.waitForLoadState('load'); await page.goto(pathWithQuery, { waitUntil: 'domcontentloaded' }); });
   const baseOrigin = `http://localhost:${process.env.PORT ?? '3000'}`;
   await expect.poll(() => {
     const u = new URL(page.url());
@@ -102,12 +103,14 @@ export async function expectEmptyDashboard(page: Page) {
 export async function expectAdminDenied(page: Page, query = '') {
   await page.goto(`/admin${query}`);
   await expectOnPath(page, '/learning', 25000);
-  await expect(page.getByText('Admin Command Center')).toHaveCount(0);
+  await expect(page.getByText('Switch to learner portal')).toHaveCount(0);
 }
 
+// /admin redirects to the admin portal (the classic Admin Command Center was retired, SCP-89 phase 4f): the admin lands on the Overview.
 export async function expectAdminPage(page: Page) {
   await page.goto('/admin');
-  await expect(page.getByText('Admin Command Center')).toBeVisible({ timeout: 25000 });
+  await expectOnPath(page, '/admin/overview', 25000);
+  await expect(page.getByRole('heading', { name: 'Overview', level: 1 })).toBeVisible({ timeout: 25000 });
 }
 
 export async function expectNoAdminLink(page: Page) {

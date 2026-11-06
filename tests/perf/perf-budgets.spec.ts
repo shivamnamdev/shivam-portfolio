@@ -97,7 +97,7 @@ test.describe('PRD15 performance budgets @perf', () => {
       requireSeed();
       await signInAs(page, EMAIL.admin);
       const t0 = Date.now();
-      await page.goto('/admin');
+      await page.goto('/admin/enrolments');
       await expect(page.locator('tbody tr').first()).toBeVisible({ timeout: 60000 });
       const ms = Date.now() - t0;
       note('admin table visible', `${ms} ms`);
@@ -115,15 +115,7 @@ test.describe('PRD15 performance budgets @perf', () => {
       await expect(ui.finalPrice(page)).toHaveText('$1');
     });
 
-    test('[PRF-UIX-002] switching an admin tab paints within 400 ms', async ({ page }) => {
-      requireSeed();
-      await signInAs(page, EMAIL.admin);
-      await page.goto('/admin');
-      await expect(page.locator('tbody tr').first()).toBeVisible({ timeout: 60000 });
-      const ms = await clickToPaintMs(page, 'Enrollments');
-      note('admin tab click to paint', `${ms.toFixed(0)} ms`);
-      expect(ms).toBeLessThan(400);
-    });
+    test.fixme('[PRF-UIX-002] switching an admin tab paints within 400 ms (the tabs belonged to the classic admin page, retired in SCP-89 phase 4f; the portal opens each screen as its own page, covered by PRF-PGE-007)', async () => {});
   });
 
   test.describe('API latency', () => {

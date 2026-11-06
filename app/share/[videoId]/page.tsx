@@ -1,33 +1,17 @@
 // app/share/[videoId]/page.tsx
 import { Metadata } from 'next';
 import { auth, currentUser } from '@clerk/nextjs/server';
-import { courseCurriculumMap } from '@/data/learning-content';
-import { activeCourses } from '@/data/courses';
+import { findLesson } from '@/lib/catalog/learning';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { isAdminEmail } from '@/lib/admin';
 import { getPrimaryEmail } from '@/lib/serverAuth';
 
-// 1. Helper function to find which course this video belongs to
-function getVideoDetails(videoId: string) {
-  for (const slug in courseCurriculumMap) {
-    for (const module of courseCurriculumMap[slug]) {
-      const vIndex = module.videoIds.indexOf(videoId);
-      if (vIndex !== -1) {
-        let title = `Lesson ${vIndex + 1}`;
-        if (module.githubAssignments && module.githubAssignments[videoId]) {
-           title = module.githubAssignments[videoId].title;
-        }
-        const course = activeCourses.find(c => c.slug === slug);
-        return { slug, title, courseTitle: course?.title || "Python Course" };
-      }
-    }
-  }
-  return null;
-}
+// 1. Which course (and lesson title) a video belongs to: the published portal curriculum or the data files, per PORTAL_LEARNING.
+const getVideoDetails = findLesson;
 
 // 2. Generate Dynamic SEO Metadata for WhatsApp!
 export async function generateMetadata({ params }: { params: { videoId: string } }): Promise<Metadata> {
-  const details = getVideoDetails(params.videoId);
+  const details = await getVideoDetails(params.videoId);
   const title = details ? `${details.title} | ${details.courseTitle}` : "Exclusive Lesson | Shivam Academy";
   
   // 🚨 THE FIX: Use 0.jpg which is guaranteed to exist even for Unlisted YouTube videos!
@@ -52,7 +36,7 @@ export async function generateMetadata({ params }: { params: { videoId: string }
 }
 
 async function resolveDestination(videoId: string) {
-  const details = getVideoDetails(videoId);
+  const details = await getVideoDetails(videoId);
   if (!details) return '/learning';
 
   const { userId } = auth();

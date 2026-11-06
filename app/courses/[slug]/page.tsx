@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { activeCourses } from '@/data/courses';
+import { getCourse, getSupport } from '@/lib/catalog/catalog';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import HeroVSL from "@/components/HeroVSL"; 
@@ -8,12 +8,13 @@ import ActiveCohorts from "@/components/ActiveCohorts";
 import Differentiators from "@/components/Differentiators";
 import FAQ from "@/components/FAQ";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
+import Banners from "@/components/Banners";
 import SpotlightCard from '@/components/SpotlightCard';
 import { Quote } from 'lucide-react';
 
-export default function CourseSalesPage({ params }: { params: { slug: string } }) {
-  
-  const course = activeCourses.find((c) => c.slug === params.slug);
+export default async function CourseSalesPage({ params }: { params: { slug: string } }) {
+  const course = await getCourse(params.slug);
+  const support = await getSupport();
 
   if (!course) {
     notFound();
@@ -26,6 +27,7 @@ export default function CourseSalesPage({ params }: { params: { slug: string } }
       
       <main className="flex flex-col items-center max-w-7xl mx-auto px-6 sm:px-12 pb-10 space-y-20 md:space-y-32 relative z-10">
         
+        <div className="w-full pt-6"><Banners placement="course-page" /></div>
         <HeroVSL course={course} /> 
         <PainPoints painPoints={course.painPoints} />
         <Differentiators course={course} />
@@ -62,7 +64,7 @@ export default function CourseSalesPage({ params }: { params: { slug: string } }
       </main>
       
       <Footer />
-      <WhatsAppWidget />
+      <WhatsAppWidget number={support.whatsappNumber} />
     </div>
   );
 }
