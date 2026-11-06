@@ -275,3 +275,11 @@ Plan: `docs/architecture/admin-portal-plan.md` (branch `epic/admin-portal`). Pha
 - [x] Slice 4f(b) screens (2026-11-06): `lib/adminUi/progressView.ts`, `components/admin/{useCohortSlugs,progress/CodeDialog}`, screens `progress`, `submissions`, `engagement`; all nav entries ready; 4 unit and 3 UI tests; PRD 20 section 10. Cohort filters now list cohorts that have enrolments (also on Enrolments). Next: 4f(c) retire the classic page.
 - [x] Slice 4f(c) (2026-11-06): Learners directory (`GET /learners` extended with joinedAt, enrolments, status and paging; screen `/admin/learners`), classic `/admin` page retired (redirect to `/admin/overview`, sidebar entry removed), PRD 08 specs retired or rewritten with a mapping (PRD 08 section 12). The routes `get-all-users`, `dashboard-data` and `admin/enroll` are kept for now (owner decision) and deleted in a later clean-up.
 
+## 2026-11-06 Phase 5 Blueprint (APPROVED 2026-11-06): the learner portal reads the database
+Full text: `docs/architecture/admin-portal-phase5-learner-portal.md`. Owner decisions given: one server flag per slice (`PORTAL_CATALOG`, `PORTAL_LEARNING`, `PORTAL_ENGAGEMENT`, `PORTAL_COUPONS`, default `files`, per-request fallback to the data files); non-payment slices first, payments (5d) after `course-cta-update-3` merges; the four old coupons are not imported (recreate what is needed before turning `PORTAL_COUPONS` on); the bell starts empty.
+- [ ] 5a Catalog: `lib/catalog` (server only), sales pages and home read published courses and cohorts without private links, support phone and e-mail from settings, tag revalidation.
+- [ ] 5b Learning content and private links: published curriculum into the learning, share and certificate code; `liveLink` and `whatsappLink` leave the client bundle and are served by `GET /api/learning/links/{slug}` after the enrolment check (SCP-45).
+- [ ] 5c Banners, notification bell (`GET /api/learning/notifications`, `POST .../read`), e-mail templates in the mails; the unused `UrgencyBanner` is removed.
+- [ ] 5d Prices and coupons from the database with reservation and expiry (SCP-53), plans; after `course-cta-update-3`.
+Exit: the learner suites pass with every flag on `files` and on `database`; a bundle test shows no private link, coupon code or flag name in client JavaScript.
+
