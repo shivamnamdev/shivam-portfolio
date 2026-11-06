@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { activeCourses } from '@/data/courses';
+import { getCourse, getSupport } from '@/lib/catalog/catalog';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import HeroVSL from "@/components/HeroVSL"; 
@@ -11,9 +11,9 @@ import WhatsAppWidget from "@/components/WhatsAppWidget";
 import SpotlightCard from '@/components/SpotlightCard';
 import { Quote } from 'lucide-react';
 
-export default function CourseSalesPage({ params }: { params: { slug: string } }) {
-  
-  const course = activeCourses.find((c) => c.slug === params.slug);
+export default async function CourseSalesPage({ params }: { params: { slug: string } }) {
+  const course = await getCourse(params.slug);
+  const support = await getSupport();
 
   if (!course) {
     notFound();
@@ -62,7 +62,7 @@ export default function CourseSalesPage({ params }: { params: { slug: string } }
       </main>
       
       <Footer />
-      <WhatsAppWidget />
+      <WhatsAppWidget number={support.whatsappNumber} />
     </div>
   );
 }

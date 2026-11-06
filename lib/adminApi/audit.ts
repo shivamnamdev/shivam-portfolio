@@ -1,7 +1,9 @@
 // lib/adminApi/audit.ts
 // Every admin write records who did what, with the data before and after. If the entry cannot be written the whole request fails
 // (the caller awaits this BEFORE reporting success), so a change never exists without its history.
+import { revalidateTag } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { CATALOG_TAG, touchesCatalog } from "@/lib/catalog/tags";
 import { ApiError } from "./envelope";
 import type { Actor } from "./guard";
 
@@ -24,5 +26,9 @@ export async function writeAudit(entry: { actor: Actor; action: string; resource
   if (error) {
     console.error("audit write failed:", error);
     throw new ApiError(500, "audit_failed", "The change was not saved because it could not be recorded");
+  }
+  // A saved change to a course, cohort or setting refreshes the cached course list and sales pages at once (the 60-second timer is only a backstop).
+  if (touchesCatalog(entry.resource, entry.action)) {
+    try { revalidateTag(CATALOG_TAG); } catch (e) { console.error("catalog revalidation failed:", (e as Error).message?.slice(0, 80)); }
   }
 }

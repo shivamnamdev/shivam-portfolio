@@ -2,7 +2,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { CheckCircle2, ChevronDown, Gift, Calendar, Code2, Download, CreditCard, Loader2, Globe, Tag, PartyPopper, ExternalLink } from 'lucide-react';
-import { activeCourses } from '@/data/courses';
 import { applyCoupon, formatPrice, parsePrice, resolveCoupon, toCurrencyCode, type Coupon } from '@/lib/pricing';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
@@ -39,7 +38,7 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
   const { openSignIn } = useClerk();
   const router = useRouter();
 
-  const displayCourse = propCourse || activeCourses[0];
+  const displayCourse = propCourse;
 
   useEffect(() => {
     async function checkEnrollment() {
@@ -104,7 +103,7 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
         const data = await res.json();
         if (data.success) {
           // 🚨 THE FIX: Trigger the beautiful success modal instead of an alert!
-          setPaymentSuccessData({ show: true, whatsappLink: displayCourse.whatsappLink || "#" });
+          setPaymentSuccessData({ show: true, whatsappLink: data.whatsappLink || displayCourse.whatsappLink || "#" });
         } else {
           alert(data.error || "Failed to process free enrollment.");
         }
@@ -155,7 +154,7 @@ export default function ActiveCohorts({ course: propCourse }: ActiveCohortsProps
             const verifyData = await verifyRes.json();
             if (verifyData.success) {
               // 🚨 THE FIX: Trigger the beautiful success modal instead of an alert!
-              setPaymentSuccessData({ show: true, whatsappLink: displayCourse.whatsappLink || "#" });
+              setPaymentSuccessData({ show: true, whatsappLink: verifyData.whatsappLink || displayCourse.whatsappLink || "#" });
             } else {
               alert(verifyData.error || "Error verifying enrollment.");
             }

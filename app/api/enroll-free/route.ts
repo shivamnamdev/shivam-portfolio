@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: created ? "Enrolled for free successfully!" : "You are already enrolled in this course.",
+      whatsappLink: course.whatsappLink || "#",   // same as verify-payment: the page shows it after enrolling, so it need not carry the link
     });
 
   } catch (error) {

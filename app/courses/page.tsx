@@ -1,11 +1,13 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
-import { activeCourses, isQaFixture } from "@/data/courses";
+import { isQaFixture } from "@/data/courses";
+import { getCatalog } from "@/lib/catalog/catalog";
 import { ChevronRight, Calendar } from "lucide-react";
 import SpotlightCard from "@/components/SpotlightCard";
 
-export default function CoursesPage() {
+export default async function CoursesPage() {
+  const catalog = await getCatalog();
   return (
     <div className="relative min-h-screen flex flex-col bg-black">
       <div className="absolute inset-0 bg-grid-pattern z-0 opacity-50" />
@@ -22,7 +24,7 @@ export default function CoursesPage() {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl">
-          {activeCourses.filter((course) => !isQaFixture(course.slug)).map((course) => (
+          {catalog.filter((course) => !isQaFixture(course.slug) && course.listed !== false).map((course) => (
             <SpotlightCard key={course.id} className="flex flex-col h-full p-8 md:p-10 group">
               <div className="flex justify-between items-start mb-6 relative z-10">
                 <span className={`px-3 py-1 font-bold rounded-full text-xs ${course.enrollmentClosed ? 'bg-white/10 text-stone-400 border border-white/10' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>

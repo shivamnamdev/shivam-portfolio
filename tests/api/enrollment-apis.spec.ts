@@ -70,7 +70,7 @@ test.describe('PRD10 enroll-free and admin/enroll @regression', () => {
     test('[ENRA-FRE-008][ENRA-FRE-009][ENRA-FRE-010] QA100 enrols once with the coupon recorded and the activity entry, ignoring a forged course slug', async () => {
       const res = await free({ courseId: SLUG, couponCode: 'QA100', courseSlug: 'git-beginner-batch-1', slug: 'git-beginner-batch-1' });
       expect(res.status()).toBe(200);
-      expect(await res.json()).toEqual({ success: true, message: 'Enrolled for free successfully!' });
+      expect(await res.json()).toEqual({ success: true, message: 'Enrolled for free successfully!', whatsappLink: 'https://chat.whatsapp.com/qa-checkout-sandbox' });   // the page shows this link after enrolling; it no longer needs it in its props
       const r = await rows();
       expect(r).toHaveLength(1);
       expect(r[0].coupon_used).toBe('QA100');
