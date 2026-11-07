@@ -528,3 +528,5 @@ Every case below drove the old page. The automated ones were retired with it; th
 | ADM-E2E-005 | Kept (inside ADM-GATE-002) |
 | PRF-PGE-007 (performance) | Retargeted to `/admin/enrolments`. PRF-UIX-002 (tab switch) is `fixme`: the tabs no longer exist |
 
+## 13. Phase 6a and 6b (2026-11-07)
+The three routes the classic page used were deleted (`dashboard-data`, `admin/enroll`, `get-all-users`); `ADM-GATE-002`, `006` to `010` now check the admin API v1 routes that replaced them. The phone and keyboard gap listed in section 12 is closed by `tests/ui/admin/admin-phone-keyboard.spec.ts`: `ADMUI-MOB-001` (every screen fits 375 px and never scrolls sideways), `MOB-002` (menu opens, closes and closes after a choice), `MOB-003` (tap targets at least 36 px, this design's floor), `ADMUI-KEY-001` (Tab walks the sidebar in order, visible focus, Enter opens), `KEY-002` (a confirmation dialog starts on Cancel, Escape closes it without acting). Not done: the Grant form still lists portal cohorts only.

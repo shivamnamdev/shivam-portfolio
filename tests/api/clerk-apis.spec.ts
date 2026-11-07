@@ -6,7 +6,7 @@ import { adminDb } from '../support/db';
 import { requireSeed } from '../support/guards';
 import { API_UA, sessionFor, type Session } from '../support/api';
 
-// PRD 11 · Clerk, webhook and user-lookup APIs: POST /api/webhooks/clerk, GET /api/get-all-users, POST /api/get-clerk-users.
+// PRD 11 · Clerk, webhook and user-lookup APIs: POST /api/webhooks/clerk. (The two user routes were deleted in phase 6a: tests/api/legacy-routes-gone.spec.ts.)
 // Webhook calls are signed here with CLERK_WEBHOOK_SECRET exactly as Clerk (svix) signs them. Only events that cannot send an
 // e-mail are used: a user.created without an address logs the signup and sends nothing. Rows written here are removed after each test.
 const secret = process.env.CLERK_WEBHOOK_SECRET;
@@ -86,75 +86,4 @@ test.describe('PRD11 Clerk webhook and user lookup @regression', () => {
   });
 
   test.fixme('[CLKA-WHK-011] a real signup sends one welcome e-mail and one owner notice (needs a real signup and mailbox access: manual)', async () => {});
-
-  test.describe('GET /api/get-all-users and POST /api/get-clerk-users', () => {
-    test.beforeEach(() => requireSeed());
-    let admin: Session, learner: Session;
-    test.beforeAll(async ({ browser }) => { admin = await sessionFor(browser, EMAIL.admin); learner = await sessionFor(browser, EMAIL.mavish); });
-    test.afterAll(async () => { await admin?.close(); await learner?.close(); });
-
-    test('[CLKA-USR-001][CLKA-USR-002][CLKA-LKP-001][CLKA-LKP-002] a visitor gets 401 and a learner 403 on both user routes', async ({ request }) => {
-      expect((await request.get('/api/get-all-users', { headers: { 'User-Agent': API_UA } })).status()).toBe(401);
-      expect((await request.post('/api/get-clerk-users', { data: { userIds: [] }, headers: { 'User-Agent': API_UA } })).status()).toBe(401);
-      const a = await learner.request.get('/api/get-all-users');
-      const b = await learner.request.post('/api/get-clerk-users', { data: { userIds: [await clerkUserId(EMAIL.edu)] } });
-      expect([a.status(), b.status()]).toEqual([403, 403]);
-      expect(JSON.stringify(await a.json())).not.toContain('@');
-      expect(JSON.stringify(await b.json())).not.toContain('@');
-    });
-
-    test('[CLKA-USR-003][CLKA-USR-004][CLKA-USR-005] the admin gets the directory: exact fields, the four personas, newest first, not cacheable', async () => {
-      const res = await admin.request.get('/api/get-all-users');
-      expect(res.status()).toBe(200);
-      const { success, users } = await res.json();
-      expect(success).toBe(true);
-      for (const u of users) expect(Object.keys(u).sort()).toEqual(['email', 'id', 'image', 'joinedAt', 'name']);
-      for (const email of Object.values(EMAIL)) {
-        const u = users.find((x: any) => x.email === email);
-        expect(u, email).toBeTruthy();
-        expect(u.id).toBe(await clerkUserId(email));
-      }
-      const times = users.map((u: any) => u.joinedAt);
-      expect([...times].sort((a: number, b: number) => b - a)).toEqual(times);
-      expect(res.headers()['cache-control'] ?? '').not.toMatch(/public|max-age=[1-9]/);
-    });
-
-    test('[CLKA-USR-006] the user list refuses other methods', async () => {
-      expect((await admin.request.post('/api/get-all-users', { data: {} })).status()).toBe(405);
-    });
-
-    test('[CLKA-LKP-003] a missing, empty or non-array userIds gives an empty map', async () => {
-      for (const body of [{}, { userIds: [] }, { userIds: 'user_x' }, { userIds: null }]) {
-        const res = await admin.request.post('/api/get-clerk-users', { data: body });
-        expect(res.status()).toBe(200);
-        expect(await res.json()).toEqual({ success: true, users: {} });
-      }
-    });
-
-    test('[CLKA-LKP-004][CLKA-LKP-005][CLKA-LKP-006] known ids come back as name, e-mail and image; unknown ids are left out', async () => {
-      const edu = await clerkUserId(EMAIL.edu), mav = await clerkUserId(EMAIL.mavish);
-      const res = await admin.request.post('/api/get-clerk-users', { data: { userIds: [edu, mav, 'user_does_not_exist_000'] } });
-      expect(res.status()).toBe(200);
-      const { users } = await res.json();
-      expect(Object.keys(users).sort()).toEqual([edu, mav].sort());
-      expect(users[edu]).toMatchObject({ email: EMAIL.edu });
-      expect(Object.keys(users[edu]).sort()).toEqual(['email', 'image', 'name']);
-      const none = await admin.request.post('/api/get-clerk-users', { data: { userIds: ['user_does_not_exist_000'] } });
-      expect(await none.json()).toEqual({ success: true, users: {} });
-    });
-
-    test('[CLKA-LKP-007] ids that are not text are a client error, not a server error', async () => {
-      const res = await admin.request.post('/api/get-clerk-users', { data: { userIds: [123, { a: 1 }] } });
-      expect(res.status()).toBeLessThan(500);
-    });
-
-    test('[CLKA-LKP-008] a very long list of ids is a client error, not a server error', async () => {
-      const res = await admin.request.post('/api/get-clerk-users', { data: { userIds: Array.from({ length: 600 }, (_, i) => `user_qa_${i}`) } });
-      expect(res.status()).toBeLessThan(500);
-    });
-
-    test('[CLKA-LKP-009] GET is not allowed', async () => {
-      expect((await admin.request.get('/api/get-clerk-users')).status()).toBe(405);
-    });
-  });
 });

@@ -86,3 +86,6 @@ All 28 cases automated or a `test.fixme` with a reason; known failures keep fail
 ## 12. References
 
 [PRD 05](05-ui-free-enrollment-flow.md), [PRD 08](08-ui-admin-portal.md), `lib/enrollments.ts`, `lib/serverAuth.ts`, `lib/pricing.ts`.
+
+## 13. Phase 6a: `POST /api/admin/enroll` deleted (SCP-89, 2026-11-07)
+The route was removed (it granted access without an audit row and without a key role). Its cases ENRA-ADM-001 to 012 are retired from automation; the grant is `POST /api/admin/v1/enrolments`, covered by `AAPI-ENR-001` to `004` (grant by e-mail once, repeat 409, bad input, unknown learner and cohort, plan) and the access rules by `ADM-GATE-006` to `010` (visitor 401, learner 403, no row) in `tests/ui/admin/admin-readonly.spec.ts`. The five parallel grants case (SCP-44) is kept through the shared `grantEnrollment` by `ENRA-FRE-015` (free enrolment) and `PAYA-RBT-001` (verification). `GONE-001` to `003` assert the old path answers 404 to the admin and a learner and never serves a visitor.

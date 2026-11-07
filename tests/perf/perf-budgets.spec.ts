@@ -131,14 +131,14 @@ test.describe('PRD15 performance budgets @perf', () => {
       expect(r.p95).toBeLessThan(3000); // not scaled: the mock waits 1.2 s on purpose
     });
 
-    test('[PRF-API-002] the admin user directory answers within 5 s and its size per user stays small', async () => {
-      const r = await timeCalls(5, () => admin.request.get('/api/get-all-users'));
-      const res = await admin.request.get('/api/get-all-users');
-      const body = await res.body(); const users = JSON.parse(body.toString()).users.length;
-      note('get-all-users', `p50 ${r.p50.toFixed(0)} ms, p95 ${r.p95.toFixed(0)} ms, ${users} users, ${body.length} bytes (${Math.round(body.length / users)} per user)`);
+    test('[PRF-API-002] the admin learners directory (admin API v1) answers within 5 s and its size per user stays small', async () => {
+      const r = await timeCalls(5, () => admin.request.get('/api/admin/v1/learners?limit=100'));
+      const res = await admin.request.get('/api/admin/v1/learners?limit=100');
+      const body = await res.body(); const users = Math.max(1, JSON.parse(body.toString()).data.items.length);
+      note('admin learners', `p50 ${r.p50.toFixed(0)} ms, p95 ${r.p95.toFixed(0)} ms, ${users} users, ${body.length} bytes (${Math.round(body.length / users)} per user)`);
       expect(r.statuses.every(s => s === 200)).toBe(true);
       expect(r.p95).toBeLessThan(B(5000));
-      expect(body.length / users).toBeLessThan(600);
+      expect(body.length / users).toBeLessThan(900);   // the directory row now also carries enrolments and status
     });
 
     test('[PRF-API-003] xp/sync answers within 3 s', async () => {

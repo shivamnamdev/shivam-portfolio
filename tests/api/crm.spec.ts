@@ -59,9 +59,6 @@ test.describe('POST /api/create-order @smoke', () => {
 test.describe('Protected endpoints reject anonymous callers @smoke', () => {
 
   for (const [method, path] of [
-    ['GET', '/api/get-all-users'],
-    ['POST', '/api/get-clerk-users'],
-    ['POST', '/api/admin/enroll'],
     ['POST', '/api/enroll-free'],
     ['POST', '/api/verify-payment'],
     ['POST', '/api/xp/sync'],
