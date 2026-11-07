@@ -9,7 +9,7 @@ import { activeCourses, isQaFixture } from "@/data/courses";
 import { savedSettings } from "@/lib/adminApi/engagementStore";
 import { CATALOG_TAG } from "./tags";
 import { chooseSource, pricingSource, readWithFallback, type Source } from "./source";
-import { buildCourse, FALLBACK_WHATSAPP_NUMBER, whatsappNumber, withoutPrivateLinks, type CatalogCourse, type CohortView, type CourseView, type FileEntry } from "./mapping";
+import { buildCourse, cohortFromDoc, FALLBACK_WHATSAPP_NUMBER, whatsappNumber, withoutPrivateLinks, type CatalogCourse, type CohortView, type CourseView, type FileEntry } from "./mapping";
 
 const flags = () => ({ catalog: chooseSource(process.env.PORTAL_CATALOG), coupons: pricingSource(process.env.PORTAL_CATALOG, process.env.PORTAL_COUPONS) });
 // Entries of the data files as page objects: never with their private links (slice 5b), `listed` defaulted.
@@ -29,12 +29,7 @@ async function readDatabase(priceFrom: Source): Promise<CatalogCourse[] | null> 
     const d = r.doc;
     const course = courses.get(String(d.courseSlug));
     if (!course) continue;   // a cohort whose course is not published is not shown
-    // The named fields only: the cohort's `private` part (links) is never read here.
-    const cohort: CohortView = {
-      slug: r.key, courseSlug: String(d.courseSlug), title: String(d.title ?? course.title), statusText: d.statusText as string | undefined, demoOffer: d.demoOffer as string | undefined,
-      duration: d.duration as string | undefined, contactPhone: d.contactPhone as string | undefined, enrollmentClosed: d.enrollmentClosed as boolean | undefined,
-      listed: d.listed as boolean | undefined, pricing: d.pricing as CohortView["pricing"],
-    };
+    const cohort = cohortFromDoc(r.key, d, String(course.title));   // the named fields only: the cohort's `private` part (links) is never read
     built.push(buildCourse(cohort, course, priceFrom, files.get(r.key)));
   }
   if (!built.length) return null;

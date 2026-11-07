@@ -10,6 +10,8 @@ Applies to `PORTAL_CATALOG`, `PORTAL_LEARNING`, `PORTAL_ENGAGEMENT`, `PORTAL_COU
 5. Run the check against the project the site uses (it reads counts only and prints no secret; it uses `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` from the environment or `.env.local`):
    `node scripts/cutover-check.mjs` (all flags) or `node scripts/cutover-check.mjs PORTAL_CATALOG` (one). Exit code 0 means every asked flag is ready, 1 means a line says why not. Fix what it names first.
 
+> Tip: before publishing anything, open **Learner preview** in the admin sidebar (`/preview/courses`) to see every draft cohort exactly as learners will, with checkout off.
+
 ## 1. For each flag, in order: catalog, learning, engagement, coupons
 | Step | Check before | Smoke after the redeploy | Watch |
 |---|---|---|---|

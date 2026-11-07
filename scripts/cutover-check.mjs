@@ -3,6 +3,7 @@
 // Read-only check before turning a PORTAL_* flag to "database" (phase 6c). Counts rows only, never prints a key or a row.
 //   node scripts/cutover-check.mjs                       all four flags
 //   node scripts/cutover-check.mjs PORTAL_CATALOG ...    only those flags
+//   node scripts/cutover-check.mjs --include-drafts      a rehearsal: draft documents count as if they were published (nothing is changed)
 // Reads NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY from the environment or from .env.local. Exit code 0 when every requested flag is ready, 1 otherwise, 2 on a read error.
 import { readFileSync, existsSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
@@ -18,7 +19,9 @@ function loadEnvFile(path) {
 loadEnvFile(".env.local");
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!url || !key) { console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY (environment or .env.local)."); process.exit(2); }
-const asked = process.argv.slice(2);
+const args = process.argv.slice(2);
+const includeDrafts = args.includes("--include-drafts");
+const asked = args.filter((a) => a !== "--include-drafts");
 const bad = asked.filter((f) => !FLAGS.includes(f));
 if (bad.length) { console.error(`Unknown flag(s): ${bad.join(", ")}. Known: ${FLAGS.join(", ")}`); process.exit(2); }
 
@@ -26,7 +29,7 @@ const db = createClient(url, key, { auth: { persistSession: false, autoRefreshTo
 const fail = (what, error) => { console.error(`Could not read ${what}: ${String(error?.message ?? error).slice(0, 120)}`); process.exit(2); };
 
 const docs = async (kind) => {
-  const { data, error } = await db.from("content_docs").select("key, doc").eq("kind", kind).eq("status", "published").limit(2000);
+  const { data, error } = await db.from("content_docs").select("key, doc").eq("kind", kind).in("status", includeDrafts ? ["draft", "published"] : ["published"]).limit(2000);
   if (error) fail(`${kind} documents`, error);
   return data ?? [];
 };
@@ -57,5 +60,6 @@ const results = readiness({
   publishedCurricula: curricula.length, plansCohorts, planIdColumn, notificationTables: !nProbe.error && !rProbe.error,
   activeCoupons: activeCoupons ?? 0, cohortsWithoutPrice: cohorts.filter((c) => !hasPrice(c.doc?.pricing)).map((c) => c.key),
 }, asked.length ? asked : FLAGS);
+if (includeDrafts) console.log("(rehearsal: draft documents are counted; nothing is live until they are published)");
 console.log(lines(results).join("\n"));
 process.exit(results.every((r) => r.ready) ? 0 : 1);

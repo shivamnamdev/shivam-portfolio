@@ -287,3 +287,14 @@ Exit: the learner suites pass with every flag on `files` and on `database`; a bu
 ## 2026-11-06 Phase 6 Blueprint (APPROVED 2026-11-06, "6 plan looks good"): hardening and cutover
 Full text: `docs/architecture/admin-portal-phase6-cutover.md`. Slices: 6a retire `dashboard-data`, `admin/enroll`, `get-all-users` (and `get-clerk-users` if unused); 6b admin phone and keyboard specs, Grant form for file cohorts, lint and tsc clean; 6c `scripts/cutover-check.mjs` and the cutover runbook (order: catalog, learning, engagement, coupons); 6d roles (skipped); 6e soak (14 days, zero fallback lines) then remove the data-file fallback, only on the owner's word. Production SQL steps 4 to 8 applied by the owner 2026-11-06.
 - [x] 6a (2026-11-07): four legacy routes deleted, tests mapped, `GONE-*` added. [x] 6b (partly): admin phone and keyboard specs; lint is not configured in this repo (`next lint` asks to set it up, which would install packages: not run) and `tsc` is clean; the Grant form for file-only cohorts is not done. [x] 6c: `scripts/cutover-check.mjs`, runbook. [ ] run of the runbook on QA (needs the import first), [ ] 6e after the soak, on the owner's word
+
+## 2026-11-07 Phase 6e Blueprint (PROPOSED, awaiting owner approval): retire the data files as a runtime source
+Full text: `docs/architecture/admin-portal-phase6e-retire-files.md`. Gate: all four flags `database` in production for the soak (14 days proposed, zero fallback log lines), `cutover-check` OK, owner backup taken. Slices 6e-1 safety net (stale copy or friendly error instead of the files), 6e-2 close SCP-53 (no coupon code in the client bundle, browser coupon check removed), 6e-3 remove the flags, 6e-4 move the data files to `seed/` and keep only the QA fixture, 6e-5 `scripts/seed-qa.mjs` and the 42 test files. Owner decisions needed: database-down behaviour, test data source, curriculum import tool, soak length.
+- [ ] Owner approval of the Blueprint and of the four decisions
+- [ ] Gate met (production soak, backup)
+- [ ] 6e-1 to 6e-5
+
+## 2026-11-07 Draft preview Blueprint (PROPOSED, awaiting owner approval): admin sees draft courses and cohorts as a learner would
+Full text: `docs/architecture/admin-portal-draft-preview.md`. Requested by the owner: drafts must be visible to the admin only. Recommended design: admin-only `/preview/courses` pages that render the real sales page from the portal's data in any status (public pages untouched and still cacheable); decisions: design A or B, show archived, preview checkout off.
+- [x] Owner approval 2026-11-07 (design A with the real cards and page reused; archived hidden by default with an "archived only" dropdown; read-only preview)
+- [x] Slice 5e built 2026-11-07: `lib/catalog/{preview,previewView}.ts`, shared `components/catalog/{CourseGrid,CourseSalesView,PreviewFilter}.tsx`, `app/preview/**`, entry points; 6 unit and 7 UI tests (see PRD 21 section 6)

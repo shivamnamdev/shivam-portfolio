@@ -34,7 +34,7 @@ export default function CohortsPage() {
   const free = freeNotice(pricing);
   return (
     <div>
-      <PageHeader title="Cohorts" subtitle="A cohort is one batch of a course: its dates, price model and private links. It starts as a draft." />
+      <PageHeader title="Cohorts" subtitle="A cohort is one batch of a course: its dates, price model and private links. It starts as a draft." actions={<a href="/preview/courses" target="_blank" rel="noreferrer" className={ghostButtonClass}>Preview as learner</a>} />
       <form onSubmit={create} className="mb-6 space-y-4 rounded-xl border border-white/10 bg-white/[0.03] p-4" aria-label="New cohort">
         <div className="grid gap-3 md:grid-cols-3">
           <label className="text-xs font-semibold text-stone-400">Course

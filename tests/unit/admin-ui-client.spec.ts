@@ -61,8 +61,8 @@ test.describe('Admin UI helpers @regression', () => {
   test('[ADMUI-UNIT-NAV-001] the sidebar: unique links, every entry in a known group, active matching is exact for /admin and by path for the rest', () => {
     const hrefs = NAV.map((n) => n.href);
     expect(new Set(hrefs).size).toBe(hrefs.length);
-    for (const n of NAV) { expect(NAV_GROUPS).toContain(n.group); expect(n.href.startsWith('/admin')).toBe(true); }
-    expect(NAV.filter((n) => n.ready).map((n) => n.label)).toEqual(['Overview', 'Courses', 'Cohorts', 'Curriculum', 'Coupons', 'Banners', 'Notifications', 'E-mail templates', 'Settings', 'Learners', 'Enrolments', 'Reports', 'Student progress', 'Code submissions', 'Engagement', 'Audit log', 'API keys', 'API docs']);
+    for (const n of NAV) { expect(NAV_GROUPS).toContain(n.group); expect(n.href.startsWith('/admin') || n.href === '/preview/courses').toBe(true); }   // the learner preview is the one entry outside /admin
+    expect(NAV.filter((n) => n.ready).map((n) => n.label)).toEqual(['Overview', 'Courses', 'Cohorts', 'Curriculum', 'Learner preview', 'Coupons', 'Banners', 'Notifications', 'E-mail templates', 'Settings', 'Learners', 'Enrolments', 'Reports', 'Student progress', 'Code submissions', 'Engagement', 'Audit log', 'API keys', 'API docs']);
     expect(NAV.filter((n) => !n.ready).map((n) => n.slice).filter((x, i, a) => a.indexOf(x) === i).sort()).toEqual([]);   // every screen is built; nothing is greyed out any more
     expect(NAV.find((n) => n.label === 'Student progress')?.slice).toBe('4f');
     expect(NAV.find((n) => n.label === 'Code submissions')?.slice).toBe('4f');
