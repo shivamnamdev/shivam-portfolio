@@ -3,6 +3,7 @@ import Footer from "@/components/Footer";
 import Link from "next/link";
 import { isQaFixture } from "@/data/courses";
 import { getCatalog } from "@/lib/catalog/catalog";
+import { formatPrice, parsePrice } from "@/lib/pricing";
 import Banners from "@/components/Banners";
 import { ChevronRight, Calendar } from "lucide-react";
 import SpotlightCard from "@/components/SpotlightCard";
@@ -35,7 +36,11 @@ export default async function CoursesPage() {
                 </span>
                 
                 <span className={`text-2xl font-black ${course.enrollmentClosed ? 'text-stone-500' : 'text-white'}`}>
-                  {course.enrollmentClosed ? "Closed" : course.pricing?.inr.currentPrice}
+                  {course.enrollmentClosed
+                    ? "Closed"
+                    : course.pricingPlans?.length
+                      ? `From ${formatPrice(Math.min(...course.pricingPlans.map((p: { price: string }) => parsePrice(p.price))), "INR")}`
+                      : course.pricing?.inr.currentPrice}
                 </span>
               </div>
               

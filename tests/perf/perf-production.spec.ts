@@ -64,8 +64,8 @@ test.describe('PRD15 production build @perf-prod', () => {
     requireSeed();
     const admin = await sessionFor(browser, EMAIL.admin);
     try {
-      const cc = (await admin.request.get('/api/get-all-users')).headers()['cache-control'] ?? '';
-      note('get-all-users cache-control', cc);
+      const cc = (await admin.request.get('/api/admin/v1/learners?limit=5')).headers()['cache-control'] ?? '';
+      note('admin learners cache-control', cc);
       expect(cc).toMatch(/no-store|no-cache|private/);
     } finally { await admin.close(); }
   });

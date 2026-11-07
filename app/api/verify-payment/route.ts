@@ -4,11 +4,12 @@ import Razorpay from "razorpay";
 import nodemailer from "nodemailer";
 import { savedMail } from "@/lib/catalog/engagement";
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { activeCourses } from "@/data/courses";
 import { grantEnrollment } from "@/lib/enrollments";
 import { getDisplayName, getPrimaryEmail } from "@/lib/serverAuth";
 import { escapeHtml } from "@/lib/escapeHtml";
 import { formatPrice, toCurrencyCode } from "@/lib/pricing";
+import { getSellable, settleCoupon } from "@/lib/catalog/commerce";
+import { getLinks } from "@/lib/catalog/learning";
 
 function isValidSignature(orderId: string, paymentId: string, signature: string, secret: string): boolean {
   const expected = crypto.createHmac("sha256", secret).update(`${orderId}|${paymentId}`).digest("hex");
@@ -54,8 +55,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "This order belongs to a different account." }, { status: 403 });
     }
 
-    const courseObj = activeCourses.find(c => c.slug === notes.courseSlug);
+    const { course: courseObj } = await getSellable(notes.courseSlug);
     if (!courseObj) return NextResponse.json({ success: false, error: "Course not found" }, { status: 400 });
+    const plan = courseObj.pricingPlans?.find(p => p.id === notes.planId) ?? null;
 
     const user = await currentUser();
     const userEmail = getPrimaryEmail(user) || "Unknown Email";
@@ -69,11 +71,13 @@ export async function POST(req: NextRequest) {
       userName,
       userEmail,
       couponUsed: notes.couponCode || null,
-      activityMessage: `New Paid Enrollment: ${courseObj.title}`,
+      planId: plan?.id,
+      activityMessage: `New Paid Enrollment: ${courseObj.title}${plan ? ` — ${plan.name}` : ""}`,
     });
 
     // 3. Send the Welcome Email with the WhatsApp Link
-    const whatsappLink = courseObj.whatsappLink || "#";
+    await settleCoupon(created ? notes.couponCode : null, userId, "used");   // a retried verification (created = false) spends nothing twice
+    const whatsappLink = (await getLinks(courseObj.slug)).whatsappLink || "#";
     if (created && user && process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
       try {
         const transporter = nodemailer.createTransport({
@@ -97,7 +101,7 @@ export async function POST(req: NextRequest) {
               </div>
               <div style="padding: 40px 30px; background-color: #fdfcf8;">
                 <p style="font-size: 18px; margin-bottom: 20px;">Hi <strong>${escapeHtml(userName)}</strong>,</p>
-                <p style="font-size: 16px; line-height: 1.6; margin-bottom: 30px;">Thank you for enrolling in <strong>${escapeHtml(courseObj.title)}</strong>. Your payment was successful!</p>
+                <p style="font-size: 16px; line-height: 1.6; margin-bottom: 30px;">Thank you for enrolling in <strong>${escapeHtml(courseObj.title)}</strong>${plan ? ` (${escapeHtml(plan.name)})` : ""}. Your payment was successful!</p>
 
                 <div style="background-color: #ffffff; padding: 25px; border-radius: 12px; border: 1px solid #e5e7eb; margin-bottom: 30px;">
                   <h3 style="margin-top: 0; color: #1c1917; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 15px;">Transaction Receipt</h3>

@@ -152,8 +152,8 @@ test.describe('PRD01 Visitor blocked from protected routes @regression', () => {
   });
 
   test('[AUTH-MW-012] a route that is not whitelisted is denied by default', async ({ request }) => {
-    // /api/get-all-users is intentionally not in publicRoutes: the default-deny model must apply.
-    const res = await request.get('/api/get-all-users', { maxRedirects: 0, headers: { 'User-Agent': 'shivam-academy-api-tests' } });
+    // /api/learning/stats is intentionally not in publicRoutes: the default-deny model must apply.
+    const res = await request.get('/api/learning/stats', { maxRedirects: 0, headers: { 'User-Agent': 'shivam-academy-api-tests' } });
     expect([307, 401, 403]).toContain(res.status());
   });
 });

@@ -66,3 +66,6 @@ Signature and tampering 35% · admin-only access 30% · retry and malformed even
 ## 9. Definition of Done
 
 All cases automated or recorded as manual/`test.fixme` with a reason; known failures keep failing visibly with a ticket; test rows removed; CHANGELOG line added.
+
+## Phase 6a: user routes deleted (SCP-89, 2026-11-07)
+`GET /api/get-all-users` and `POST /api/get-clerk-users` were removed; nothing in the portal used `get-clerk-users`, and the directory is `GET /api/admin/v1/learners`. Cases CLKA-USR-001 to 006 and CLKA-LKP-001 to 009 are retired from automation: access is covered by `ADM-GATE-006/007` and `GONE-004`, the directory shape and order by `AAPI-LRN-001`, and the removed paths by `GONE-001` to `003`. The webhook cases CLKA-WHK-* are unchanged.

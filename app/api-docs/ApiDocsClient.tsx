@@ -66,23 +66,6 @@ const swaggerSpec = {
         responses: { '200': { description: 'AI hint generated' } }
       }
     },
-    '/api/get-clerk-users': {
-      post: {
-        tags: ['CRM / Admin'],
-        summary: 'Get Specific Clerk Users',
-        description: 'Takes an array of user IDs and fetches their Real Name, Email, and Avatar from Clerk backend.',
-        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', properties: { userIds: { type: 'array', items: { type: 'string' }, example: ["user_2aBcD...", "user_9zYxW..."] } } } } } },
-        responses: { '200': { description: 'Returns a mapped dictionary of user data' } }
-      }
-    },
-    '/api/get-all-users': {
-      get: {
-        tags: ['CRM / Admin'],
-        summary: 'Get All Clerk Leads (Directory)',
-        description: 'Fetches up to 100 recent users from Clerk to populate the Admin CRM directory.',
-        responses: { '200': { description: 'Returns an array of user objects' } }
-      }
-    },
     '/api/webhooks/clerk': {
       post: {
         tags: ['Integrations'],

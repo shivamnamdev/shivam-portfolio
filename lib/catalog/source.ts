@@ -26,3 +26,8 @@ export async function readWithFallback<T>(
     return { value: fromFiles(), source: "files" };
   }
 }
+
+// Where orders are priced from. Prices and coupons come from the database only when BOTH the catalog and the coupon flag say so: the page must
+// show exactly what the server charges, and the page shows the data files whenever the catalog flag is off.
+export const pricingSource = (catalogFlag: string | null | undefined, couponFlag: string | null | undefined): Source =>
+  (chooseSource(catalogFlag) === "database" && chooseSource(couponFlag) === "database" ? "database" : "files");

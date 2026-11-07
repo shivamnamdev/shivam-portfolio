@@ -100,3 +100,6 @@ Checkout and dashboard 35% · API 25% · concurrency 20% · other pages 15% · s
 ## 9. Definition of Done
 
 Budgets met on a production build (all but SCP-77, SCP-80, SCP-81 today), baseline recorded, open cases (1000+ users, sustained load, k6) assigned to the CI/staging follow-up, CHANGELOG line added.
+
+## Phase 6a note (2026-11-07)
+`PRF-API-002` and `PRF-PRD-004` now measure the admin learners directory (`GET /api/admin/v1/learners`) because `get-all-users` was deleted; the size budget per person is 900 bytes (the directory row also carries enrolments and status).

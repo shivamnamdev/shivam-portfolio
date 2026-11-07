@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { activeCourses, isQaFixture } from '../../../data/courses';
 
 // PRD 03 sheet "Course Card Discovery Rendering". The catalog lists every course except the QA fixture.
-const listed = activeCourses.filter(c => !isQaFixture(c.slug));
+const listed = activeCourses.filter(c => !isQaFixture(c.slug) && (c as { listed?: boolean }).listed !== false);   // same rule as /courses: course-cta-update-3 hides unlisted batches
 const card = (page: Page, title: string) => page.locator('h2', { hasText: title }).locator('xpath=ancestor::div[contains(@class,"flex-col")][1]');
 
 test.describe('PRD03 Course discovery cards @regression', () => {

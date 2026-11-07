@@ -34,3 +34,18 @@ export async function releaseSingleUse(code: string, userId: string): Promise<vo
     .eq("code", code.toUpperCase()).eq("kind", "single-use").eq("reserved_by", userId).is("redeemed_at", null);
   if (error) throw error;
 }
+
+// Counting one use of an `everyone` or `selected` code (maxRedemptions): the counter moves only if nobody else moved it first, so two verified
+// payments at once never both write the same number. A few retries cover a collision; the enrolment never depends on the result.
+export async function countRedemption(code: string): Promise<void> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { data, error } = await supabaseAdmin.from("coupons").select("redemptions").eq("code", code.toUpperCase()).neq("kind", "single-use").maybeSingle();
+    if (error) throw error;
+    if (!data) return;
+    const { data: moved, error: e2 } = await supabaseAdmin.from("coupons").update({ redemptions: data.redemptions + 1 })
+      .eq("code", code.toUpperCase()).eq("redemptions", data.redemptions).select("code");
+    if (e2) throw e2;
+    if ((moved?.length ?? 0) === 1) return;
+  }
+  throw new Error("coupon counter is busy");
+}

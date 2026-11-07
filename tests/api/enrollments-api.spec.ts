@@ -3,6 +3,7 @@ import { EMAIL } from '../support/personas';
 import { requireSeed } from '../support/guards';
 import { API_UA, sessionFor } from '../support/api';
 import { clerkUserId } from '../support/clerk';
+import { adminDb } from '../support/db';
 
 // SCP-75 · GET /api/learning/enrollments: a learner's own course slugs. It replaces the browser's direct read of
 // user_enrollments, which the database step locks for the public key.
@@ -15,15 +16,14 @@ test.describe('ENRL own enrolments @regression', () => {
   });
 
   test('[LRNA-ENR-002] a learner gets exactly the slugs of their own enrolments', async ({ browser }) => {
-    const admin = await sessionFor(browser, EMAIL.admin);
     const learner = await sessionFor(browser, EMAIL.edu);
     const userId = await clerkUserId(EMAIL.edu);
     try {
-      const all = (await (await admin.request.get('/api/admin/dashboard-data')).json()).enrollments as { user_id: string; course_slug: string }[];
-      const mine = all.filter(e => e.user_id === userId).map(e => e.course_slug);
+      const { data: all } = await adminDb().from('user_enrollments').select('user_id, course_slug').eq('user_id', userId);
+      const mine = (all ?? []).map(e => e.course_slug);
       const body = await (await learner.request.get('/api/learning/enrollments')).json();
       expect(body.success).toBe(true);
       expect([...body.slugs].sort()).toEqual([...new Set(mine)].sort());
-    } finally { await admin.close(); await learner.close(); }
+    } finally { await learner.close(); }
   });
 });

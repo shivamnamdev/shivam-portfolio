@@ -140,7 +140,7 @@ test.describe('PRD02 CTA on real (closed) course pages @regression', () => {
   test('[PUB-CTA-001][PUB-CTA-002] a visitor on a closed paid course sees View Open Cohorts, which leads to the catalog', async ({ page }) => {
     await page.goto(`/courses/${COURSE.A}`);
     await page.waitForLoadState('networkidle'); // the click does nothing before the page hydrates
-    const cta = page.getByRole('button', { name: 'View Open Cohorts' });
+    const cta = page.getByRole('link', { name: 'View Open Cohorts' }).first();   // a link on the current page; there are two
     await expect(cta).toBeVisible();
     await cta.click();
     await expectOnPath(page, '/courses');

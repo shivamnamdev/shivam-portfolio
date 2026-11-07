@@ -8,10 +8,10 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { activeCourses, isQaFixture } from "@/data/courses";
 import { savedSettings } from "@/lib/adminApi/engagementStore";
 import { CATALOG_TAG } from "./tags";
-import { chooseSource, readWithFallback, type Source } from "./source";
+import { chooseSource, pricingSource, readWithFallback, type Source } from "./source";
 import { buildCourse, FALLBACK_WHATSAPP_NUMBER, whatsappNumber, withoutPrivateLinks, type CatalogCourse, type CohortView, type CourseView, type FileEntry } from "./mapping";
 
-const flags = () => ({ catalog: chooseSource(process.env.PORTAL_CATALOG), coupons: chooseSource(process.env.PORTAL_COUPONS) });
+const flags = () => ({ catalog: chooseSource(process.env.PORTAL_CATALOG), coupons: pricingSource(process.env.PORTAL_CATALOG, process.env.PORTAL_COUPONS) });
 // Entries of the data files as page objects: never with their private links (slice 5b), `listed` defaulted.
 const fileEntries = (): CatalogCourse[] => (activeCourses as unknown as CatalogCourse[]).map((c) => ({ ...withoutPrivateLinks(c), listed: (c as { listed?: boolean }).listed !== false }) as CatalogCourse);
 const log = (what: string, reason: string) => console.error(`catalog: ${what} (${reason}), answering from the data files`);
