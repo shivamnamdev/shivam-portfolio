@@ -16,6 +16,14 @@ export type CohortView = {
   slug: string; courseSlug: string; title: string; statusText?: string; demoOffer?: string; duration?: string; contactPhone?: string;
   enrollmentClosed?: boolean; listed?: boolean; pricing: CohortPricing;
 };
+// The named fields of a cohort document that a page may read. The document's `private` part (the links) is never read here.
+export function cohortFromDoc(key: string, d: Record<string, unknown>, fallbackTitle: string): CohortView {
+  return {
+    slug: key, courseSlug: String(d.courseSlug), title: String(d.title ?? fallbackTitle), statusText: d.statusText as string | undefined, demoOffer: d.demoOffer as string | undefined,
+    duration: d.duration as string | undefined, contactPhone: d.contactPhone as string | undefined, enrollmentClosed: d.enrollmentClosed as boolean | undefined,
+    listed: d.listed as boolean | undefined, pricing: d.pricing as CohortPricing,
+  };
+}
 export type CourseView = { slug: string; title: string; summary?: string; pitch?: Record<string, unknown> };
 export type FileEntry = { slug: string; enrollmentClosed?: boolean; pricing?: PricingView; [k: string]: unknown };
 

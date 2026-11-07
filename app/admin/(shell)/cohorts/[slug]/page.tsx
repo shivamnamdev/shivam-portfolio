@@ -82,7 +82,7 @@ export default function CohortDetailPage() {
   return (
     <div>
       <p className="mb-2 text-sm"><Link href="/admin/cohorts" className="text-amber-400 hover:text-amber-300">Cohorts</Link> / <span className="font-mono text-stone-400">{cohort.slug}</span> · course <Link href={`/admin/courses/${cohort.courseSlug}`} className="font-mono text-stone-300 hover:text-white">{cohort.courseSlug}</Link></p>
-      <PageHeader title={cohort.title} subtitle={`Version ${cohort.version}`} />
+      <PageHeader title={cohort.title} subtitle={`Version ${cohort.version}`} actions={<a href={`/preview/courses/${cohort.slug}`} target="_blank" rel="noreferrer" className={ghostButtonClass}>Preview as learner</a>} />
       <div className="mb-6 space-y-3">
         <LifecycleBar<Cohort> kind="cohorts" slug={slug} status={cohort.status} onChanged={adopt} />
         <div className="flex flex-wrap items-center gap-3 text-sm">

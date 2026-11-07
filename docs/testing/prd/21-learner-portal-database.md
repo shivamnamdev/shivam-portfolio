@@ -1,6 +1,6 @@
 # PRD 21: The learner portal reads the database (phase 5)
 
-Status: slices 5a, 5b, 5c and 5d built 2026-11-06. Blueprint (approved): [docs/architecture/admin-portal-phase5-learner-portal.md](../../architecture/admin-portal-phase5-learner-portal.md). Later slices (5b learning content and private links, 5c banners, bell and templates, 5d prices and coupons) extend this PRD.
+Status: slices 5a, 5b, 5c and 5d built 2026-11-06, slice 5e (admin learner preview) built 2026-11-07. Blueprint (approved): [docs/architecture/admin-portal-phase5-learner-portal.md](../../architecture/admin-portal-phase5-learner-portal.md). Later slices (5b learning content and private links, 5c banners, bell and templates, 5d prices and coupons) extend this PRD.
 
 ## 1. Flags
 Four server environment variables (never `NEXT_PUBLIC_`), each `files` (the default) or `database`: `PORTAL_CATALOG`, `PORTAL_LEARNING`, `PORTAL_ENGAGEMENT`, `PORTAL_COUPONS`. Only the exact word `database` (any case) turns one on; any other value, a typo or an empty value means `files`. A flag set to `database` that cannot read its rows (error) or finds nothing published falls back to the data files **for that request**, logs one line without secrets, and never shows an error page. Turning a flag back to `files` is the rollback; nothing in the database changes. A change of a flag needs a restart or redeploy (it is read from the environment).
@@ -74,3 +74,18 @@ Built on `integrate/course-cta-update-3` (plan-based pricing, `planId` in the or
 **UI (`tests/ui/portal/coupons.spec.ts`, same flags):** `PCP-UI-001` (plan cards, no code in the page HTML, wrong code text, server-applied percentage), `PCP-UI-002` (course list).
 **Matrix:** payment, enrolment and learner API specs and the discovery, public, sales-funnel and smoke UI specs run with all flags `files` and again with all four `database`.
 **Not automated:** a real card payment (test keys only; `verify-payment` is driven with a signed test payment), the owner recreating coupons before turning the flag on, the look of the plan cards on a phone.
+
+## 6. Slice 5e: the admin-only learner preview (`/preview/courses`)
+
+Blueprint (approved 2026-11-07): [docs/architecture/admin-portal-draft-preview.md](../../architecture/admin-portal-draft-preview.md). Drafts never appear on the public pages; the admin sees them, as a learner will, on two separate admin-only routes.
+
+* **Access:** `app/preview/layout.tsx` runs the admin check on the server before anything is read: a visitor goes to the home page, a signed-in learner to `/learning`; `robots: noindex`, `force-dynamic`, not in the middleware's public list. No draft text is ever in a non-admin response.
+* **List (`/preview/courses`):** the public catalog's own card component (`components/catalog/CourseGrid.tsx`, shared with `/courses`) for every cohort in the portal, each card tagged **draft**, **published** or **archived** (plus a note when its course is missing, draft or archived). Draft and published show by default (drafts first); the **Show** dropdown (`?show=archived`) lists only archived cohorts, greyed out. Prices are the portal's (a plans cohort shows its lowest plan, as on the public list).
+* **Page (`/preview/courses/{cohort}`):** the public sales page itself (`components/catalog/CourseSalesView.tsx`, shared with `/courses/{slug}`) with one slim label (draft, published or archived) and the checkout section **inert** (no coupon box or Buy button works) and the mobile sticky bar removed. The order routes also refuse a draft with "Course not found", so nothing can be bought from a preview. Banners are not shown in a preview.
+* **Data:** `lib/catalog/preview.ts` reads `content_docs` (course and cohort rows, any status), never cached, **independent of the `PORTAL_*` flags**, never reads the `private` part of a cohort (no links). Pure rules (mode, order, notes) are in `lib/catalog/previewView.ts`.
+* **Entry points:** "Preview as learner" on the Courses screen, the Cohorts screen and each cohort, and a "Learner preview" entry in the admin sidebar (opens in a new tab).
+* **Public pages unchanged:** the two public routes now render the same shared components; their output is the same (the discovery, public, sales-funnel and smoke suites pass with the flags on `files` and `database`).
+
+**Unit (`tests/unit/portal-preview.spec.ts`):** `PRV-UNIT-001` to `006` (mode parsing, order, course notes, statuses, no private link in a preview object, the sidebar entry).
+**UI (`tests/ui/portal/preview.spec.ts`, any flags):** `PRV-UI-001` set-up; `002` a visitor is refused and gets no draft text; `003` a learner is sent to `/learning`; `004` the list shows draft and published with their tags, hides archived, "Archived only" shows just archived greyed; `005` a draft opens as the real page with the label and plan cards, checkout inert, refused by the order route, absent from the public pages; `006` a published cohort is read-only, a missing page is 404, an unpublished course is noted on the cards; `007` publishing makes it public (database catalog) and the label changes, and the admin screens link to the preview.
+**Not automated:** the look of the label and greyed cards on a phone.

@@ -293,3 +293,8 @@ Full text: `docs/architecture/admin-portal-phase6e-retire-files.md`. Gate: all f
 - [ ] Owner approval of the Blueprint and of the four decisions
 - [ ] Gate met (production soak, backup)
 - [ ] 6e-1 to 6e-5
+
+## 2026-11-07 Draft preview Blueprint (PROPOSED, awaiting owner approval): admin sees draft courses and cohorts as a learner would
+Full text: `docs/architecture/admin-portal-draft-preview.md`. Requested by the owner: drafts must be visible to the admin only. Recommended design: admin-only `/preview/courses` pages that render the real sales page from the portal's data in any status (public pages untouched and still cacheable); decisions: design A or B, show archived, preview checkout off.
+- [x] Owner approval 2026-11-07 (design A with the real cards and page reused; archived hidden by default with an "archived only" dropdown; read-only preview)
+- [x] Slice 5e built 2026-11-07: `lib/catalog/{preview,previewView}.ts`, shared `components/catalog/{CourseGrid,CourseSalesView,PreviewFilter}.tsx`, `app/preview/**`, entry points; 6 unit and 7 UI tests (see PRD 21 section 6)

@@ -62,7 +62,7 @@ export default function CourseDetailPage() {
   return (
     <div>
       <p className="mb-2 text-sm"><Link href="/admin/courses" className="text-amber-400 hover:text-amber-300">Courses</Link> / <span className="font-mono text-stone-400">{course.slug}</span></p>
-      <PageHeader title={course.title} subtitle={`Version ${course.version}`} />
+      <PageHeader title={course.title} subtitle={`Version ${course.version}`} actions={<a href="/preview/courses" target="_blank" rel="noreferrer" className={ghostButtonClass}>Preview as learner</a>} />
       <div className="mb-6"><LifecycleBar<Course> kind="courses" slug={slug} status={course.status} onChanged={adopt} /></div>
 
       <form onSubmit={save} className="space-y-4" aria-label="Edit course">
