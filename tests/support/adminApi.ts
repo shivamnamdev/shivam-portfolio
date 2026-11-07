@@ -19,6 +19,16 @@ export async function clearWriteLimits(): Promise<void> { await adminDb().from('
 
 export async function json(res: Awaited<ReturnType<APIRequestContext['get']>>) { return res.json(); }
 
+// Specs that publish portal rows delete them straight in the database afterwards, which does not clear the server's 60 s catalog cache: the next spec
+// on the same server would still see the deleted cohort. Any admin write refreshes that cache, so this makes (and removes) a throw-away draft course.
+export async function flushCatalogCache(admin: { request: APIRequestContext }): Promise<void> {
+  const slug = 'qa-flush-cache';
+  await admin.request.post(`${BASE}/courses`, { data: { slug, title: 'QA cache flush' } }).catch(() => {});
+  await admin.request.delete(`${BASE}/courses/${slug}`).catch(() => {});
+  await adminDb().from('content_docs').delete().eq('key', slug);
+  await adminDb().from('admin_audit').delete().like('resource_id', `%${slug}%`);
+}
+
 export const course = (slug: string, extra: object = {}) => ({ slug, title: `QA course ${slug}`, summary: 'created by the admin API tests', pitch: { vsl: { headline: 'QA' } }, ...extra });
 export const singlePricing = (inr = 1999, usd?: number) => ({ kind: 'single', inr: { amount: inr, original: inr + 500 }, ...(usd ? { usd: { amount: usd } } : {}) });
 export const plansPricing = () => ({ kind: 'plans', currency: 'INR', plans: [

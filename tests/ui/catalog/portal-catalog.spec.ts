@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { EMAIL } from '../../support/personas';
 import { requireSeed } from '../../support/guards';
 import { sessionFor, type Session } from '../../support/api';
-import { BASE, clearWriteLimits, course, cohort, singlePricing } from '../../support/adminApi';
+import { BASE, clearWriteLimits, course, cohort, flushCatalogCache, singlePricing } from '../../support/adminApi';
 import { adminDb } from '../../support/db';
 
 // Phase 5, slice 5a: the course list and sales pages with PORTAL_CATALOG=database. The server under test must be started with that flag
@@ -43,6 +43,7 @@ test.describe('Portal catalog, PORTAL_CATALOG=database @regression', () => {
     await db.from('content_docs').delete().eq('kind', 'setting');
     if (savedSettings.length) await db.from('content_docs').insert(savedSettings);
     await db.from('admin_audit').delete().or('resource_id.like.qa-cat%,resource.eq.setting').gte('at', startedAt);
+    await flushCatalogCache(admin);
     await clearWriteLimits(); await admin?.close();
   });
   const html = async (path: string) => { const r = await admin.context.request.get(path); return { status: r.status(), text: await r.text() }; };
@@ -80,7 +81,7 @@ test.describe('Portal catalog, PORTAL_CATALOG=database @regression', () => {
   test('[CAT-UI-003] the sales page shows the pitch from the portal and carries no private link anywhere in what the browser receives', async ({ page, request }) => {
     await page.goto(`/courses/${MAIN}`);
     await expect(page.getByText('QA catalog headline')).toBeVisible({ timeout: 60000 });
-    await expect(page.getByText('FROM THE PORTAL')).toBeVisible();
+    await expect(page.locator('h1').getByText('FROM THE PORTAL')).toBeVisible();   // h1 only: the closing heading repeats the words
     await expect(page.getByText('Old way QA line')).toBeVisible();
     await expect(page.getByText('Portal topic').first()).toBeAttached();
     const { status, text } = await visitorHtml(request, `/courses/${MAIN}`);
@@ -94,6 +95,7 @@ test.describe('Portal catalog, PORTAL_CATALOG=database @regression', () => {
   });
 
   test('[CAT-UI-004] until the database prices orders, a cohort that exists only in the portal shows as closed (the server could not charge it)', async ({ page }) => {
+    test.skip(process.env.PORTAL_COUPONS === 'database', 'only while orders are priced from the data files (PORTAL_COUPONS not database); with it on, the portal prices are sold (tests/ui/portal/coupons.spec.ts)');
     await page.goto(`/courses/${MAIN}`);
     await expect(page.getByText('QA catalog headline')).toBeVisible({ timeout: 60000 });
     await expect(page.getByRole('button', { name: /enroll|buy|pay/i })).toHaveCount(0);

@@ -3,7 +3,7 @@ import { EMAIL } from '../../support/personas';
 import { requireSeed } from '../../support/guards';
 import { signInAs } from '../../support/clerk';
 import { hasRazorpayTestKeys, sessionFor, type Session } from '../../support/api';
-import { BASE, clearWriteLimits, cohort, course, plansPricing, singlePricing } from '../../support/adminApi';
+import { BASE, clearWriteLimits, cohort, course, flushCatalogCache, plansPricing, singlePricing } from '../../support/adminApi';
 import { adminDb } from '../../support/db';
 
 // Slice 5e: the admin-only learner preview (/preview/courses): draft, published and archived cohorts as a learner will see them; nobody else can open it.
@@ -28,6 +28,7 @@ test.describe('Admin learner preview @regression', () => {
   test.afterAll(async () => {
     await adminDb().from('content_docs').delete().like('key', 'qa-prv%');
     await adminDb().from('admin_audit').delete().or('resource_id.like.qa-prv%,resource_id.like.%:qa-prv%').gte('at', startedAt);
+    await flushCatalogCache(admin);
     await clearWriteLimits(); await admin?.close();
   });
 
