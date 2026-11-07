@@ -39,7 +39,7 @@ export default async function CoursesPage() {
                   {course.enrollmentClosed
                     ? "Closed"
                     : course.pricingPlans?.length
-                      ? `From ${formatPrice(Math.min(...course.pricingPlans.map(p => parsePrice(p.price))), "INR")}`
+                      ? `From ${formatPrice(Math.min(...course.pricingPlans.map((p: { price: string }) => parsePrice(p.price))), "INR")}`
                       : course.pricing?.inr.currentPrice}
                 </span>
               </div>

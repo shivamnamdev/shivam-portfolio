@@ -22,6 +22,7 @@ import { ChevronRight, Quote } from 'lucide-react';
 export default async function CourseSalesPage({ params }: { params: { slug: string } }) {
   const course = await getCourse(params.slug);
   const support = await getSupport();
+  const couponCheck = course?.pricedBy === 'database' ? 'server' : 'browser';   // a course priced from the portal asks the server (its codes never ship to the browser)
 
   if (!course) {
     notFound();
@@ -31,7 +32,7 @@ export default async function CourseSalesPage({ params }: { params: { slug: stri
   const hasPlans = !!course.pricingPlans?.length;
   const enrollTarget = hasPlans ? 'pricing' : 'live-sessions';
   const startingPrice = hasPlans
-    ? formatPrice(Math.min(...course.pricingPlans!.map(p => parsePrice(p.price))), 'INR')
+    ? formatPrice(Math.min(...course.pricingPlans!.map((p: { price: string }) => parsePrice(p.price))), 'INR')
     : course.pricing.inr.currentPrice;
 
   return (
@@ -49,7 +50,7 @@ export default async function CourseSalesPage({ params }: { params: { slug: stri
         <CourseCurriculum modules={course.modules} />
         <CertificatePreview courseTitle={course.title} />
 
-        {hasPlans ? <CoursePricing course={course} /> : <ActiveCohorts course={course} hideCurriculum />}
+        {hasPlans ? <CoursePricing course={course} couponCheck={couponCheck} /> : <ActiveCohorts course={course} hideCurriculum couponCheck={couponCheck} />}
 
         {/* COURSE-SPECIFIC TESTIMONIALS */}
         {course.courseTestimonials && course.courseTestimonials.length > 0 && (
@@ -80,10 +81,11 @@ export default async function CourseSalesPage({ params }: { params: { slug: stri
 
         <FAQ />
 
+        {/* a portal course may have no sales pitch yet, so the closing heading falls back to a plain one */}
         {/* CLOSING CTA — repeats the primary action at the last decision point */}
         <section className="w-full max-w-4xl mx-auto text-center rounded-3xl border border-amber-500/30 bg-gradient-to-b from-amber-500/10 to-transparent px-6 py-14">
           <h2 className="text-3xl md:text-5xl font-display font-black text-white mb-4">
-            Ready to {course.vsl.headlineHighlight.toLowerCase()}?
+            Ready to {course.vsl?.headlineHighlight ? course.vsl.headlineHighlight.toLowerCase() : 'get started'}?
           </h2>
           <p className="text-stone-400 text-lg mb-8">
             {course.enrollmentClosed
@@ -96,7 +98,7 @@ export default async function CourseSalesPage({ params }: { params: { slug: stri
             </Link>
           ) : (
             <a href={`#${enrollTarget}`} className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-amber-500 text-black font-black text-lg hover:bg-amber-400 transition-colors">
-              {course.vsl.ctaLabel || 'Enroll Now'} <ChevronRight size={20} />
+              {course.vsl?.ctaLabel || 'Enroll Now'} <ChevronRight size={20} />
             </a>
           )}
         </section>

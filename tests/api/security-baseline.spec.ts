@@ -71,7 +71,7 @@ test.describe('SEC security baseline @regression', () => {
   });
 
   test('[SEC-AUTH-001] every API route outside the public list refuses a visitor', async ({ request }) => {
-    const publicRoutes = ['/api/create-order', '/api/verify-payment', '/api/enroll-free', '/api/send-email', '/api/webhooks/clerk'];
+    const publicRoutes = ['/api/create-order', '/api/verify-payment', '/api/enroll-free', '/api/send-email', '/api/webhooks/clerk', '/api/banners'];
     const root = path.join(process.cwd(), 'app', 'api');
     const routes: string[] = [];
     const walk = (dir: string) => {

@@ -42,7 +42,7 @@ export type PricingPlan = {
 };
 
 type PricedCourse = {
-  pricing: { inr: { currentPrice: string }; usd: { currentPrice: string } };
+  pricing: { inr: { currentPrice: string }; usd?: { currentPrice: string } };
   pricingPlans?: PricingPlan[];
 };
 
@@ -58,7 +58,8 @@ export function getBasePrice(course: PricedCourse, currency: CurrencyCode, planI
     if (currency !== "INR") return { ok: false, error: "This course is priced in INR only" };
     return { ok: true, amount: parsePrice(plan.price), plan };
   }
-  const label = currency === "USD" ? course.pricing.usd.currentPrice : course.pricing.inr.currentPrice;
+  const label = currency === "USD" ? course.pricing.usd?.currentPrice : course.pricing.inr.currentPrice;
+  if (!label) return { ok: false, error: "This course is priced in INR only" };   // a portal cohort may have no USD price
   return { ok: true, amount: parsePrice(label), plan: null };
 }
 

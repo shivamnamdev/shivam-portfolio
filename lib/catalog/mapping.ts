@@ -4,7 +4,7 @@
 //
 // Price rule (keeps "the amount shown equals the amount charged"): the payment routes still price from the data files until slice 5d, so while
 // `priceFrom` is "files" the price and the open or closed flag come from the matching file entry. A cohort that exists only in the portal has no
-// file entry, so it shows as closed (the server could not charge it). `priceFrom` is "database" only when PORTAL_COUPONS is "database".
+// file entry, so it shows as closed (the server could not charge it). `priceFrom` is "database" only when the catalog and coupon flags are both "database" (`pricingSource`).
 import type { Source } from "./source";
 
 export type MoneyView = { currentPrice: string; originalPrice: string; savingsText: string; currencyCode: "INR" | "USD" };
@@ -50,11 +50,39 @@ function moneyView(p: Price, currency: "INR" | "USD"): MoneyView {
   return { currentPrice: formatMoney(p.amount, currency), originalPrice: p.original && p.original > p.amount ? formatMoney(p.original, currency) : "", savingsText: savingsText(p, currency), currencyCode: currency };
 }
 
-// The price block of the sales page from a cohort's pricing. A plans cohort shows its lowest plan price (the plan picker arrives with checkout in 5d).
+// The price block of the sales page from a cohort's pricing. A plans cohort shows its lowest plan price on the card; the plan cards come from `pricingPlans`.
 export function pricingFromCohort(p: CohortPricing): PricingView {
   if (p.kind === "single") return { inr: moneyView(p.inr, "INR"), ...(p.usd ? { usd: moneyView(p.usd, "USD") } : {}) };
   const cheapest = [...p.plans].sort((a, b) => a.price.amount - b.price.amount)[0];
   return { inr: moneyView(cheapest ? cheapest.price : { amount: 0 }, "INR") };
+}
+
+// A plans cohort's plans in the shape the plan cards and the price library read (`PricingPlan` of lib/pricing.ts). undefined for a single-price cohort.
+export type PlanView = { id: string; name: string; subtitle?: string; price: string; originalPrice?: string; features: string[]; isPopular?: boolean };
+export function plansFromCohort(p: CohortPricing): PlanView[] | undefined {
+  if (p.kind !== "plans") return undefined;
+  return p.plans.map((pl) => ({
+    id: pl.id, name: pl.name, ...(pl.subtitle ? { subtitle: pl.subtitle } : {}), price: formatMoney(pl.price.amount, "INR"),
+    ...(pl.price.original && pl.price.original > pl.price.amount ? { originalPrice: formatMoney(pl.price.original, "INR") } : {}),
+    features: pl.features ?? [], isPopular: !!pl.popular,
+  }));
+}
+
+// What an order is priced from (create-order, enroll-free, verify-payment): the numbers of a published cohort, never page text.
+export type Sellable = {
+  id: string; slug: string; title: string; enrollmentClosed: boolean;
+  pricing: { inr: { currentPrice: string }; usd?: { currentPrice: string } };
+  pricingPlans?: PlanView[];
+};
+export function sellableFromCohort(slug: string, doc: { title?: unknown; enrollmentClosed?: unknown; pricing?: unknown }): Sellable | null {
+  const p = doc.pricing as CohortPricing | undefined;
+  if (!p || (p.kind !== "single" && p.kind !== "plans")) return null;
+  const view = pricingFromCohort(p);
+  return {
+    id: slug, slug, title: String(doc.title ?? slug), enrollmentClosed: !!doc.enrollmentClosed,
+    pricing: { inr: { currentPrice: view.inr.currentPrice }, ...(view.usd ? { usd: { currentPrice: view.usd.currentPrice } } : {}) },
+    ...(p.kind === "plans" ? { pricingPlans: plansFromCohort(p) } : {}),
+  };
 }
 
 export function buildCourse(cohort: CohortView, course: CourseView, priceFrom: Source, fileEntry: FileEntry | undefined): CatalogCourse {
@@ -65,11 +93,16 @@ export function buildCourse(cohort: CohortView, course: CourseView, priceFrom: S
   const pricing = useFiles && inFiles ? (fileEntry!.pricing as PricingView) : pricingFromCohort(cohort.pricing);
   // Files price the order: a portal-only cohort cannot be bought yet, so it is shown as closed (never a price the server would refuse).
   const enrollmentClosed = useFiles ? (inFiles ? !!fileEntry!.enrollmentClosed : true) : !!cohort.enrollmentClosed;
+  // The plan cards follow the price source too: the plans that price the order are the plans the page shows.
+  const pricingPlans = useFiles && inFiles ? (fileEntry as { pricingPlans?: PlanView[] }).pricingPlans : plansFromCohort(cohort.pricing);
   return {
-    ...fromPitch,   // a block the owner left out stays absent: every sales component already hides or defaults a missing block
+    ...fromPitch,
+    ...(pricingPlans ? { pricingPlans } : {}),   // a block the owner left out stays absent: every sales component already hides or defaults a missing block
     id: cohort.slug, slug: cohort.slug, courseSlug: cohort.courseSlug, title: cohort.title,
     statusText: cohort.statusText ?? "", demoOffer: cohort.demoOffer ?? "", duration: cohort.duration ?? "", contactPhone: cohort.contactPhone ?? "",
     enrollmentClosed, listed: cohort.listed !== false, pricing,
+    // Tells the page which coupon check to use: only a course priced from the portal asks the server (a fallback to the files behaves exactly like `files`).
+    ...(useFiles ? {} : { pricedBy: "database" as const }),
   };
 }
 

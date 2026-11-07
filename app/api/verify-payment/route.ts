@@ -4,11 +4,12 @@ import Razorpay from "razorpay";
 import nodemailer from "nodemailer";
 import { savedMail } from "@/lib/catalog/engagement";
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { activeCourses } from "@/data/courses";
 import { grantEnrollment } from "@/lib/enrollments";
 import { getDisplayName, getPrimaryEmail } from "@/lib/serverAuth";
 import { escapeHtml } from "@/lib/escapeHtml";
 import { formatPrice, toCurrencyCode } from "@/lib/pricing";
+import { getSellable, settleCoupon } from "@/lib/catalog/commerce";
+import { getLinks } from "@/lib/catalog/learning";
 
 function isValidSignature(orderId: string, paymentId: string, signature: string, secret: string): boolean {
   const expected = crypto.createHmac("sha256", secret).update(`${orderId}|${paymentId}`).digest("hex");
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "This order belongs to a different account." }, { status: 403 });
     }
 
-    const courseObj = activeCourses.find(c => c.slug === notes.courseSlug);
+    const { course: courseObj } = await getSellable(notes.courseSlug);
     if (!courseObj) return NextResponse.json({ success: false, error: "Course not found" }, { status: 400 });
     const plan = courseObj.pricingPlans?.find(p => p.id === notes.planId) ?? null;
 
@@ -75,7 +76,8 @@ export async function POST(req: NextRequest) {
     });
 
     // 3. Send the Welcome Email with the WhatsApp Link
-    const whatsappLink = courseObj.whatsappLink || "#";
+    await settleCoupon(created ? notes.couponCode : null, userId, "used");   // a retried verification (created = false) spends nothing twice
+    const whatsappLink = (await getLinks(courseObj.slug)).whatsappLink || "#";
     if (created && user && process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
       try {
         const transporter = nodemailer.createTransport({

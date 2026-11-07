@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Loader2, Tag, Lock, PartyPopper, ExternalLink } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import { checkCouponOnServer } from '@/lib/couponClient';
 import { applyCoupon, formatPrice, parsePrice, resolveCoupon, type Coupon, type PricingPlan } from '@/lib/pricing';
 
 const loadRazorpayScript = () => new Promise<boolean>((resolve) => {
@@ -18,7 +19,7 @@ const loadRazorpayScript = () => new Promise<boolean>((resolve) => {
 
 // Plan cards for plan-based courses. Prices shown here are re-computed on the server
 // (/api/create-order, /api/enroll-free) from courseId + planId + coupon — the client never sends an amount.
-export default function CoursePricing({ course }: { course: any }) {
+export default function CoursePricing({ course, couponCheck = 'browser' }: { course: any; couponCheck?: 'browser' | 'server' }) {
   const { isSignedIn, user } = useUser();
   const { openSignIn } = useClerk();
   const router = useRouter();
@@ -41,8 +42,17 @@ export default function CoursePricing({ course }: { course: any }) {
   if (!plans.length) return null;
   const isClosed = !!course.enrollmentClosed;
 
-  const handleApplyCoupon = () => {
+  const handleApplyCoupon = async () => {
     if (!isSignedIn) { openSignIn(); return; }
+    if (couponCheck === 'server') {
+      // A coupon can be limited to some plans and the plan cards share one coupon box: accept the code if any plan takes it (create-order re-checks the chosen plan).
+      let checked = await checkCouponOnServer({ courseId: course.id, planId: plans[0]?.id, currency: 'INR', couponCode: couponInput });
+      for (const plan of plans.slice(1)) { if (checked.ok) break; if (checked.status !== 400) break; checked = await checkCouponOnServer({ courseId: course.id, planId: plan.id, currency: 'INR', couponCode: couponInput }); }
+      if (!checked.ok) { setAppliedCoupon(null); setCouponMessage({ text: checked.error, type: 'error' }); return; }
+      setAppliedCoupon(checked.coupon);
+      setCouponMessage({ text: 'Coupon applied successfully!', type: 'success' });
+      return;
+    }
     const result = resolveCoupon(couponInput, user?.id);
     if (!result.ok || !result.coupon) {
       setAppliedCoupon(null);
@@ -64,7 +74,7 @@ export default function CoursePricing({ course }: { course: any }) {
         const res = await fetch('/api/enroll-free', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const data = await res.json();
         if (!data.success) throw new Error(data.error || 'Failed to process free enrollment.');
-        setSuccess({ show: true, whatsappLink: course.whatsappLink || '#' });
+        setSuccess({ show: true, whatsappLink: data.whatsappLink || '#' });
         return;
       }
 
@@ -94,7 +104,7 @@ export default function CoursePricing({ course }: { course: any }) {
               }),
             });
             const verifyData = await verifyRes.json();
-            if (verifyData.success) setSuccess({ show: true, whatsappLink: verifyData.whatsappLink || course.whatsappLink || '#' });
+            if (verifyData.success) setSuccess({ show: true, whatsappLink: verifyData.whatsappLink || '#' });
             else setErrorMessage(verifyData.error || 'We could not verify your payment. Please contact support.');
           } catch {
             setErrorMessage('We could not verify your payment. Please contact support.');

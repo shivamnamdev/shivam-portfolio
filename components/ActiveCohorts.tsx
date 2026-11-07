@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { CheckCircle2, ChevronDown, Gift, Calendar, Code2, Download, CreditCard, Loader2, Globe, Tag, PartyPopper, ExternalLink } from 'lucide-react';
 import { applyCoupon, formatPrice, parsePrice, resolveCoupon, toCurrencyCode, type Coupon } from '@/lib/pricing';
+import { checkCouponOnServer } from '@/lib/couponClient';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import SpotlightCard from '@/components/SpotlightCard';
@@ -10,6 +11,7 @@ import SpotlightCard from '@/components/SpotlightCard';
 interface ActiveCohortsProps {
   course?: any;
   hideCurriculum?: boolean; // the course page renders its own full-width curriculum section
+  couponCheck?: 'browser' | 'server'; // 'server' when PORTAL_COUPONS is database: the codes live in the database and are checked by /api/coupons/check
 }
 
 const loadRazorpayScript = () => {
@@ -22,7 +24,7 @@ const loadRazorpayScript = () => {
   });
 };
 
-export default function ActiveCohorts({ course: propCourse, hideCurriculum = false }: ActiveCohortsProps) {
+export default function ActiveCohorts({ course: propCourse, hideCurriculum = false, couponCheck = 'browser' }: ActiveCohortsProps) {
   const [openModule, setOpenModule] = useState<number | null>(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAlreadyEnrolled, setIsAlreadyEnrolled] = useState(false);
@@ -61,7 +63,7 @@ export default function ActiveCohorts({ course: propCourse, hideCurriculum = fal
   // Same rules the server re-applies in /api/create-order and /api/enroll-free.
   const displayPriceNumeric = applyCoupon(parsePrice(activePricing.currentPrice), appliedCoupon, currencyCode);
 
-  const handleApplyCoupon = () => {
+  const handleApplyCoupon = async () => {
     if (!isSignedIn) {
       alert("Please log in first to apply a coupon!");
       openSignIn();
@@ -69,6 +71,13 @@ export default function ActiveCohorts({ course: propCourse, hideCurriculum = fal
     }
     
     setCouponMessage({ text: "", type: "" });
+    if (couponCheck === 'server') {
+      const checked = await checkCouponOnServer({ courseId: displayCourse.id, currency: currencyCode, couponCode: couponInput });
+      if (!checked.ok) { setCouponMessage({ text: checked.error, type: "error" }); setAppliedCoupon(null); return; }
+      setAppliedCoupon(checked.coupon);
+      setCouponMessage({ text: "Coupon applied successfully!", type: "success" });
+      return;
+    }
     const result = resolveCoupon(couponInput, user?.id);
 
     if (!result.ok || !result.coupon) {
@@ -104,7 +113,7 @@ export default function ActiveCohorts({ course: propCourse, hideCurriculum = fal
         const data = await res.json();
         if (data.success) {
           // 🚨 THE FIX: Trigger the beautiful success modal instead of an alert!
-          setPaymentSuccessData({ show: true, whatsappLink: data.whatsappLink || displayCourse.whatsappLink || "#" });
+          setPaymentSuccessData({ show: true, whatsappLink: data.whatsappLink || "#" });
         } else {
           alert(data.error || "Failed to process free enrollment.");
         }
@@ -155,7 +164,7 @@ export default function ActiveCohorts({ course: propCourse, hideCurriculum = fal
             const verifyData = await verifyRes.json();
             if (verifyData.success) {
               // 🚨 THE FIX: Trigger the beautiful success modal instead of an alert!
-              setPaymentSuccessData({ show: true, whatsappLink: verifyData.whatsappLink || displayCourse.whatsappLink || "#" });
+              setPaymentSuccessData({ show: true, whatsappLink: verifyData.whatsappLink || "#" });
             } else {
               alert(verifyData.error || "Error verifying enrollment.");
             }

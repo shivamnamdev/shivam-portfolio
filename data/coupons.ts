@@ -5,7 +5,7 @@
 // so the coupon must never be created without ids (fail closed).
 const qaFreeCouponUsers = (process.env.NEXT_PUBLIC_QA_FREE_COUPON_USERS ?? "")
   .split(",").map((id) => id.trim()).filter(Boolean);
-const qaCoupons = process.env.NEXT_PUBLIC_QA_FIXTURES === "1" && qaFreeCouponUsers.length > 0
+export const qaCoupons = process.env.NEXT_PUBLIC_QA_FIXTURES === "1" && qaFreeCouponUsers.length > 0
   ? [{ code: "QA100", discountType: "percentage", discountValue: 100, allowedUsers: qaFreeCouponUsers }]
   : [];
 
