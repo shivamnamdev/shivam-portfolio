@@ -1,3 +1,6 @@
 [submodule "agents"]
 	path = agents
 	url = https://github.com/sickn33/agentic-awesome-skills.git
+[submodule "Building-with-the-Claude-API"]
+	path = Building-with-the-Claude-API
+	url = git@github.com:shivamnamdev/Building-with-the-Claude-API.git
