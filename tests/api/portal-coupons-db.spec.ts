@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { EMAIL } from '../support/personas';
 import { requireSeed } from '../support/guards';
 import { hasRazorpayTestKeys, paymentIdFor, razorpaySignature, sessionFor, type Session } from '../support/api';
-import { BASE, clearWriteLimits, cohort, course, future, plansPricing, singlePricing } from '../support/adminApi';
+import { BASE, clearWriteLimits, cohort, course, flushCatalogCache, future, plansPricing, singlePricing } from '../support/adminApi';
 import { adminDb } from '../support/db';
 
 // Phase 5, slice 5d with PORTAL_CATALOG=database and PORTAL_COUPONS=database: prices come from the published cohort, coupons from the `coupons` table.
@@ -38,6 +38,7 @@ test.describe('Prices and coupons from the portal, PORTAL_COUPONS=database @regr
     await db.from('coupons').delete().like('code', 'QAPCP%');
     await db.from('content_docs').delete().like('key', 'qa-pcp%');
     await db.from('admin_audit').delete().or('resource_id.like.qa-pcp%,resource_id.like.QAPCP%,resource_id.like.%:qa-pcp%').gte('at', startedAt);
+    await flushCatalogCache(admin);
     await clearWriteLimits(); await admin?.close(); await edu?.close(); await mav?.close();
   });
 

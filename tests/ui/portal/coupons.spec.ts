@@ -3,7 +3,7 @@ import { EMAIL } from '../../support/personas';
 import { requireSeed } from '../../support/guards';
 import { signInAs } from '../../support/clerk';
 import { sessionFor, type Session } from '../../support/api';
-import { BASE, clearWriteLimits, cohort, course, future, plansPricing } from '../../support/adminApi';
+import { BASE, clearWriteLimits, cohort, course, flushCatalogCache, future, plansPricing } from '../../support/adminApi';
 import { adminDb } from '../../support/db';
 
 // Phase 5, slice 5d in the browser with PORTAL_CATALOG=database and PORTAL_COUPONS=database: the plan cards show the portal's prices, and the coupon
@@ -31,6 +31,7 @@ test.describe('Portal prices and coupons in the browser, PORTAL_COUPONS=database
     await db.from('coupons').delete().like('code', 'QAUIPCP%');
     await db.from('content_docs').delete().like('key', 'qa-uipcp%');
     await db.from('admin_audit').delete().or('resource_id.like.qa-uipcp%,resource_id.like.QAUIPCP%,resource_id.like.%:qa-uipcp%').gte('at', startedAt);
+    await flushCatalogCache(admin);   // the next spec on this server must not see the deleted cohort
     await clearWriteLimits(); await admin?.close();
   });
 
@@ -56,6 +57,7 @@ test.describe('Portal prices and coupons in the browser, PORTAL_COUPONS=database
     expect(html).not.toContain('QAUIPCP-20');            // the code is in the database only
     expect(html).not.toContain('EXISTINGSTUDENT_BATCH03');   // the old file codes are not in the page either
 
+    await expect(page.locator('.cl-userButtonTrigger').first()).toBeVisible({ timeout: 30000 });   // signed in on the page before applying a code (a signed-out click opens the sign-in box instead)
     await page.locator('#coupon').fill('NOT-A-CODE');
     await page.getByRole('button', { name: 'Apply' }).click();
     await expect(pricing.getByText('Invalid coupon code')).toBeVisible();
