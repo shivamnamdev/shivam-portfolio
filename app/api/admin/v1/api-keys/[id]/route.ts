@@ -6,7 +6,8 @@ import { writeAudit } from "@/lib/adminApi/audit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 // Revokes a key (it stops working at once). Revoking twice is fine.
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await authorize(req, "keys:write");
     await limitWrites(actor);

@@ -5,7 +5,8 @@ import { limitWrites } from "@/lib/adminApi/request";
 import { slug as slugCheck } from "@/lib/adminApi/validate";
 import { changeStatus } from "@/lib/adminApi/actions";
 
-export async function POST(req: NextRequest, { params }: { params: { slug: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await authorize(req, "cohorts:write");
     await limitWrites(actor);

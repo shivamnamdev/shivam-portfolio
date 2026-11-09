@@ -8,13 +8,15 @@ import { deleteRow, getRow, shape, updateRow } from "@/lib/adminApi/docStore";
 import { assertCohortAudience, slugParam, withoutUndefined } from "@/lib/adminApi/engagementStore";
 import { writeAudit } from "@/lib/adminApi/audit";
 
-type Ctx = { params: { slug: string } };
+type Ctx = { params: Promise<{ slug: string }> };
 
-export async function GET(req: NextRequest, { params }: Ctx) {
+export async function GET(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   return handle(async () => { await authorize(req, "banners:read"); return ok(shape(await getRow("banner", slugParam(params.slug, "banner")))); });
 }
 
-export async function PATCH(req: NextRequest, { params }: Ctx) {
+export async function PATCH(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await authorize(req, "banners:write");
     await limitWrites(actor);
@@ -32,7 +34,8 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   });
 }
 
-export async function DELETE(req: NextRequest, { params }: Ctx) {
+export async function DELETE(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await authorize(req, "banners:write");
     await limitWrites(actor);

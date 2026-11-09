@@ -11,7 +11,8 @@ import { writeAudit } from "@/lib/adminApi/audit";
 export const maxDuration = 60;
 
 // The only way an e-mail leaves for a notification: explicit, immediate, once. Owner only (permission notifications:send).
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await authorize(req, "notifications:send");
     await limitWrites(actor);

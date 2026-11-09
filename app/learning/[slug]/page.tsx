@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import { useUser, UserButton } from '@clerk/nextjs';
 import Navbar from '@/components/Navbar';
 import Banners from '@/components/Banners';
@@ -40,7 +40,8 @@ function formatYouTubeDuration(duration: string) {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-export default function CoursePlayerPage({ params }: { params: { slug: string } }) {
+export default function CoursePlayerPage(props: { params: Promise<{ slug: string }> }) {
+  const params = use(props.params);
   const { user, isLoaded } = useUser();
   const isAdmin = user?.primaryEmailAddress?.emailAddress === ADMIN_EMAIL;
   const siteOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://shivamnamdev.com';

@@ -5,7 +5,8 @@ import { countRecipients, getNotification, idParam, sampleRecipients } from "@/l
 import { SAMPLE_SIZE } from "@/lib/adminApi/notifications";
 
 // How many people the target reaches and who a few of them are (at most 5): enough to check the target, never a list to copy.
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   return handle(async () => {
     await authorize(req, "notifications:read");
     const n = await getNotification(idParam(params.id));

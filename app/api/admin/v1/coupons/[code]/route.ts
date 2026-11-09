@@ -7,10 +7,11 @@ import { CODE_PATTERN, checkCouponAgainstPrices, couponUpdateShape, getCoupon, i
 import { writeAudit } from "@/lib/adminApi/audit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-type Ctx = { params: { code: string } };
+type Ctx = { params: Promise<{ code: string }> };
 const checkCode = (c: string) => { const up = c.toUpperCase(); if (!CODE_PATTERN.test(up)) throw notFound("Coupon not found"); return up; };
 
-export async function GET(req: NextRequest, { params }: Ctx) {
+export async function GET(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   return handle(async () => {
     await authorize(req, "coupons:read");
     const row = await getCoupon(checkCode(params.code));
@@ -18,7 +19,8 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   });
 }
 
-export async function PATCH(req: NextRequest, { params }: Ctx) {
+export async function PATCH(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await authorize(req, "coupons:write");
     await limitWrites(actor);
@@ -49,7 +51,8 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   });
 }
 
-export async function DELETE(req: NextRequest, { params }: Ctx) {
+export async function DELETE(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await authorize(req, "coupons:write");
     await limitWrites(actor);

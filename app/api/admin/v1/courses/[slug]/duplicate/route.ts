@@ -6,7 +6,8 @@ import { optional, parseObject, readBody, slug as slugCheck, str, slug } from "@
 import { getRow, insertRow, shape } from "@/lib/adminApi/docStore";
 import { writeAudit } from "@/lib/adminApi/audit";
 
-export async function POST(req: NextRequest, { params }: { params: { slug: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await authorize(req, "courses:write");
     await limitWrites(actor);

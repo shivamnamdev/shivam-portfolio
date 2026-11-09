@@ -5,7 +5,8 @@ import { slug as slugCheck } from "@/lib/adminApi/validate";
 import { getRow } from "@/lib/adminApi/docStore";
 
 // The only place the private WhatsApp and live-class links are returned (permission cohorts:links).
-export async function GET(req: NextRequest, { params }: { params: { slug: string } }) {
+export async function GET(req: NextRequest, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   return handle(async () => {
     await authorize(req, "cohorts:links");
     if (!slugCheck(params.slug).ok) throw notFound("cohort not found");

@@ -4,10 +4,11 @@ import { parseObject, readBody } from "@/lib/adminApi/validate";
 import { modulePatchShape, patchModule, removeModule } from "@/lib/adminApi/curriculum";
 import { curriculumWrite, writeActor } from "@/lib/adminApi/curriculumStore";
 
-type Ctx = { params: { cohort: string; moduleId: string } };
+type Ctx = { params: Promise<{ cohort: string; moduleId: string }> };
 const idOf = (s: string) => { if (!/^m-[a-z0-9]{8}$/.test(s)) throw notFound("module not found"); return s; };
 
-export async function PATCH(req: NextRequest, { params }: Ctx) {
+export async function PATCH(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await writeActor(req);
     const id = idOf(params.moduleId);
@@ -18,7 +19,8 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   });
 }
 
-export async function DELETE(req: NextRequest, { params }: Ctx) {
+export async function DELETE(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await writeActor(req);
     const id = idOf(params.moduleId);

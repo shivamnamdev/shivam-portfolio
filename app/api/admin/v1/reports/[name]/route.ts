@@ -4,10 +4,11 @@ import { handle, notFound, ok } from "@/lib/adminApi/envelope";
 import { isReport, reportDays } from "@/lib/adminApi/enrolments";
 import { couponUsageReport, enrolmentsPerCohort, signupsPerDay } from "@/lib/adminApi/enrolmentStore";
 
-type Ctx = { params: { name: string } };
+type Ctx = { params: Promise<{ name: string }> };
 
 // Counts only: no name, e-mail or id of a person is in any report.
-export async function GET(req: NextRequest, { params }: Ctx) {
+export async function GET(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   return handle(async () => {
     await authorize(req, "reports:read");
     if (!isReport(params.name)) throw notFound("report not found");

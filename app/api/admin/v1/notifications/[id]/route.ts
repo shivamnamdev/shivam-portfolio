@@ -5,9 +5,10 @@ import { limitWrites } from "@/lib/adminApi/request";
 import { deleteNotification, getNotification, idParam, readCount, view } from "@/lib/adminApi/notificationStore";
 import { writeAudit } from "@/lib/adminApi/audit";
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
-export async function GET(req: NextRequest, { params }: Ctx) {
+export async function GET(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   return handle(async () => {
     await authorize(req, "notifications:read");
     const id = idParam(params.id);
@@ -16,7 +17,8 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   });
 }
 
-export async function DELETE(req: NextRequest, { params }: Ctx) {
+export async function DELETE(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await authorize(req, "notifications:write");
     await limitWrites(actor);

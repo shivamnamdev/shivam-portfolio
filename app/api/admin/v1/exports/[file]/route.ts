@@ -6,10 +6,11 @@ import { enrolmentCsv, isExportFile, learnerCsv, summariseLearners } from "@/lib
 import { allEnrolments } from "@/lib/adminApi/enrolmentStore";
 import { writeAudit } from "@/lib/adminApi/audit";
 
-type Ctx = { params: { file: string } };
+type Ctx = { params: Promise<{ file: string }> };
 
 // A CSV of personal data, so: owner or admin key only, counted against the write limit, and every export is written to the audit log.
-export async function GET(req: NextRequest, { params }: Ctx) {
+export async function GET(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await authorize(req, "exports:run");
     if (!isExportFile(params.file)) throw notFound("export not found");

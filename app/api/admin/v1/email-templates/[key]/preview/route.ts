@@ -10,7 +10,8 @@ const anything = (v: unknown) => ({ ok: true as const, value: v });
 
 // Shows what the e-mail would look like with sample values. Sends nothing and saves nothing. An empty request previews the saved (or built-in)
 // template; { subject, body } previews text that has not been saved yet.
-export async function POST(req: NextRequest, { params }: { params: { key: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ key: string }> }) {
+  const params = await props.params;
   return handle(async () => {
     await authorize(req, "templates:read");
     if (!isTemplateKey(params.key)) throw notFound("template not found");

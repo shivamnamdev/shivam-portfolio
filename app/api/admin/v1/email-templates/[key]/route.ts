@@ -8,11 +8,12 @@ import { getRow, insertRow, updateRow } from "@/lib/adminApi/docStore";
 import { templateView } from "@/lib/adminApi/engagementStore";
 import { writeAudit } from "@/lib/adminApi/audit";
 
-type Ctx = { params: { key: string } };
+type Ctx = { params: Promise<{ key: string }> };
 const find = async (key: string) => { try { return await getRow("email_template", key); } catch (e) { if ((e as { status?: number }).status === 404) return undefined; throw e; } };
 const anything = (v: unknown) => ({ ok: true as const, value: v });
 
-export async function GET(req: NextRequest, { params }: Ctx) {
+export async function GET(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   return handle(async () => {
     await authorize(req, "templates:read");
     if (!isTemplateKey(params.key)) throw notFound("template not found");
@@ -21,7 +22,8 @@ export async function GET(req: NextRequest, { params }: Ctx) {
 }
 
 // Replaces one template (subject and body, plain text). The first save needs no version; later saves send If-Match.
-export async function PUT(req: NextRequest, { params }: Ctx) {
+export async function PUT(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await authorize(req, "templates:write");
     await limitWrites(actor);
