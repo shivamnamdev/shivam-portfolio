@@ -276,7 +276,7 @@ test.describe('PRD07 Python course: progress, Q&A and lab (writes)', () => {
         await expect(page.getByText('Step one: print one')).toBeVisible();
         await setCode(page, "print('one')");
         await page.waitForTimeout(500);
-        await page.getByRole('button', { name: /Next/ }).click();
+        await page.getByRole('button', { name: 'Next', exact: true }).click();   // exact: the Next.js dev server adds an "Open Next.js Dev Tools" button
         await expect(page.getByText('Question 2 of 2')).toBeVisible();
         await expect(page.getByText('Step two: print two')).toBeVisible();
         expect(await getCode(page)).not.toContain("print('one')");

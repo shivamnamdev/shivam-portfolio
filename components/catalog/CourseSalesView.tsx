@@ -53,7 +53,7 @@ export default function CourseSalesView({ course, support, couponCheck, preview 
         <CertificatePreview courseTitle={course.title} />
 
         {preview
-          ? <div data-testid="preview-checkout-off" title="Checkout is off in preview" className="w-full opacity-90 pointer-events-none select-none" aria-disabled="true" {...({ inert: '' } as object)}>
+          ? <div data-testid="preview-checkout-off" title="Checkout is off in preview" className="w-full opacity-90 pointer-events-none select-none" aria-disabled="true" {...({ inert: true } as object)}>
               {hasPlans ? <CoursePricing course={course} couponCheck={couponCheck} /> : <ActiveCohorts course={course} hideCurriculum couponCheck={couponCheck} />}
             </div>
           : hasPlans ? <CoursePricing course={course} couponCheck={couponCheck} /> : <ActiveCohorts course={course} hideCurriculum couponCheck={couponCheck} />}
