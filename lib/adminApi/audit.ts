@@ -29,14 +29,14 @@ export async function writeAudit(entry: { actor: Actor; action: string; resource
   }
   // A saved change to a course, cohort or setting refreshes the cached course list and sales pages at once (the 60-second timer is only a backstop).
   if (touchesCatalog(entry.resource, entry.action)) {
-    try { revalidateTag(CATALOG_TAG); } catch (e) { console.error("catalog revalidation failed:", (e as Error).message?.slice(0, 80)); }
+    try { revalidateTag(CATALOG_TAG, { expire: 0 }); } catch (e) { console.error("catalog revalidation failed:", (e as Error).message?.slice(0, 80)); }
   }
   // The same for what the learning area reads (curriculum, cohort, course).
   if (touchesLearning(entry.resource)) {
-    try { revalidateTag(LEARNING_TAG); } catch (e) { console.error("learning revalidation failed:", (e as Error).message?.slice(0, 80)); }
+    try { revalidateTag(LEARNING_TAG, { expire: 0 }); } catch (e) { console.error("learning revalidation failed:", (e as Error).message?.slice(0, 80)); }
   }
   // And the banners shown on the pages.
   if (touchesBanners(entry.resource)) {
-    try { revalidateTag(BANNERS_TAG); } catch (e) { console.error("banner revalidation failed:", (e as Error).message?.slice(0, 80)); }
+    try { revalidateTag(BANNERS_TAG, { expire: 0 }); } catch (e) { console.error("banner revalidation failed:", (e as Error).message?.slice(0, 80)); }
   }
 }
