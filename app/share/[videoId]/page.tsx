@@ -10,10 +10,11 @@ import { getPrimaryEmail } from '@/lib/serverAuth';
 const getVideoDetails = findLesson;
 
 // 2. Generate Dynamic SEO Metadata for WhatsApp!
-export async function generateMetadata({ params }: { params: { videoId: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ videoId: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const details = await getVideoDetails(params.videoId);
   const title = details ? `${details.title} | ${details.courseTitle}` : "Exclusive Lesson | Shivam Academy";
-  
+
   // 🚨 THE FIX: Use 0.jpg which is guaranteed to exist even for Unlisted YouTube videos!
   const imageUrl = `https://img.youtube.com/vi/${params.videoId}/0.jpg`;
 
@@ -66,7 +67,8 @@ async function resolveDestination(videoId: string) {
 }
 
 // 3. 🚨 THE FIX: A 200 OK page with a Client-Side JavaScript Redirect
-export default async function ShareRedirectPage({ params }: { params: { videoId: string } }) {
+export default async function ShareRedirectPage(props: { params: Promise<{ videoId: string }> }) {
+  const params = await props.params;
   const destination = await resolveDestination(params.videoId);
 
   return (

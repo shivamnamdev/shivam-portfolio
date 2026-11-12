@@ -4,7 +4,8 @@ import { getPreview } from '@/lib/catalog/preview';
 import CourseSalesView from '@/components/catalog/CourseSalesView';
 
 // One cohort's sales page exactly as a learner will see it, in any status, with a slim label and the checkout turned off. Admin only (see ../../layout.tsx).
-export default async function PreviewCoursePage({ params }: { params: { slug: string } }) {
+export default async function PreviewCoursePage(props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   const course = await getPreview(params.slug);
   if (!course) notFound();
   const support = await getSupport();

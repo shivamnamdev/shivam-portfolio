@@ -7,7 +7,8 @@ import { getRow, shape, updateRow } from "@/lib/adminApi/docStore";
 import { publicCohort } from "@/lib/adminApi/cohorts";
 import { writeAudit } from "@/lib/adminApi/audit";
 
-export async function POST(req: NextRequest, { params }: { params: { slug: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await authorize(req, "cohorts:write");
     await limitWrites(actor);

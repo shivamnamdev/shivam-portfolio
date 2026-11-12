@@ -1,12 +1,13 @@
 'use client';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import Navbar from '@/components/Navbar';
 import { Loader2, ChevronLeft, ShieldAlert, Video, ExternalLink, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 
-export default function LiveClassLobby({ params }: { params: { slug: string } }) {
+export default function LiveClassLobby(props: { params: Promise<{ slug: string }> }) {
+  const params = use(props.params);
   const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
   const [hasAccess, setHasAccess] = useState(false);

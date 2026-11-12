@@ -7,7 +7,8 @@ import { listPreview } from '@/lib/catalog/preview';
 import { parseMode } from '@/lib/catalog/previewView';
 
 // The catalog as a learner sees it, with the cohorts that are not public yet. Admin only (see layout.tsx).
-export default async function PreviewCatalog({ searchParams }: { searchParams: { show?: string } }) {
+export default async function PreviewCatalog(props: { searchParams: Promise<{ show?: string }> }) {
+  const searchParams = await props.searchParams;
   const mode = parseMode(searchParams.show);
   const courses = await listPreview(mode);
   return (

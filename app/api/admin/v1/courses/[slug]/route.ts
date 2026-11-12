@@ -8,14 +8,16 @@ import { deleteRow, getRow, shape, updateRow } from "@/lib/adminApi/docStore";
 import { writeAudit } from "@/lib/adminApi/audit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-type Ctx = { params: { slug: string } };
+type Ctx = { params: Promise<{ slug: string }> };
 const checkSlug = (s: string) => { if (!slugCheck(s).ok) throw notFound("course not found"); return s; };
 
-export async function GET(req: NextRequest, { params }: Ctx) {
+export async function GET(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   return handle(async () => { await authorize(req, "courses:read"); return ok(shape(await getRow("course", checkSlug(params.slug)))); });
 }
 
-export async function PATCH(req: NextRequest, { params }: Ctx) {
+export async function PATCH(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await authorize(req, "courses:write");
     await limitWrites(actor);
@@ -31,7 +33,8 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   });
 }
 
-export async function DELETE(req: NextRequest, { params }: Ctx) {
+export async function DELETE(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await authorize(req, "courses:write");
     await limitWrites(actor);

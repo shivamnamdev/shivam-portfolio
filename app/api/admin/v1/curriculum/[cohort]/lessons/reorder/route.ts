@@ -4,7 +4,8 @@ import { parseObject, readBody } from "@/lib/adminApi/validate";
 import { reorderLessons, reorderLessonsShape } from "@/lib/adminApi/curriculum";
 import { curriculumWrite, writeActor } from "@/lib/adminApi/curriculumStore";
 
-export async function POST(req: NextRequest, { params }: { params: { cohort: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ cohort: string }> }) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await writeActor(req);
     const body = parseObject(await readBody(req), reorderLessonsShape);

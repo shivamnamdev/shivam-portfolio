@@ -6,7 +6,8 @@ import { getLearningCourse, getLinks } from "@/lib/catalog/learning";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_req: Request, { params }: { params: { slug: string } }) {
+export async function GET(_req: Request, props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   const who = requireLearner();
   if ("response" in who) return who.response;
   if (!isSlug(params.slug)) return fail(400, "Invalid course");

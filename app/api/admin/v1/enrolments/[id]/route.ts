@@ -6,10 +6,11 @@ import { assertRevokeAllowed } from "@/lib/adminApi/enrolments";
 import { enrolmentKey, getEnrolment, idParam, revoke, wasGrantedByAdmin } from "@/lib/adminApi/enrolmentStore";
 import { writeAudit } from "@/lib/adminApi/audit";
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 // Removes the enrolment. One the admin API granted goes freely; any other (paid, coupon, older manual) is refused unless ?force=true from the owner session.
-export async function DELETE(req: NextRequest, { params }: Ctx) {
+export async function DELETE(req: NextRequest, props: Ctx) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await authorize(req, "enrolments:write");
     await limitWrites(actor);

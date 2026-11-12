@@ -9,7 +9,8 @@ import { effective, savedSettings, settingView } from "@/lib/adminApi/engagement
 import { writeAudit } from "@/lib/adminApi/audit";
 
 // Replaces one setting. The first save of a key needs no version; later saves send the version in If-Match.
-export async function PUT(req: NextRequest, { params }: { params: { key: string } }) {
+export async function PUT(req: NextRequest, props: { params: Promise<{ key: string }> }) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await authorize(req, "settings:write");
     await limitWrites(actor);

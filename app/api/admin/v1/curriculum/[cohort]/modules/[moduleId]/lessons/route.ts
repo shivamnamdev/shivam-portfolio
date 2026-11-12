@@ -4,7 +4,11 @@ import { parseObject, readBody } from "@/lib/adminApi/validate";
 import { addLesson, clean, lessonCreateShape, type Lesson } from "@/lib/adminApi/curriculum";
 import { curriculumWrite, writeActor } from "@/lib/adminApi/curriculumStore";
 
-export async function POST(req: NextRequest, { params }: { params: { cohort: string; moduleId: string } }) {
+export async function POST(
+  req: NextRequest,
+  props: { params: Promise<{ cohort: string; moduleId: string }> }
+) {
+  const params = await props.params;
   return handle(async () => {
     const actor = await writeActor(req);
     if (!/^m-[a-z0-9]{8}$/.test(params.moduleId)) throw notFound("module not found");
