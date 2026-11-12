@@ -24,7 +24,7 @@ const isPublicRoute = createRouteMatcher([
   // Everything else, including any other /api/admin/* route, is intentionally NOT public; handlers also verify the identity server-side.
 ]);
 
-const isApiRoute = createRouteMatcher(["/api(.*)", "/trpc(.*)"]);
+const isApiRoute = createRouteMatcher(["/api", "/api/(.*)", "/trpc(.*)"]) // not "/api(.*)": that would also catch the page /api-docs;
 
 // Same behaviour as the old authMiddleware: a visitor on a protected page is sent to sign in, a visitor on a protected
 // API route gets 401 (Clerk 7's auth.protect() would answer 404 for non-page requests, so it is not used).
