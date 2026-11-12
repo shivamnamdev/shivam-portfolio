@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     const { courseId, planId, currency: rawCurrency, couponCode } = await req.json();
 
     // 1. SECURITY CHECK: identity comes from the Clerk session, never from the request body.
-    const { userId: sessionUserId } = auth();
+    const { userId: sessionUserId } = await auth();
     const userId = sessionUserId ?? (isTestApiKey(req) ? "api-test-user" : null);
     if (!userId) {
       return NextResponse.json({ success: false, error: "401 Unauthorized: Invalid Request" }, { status: 401 });

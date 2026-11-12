@@ -8,7 +8,7 @@ import { getBell } from "@/lib/catalog/engagement";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const who = requireLearner();
+  const who = await requireLearner();
   if ("response" in who) return who.response;
   return NextResponse.json({ success: true, ...(await getBell(who.userId)) }, { headers: { "Cache-Control": "private, no-store" } });
 }

@@ -7,7 +7,7 @@ import { fail, requireLearner } from "@/lib/learnerApi";
 const HIDDEN_EMAILS = ["financetrail.bazar@gmail.com", "mavish.ps8@gmail.com", "shivamnamdev.edu@gmail.com", "shivamnamdev.corp@gmail.com"];
 
 export async function GET() {
-  const who = requireLearner();
+  const who = await requireLearner();
   if ("response" in who) return who.response;
 
   try {

@@ -9,7 +9,7 @@ import { streakDays } from "@/lib/streakDay";
 
 
 export async function POST(req: Request) {
-  const who = requireLearner();
+  const who = await requireLearner();
   if ("response" in who) return who.response;
 
   try {

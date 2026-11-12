@@ -1507,7 +1507,7 @@ sys.settrace(_trace_calls)
               <Award size={14} /> Certificate
             </button>
           )}
-          <UserButton afterSignOutUrl="/" />
+          <UserButton />
         </div>
       </header>
 

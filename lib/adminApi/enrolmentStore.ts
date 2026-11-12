@@ -84,7 +84,7 @@ export async function grant(input: { cohortSlug: string; userId?: string; email?
   let userId: string; let email: string | null; let name: string;
   if (input.userId) {
     let u;
-    try { u = await clerkClient.users.getUser(input.userId); } catch { throw notFound("no signed-up user with that id"); }
+    try { u = await (await clerkClient()).users.getUser(input.userId); } catch { throw notFound("no signed-up user with that id"); }
     userId = u.id; email = getPrimaryEmail(u); name = getDisplayName(u, "");
   } else {
     const [found] = await idsForEmails([input.email as string]);   // 400 naming the address when nobody has signed up with it
@@ -133,7 +133,7 @@ export async function signupsPerDay(days: number, now: Date) {
   const since = now.getTime() - days * 86_400_000;
   const stamps: number[] = []; let truncated = false;
   for (let page = 0; page < 10; page++) {
-    const users = await clerkClient.users.getUserList({ orderBy: "-created_at", limit: 500, offset: page * 500 });
+    const users = (await (await clerkClient()).users.getUserList({ orderBy: "-created_at", limit: 500, offset: page * 500 })).data;
     stamps.push(...users.map((u) => u.createdAt));
     if (users.length < 500 || users[users.length - 1].createdAt < since) break;
     if (page === 9) truncated = true;

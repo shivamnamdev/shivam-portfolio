@@ -15,7 +15,7 @@
     "test:seeded": "E2E_SEED_PERSONAS=1 playwright test --project=chromium"
   },
   "dependencies": {
-    "@clerk/nextjs": "^4.29.9",
+    "@clerk/nextjs": "^7.9.25",
     "@gitgraph/react": "^1.6.0",
     "@jitsi/react-sdk": "^1.4.4",
     "@monaco-editor/react": "^4.7.0",

@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = await req.json();
 
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
     const keyId = process.env.RAZORPAY_KEY_ID;

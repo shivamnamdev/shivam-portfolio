@@ -51,7 +51,8 @@ export async function openUserMenu(page: Page) {
 
 export async function signOutThroughUi(page: Page) {
   await openUserMenu(page);
-  await page.getByRole('menuitem', { name: 'Sign out' }).first().click();
+  // Clerk 7 renders the account menu entries as buttons (Clerk 4 used role=menuitem); accept either.
+  await page.getByRole('menuitem', { name: 'Sign out' }).or(page.getByRole('button', { name: 'Sign out' })).first().click();
   await expect(page.getByRole('button', { name: 'Log In' }).first()).toBeVisible({ timeout: 20000 });
 }
 
@@ -66,7 +67,8 @@ export async function submitUnknownAccount(page: Page) {
   await page.getByRole('button', { name: 'Log In' }).first().click();
   await page.locator('input[name="identifier"]').fill('no-such-user-qa@example.com');
   await page.keyboard.press('Enter');
-  await expect(page.getByText(/Couldn.t find your account/i)).toBeVisible({ timeout: 20000 });
+  // Clerk 7 also adds a screen-reader live region with the same text, so match the visible field error only.
+  await expect(page.getByTestId('form-feedback-error').or(page.locator('.cl-formFieldErrorText')).first()).toContainText(/Couldn.t find your account/i, { timeout: 20000 });
 }
 
 // ---- signed-in access markers (what the app really renders) ----

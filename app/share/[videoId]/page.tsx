@@ -40,7 +40,7 @@ async function resolveDestination(videoId: string) {
   const details = await getVideoDetails(videoId);
   if (!details) return '/learning';
 
-  const { userId } = auth();
+  const { userId } = await auth();
   if (!userId) return `/courses/${details.slug}`;
 
   const clerkUser = await currentUser();

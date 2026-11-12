@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   try {
     const { courseId, planId, currency: rawCurrency, couponCode } = await req.json();
 
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
     const { course, source } = await getSellable(String(courseId ?? ""));

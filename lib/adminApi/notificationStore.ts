@@ -73,7 +73,7 @@ const planUnavailable = () => unprocessable("Plans are not recorded in this data
 export async function countRecipients(t: Target): Promise<number> {
   if (t.kind === "admins") return 0;
   if (t.kind === "user") return 1;
-  if (t.kind === "all") return await clerkClient.users.getCount();
+  if (t.kind === "all") return await (await clerkClient()).users.getCount();
   const col = t.kind === "cohort" ? "course_slug" : "plan_id";
   const { count, error } = await supabaseAdmin.from("user_enrollments").select("user_id", { count: "exact", head: true }).eq(col, t.kind === "cohort" ? t.cohortSlug : t.planId);
   if (error) { if (planColumnMissing(error)) throw planUnavailable(); throw error; }
@@ -87,7 +87,7 @@ export async function resolveRecipients(t: Target, max: number): Promise<Learner
   if (t.kind === "all") {
     const out: LearnerRef[] = [];
     for (let offset = 0; out.length < max; offset += 100) {
-      const users = await clerkClient.users.getUserList({ limit: Math.min(100, max - out.length), offset });
+      const users = (await (await clerkClient()).users.getUserList({ limit: Math.min(100, max - out.length), offset })).data;
       if (!users.length) break;
       out.push(...(await refsForIds(users.map((u) => u.id))));
     }

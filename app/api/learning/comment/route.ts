@@ -8,7 +8,7 @@ import { fail, isItemId, readJson, requireLearner } from "@/lib/learnerApi";
 const MAX_COMMENT_CHARS = 1000;
 
 export async function POST(req: Request) {
-  const who = requireLearner();
+  const who = await requireLearner();
   if ("response" in who) return who.response;
   const body = await readJson(req);
   const content = typeof body?.content === "string" ? body.content.trim() : "";

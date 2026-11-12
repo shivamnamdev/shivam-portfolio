@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { SignInButton, SignedIn, SignedOut, UserButton, useUser } from '@clerk/nextjs';
+import { SignInButton, Show, UserButton, useUser } from '@clerk/nextjs';
 import { Menu, X, ShieldAlert } from 'lucide-react';
 import NotificationBell from '@/components/NotificationBell';
 import Banners from '@/components/Banners';
@@ -46,19 +46,19 @@ export default function Navbar() {
         </div>
 
         <div className="z-50 flex items-center gap-2 md:gap-4">
-          <SignedIn>
+          <Show when="signed-in">
             <NotificationBell />
-          </SignedIn>
+          </Show>
 
-          <SignedOut>
+          <Show when="signed-out">
             <SignInButton mode="modal">
               <button className="px-4 py-2 md:px-6 md:py-2 rounded-full bg-white text-black font-bold text-xs md:text-sm hover:bg-stone-200 transition-colors shadow-md whitespace-nowrap">
                 Log In
               </button>
             </SignInButton>
-          </SignedOut>
+          </Show>
           
-          <SignedIn>
+          <Show when="signed-in">
             {isAdmin && (
               <Link href="/admin/overview" className="hidden md:block px-4 py-2 rounded-full border border-amber-500/50 text-amber-400 font-bold text-sm hover:bg-amber-500/10 transition-colors">
                 Switch to admin portal
@@ -68,8 +68,8 @@ export default function Navbar() {
               Dashboard
             </Link>
             <div className="border-l border-white/20 h-6 mx-1 hidden md:block"></div>
-            <UserButton afterSignOutUrl="/" />
-          </SignedIn>
+            <UserButton />
+          </Show>
 
           <button className="ml-1 rounded-full p-2 text-stone-400 transition-colors hover:bg-white/10 md:hidden" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -87,14 +87,14 @@ export default function Navbar() {
                 <Link href="/about" onClick={() => setIsMobileMenuOpen(false)} className={`text-lg font-bold transition-colors ${pathname === '/about' ? 'text-amber-500' : 'text-white'}`}>About</Link>
                 <div className="h-px w-full bg-white/10"></div>
                 <Link href="/contact" onClick={() => setIsMobileMenuOpen(false)} className={`text-lg font-bold transition-colors ${pathname === '/contact' ? 'text-amber-500' : 'text-white'}`}>Contact</Link>
-                <SignedIn>
+                <Show when="signed-in">
                   <div className="h-px w-full bg-white/10"></div>
                   <Link href="/learning" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between text-lg font-bold text-amber-500">My Dashboard <span className="text-xl">➔</span></Link>
                   {isAdmin && (<>
                     <div className="h-px w-full bg-white/10"></div>
                     <Link href="/admin/overview" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between text-lg font-bold text-amber-500">Switch to admin portal <span className="text-xl">➔</span></Link>
                   </>)}
-                </SignedIn>
+                </Show>
               </div>
             </motion.div>
           )}

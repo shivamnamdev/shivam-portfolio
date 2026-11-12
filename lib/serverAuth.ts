@@ -20,7 +20,7 @@ export function getDisplayName(user: User | null | undefined, fallback = "Studen
 
 // Returns a 401/403 response when the caller is not the admin, or null when access is allowed.
 export async function requireAdmin(): Promise<NextResponse | null> {
-  const { userId } = auth();
+  const { userId } = await auth();
   if (!userId) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   const user = await currentUser();
   if (!isAdminEmail(getPrimaryEmail(user))) {
