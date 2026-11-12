@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { fail, hasCourseAccess, isItemId, isSlug, readJson, requireLearner, UNIQUE_VIOLATION } from "@/lib/learnerApi";
 
 export async function POST(req: Request) {
-  const who = requireLearner();
+  const who = await requireLearner();
   if ("response" in who) return who.response;
   const body = await readJson(req);
   if (!body || !isSlug(body.courseSlug) || !isItemId(body.videoId)) return fail(400, "Invalid request");

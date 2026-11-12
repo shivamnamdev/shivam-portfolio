@@ -6,7 +6,7 @@ import { fail, isItemId, requireLearner } from "@/lib/learnerApi";
 const MAX_COMMENTS = 200;
 
 export async function GET(req: Request) {
-  const who = requireLearner();
+  const who = await requireLearner();
   if ("response" in who) return who.response;
   const videoId = new URL(req.url).searchParams.get("videoId");
   if (!isItemId(videoId)) return fail(400, "Invalid videoId");

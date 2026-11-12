@@ -8,7 +8,7 @@ import { fail, requireLearner } from "@/lib/learnerApi";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const who = requireLearner();
+  const who = await requireLearner();
   if ("response" in who) return who.response;
 
   const { data, error } = await supabaseAdmin.from("user_enrollments").select("course_slug").eq("user_id", who.userId);

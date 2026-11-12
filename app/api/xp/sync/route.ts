@@ -9,7 +9,7 @@ const XP_PER_VIDEO = 10;
 const XP_PER_ASSIGNMENT = 50;
 
 export async function POST() {
-  const { userId } = auth();
+  const { userId } = await auth();
   if (!userId) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
 
   try {

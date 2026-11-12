@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { fail, hasCourseAccess, isSlug, requireLearner } from "@/lib/learnerApi";
 
 export async function GET(req: Request) {
-  const who = requireLearner();
+  const who = await requireLearner();
   if ("response" in who) return who.response;
   const courseSlug = new URL(req.url).searchParams.get("courseSlug");
   if (!isSlug(courseSlug)) return fail(400, "Invalid courseSlug");

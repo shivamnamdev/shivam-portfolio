@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(req: Request) {
-  const who = requireLearner();
+  const who = await requireLearner();
   if ("response" in who) return who.response;
   const body = await readJson(req);
   if (body === null) return fail(400, "Invalid request");

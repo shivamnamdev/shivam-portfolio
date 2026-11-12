@@ -9,7 +9,7 @@ const MAX_CODE_CHARS = 200_000;
 const MAX_TITLE_CHARS = 200;
 
 export async function POST(req: Request) {
-  const who = requireLearner();
+  const who = await requireLearner();
   if ("response" in who) return who.response;
   const body = await readJson(req);
   if (!body || !isSlug(body.courseSlug) || !isItemId(body.videoId)) return fail(400, "Invalid request");

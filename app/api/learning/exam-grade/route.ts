@@ -39,7 +39,7 @@ function combine(files: unknown): string | null {
 }
 
 export async function POST(req: Request) {
-  const who = requireLearner();
+  const who = await requireLearner();
   if ("response" in who) return who.response;
   const body = await readJson(req);
   const code = body ? combine(body.files) : null;

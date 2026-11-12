@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     const body = await req.json().catch(() => ({}));
     const { courseId, planId, currency: rawCurrency, couponCode } = body as Record<string, unknown>;

@@ -8,7 +8,7 @@ import { getMyCourses } from "@/lib/catalog/learning";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const who = requireLearner();
+  const who = await requireLearner();
   if ("response" in who) return who.response;
   const { data, error } = await supabaseAdmin.from("user_enrollments").select("course_slug").eq("user_id", who.userId);
   if (error) { console.error("my-courses lookup failed:", error.message); return fail(500, "Could not load your courses"); }

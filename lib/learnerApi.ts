@@ -28,8 +28,8 @@ export async function readJson(req: Request): Promise<Record<string, unknown> | 
 }
 
 // Returns the signed-in user id, or a 401 response.
-export function requireLearner(): { userId: string } | { response: NextResponse } {
-  const { userId } = auth();
+export async function requireLearner(): Promise<{ userId: string } | { response: NextResponse }> {
+  const { userId } = await auth();
   return userId ? { userId } : { response: fail(401, "Unauthorized") };
 }
 

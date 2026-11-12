@@ -9,7 +9,7 @@ const openai = new OpenAI({
 
 export async function POST(req: NextRequest) {
   // SCP-70: signed-in learners only, so a real model behind this route is never free to anyone (also enforced by middleware).
-  if (!auth().userId) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  if (!(await auth()).userId) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
   try {
     const { labType, code, assignment, output, gitContext } = await req.json();
 

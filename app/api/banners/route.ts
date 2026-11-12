@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   if (!placement || !(PLACEMENTS as readonly string[]).includes(placement)) {
     return NextResponse.json({ success: false, error: "Invalid placement" }, { status: 400 });
   }
-  const { userId } = auth();
+  const { userId } = await auth();
   const banners = await getBanners(placement as (typeof PLACEMENTS)[number], userId);
   return NextResponse.json({ success: true, banners }, { headers: { "Cache-Control": "private, no-store" } });
 }

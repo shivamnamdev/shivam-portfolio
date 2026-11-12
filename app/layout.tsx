@@ -37,7 +37,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider afterSignOutUrl="/">
       <html lang="en" className={`scroll-smooth ${inter.variable} ${space.variable} ${mono.variable}`} suppressHydrationWarning>
         {/* 🚨 THE FIX: Global Black Background and Text Color */}
         <body className="font-sans relative antialiased bg-black text-white min-h-screen flex flex-col" suppressHydrationWarning>

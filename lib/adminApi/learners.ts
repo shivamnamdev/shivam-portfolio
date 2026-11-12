@@ -11,7 +11,7 @@ const ref = (u: Parameters<typeof getPrimaryEmail>[0] & { id: string }): Learner
 
 // The directory: signed-up people, newest first, each with their join date and enrolment count (enrolled or lead). Pages by position.
 export async function directoryPage(q: string | null, limit: number, offset: number): Promise<{ items: DirectoryRow[]; next: string | null }> {
-  const users = await clerkClient.users.getUserList({ query: q ?? undefined, limit: limit + 1, offset, orderBy: "-created_at" });
+  const users = (await (await clerkClient()).users.getUserList({ query: q ?? undefined, limit: limit + 1, offset, orderBy: "-created_at" })).data;
   const page = users.slice(0, limit);
   const counts = new Map<string, number>();
   if (page.length) {
@@ -23,7 +23,7 @@ export async function directoryPage(q: string | null, limit: number, offset: num
 }
 
 export async function searchLearners(q: string | null, limit = 20): Promise<LearnerRef[]> {
-  const users = await clerkClient.users.getUserList({ query: q ?? undefined, limit });
+  const users = (await (await clerkClient()).users.getUserList({ query: q ?? undefined, limit })).data;
   return users.map((u) => ref(u as never));
 }
 
@@ -32,7 +32,7 @@ export async function idsForEmails(emails: string[]): Promise<LearnerRef[]> {
   const unique = [...new Set(emails.map((e) => e.toLowerCase()))];
   const found: LearnerRef[] = [];
   for (let i = 0; i < unique.length; i += 100) {
-    const users = await clerkClient.users.getUserList({ emailAddress: unique.slice(i, i + 100), limit: 100 });
+    const users = (await (await clerkClient()).users.getUserList({ emailAddress: unique.slice(i, i + 100), limit: 100 })).data;
     found.push(...users.map((u) => ref(u as never)));
   }
   const have = new Set(found.map((f) => f.email?.toLowerCase()));
@@ -45,7 +45,7 @@ export async function refsForIds(ids: string[]): Promise<LearnerRef[]> {
   if (!ids.length) return [];
   const byId = new Map<string, LearnerRef>();
   for (let i = 0; i < ids.length; i += 100) {
-    const users = await clerkClient.users.getUserList({ userId: ids.slice(i, i + 100), limit: 100 });
+    const users = (await (await clerkClient()).users.getUserList({ userId: ids.slice(i, i + 100), limit: 100 })).data;
     for (const u of users) byId.set(u.id, ref(u as never));
   }
   return ids.map((id) => byId.get(id) ?? { id, email: null, name: "(user not found)" });

@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(_req: Request, props: { params: Promise<{ slug: string }> }) {
   const params = await props.params;
-  const who = requireLearner();
+  const who = await requireLearner();
   if ("response" in who) return who.response;
   if (!isSlug(params.slug)) return fail(400, "Invalid course");
   try {

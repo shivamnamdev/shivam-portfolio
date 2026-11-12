@@ -39,7 +39,7 @@ const SESSION_TTL_MS = 60_000;
 const sessionCache = new Map<string, { email: string | null; admin: boolean; until: number }>();
 
 async function actorFromSession(): Promise<Actor> {
-  const { userId } = auth();
+  const { userId } = await auth();
   if (!userId) throw unauthorized();
   let hit = sessionCache.get(userId);
   if (!hit || hit.until < Date.now()) {

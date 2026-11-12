@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   try {
     // SCP-71: who the certificate is for and what it is for come from the server (Clerk session and the course catalogue),
     // never from the request body. Rule: 80% of the tasks done and the final exam passed (lib/certificateEligibility.ts).
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json().catch(() => null);
