@@ -288,3 +288,4 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 - 2026-11-13 CI (PR #92): workflow pinned to `ubuntu-24.04` and Node 24; the PR smoke run passes again.
 - 2026-11-13 SCP-87 follow-up: `middleware.ts` renamed to `proxy.ts` (Next 16), public/API path rules extracted to `lib/routeAccess.ts` with unit tests `RTE-UNIT-001` to `005` (`tests/unit/route-access.spec.ts`); a prefix now stops at a path segment (`/coursesfoo` is no longer public). Auth gate specs re-run: 50 passed.
 - 2026-11-13 SCP-103: `PRF-LOD-003` accepts 400 or 429 for the refused send-email burst (the per-IP rate limit answers 429 after 5 requests); a 5xx or a slow answer still fails it.
+- 2026-11-13 SCP-102: `DBI-SCH-002` accepts the optional `user_enrollments.plan_id` column; `docs/DATABASE.md` now lists the columns of `user_enrollments` (user_email, user_name, coupon_used, plan_id).
