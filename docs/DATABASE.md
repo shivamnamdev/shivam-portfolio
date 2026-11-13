@@ -6,7 +6,11 @@ All tables are secured via Row Level Security (RLS). Currently, policies are set
 Tracks which student owns which course.
 - `id` (UUID)
 - `user_id` (Text - Clerk ID)
+- `user_email` (Text)
+- `user_name` (Text)
 - `course_slug` (Text - e.g., 'python-beginners')
+- `coupon_used` (Text - the coupon code used, if any)
+- `plan_id` (Text, optional - the pricing plan of a plan-based course; added by `docs/SUPABASE_PLAN_COLUMN.md`, null for older rows; the code works without the column)
 - `enrolled_at` (Timestamp)
 
 ### 2. `video_progress`
