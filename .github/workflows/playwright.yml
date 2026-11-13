@@ -7,7 +7,8 @@ on:
 jobs:
   test:
     timeout-minutes: 60
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04, which Playwright 1.59 cannot install browsers on.
+    runs-on: ubuntu-24.04
     env:
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
       CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
@@ -25,7 +26,8 @@ jobs:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
       with:
-        node-version: lts/*
+        # Pinned: lts/* moved to Node 26, where the Playwright browser download hangs while extracting.
+        node-version: 24
     - name: Install dependencies
       run: npm ci
     - name: Install Playwright Browsers
