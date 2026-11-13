@@ -158,9 +158,10 @@ export default function CurriculumEditorPage() {
                       <span className="w-14 shrink-0 text-xs text-stone-500">Lesson {li + 1}</span>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       {yt[l.id] && <img src={yt[l.id].thumbnail} alt="" width={64} height={36} loading="lazy" className="h-9 w-16 shrink-0 rounded object-cover" />}
+                      {/* headline: the stored title, else what YouTube calls the video, else the id; the small line keeps whichever one is not the headline */}
                       <span className="min-w-0 flex-1" title={l.id}>
-                        <span className="block truncate text-stone-200">{lessonLabel(l)}</span>
-                        {yt[l.id] && <span className="block truncate text-xs text-stone-500">On YouTube: {yt[l.id].title || 'untitled'}{yt[l.id].duration ? ` · ${yt[l.id].duration}` : ''}</span>}
+                        <span className="block truncate text-stone-200">{l.title?.trim() || yt[l.id]?.title || lessonLabel(l)}</span>
+                        {yt[l.id] && <span className="block truncate text-xs text-stone-500">{l.title?.trim() ? `On YouTube: ${yt[l.id].title || 'untitled'}` : l.id}{yt[l.id].duration ? ` · ${yt[l.id].duration}` : ''}</span>}
                       </span>
                       {l.assignment && <span className="rounded-full bg-sky-500/20 px-2 py-0.5 text-[11px] text-sky-300">{l.assignment.isExam ? 'Exam' : 'Assignment'}</span>}
                       {!!l.resources?.length && <span className="rounded-full bg-stone-500/20 px-2 py-0.5 text-[11px] text-stone-300">{l.resources.length} res.</span>}
