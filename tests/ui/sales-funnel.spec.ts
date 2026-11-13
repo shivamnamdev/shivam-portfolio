@@ -10,14 +10,24 @@ test.describe('Course Sales Page UI @smoke', () => {
       await page.goto(`/courses/${course.slug}`);
       await page.waitForLoadState('networkidle');
 
+      // An unlisted (old live) cohort is not for visitors: its sales page is "not found" unless the learner is enrolled or an admin
+      // (lib/courseAccess.ts, canOpenSalesPage; covered as a learner and an admin by CAC-UI-001..006). The smoke suite runs signed out.
+      if (course.listed === false) {
+        await expect(page.getByText('This page could not be found.')).toBeVisible();
+        await expect(page.getByText(course.vsl.headlineHighlight)).toHaveCount(0);   // nothing of the sales page leaks
+        return;
+      }
+
       await expect(page.getByRole('heading', { level: 1 })).toContainText(course.vsl.headlineHighlight);
 
       // Plan-based courses show plan cards (#pricing); others the single-price cohort box.
       const plans = course.pricingPlans ?? [];
 
       if (course.enrollmentClosed) {
+        // A recorded course that is not open yet says "Opens Soon"; a finished live cohort says "Enrollment Closed" (components/CoursePricing.tsx).
+        const closedLabel = course.format === 'recorded' ? /Opens Soon/ : /Enrollment Closed/;
         if (plans.length) {
-          const closedButtons = page.locator('#pricing').getByRole('button', { name: /Enrollment Closed/ });
+          const closedButtons = page.locator('#pricing').getByRole('button', { name: closedLabel });
           await expect(closedButtons).toHaveCount(plans.length);
           for (const button of await closedButtons.all()) await expect(button).toBeDisabled();
           await expect(page.getByRole('button', { name: /^Enroll in/ })).toHaveCount(0);

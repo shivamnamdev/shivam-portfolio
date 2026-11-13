@@ -721,3 +721,7 @@ _Last generated: 2026-11-13 from `9694b61` on branch `docs/SCP-87-upgrade-record
 ### 2026-03-25
 
 - `3740792` Initial commit from Create Next App — Shivam-Namdev (19 files, +6922/−0)
+
+### 2026-11-14 (hand-written) SCP-105
+- Found while opening PR #101: the PR smoke check fails on three sales pages. Cause is PR #99 (recorded courses): two unlisted cohorts and the recorded "Opens Soon" wording; the spec still expected the old behaviour. Fixed the spec; first attempt also asserted "no h1" on the not-found page, which is wrong (the 404 page has one), replaced by "the hero headline is absent". `tests/ui/sales-funnel.spec.ts` 5/5 locally.
+

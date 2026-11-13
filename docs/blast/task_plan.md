@@ -309,3 +309,9 @@ Full text: `docs/architecture/curriculum-editor-parity.md`. Findings: git lab so
 - [x] Owner approval; exam stays read-only with a card; no hidden-lesson toggle; the Advanced checkbox relabelled as locked-until-exam
 - [x] Steps 1 to 3 built (library, panel, page); unit tests ADMUI-UNIT-CUR-009..012
 - [ ] Step 4 UI tests ADMUI-CUR-009..012 on QA; step 5 docs; PR
+## 2026-11-14 SCP-105 PR smoke red on main (sales-funnel cases after the recorded-courses change)
+- [x] Branch `fix/SCP-105-sales-funnel-smoke` from main; Jira bug SCP-105 under SCP-2
+- [x] Cause: the smoke spec visits every course as a visitor and expects the hero and "Enrollment Closed"; since PR #99 two Python cohorts are unlisted (not found for visitors) and python-foundation is recorded ("Opens Soon")
+- [x] Fix in the spec only (behaviour is as decided in `docs/architecture/recorded-courses.md`); 5/5 pass locally
+- [ ] Smoke and neighbour runs green, PR opened, Jira comment, owner merge
+
