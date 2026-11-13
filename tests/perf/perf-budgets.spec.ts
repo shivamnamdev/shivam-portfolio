@@ -149,10 +149,13 @@ test.describe('PRD15 performance budgets @perf', () => {
     });
 
     test('[PRF-API-004] certificate generation answers within 3 s and the file stays under 100 KB', async () => {
-      const r = await timeCalls(5, () => learner.request.post('/api/generate-certificate', { data: { studentName: 'QA Student', courseTitle: 'QA Course' } }));
-      const bytes = (await (await learner.request.post('/api/generate-certificate', { data: { studentName: 'QA Student', courseTitle: 'QA Course' } })).body()).length;
+      // Since SCP-71 the route takes { courseSlug } and refuses a learner who has not finished the course (80% of the tasks and the final exam).
+      // The admin is exempt from that check and the PDF is built by the same code, so the budget is measured with the admin session.
+      const post = () => admin.request.post('/api/generate-certificate', { data: { courseSlug: COURSE.A } });
+      const r = await timeCalls(5, post);
+      const bytes = (await (await post()).body()).length;
       note('generate-certificate', `p50 ${r.p50.toFixed(0)} ms, p95 ${r.p95.toFixed(0)} ms, ${bytes} bytes`);
-      expect(r.statuses.every(s => s === 200)).toBe(true);
+      expect(r.statuses.every(s => s === 200), `statuses: ${r.statuses.join(', ')}`).toBe(true);
       expect(r.p95).toBeLessThan(B(3000));
       expect(bytes).toBeLessThan(100_000);
     });
@@ -191,7 +194,8 @@ test.describe('PRD15 performance budgets @perf', () => {
     test('[PRF-LOD-003] a burst of 50 refused requests on a public endpoint is answered quickly (no work is done for refusals)', async ({ request }) => {
       const r = await timeCalls(50, () => request.post('/api/send-email', { data: { email: 'bad' }, headers: { 'User-Agent': API_UA } }), true);
       note('50 parallel refused send-email', `p50 ${r.p50.toFixed(0)} ms, p95 ${r.p95.toFixed(0)} ms`);
-      expect(r.statuses.every(s => s === 400)).toBe(true);
+      // A refusal is a 400 (invalid body) or a 429 (the per-IP rate limit, SCP-69/73: 5 per 10 minutes). Never a 5xx, and always fast.
+      expect(r.statuses.every(s => s === 400 || s === 429), `statuses: ${[...new Set(r.statuses)].join(', ')}`).toBe(true);
       expect(r.p95).toBeLessThan(B(5000));
     });
   });
