@@ -152,7 +152,7 @@ modules: [
   {
     id: "python-beginners-batch-2",
     slug: "python-beginners-batch-2",
-    title: "Python Live Session",
+    title: "Python Live Session (Batch 2)",
     statusText: "🔒 Cohort Completed",
     demoOffer: "Enrollment Closed",
     duration: "6-8 Weeks | Weekends Only (Sat & Sun)",
