@@ -2,8 +2,10 @@ import { test, expect } from '@playwright/test';
 import {
   ASSIGNMENT_HOSTS, RESOURCE_HOSTS, LIMITS, assignmentProblems, assignmentToForm, cleanResources, countLessons, emptyAssignmentForm, formToAssignment, layoutAfterMove,
   layoutAfterMoveToModule, lessonIdFrom, lessonKindOf, lessonLabel, linkProblem, moduleOrderAfterMove, moved, outline, resourceProblems, urlFieldsFor, type Module,
+  FIELD_LABELS, GIT_FIELDS, PYTHON_FIELDS, documentFile, documentIdFrom, documentLessonBody, documentProblems, emptyDocumentForm, examOf, formatDuration, parseYoutubeItems, thumbnailUrl, youtubeRequestUrls, type Lesson,
 } from '../../lib/adminUi/curriculum';
-import { ASSIGNMENT_HOSTS as SERVER_ASSIGNMENT_HOSTS, RESOURCE_HOSTS as SERVER_RESOURCE_HOSTS, LIMITS as SERVER_LIMITS, reorderLessons, reorderModules, patchLesson } from '../../lib/adminApi/curriculum';
+import { ASSIGNMENT_HOSTS as SERVER_ASSIGNMENT_HOSTS, RESOURCE_HOSTS as SERVER_RESOURCE_HOSTS, LIMITS as SERVER_LIMITS, reorderLessons, reorderModules, patchLesson, addLesson, lessonCheck } from '../../lib/adminApi/curriculum';
+import { courseCurriculumMap } from '../../data/learning-content';
 
 // Unit level (phase 4c): the pure helpers behind the curriculum editor. No browser, no network.
 const V1 = 'a9nrrH5XkG0'; const V2 = 'b9nrrH5XkG1'; const V3 = 'c9nrrH5XkG2'; const D1 = 'doc-notes-1';
@@ -91,7 +93,7 @@ test.describe('Admin UI curriculum @regression', () => {
     expect(assignmentToForm(undefined)).toEqual(emptyAssignmentForm());
     expect(assignmentToForm({ title: 'T', labType: 'git', carryOverCode: true }).labType).toBe('git');
     expect(assignmentProblems(emptyAssignmentForm())).toEqual(['The assignment needs a title']);
-    expect(assignmentProblems({ ...f, title: 'x', rawUrl: 'https://github.com/o/r' })[0]).toMatch(/^rawUrl must be a link on raw/);
+    expect(assignmentProblems({ ...f, title: 'x', rawUrl: 'https://github.com/o/r' })[0]).toMatch(/^Assignment file must be a link on raw/);   // plain label, not the field name
     expect(assignmentProblems({ ...f, title: 'x' })).toEqual([]);
     // what the screen builds is accepted by the server's own patch logic and never touches the protected flags
     const patched = patchLesson([{ id: 'm-aaaaaaaa', title: 'M', advanced: false, lessons: [{ id: V1, kind: 'video' }] }], V1, { assignment: formToAssignment({ ...f, title: 'x' }) });
@@ -116,5 +118,75 @@ test.describe('Admin UI curriculum @regression', () => {
     expect(o[0].lessons[0]).toMatchObject({ assignment: false, exam: false, resources: 0 });
     expect(countLessons(mods())).toBe(4);
     expect(outline([])).toEqual([]);
+  });
+  test('[ADMUI-UNIT-CUR-009] a git lab keeps its solution link through the form (the data files have one on every git day) and every link field has a plain label', () => {
+    expect(GIT_FIELDS).toContain('solutionUrl');
+    const git = { title: 'Git Day 01', labType: 'git' as const, instructionsUrl: 'https://raw.githubusercontent.com/o/g/instructions.md', starterRepoUrl: 'https://raw.githubusercontent.com/o/g/repo-seed.json',
+      expectedStateUrl: 'https://raw.githubusercontent.com/o/g/expected-state.json', validatorUrl: 'https://raw.githubusercontent.com/o/g/validator.json', solutionUrl: 'https://raw.githubusercontent.com/o/g/solution.md' };
+    expect(formToAssignment(assignmentToForm(git))).toEqual(git);   // round trip loses nothing
+    // the real Git Day 01 from the data files survives the editor's form unchanged
+    const real = (courseCurriculumMap['git-beginner-batch-1'][0].githubAssignments as Record<string, any>)['LNmtD68zih0'];
+    expect(formToAssignment(assignmentToForm(real))).toEqual(real);
+    for (const k of [...PYTHON_FIELDS, ...GIT_FIELDS]) { expect(FIELD_LABELS[k].label, k).not.toMatch(/Url|^[a-z]+[A-Z]/); expect(FIELD_LABELS[k].hint).toContain('raw.githubusercontent.com'); }
+    expect(assignmentProblems({ ...emptyAssignmentForm(), title: 'x', labType: 'git', validatorUrl: 'https://github.com/x' })[0]).toMatch(/^Validator \(\.json\) must be a link on/);
+  });
+
+  test('[ADMUI-UNIT-CUR-010] a document lesson from a title, a link and a type: id from the title, -2 on a clash, accepted by the server, first resource is the document', () => {
+    expect(documentIdFrom('Right Thinking Pattern for Coding', [])).toBe('doc-right-thinking-pattern-for-coding');
+    expect(documentIdFrom('  Git  Cheatsheet! ', ['doc-git-cheatsheet'])).toBe('doc-git-cheatsheet-2');
+    expect(documentIdFrom('Café résumé', ['doc-cafe-resume', 'doc-cafe-resume-2'])).toBe('doc-cafe-resume-3');
+    expect(documentIdFrom('!!!', [])).toBeNull();
+    expect(documentIdFrom('x'.repeat(80), [])!.length).toBeLessThanOrEqual(54);
+    const f = { ...emptyDocumentForm(), title: 'Git Cheatsheet', url: 'https://s3.ap-south-1.amazonaws.com/git-course-content.shivamnamdev.com/Git+Cheatsheet.pdf', type: 'Document' as const, description: 'Git Complete Course Cheatsheet' };
+    const body = documentLessonBody(f, [V1]);
+    expect(body).toEqual({ id: 'doc-git-cheatsheet', title: 'Git Cheatsheet', description: 'Git Complete Course Cheatsheet', resources: [{ title: 'Git Cheatsheet', url: f.url, type: 'Document' }] });
+    const checked = lessonCheck(body!);                                              // the server accepts exactly this body (the route checks, then adds)
+    expect(checked.ok).toBe(true);
+    const added = addLesson([{ id: 'm-aaaaaaaa', title: 'M', advanced: false, lessons: [] }], 'm-aaaaaaaa', (checked as { ok: true; value: Lesson }).value);
+    expect(added[0].lessons[0]).toMatchObject({ id: 'doc-git-cheatsheet', kind: 'document' });
+    expect(documentProblems(emptyDocumentForm())).toEqual(['The document needs a title', 'The document needs a link']);
+    expect(documentProblems({ ...f, url: 'https://evil.example/x.pdf' })[0]).toMatch(/^The document link must be a link on/);
+    expect(documentProblems({ ...f, description: 'x'.repeat(501) })).toEqual(['The description can have at most 500 characters']);
+    expect(documentLessonBody({ ...f, url: '' }, [])).toBeNull();
+    const doc: Lesson = { id: 'doc-x', kind: 'document', resources: [{ title: 'The doc', url: 'https://github.com/a', type: 'PDF' }, { title: 'Extra', url: 'https://github.com/b', type: 'Link' }] };
+    expect(documentFile(doc)).toEqual({ file: doc.resources![0], extras: [doc.resources![1]] });
+    expect(documentFile({ id: V1, kind: 'video', resources: doc.resources })).toEqual({ file: null, extras: doc.resources });
+    expect(documentFile({ id: 'doc-y', kind: 'document' })).toEqual({ file: null, extras: [] });
+  });
+
+  test('[ADMUI-UNIT-CUR-011] the exam card finds the final exam, its files and its place; a course without one says so', () => {
+    const exam = examOf(mods());
+    expect(exam).toMatchObject({ moduleId: 'm-bbbbbbbb', moduleTitle: 'Loops', number: 1, serverGraded: false, files: [] });
+    expect(exam!.lesson.id).toBe(V3);
+    expect(examOf([{ id: 'm-aaaaaaaa', title: 'M', advanced: false, lessons: [{ id: V1, kind: 'video', assignment: { title: 'Day 1' } }] }])).toBeNull();
+    const real = examOf([{ id: 'm-aaaaaaaa', title: 'Module 5', advanced: false, lessons: [{ id: 'WhP2F-xk3Kk', kind: 'video', assignment: (courseCurriculumMap['python-beginners'][4].githubAssignments as Record<string, any>)['WhP2F-xk3Kk'] }] }]);
+    expect(real).toMatchObject({ serverGraded: true });
+    expect(real!.files.map((x) => x.label)).toEqual(['Exam file', 'Add-on file', 'Expected result']);
+    for (const x of real!.files) expect(x.url).toMatch(/^https:\/\/raw\.githubusercontent\.com\//);
+  });
+
+  test('[ADMUI-UNIT-CUR-012] YouTube requests: videos only, no duplicates, 50 per request, the key encoded; the answer is read tolerantly', () => {
+    const ids = Array.from({ length: 120 }, (_, i) => `v${String(i).padStart(10, '0')}`);
+    const urls = youtubeRequestUrls([...ids, 'doc-notes', ids[0], 'bad id'], 'k&y');
+    expect(urls.length).toBe(3);
+    expect(urls[0]).toMatch(/^https:\/\/www\.googleapis\.com\/youtube\/v3\/videos\?part=snippet,contentDetails&id=v0000000000,/);
+    expect(urls[0].split('&id=')[1].split('&key=')[0].split(',').length).toBe(50);
+    expect(urls[2].split('&id=')[1].split('&key=')[0].split(',').length).toBe(20);
+    expect(urls[0].endsWith('&key=k%26y')).toBe(true);
+    expect(urls.join()).not.toContain('doc-notes');
+    expect(youtubeRequestUrls(['doc-a'], 'k')).toEqual([]);
+    const parsed = parseYoutubeItems({ items: [
+      { id: V1, snippet: { title: 'Intro', description: 'First class', thumbnails: { medium: { url: `https://i.ytimg.com/vi/${V1}/mqdefault.jpg` } } }, contentDetails: { duration: 'PT1H2M3S' } },
+      { id: V2, snippet: { title: 'No thumb' } },
+      { id: 'short', snippet: { title: 'bad id' } },
+      { id: V3 },
+      { id: 'd9nrrH5XkG3', snippet: { title: 'Evil', thumbnails: { medium: { url: 'javascript:alert(1)' } } } },
+    ] });
+    expect(parsed[V1]).toEqual({ title: 'Intro', description: 'First class', duration: '1:02:03', thumbnail: `https://i.ytimg.com/vi/${V1}/mqdefault.jpg` });
+    expect(parsed[V2]).toEqual({ title: 'No thumb', description: '', duration: '', thumbnail: thumbnailUrl(V2) });
+    expect(parsed).not.toHaveProperty('short'); expect(parsed).not.toHaveProperty(V3);
+    expect(parsed['d9nrrH5XkG3'].thumbnail).toBe(thumbnailUrl('d9nrrH5XkG3'));   // only an i.ytimg.com picture is trusted
+    expect(parseYoutubeItems(null)).toEqual({}); expect(parseYoutubeItems({ error: 'quota' })).toEqual({});
+    expect(formatDuration('PT5M30S')).toBe('5:30'); expect(formatDuration('PT45S')).toBe('0:45'); expect(formatDuration('PT2H')).toBe('2:00:00'); expect(formatDuration('nope')).toBe(''); expect(formatDuration(undefined)).toBe('');
   });
 });
