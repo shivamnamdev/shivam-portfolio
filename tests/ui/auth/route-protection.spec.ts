@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { activeCourses } from '../../../data/courses';
+import { courseCurriculumMap } from '../../../data/learning-content';
 import { signInAs, signOutViaClerk } from '../../support/clerk';
 import { requireSignIn } from '../../support/guards';
 import { AUTH, COURSE } from '../../support/personas';
