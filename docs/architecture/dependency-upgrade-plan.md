@@ -80,9 +80,9 @@ Checked with `npm audit --omit=dev --json`, `npm view` and `npm ... --dry-run`:
 
 | Stage | Change | PR | Full Chromium run (QA) |
 |---|---|---|---|
-| 1 | in-range fixes of 8 transitive packages | #86 | covered by the stage 2 and 3 runs |
-| 2 | `swagger-ui-react` 3 to 5.34.1, `dompurify` override 3.4.17 | #87 | admin API docs checked by `SCP-29` |
-| 3 | `nodemailer` 8 to 10.4.0 | #88 | e-mail specs |
+| 1 | in-range fixes of 8 transitive packages | #86 | no separate full run; merged on the owner's instruction without waiting for CI. The stage 4 run is the first full run after it |
+| 2 | `swagger-ui-react` 3 to 5.34.1, `dompurify` override 3.4.17 | #87 | no separate full run (same); `/api-docs` is covered by `SCP-29` in the later runs |
+| 3 | `nodemailer` 8 to 10.4.0 | #88 | no separate full run (same); covered by the later full runs |
 | 4 | `next` 14 to 15.5.29, async request APIs (codemod, `use(params)` on the player page by hand) | #89 | [2026-11-10](../testing/runs/2026-11-10.md): 976 passed, 25 failed (23 known, 2 new and fixed: `PRV-UI-005`, `LRN-PY-008`) |
 | 6 | `@clerk/nextjs` 4 to 7.9.25, `clerkMiddleware`, async `auth()` and `clerkClient()`, `<Show>` | #90 | [2026-11-12](../testing/runs/2026-11-12.md): 951 passed, 41 failed before the follow-ups (a real bug: the API matcher `/api(.*)` also caught the page `/api-docs`; two Clerk 7 markup changes broke test helpers), re-runs of the affected specs pass |
 | 5 | `next` 15 to 16.4.6, `revalidateTag(tag, { expire: 0 })` | #91 | [2026-11-13](../testing/runs/2026-11-13.md): 984 passed, 26 failed (23 known; `LRN-EXM-011` test relied on a webpack chunk name, fixed; 2 load flakes) |

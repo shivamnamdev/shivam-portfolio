@@ -3,17 +3,141 @@
 Date-wise log of changes, generated from `git log` (see [CONSTITUTION.md](../../CONSTITUTION.md) §2).
 Newest first. Format: `hash` subject — author (files changed, +added/−deleted). Merge commits are tagged **[merge]**; commits on other branches but not yet in `origin/main` are tagged **[not in main]**.
 
-_Last generated: 2026-11-02 from `2f9b4ce` on branch `docs/pol-016-result`._
+_Last generated: 2026-11-13 from `9694b61` on branch `docs/SCP-87-upgrade-records`._
 
 ## Working tree (not yet committed)
 
-- ` M docs/blast/task_plan.md`
-- ` M docs/testing/CHANGELOG.md`
 
 ## Commit history
 
+### 2026-11-13
+
+- `9694b61` docs(SCP-87): upgrade plan outcome, three run records, changelog, PRD 16 and constitution log **[not in main]** — shivamnamdev (8 files, +808/−3)
+- `673a6c1` fix(ci): pin ubuntu-24.04 and Node 24 so Playwright can install browsers (SCP-87) **[not in main]** — shivamnamdev (1 files, +4/−2)
+- `3698bd4` Merge pull request #91 from shivamnamdev/fix/SCP-87-stage5-next-16 **[merge]** — SHIVAM NAMDEV
+- `fbf32b5` fix(deps): stage 5 next 15 to 16.4.6 (SCP-87) — shivamnamdev (1 files, +3/−1)
+
+### 2026-11-12
+
+- `317fcaa` wip(deps): stage 5 next 15 to 16.4.6, PARKED, do not merge before Clerk 7 (SCP-87) — shivamnamdev (5 files, +59/−91)
+- `38fdb3a` Merge pull request #90 from shivamnamdev/fix/SCP-87-stage6-clerk-7 **[merge]** — SHIVAM NAMDEV
+- `aee3821` fix(deps): stage 6 follow-ups from the full suite, api matcher no longer catches /api-docs and Clerk 7 sign-out and error locators (SCP-87) — shivamnamdev (2 files, +5/−3)
+- `aec9bc4` fix(deps): stage 6 @clerk/nextjs 4.31.8 to 7.9.25 (SCP-87) — shivamnamdev (37 files, +158/−599)
+- `97b99cf` Merge pull request #89 from shivamnamdev/fix/SCP-87-stage4-next-15 **[merge]** — SHIVAM NAMDEV
+
+### 2026-11-10
+
+- `60d107c` fix(deps): stage 4 follow-ups found by the full suite, inert on the preview checkout and an exact Next button locator (SCP-87) — shivamnamdev (2 files, +2/−2)
+- `b1a9381` fix(deps): stage 4 next 14 to 15.5.29 (SCP-87) — shivamnamdev (52 files, +839/−190)
+- `4bce663` Merge pull request #88 from shivamnamdev/fix/SCP-87-stage3-nodemailer-10 **[merge]** — SHIVAM NAMDEV
+- `c2b002a` Merge pull request #87 from shivamnamdev/fix/SCP-87-stage2-swagger-ui-5 **[merge]** — SHIVAM NAMDEV
+- `8c87447` Merge pull request #86 from shivamnamdev/fix/SCP-87-stage1-in-range-fixes **[merge]** — SHIVAM NAMDEV
+
+### 2026-11-09
+
+- `612133f` fix(deps): stage 3 nodemailer 8 to 10 (SCP-87) — shivamnamdev (2 files, +6/−6)
+- `fc7d5a5` fix(deps): stage 2 swagger-ui-react 3 to 5 and pin dompurify 3.4.17 (SCP-87) — shivamnamdev (2 files, +1147/−925)
+- `1d5e242` docs: dependency upgrade plan for SCP-87, refreshed 2026-11-09 (proposal) **[not in main]** — shivamnamdev (1 files, +77/−0)
+- `e996610` docs(testing): regression run 2026-11-08, 970 passed, 20 flaky, 23 failed, 97 skipped (SCP-97) **[not in main]** — shivamnamdev (2 files, +302/−1)
+- `277b01c` fix(deps): stage 1 in-range fixes for eight transitive packages (SCP-87) — shivamnamdev (1 files, +26/−26)
+
+### 2026-11-08
+
+- `bccad31` chore: add Building-with-the-Claude-API as a submodule (reference notebooks for the future AI epic) — shivamnamdev (2 files, +4/−0)
+- `b89d48d` Merge pull request #85 from shivamnamdev/admin-portal/p5d-prices-coupons **[merge]** — SHIVAM NAMDEV
+- `5ae7b6b` test(portal): flush the catalog cache after specs that publish portal rows, wait for sign-in before applying a coupon, scope the 5a pricing case (SCP-89) — shivamnamdev (5 files, +21/−5)
+
+### 2026-11-07
+
+- `abe8da7` Merge pull request #84 from shivamnamdev/admin-portal/p5d-prices-coupons **[merge]** — SHIVAM NAMDEV
+- `d9640f1` feat(portal): slice 5e admin-only learner preview of draft, published and archived cohorts (SCP-89) — shivamnamdev (26 files, +613/−149)
+- `7e8253b` docs: phase 6e Blueprint proposed, retire the data files as a runtime source after the production soak (SCP-89) — shivamnamdev (3 files, +66/−0)
+- `6f35a09` Merge pull request #83 from shivamnamdev/admin-portal/p5d-prices-coupons **[merge]** — SHIVAM NAMDEV
+- `5eae6c8` feat(admin): phase 6a to 6c retire the legacy admin routes, admin phone and keyboard specs, cutover check and runbook (SCP-89) — shivamnamdev (29 files, +465/−389)
+- `2ccb411` feat(portal): phase 5d prices and coupons read the portal behind PORTAL_COUPONS (SCP-89, SCP-53) — shivamnamdev (23 files, +747/−43)
+
+### 2026-11-06
+
+- `31801fa` merge: admin portal phases 4 and 5 into the course-cta-update-3 integration branch (base for slice 5d) **[merge]** — shivamnamdev
+- `eae8346` Merge pull request #82 from shivamnamdev/admin-portal/p5-learner-portal **[merge]** — SHIVAM NAMDEV
+- `a948f62` feat(portal): phase 5c banners, notification bell and saved mail templates read the portal behind PORTAL_ENGAGEMENT (SCP-89) — shivamnamdev (29 files, +905/−82)
+- `585301e` feat(portal): phase 5b lessons, dashboard cards and private links read the portal behind PORTAL_LEARNING (SCP-89, SCP-45) — shivamnamdev (28 files, +553/−66)
+- `94bb3e5` feat(portal): phase 5a course list and sales pages read the portal behind PORTAL_CATALOG (SCP-89) — shivamnamdev (19 files, +505/−17)
+- `bf857fc` docs: phase 5 blueprint, the learner portal reads the database behind per-slice flags (SCP-89) — shivamnamdev (3 files, +77/−1)
+- `506f613` feat(admin): phase 4f(c) learners directory screen and retirement of the classic admin page (SCP-89) — shivamnamdev (30 files, +236/−1073)
+- `fd17332` feat(admin): phase 4f read-only progress, submissions and engagement API and screens; sign-ups report window to 365 days (SCP-89) — shivamnamdev (34 files, +1020/−24)
+- `b79a179` feat(admin-ui): phase 4e enrolments (grant, two-step remove, CSV downloads) and count-only reports screens (SCP-89) — shivamnamdev (13 files, +472/−7)
+- `bb4df86` feat(admin-ui): phase 4d-2 banners, notifications with the confirmed e-mail send dialog, and e-mail template screens (SCP-89) — shivamnamdev (19 files, +1149/−10)
+- `e7c3640` feat(admin-ui): phase 4d-1 coupons (create, generate, change) and settings screens (SCP-89) — shivamnamdev (18 files, +970/−9)
+- `c0208c4` feat(admin-ui): phase 4c curriculum editor with lesson panel, publish and discard, outline preview and import helper (SCP-89) — shivamnamdev (15 files, +914/−5)
+
+### 2026-11-05
+
+- `0e16ade` feat(admin-ui): phase 4b courses and cohorts screens with pricing editor, life cycle and private links (SCP-89) — shivamnamdev (16 files, +954/−7)
+- `a5ec638` feat(admin-ui): phase 4a admin shell, overview, audit log and API keys screens, portal toggle (SCP-89, SCP-41) — shivamnamdev (17 files, +805/−3)
+- `353a867` Merge pull request #81 from shivamnamdev/admin-portal/p3c-operations-api **[merge]** — SHIVAM NAMDEV
+- `55614e5` feat(admin-api): phase 3c enrolments, count-only reports and CSV export, unit and API tests (SCP-89) — shivamnamdev (18 files, +764/−21)
+- `0194ab3` Merge pull request #80 from shivamnamdev/admin-portal/p3-engagement-api **[merge]** — SHIVAM NAMDEV
+- `ad33901` feat(admin-api): phase 3b notifications and the owner-only e-mail send, unit and API tests (SCP-89) — shivamnamdev (18 files, +823/−15)
+- `bc3ac36` feat(admin-api): phase 3a banners, settings and e-mail templates, unit and API tests (SCP-89) — shivamnamdev (27 files, +1193/−5)
+
+### 2026-11-04
+
+- `ef3f04a` feat(admin-api): curriculum import endpoint (dry run, owner only), unit and API tests (SCP-89) — shivamnamdev (11 files, +214/−7)
+- `594c777` feat(admin-api): phase 2 content API: curriculum of a cohort, draft and publish, unit and API tests (SCP-89) — shivamnamdev (24 files, +1140/−4)
+- `298e640` Merge pull request #79 from shivamnamdev/admin-portal/p1-api-foundation **[merge]** — SHIVAM NAMDEV
+- `4691966` test(admin-api): unit tests for the business rules, sample requests, serial admin-api script (SCP-89) — shivamnamdev (7 files, +420/−22)
+- `e3bb132` feat(admin-api): phase 1: courses, cohorts, coupons, learners picker, audit, API keys, OpenAPI and docs page (SCP-89) — shivamnamdev (51 files, +2114/−15)
+- `d1b224b` feat(admin-api): phase 1 slice 1: core library, SQL for the four tables, unit tests (SCP-89) — shivamnamdev (13 files, +443/−3)
+- `cbf48b2` fix(test): adapt discovery and public specs to the plan-based sales page (listed flag, two View Open Cohorts links) — shivamnamdev (5 files, +5/−4)
+- `76bf745` docs: record the Blueprint approval and write PRD 17 (admin API) with 45 cases — shivamnamdev (5 files, +94/−3)
+- `5f43925` fix(test): fixture course is single-price; order notes now carry planId — shivamnamdev (2 files, +3/−1)
+- `c59ef7e` docs: epic plan: one-time coupons, no new packages, payment roadmap, e-mail scope, minimum-order proposal — shivamnamdev (2 files, +45/−43)
+- `a6e0df8` Merge course-cta-update-3 into current main (integration test branch) **[merge]** — shivamnamdev
+- `1192f6c` docs: correct the coupon model: open-for-all or selected students, mandatory expiry for both — shivamnamdev (1 files, +24/−12)
+- `ee9b748` docs: align phase 1 scope with the small table set — shivamnamdev (1 files, +1/−1)
+- `98877a8` docs: admin portal plan updated with the owner's decisions, payment models, coupon rules, notifications, banners, role-ready guard and a small Supabase footprint — shivamnamdev (3 files, +132/−23)
+- `394b8e1` docs: admin portal and learner portal epic plan (proposal, no code) — shivamnamdev (3 files, +168/−0)
+- `a478d73` docs: add the links and coupons plan file (SCP-45, SCP-53) **[not in main]** — shivamnamdev (1 files, +91/−0)
+- `bafe3b7` docs: plan to take course links and coupons out of the public JavaScript (SCP-45, SCP-53) **[not in main]** — shivamnamdev (1 files, +1/−0)
+- `a028c1b` Merge pull request #78 from shivamnamdev/fix/SCP-59-60-admin-case-and-streak-timezone **[merge]** — SHIVAM NAMDEV
+- `f4ce1f7` fix: admin page uses isAdminEmail; streak day follows the learner's time zone (SCP-59, SCP-60) — shivamnamdev (7 files, +59/−13)
+- `d43912f` Merge pull request #77 from shivamnamdev/test/SCP-73-limit-test-seeds-stats-row **[merge]** — SHIVAM NAMDEV
+
+### 2026-11-03
+
+- `630d345` test: AIA-TRK-004 creates its own stats row so the limit test runs (SCP-73) — shivamnamdev (2 files, +16/−6)
+- `b47e113` Merge pull request #76 from shivamnamdev/fix/security-bug-batch **[merge]** — SHIVAM NAMDEV
+- `279b99b` docs: record batch run results — shivamnamdev (1 files, +1/−0)
+- `27b502b` Merge branch 'feat/SCP-69-73-rate-limits' into fix/security-bug-batch **[merge]** — shivamnamdev
+- `1d7b3ae` Merge branch 'fix/SCP-71-certificate-needs-completion' into fix/security-bug-batch **[merge]** — shivamnamdev
+- `189dcef` Merge branch 'fix/SCP-67-68-clerk-webhook' into fix/security-bug-batch **[merge]** — shivamnamdev
+- `a638759` Merge branch 'fix/SCP-66-verify-payment-unknown-order' into fix/security-bug-batch **[merge]** — shivamnamdev
+- `c383470` feat(security): Supabase-backed rate limits for send-email and track-time (SCP-69, SCP-73) — shivamnamdev (8 files, +120/−9)
+- `ad2a159` fix(certificate): issue only after 80% of the course and a passed exam, name from Clerk (SCP-71) — shivamnamdev (7 files, +123/−28)
+- `7c99da4` fix(certificate): refuse names the PDF font cannot print with 400 (SCP-72) — shivamnamdev (2 files, +8/−0)
+- `d9e3a00` fix(webhook): log a Clerk signup once and tolerate a missing e-mail list (SCP-67, SCP-68) — shivamnamdev (2 files, +13/−7)
+- `c771cbc` fix(payments): verify-payment answers 404 for an order Razorpay does not know (SCP-66) — shivamnamdev (2 files, +10/−1)
+- `ff571a9` fix(ai-tutor): require a signed-in learner (SCP-70) — shivamnamdev (8 files, +33/−25)
+- `7abb9af` docs: dependency upgrade plan for SCP-87 (proposal, nothing installed) **[not in main]** — shivamnamdev (4 files, +66/−0)
+- `136c823` fix(admin): manual enrollment shows the database error cause to the admin **[not in main]** — shivamnamdev (1 files, +4/−1)
+- `97476a1` Merge pull request #74 from shivamnamdev/test/prd16-security-baseline **[merge]** — SHIVAM NAMDEV
+- `3260028` docs: record SCP-86 and SCP-87 — shivamnamdev (2 files, +2/−1)
+- `945d791` fix(security): send response headers (frame, nosniff, referrer, permissions, report-only CSP); add inform-before-installing rule — shivamnamdev (5 files, +40/−4)
+- `751ee69` Merge main into test/prd16-security-baseline **[merge]** — shivamnamdev
+- `001a826` Merge pull request #75 from shivamnamdev/fix/lockfile-in-sync **[merge]** — SHIVAM NAMDEV
+- `35babe9` fix: put the four missing peer packages back in package-lock.json so npm ci passes in CI — shivamnamdev (1 files, +56/−14)
+- `df80a1c` test: PRD 16 security baseline (headers, exposure, XSS, visitor sweep) — shivamnamdev (7 files, +215/−2)
+
 ### 2026-11-02
 
+- `c90205d` Merge pull request #73 from shivamnamdev/feat/server-side-exam-grading **[merge]** — SHIVAM NAMDEV
+- `9cbf6ba` feat(exam): grade the final exam on the server — shivamnamdev (14 files, +538/−275)
+- `ab4d001` docs: Pyodide server spike findings (sandbox escape found and closed) — shivamnamdev (1 files, +9/−0)
+- `c49a792` docs: exam grading blueprint handles input() without a human time limit — shivamnamdev (1 files, +6/−2)
+- `5769999` docs: blueprint for server-side exam grading (awaiting approval) — shivamnamdev (1 files, +19/−0)
+- `40960f6` Merge pull request #72 from shivamnamdev/docs/pol-016-result **[merge]** — SHIVAM NAMDEV
+- `56b6d8e` docs: POL-016 result on QA, POL-012 not available — shivamnamdev (3 files, +9/−1)
 - `2f9b4ce` Merge pull request #71 from shivamnamdev/docs/qa-step5-verified **[merge]** — SHIVAM NAMDEV
 - `71a9522` docs: QA step 5 verified, tests/db all green — shivamnamdev (3 files, +12/−4)
 - `22fb41b` Merge pull request #70 from shivamnamdev/fix/supabase-admin-requires-service-key **[merge]** — SHIVAM NAMDEV
@@ -75,7 +199,7 @@ _Last generated: 2026-11-02 from `2f9b4ce` on branch `docs/pol-016-result`._
 ### 2026-10-16
 
 - `7a67129` Blast — shivamnamdev (8 files, +790/−0)
-- `be922f1` Course sales page upgrade with plan-based pricing (from course-cta-update-2) **[not in main]** — shivamnamdev (25 files, +728/−82)
+- `be922f1` Course sales page upgrade with plan-based pricing (from course-cta-update-2) — shivamnamdev (25 files, +728/−82)
 - `d045541` Merge pull request #57 from shivamnamdev/fix/prd-known-issues **[merge]** — SHIVAM NAMDEV
 - `67a63d8` Add pricing unit tests and record regression findings — shivamnamdev (2 files, +68/−1)
 - `67748bb` Fix security and correctness issues from the platform PRD audit — shivamnamdev (36 files, +815/−352)
@@ -95,6 +219,8 @@ _Last generated: 2026-11-02 from `2f9b4ce` on branch `docs/pol-016-result`._
 
 ### 2026-10-03
 
+- `7069fe5` On course-cta-update-2: Course CTA Update **[merge]** **[not in main]** — shivamnamdev
+- `9cbfce7` index on course-cta-update-2: 65de6c3 Updated the python course page detail draft 2 **[not in main]** — shivamnamdev
 - `fd314b0` update Python Exceptional handling — shivamnamdev (1 files, +4/−3)
 
 ### 2026-09-27
@@ -111,9 +237,6 @@ _Last generated: 2026-11-02 from `2f9b4ce` on branch `docs/pol-016-result`._
 ### 2026-09-19
 
 - `4159f65` file handling pythonsession uploaded — shivamnamdev (1 files, +5/−4)
-- `c0a91d4` basic course-manager update **[not in main]** — shivamnamdev (1 files, +54/−0)
-- `5485ec1` WIP on main: 8f858bc Merge pull request #56 from shivamnamdev/mobile-responsive **[merge]** **[not in main]** — shivamnamdev
-- `0d6ba14` index on main: 8f858bc Merge pull request #56 from shivamnamdev/mobile-responsive **[not in main]** — shivamnamdev
 
 ### 2026-09-15
 
@@ -283,7 +406,6 @@ _Last generated: 2026-11-02 from `2f9b4ce` on branch `docs/pol-016-result`._
 
 - `d66b66c` updated day 2 assignment — SHIVAM NAMDEV (1 files, +8/−5)
 - `4620115` Add new GIT video ID for Day 07 to Module 3 — SHIVAM NAMDEV (1 files, +3/−2)
-- `e1ea737` Git Day-07 video **[not in main]** — shivamnamdev (1 files, +2/−1)
 
 ### 2026-07-01
 
