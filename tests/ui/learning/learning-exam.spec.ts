@@ -126,7 +126,9 @@ test.describe('PRD07 exam, advanced lessons and certificate', () => {
       await openCourse(page, U, SLUG);
       const alerts: string[] = [];
       page.on('dialog', d => { alerts.push(d.message()); d.accept().catch(() => {}); });
-      await page.route(/jspdf/i, route => route.abort('failed'));
+      // The PDF library is loaded on click (dynamic import). Webpack named its chunk after the package, Turbopack (Next 16) hashes chunk names,
+      // so abort every script chunk requested from here on: the page is already loaded, so the only new chunk is the PDF library's.
+      await page.route(/jspdf|\/_next\/static\/chunks\/.*\.js/i, route => route.abort('failed'));
       await page.getByRole('button', { name: /Certificate/ }).click();
       await expect.poll(() => alerts.join('|')).toContain('Something went wrong while generating your certificate.');
     });

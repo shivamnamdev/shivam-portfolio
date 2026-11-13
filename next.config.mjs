@@ -38,10 +38,6 @@ const nextConfig = {
   outputFileTracingIncludes: {
     '/api/learning/exam-grade': ['./node_modules/pyodide/**/*', './lib/examWorker.mjs'],
   },
-  eslint: {
-    // ESLint is not installed as a dev dependency yet; type errors still fail the build below.
-    ignoreDuringBuilds: true,
-  },
 };
 
 export default nextConfig;
