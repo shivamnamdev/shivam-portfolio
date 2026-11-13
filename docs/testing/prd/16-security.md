@@ -28,13 +28,13 @@ The platform takes money (Razorpay), personal data (names, e-mails, submitted co
 | Area | Finding | State |
 | --- | --- | --- |
 | Headers | Production sends only `Strict-Transport-Security` (Vercel). No `Content-Security-Policy`, no clickjacking protection, no `nosniff`, no `Referrer-Policy`, no `Permissions-Policy`; `X-Powered-By: Next.js` is announced | Defect, fixed 2026-11-03 in `next.config.mjs`: frame, nosniff, referrer and permissions headers enforced, `X-Powered-By` removed, CSP in report-only mode (switch to enforcing after a clean run with no console violations). `SEC-HDR-001` to `006` pass (SCP-86) |
-| Dependencies | `npm audit --omit=dev`: 24 advisories (2 critical: `next`, `dompurify` through `swagger-ui-react`; 15 high: `@clerk/*`, `nodemailer`, `postcss` and others) | Defect, `SEC-DEP-001` to `003` (manual / CI) |
+| Dependencies | `npm audit --omit=dev`: 24 advisories on 2026-11-03 (2 critical, 15 high). After SCP-87 (2026-11-13): 6 advisories, 4 moderate and 2 low, none critical or high; left are the `swagger-ui-react` tree, `minimatch`, `baseline-browser-mapping` (no non-breaking fix) | Fixed for critical and high (SCP-87, `docs/architecture/dependency-upgrade-plan.md` section 8); `SEC-DEP-001` to `003` stay manual / CI |
 | Injection | Q&A text is rendered as React text (escaped); the only `dangerouslySetInnerHTML` is the share page redirect, whose target comes from a fixed catalogue | Pass (`SEC-XSS-001`, `002`, `003`) |
 | Exposure | `.env`, `.git`, `package.json` not served; broken input to public routes shows no stack trace; `/api-docs` needs sign-in | Pass (`SEC-EXP-001` to `003`) |
 | API access | Every API route outside the public list refuses a visitor | Pass (`SEC-AUTH-001`) |
 | Public routes | `/api/send-email` is public and unlimited (SCP-69, open). `/api/ai-tutor` now needs a signed-in learner (SCP-70, fixed 2026-11-03) | Partly open |
 
-Upgrading `next` (14 to 16) and `@clerk/nextjs` (4 to 7) are breaking changes with their own risk: they need their own plan and the full regression run, not a quick `npm audit fix --force`.
+Upgrading `next` (14 to 16) and `@clerk/nextjs` (4 to 7) were breaking changes with their own risk; they were done in six staged PRs with a full regression run each (SCP-87, runs of 2026-11-10, 2026-11-12, 2026-11-13), not with `npm audit fix --force`. The Clerk 7 run found a real regression (the API matcher caught `/api-docs`), which `SCP-29` caught.
 
 ## 5. Test Cases
 
