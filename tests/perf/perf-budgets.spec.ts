@@ -191,7 +191,8 @@ test.describe('PRD15 performance budgets @perf', () => {
     test('[PRF-LOD-003] a burst of 50 refused requests on a public endpoint is answered quickly (no work is done for refusals)', async ({ request }) => {
       const r = await timeCalls(50, () => request.post('/api/send-email', { data: { email: 'bad' }, headers: { 'User-Agent': API_UA } }), true);
       note('50 parallel refused send-email', `p50 ${r.p50.toFixed(0)} ms, p95 ${r.p95.toFixed(0)} ms`);
-      expect(r.statuses.every(s => s === 400)).toBe(true);
+      // A refusal is a 400 (invalid body) or a 429 (the per-IP rate limit, SCP-69/73: 5 per 10 minutes). Never a 5xx, and always fast.
+      expect(r.statuses.every(s => s === 400 || s === 429), `statuses: ${[...new Set(r.statuses)].join(', ')}`).toBe(true);
       expect(r.p95).toBeLessThan(B(5000));
     });
   });
