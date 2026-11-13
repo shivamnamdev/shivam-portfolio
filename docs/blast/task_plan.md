@@ -303,3 +303,10 @@ Full text: `docs/architecture/admin-portal-draft-preview.md`. Requested by the o
 Full text: `docs/architecture/recorded-courses.md`. New routes `python-foundation` and `git-beginner`; old courses hidden from the catalog and reachable only by enrolled learners and the admin; shared lesson links of old courses open only for enrolled learners; admin enrolment unchanged. Video ids stay blank (no recordings yet); Git outline comes later.
 - [ ] Owner approval and the four pending decisions (section 9 of the full text)
 - [ ] Step 1 access rules, step 2 new course entries and `format`, step 3 learning content, step 4 tests and docs
+
+## 2026-11-14 SCP-105 PR smoke red on main (sales-funnel cases after the recorded-courses change)
+- [x] Branch `fix/SCP-105-sales-funnel-smoke` from main; Jira bug SCP-105 under SCP-2
+- [x] Cause: the smoke spec visits every course as a visitor and expects the hero and "Enrollment Closed"; since PR #99 two Python cohorts are unlisted (not found for visitors) and python-foundation is recorded ("Opens Soon")
+- [x] Fix in the spec only (behaviour is as decided in `docs/architecture/recorded-courses.md`); 5/5 pass locally
+- [ ] Smoke and neighbour runs green, PR opened, Jira comment, owner merge
+
