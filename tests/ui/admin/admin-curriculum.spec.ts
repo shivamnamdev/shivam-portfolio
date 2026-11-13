@@ -5,11 +5,14 @@ import { signInAs, clerkUserId } from '../../support/clerk';
 import { adminDb } from '../../support/db';
 import { BASE, clearWriteLimits, cleanupAdminApi, cohort, course } from '../../support/adminApi';
 import { sessionFor, type Session } from '../../support/api';
+import { LOCKED_LABEL } from '../../../lib/adminUi/curriculum';
+import { lessonTitle, mockExternals } from '../../support/learning';
 
 // Phase 4c: the curriculum editor against the QA project. Course and cohort are made through the API; everything is named "qa-admui-cur..." and removed afterwards.
 const COURSE = 'qa-admui-cur-course';
 const COHORT = 'qa-admui-cur-batch';
 const V1 = 'a9nrrH5XkG0'; const V2 = 'b9nrrH5XkG1'; const V3 = 'c9nrrH5XkG2';
+const RAW = 'https://raw.githubusercontent.com/o/g';
 const dialog = (page: Page) => page.getByRole('dialog');
 const alertBox = (page: Page) => page.locator('[role=alert]:not(#__next-route-announcer__)');
 const modules = async () => ((await adminDb().from('content_docs').select('doc').eq('kind', 'curriculum').eq('key', COHORT).single()).data!.doc as { modules: Array<{ id: string; title: string; advanced: boolean; lessons: Array<Record<string, any>> }>; published: unknown });
@@ -99,10 +102,10 @@ test.describe('ADMUI curriculum editor @regression', () => {
     await panel.getByLabel(/^Description/).fill('Your first program');
     await panel.getByLabel('This lesson has an assignment').check();
     await panel.getByLabel('Assignment title').fill('Print your name');
-    await panel.getByLabel('rawUrl').fill('https://github.com/o/r/blob/main/a.py');
-    await expect(panel.getByText(/rawUrl must be a link on raw\.githubusercontent\.com/)).toBeVisible();
+    await panel.getByLabel('Assignment file').fill('https://github.com/o/r/blob/main/a.py');   // plain labels, never the field names (2026-11-14)
+    await expect(panel.getByText(/Assignment file must be a link on raw\.githubusercontent\.com/)).toBeVisible();
     await expect(panel.getByRole('button', { name: 'Save lesson' })).toBeDisabled();
-    await panel.getByLabel('rawUrl').fill('https://raw.githubusercontent.com/o/r/main/a.py');
+    await panel.getByLabel('Assignment file').fill('https://raw.githubusercontent.com/o/r/main/a.py');
     await panel.getByRole('button', { name: 'Add a resource' }).click();
     await panel.getByLabel('Title', { exact: true }).nth(1).fill('Slides');
     await panel.getByLabel('Link', { exact: true }).fill('https://evil.example/slides.pdf');
@@ -181,8 +184,8 @@ test.describe('ADMUI curriculum editor @regression', () => {
     await module(page, 'Basics').getByLabel('Module title', { exact: true }).fill('Basics renamed');
     await module(page, 'Basics').getByRole('button', { name: 'Save', exact: true }).click();
     await expect(module(page, 'Basics renamed')).toBeVisible({ timeout: 15000 });
-    await module(page, 'Basics renamed').getByLabel('Advanced').click();   // the box follows the server's answer, so it ticks a moment later
-    await expect(module(page, 'Basics renamed').getByLabel('Advanced')).toBeChecked();
+    await module(page, 'Basics renamed').getByLabel(LOCKED_LABEL).click();   // the box follows the server's answer, so it ticks a moment later
+    await expect(module(page, 'Basics renamed').getByLabel(LOCKED_LABEL)).toBeChecked();
     await expect.poll(async () => (await modules()).modules.find((m) => m.title === 'Basics renamed')?.advanced).toBe(true);
 
     const row = (await adminDb().from('content_docs').select('version').eq('kind', 'curriculum').eq('key', COHORT).single()).data!;
@@ -194,6 +197,118 @@ test.describe('ADMUI curriculum editor @regression', () => {
     await page.getByRole('button', { name: 'Reload the latest version' }).click();
     await expect(page.getByText(`version ${row.version + 5}`)).toBeVisible();
     expect((await shape()).map((m) => m[0])).not.toContain('Too late');
+  });
+
+  test('[ADMUI-CUR-009] a document is added from a title, a link and a type (no id to invent), shows in the preview, and its file is edited as "Document file"', async ({ page }) => {
+    await signInAs(page, EMAIL.admin);
+    await page.goto(`/admin/curriculum/${COHORT}`);
+    await expect(module(page, 'Loops')).toBeVisible({ timeout: 30000 });
+    await module(page, 'Loops').getByRole('radiogroup', { name: 'What to add to Loops' }).getByLabel(/^Document/).check();
+    const form = page.getByRole('form', { name: 'Add a document to Loops' });
+    await form.getByLabel('Document title').fill('Git Cheatsheet');
+    await expect(form.getByRole('button', { name: 'Add document' })).toBeDisabled();            // no link yet
+    await form.getByLabel('Document link').fill('https://evil.example/x.pdf');
+    await expect(form.getByText(/The document link must be a link on/)).toBeVisible();
+    await form.getByLabel('Document link').fill('https://s3.ap-south-1.amazonaws.com/git-course-content.shivamnamdev.com/Git+Cheatsheet.pdf');
+    await form.getByLabel('Document type').selectOption('Document');
+    await form.getByLabel(/^Short description/).fill('Git Complete Course Cheatsheet');
+    await form.getByRole('button', { name: 'Add document' }).click();
+    await expect(module(page, 'Loops').getByText('Git Cheatsheet')).toBeVisible({ timeout: 15000 });
+    const stored = (await modules()).modules.find((m) => m.title === 'Loops')!.lessons.find((l) => l.id === 'doc-git-cheatsheet')!;
+    expect(stored).toMatchObject({ kind: 'document', title: 'Git Cheatsheet', description: 'Git Complete Course Cheatsheet', resources: [{ title: 'Git Cheatsheet', type: 'Document', url: 'https://s3.ap-south-1.amazonaws.com/git-course-content.shivamnamdev.com/Git+Cheatsheet.pdf' }] });
+    // the same title again gets -2, never a clash error
+    await form.getByLabel('Document title').fill('Git Cheatsheet');
+    await form.getByLabel('Document link').fill('https://drive.google.com/file/d/second');
+    await form.getByRole('button', { name: 'Add document' }).click();
+    await expect.poll(async () => (await shape()).flatMap((m) => m[1] as string[])).toContain('doc-git-cheatsheet-2');
+    // editing: the document file is its own block, extra materials are separate
+    await module(page, 'Loops').getByRole('button', { name: 'Edit lesson Git Cheatsheet' }).first().click();
+    const panel = page.getByRole('form', { name: 'Edit lesson Git Cheatsheet' });
+    await expect(panel.getByText('Shown to learners as the name of this document.')).toBeVisible();
+    await expect(panel.getByLabel('Document link')).toHaveValue(/Git\+Cheatsheet\.pdf$/);
+    await panel.getByLabel('Document link').fill('https://drive.google.com/file/d/moved');
+    await panel.getByRole('button', { name: 'Add a resource' }).click();
+    await panel.getByLabel('Title', { exact: true }).nth(1).fill('Slides');
+    await panel.getByLabel('Link', { exact: true }).fill('https://github.com/o/slides');
+    await panel.getByRole('button', { name: 'Save lesson' }).click();
+    await expect(page.getByRole('form', { name: /Edit lesson/ })).toHaveCount(0, { timeout: 15000 });
+    const edited = (await modules()).modules.find((m) => m.title === 'Loops')!.lessons.find((l) => l.id === 'doc-git-cheatsheet')!;
+    expect(edited.resources).toEqual([{ title: 'Git Cheatsheet', type: 'Document', url: 'https://drive.google.com/file/d/moved' }, { title: 'Slides', type: 'Link', url: 'https://github.com/o/slides' }]);
+    await page.getByRole('button', { name: 'Delete lesson Git Cheatsheet' }).last().click();   // the -2 copy
+    await dialog(page).getByRole('button', { name: 'Delete', exact: true }).click();
+    await expect.poll(async () => (await shape()).flatMap((m) => m[1] as string[])).not.toContain('doc-git-cheatsheet-2');
+  });
+
+  test('[ADMUI-CUR-010] a git lab keeps its solution link through the editor, and the links read as plain words with hints', async ({ page }) => {
+    await signInAs(page, EMAIL.admin);
+    await page.goto(`/admin/curriculum/${COHORT}`);
+    await module(page, 'Loops').getByRole('button', { name: `Edit lesson Video ${V2}` }).click();
+    const panel = page.getByRole('form', { name: `Edit lesson Video ${V2}` });
+    await panel.getByLabel('This lesson has an assignment').check();
+    await panel.getByLabel('Assignment title').fill('Git Day 01: Init, Add, Commit');
+    await panel.getByRole('radiogroup', { name: 'Lab type' }).getByLabel('Git lab').check();
+    for (const [label, file] of [['Instructions (.md)', 'instructions.md'], ['Starter repository (.json)', 'repo-seed.json'], ['Expected state (.json)', 'expected-state.json'], ['Validator (.json)', 'validator.json'], ['Solution file', 'solution.md']] as const) {
+      await panel.getByLabel(label).fill(`${RAW}/${file}`);
+    }
+    await expect(panel.getByText('What the learner has to do in the git lab, on raw.githubusercontent.com')).toBeVisible();   // a hint, not a field name
+    await expect(panel.getByText(/rawUrl|solutionUrl|instructionsUrl/)).toHaveCount(0);
+    await panel.getByLabel(/^Continue from the previous assignment/).check();
+    await panel.getByRole('button', { name: 'Save lesson' }).click();
+    await expect(page.getByRole('form', { name: /Edit lesson/ })).toHaveCount(0, { timeout: 15000 });
+    const saved = (await modules()).modules.flatMap((m) => m.lessons).find((l) => l.id === V2)!.assignment;
+    expect(saved).toEqual({ title: 'Git Day 01: Init, Add, Commit', labType: 'git', instructionsUrl: `${RAW}/instructions.md`, starterRepoUrl: `${RAW}/repo-seed.json`, expectedStateUrl: `${RAW}/expected-state.json`, validatorUrl: `${RAW}/validator.json`, solutionUrl: `${RAW}/solution.md`, carryOverCode: true });
+    // reopening and saving untouched changes nothing (the solution is not lost on a second save either)
+    await module(page, 'Loops').getByRole('button', { name: `Edit lesson Video ${V2}` }).click();
+    await expect(page.getByRole('form', { name: `Edit lesson Video ${V2}` }).getByLabel('Solution file')).toHaveValue(`${RAW}/solution.md`);
+    await page.getByRole('form', { name: `Edit lesson Video ${V2}` }).getByRole('button', { name: 'Save lesson' }).click();
+    await expect(page.getByRole('form', { name: /Edit lesson/ })).toHaveCount(0);
+    expect((await modules()).modules.flatMap((m) => m.lessons).find((l) => l.id === V2)!.assignment).toEqual(saved);
+  });
+
+  test('[ADMUI-CUR-011] the exam card: none for a course without an exam; names the exam lesson, its files and its module when the repository marks one; the lesson stays read-only', async ({ page }) => {
+    await signInAs(page, EMAIL.admin);
+    await page.goto(`/admin/curriculum/${COHORT}`);
+    const card = page.getByRole('region', { name: 'Final exam' });
+    await expect(card).toContainText('Final exam: none', { timeout: 30000 });
+    // the repository (never the API) marks the exam: write the flags straight into the stored document, as the import does
+    const row = (await adminDb().from('content_docs').select('doc, version').eq('kind', 'curriculum').eq('key', COHORT).single()).data!;
+    const doc = row.doc as { modules: Array<{ lessons: Array<Record<string, any>> }> };
+    const lesson = doc.modules.flatMap((m) => m.lessons).find((l) => l.id === V2)!;
+    lesson.assignment = { ...lesson.assignment, isExam: true, serverGraded: true, expectedOutcomeUrl: `${RAW}/expected.py`, rawUrl: `${RAW}/exam.docx` };
+    await adminDb().from('content_docs').update({ doc, version: row.version + 1 }).eq('kind', 'curriculum').eq('key', COHORT);
+    await page.reload();
+    await expect(card).toContainText(`Final exam: Video ${V2}`, { timeout: 30000 });
+    await expect(card).toContainText('Lesson 1 in Loops');
+    await expect(card).toContainText('graded on the server');
+    await expect(card.getByRole('link', { name: /Exam file/ })).toHaveAttribute('href', `${RAW}/exam.docx`);
+    await expect(card.getByRole('link', { name: /Expected result/ })).toHaveAttribute('href', `${RAW}/expected.py`);
+    await card.getByRole('button', { name: 'Go to the exam lesson' }).click();
+    const panel = page.getByRole('form', { name: `Edit lesson Video ${V2}` });
+    await expect(panel.getByText(/This lesson holds the final exam/)).toBeVisible();
+    await expect(panel.getByLabel('This lesson has an assignment')).toBeDisabled();
+    await expect(module(page, 'Loops').getByText('Exam', { exact: true })).toBeVisible();
+  });
+
+  test('[ADMUI-CUR-012] video rows and the panel show what YouTube says (title, length, picture, description) and fall back quietly when YouTube is unreachable', async ({ page }) => {
+    await signInAs(page, EMAIL.admin);
+    await mockExternals(page);                      // the same stub the learner suite uses: QA Lesson <id>, 5:30
+    await page.goto(`/admin/curriculum/${COHORT}`);
+    const row = module(page, 'Basics').locator('li', { hasText: 'Introduction to print' });
+    await expect(row).toContainText(`On YouTube: ${lessonTitle(V1)} · 5:30`, { timeout: 30000 });
+    await expect(row.locator('img')).toHaveAttribute('src', `https://img.youtube.com/vi/${V1}/mqdefault.jpg`);
+    await module(page, 'Basics').getByRole('button', { name: 'Edit lesson Introduction to print' }).click();
+    const yt = page.getByRole('region', { name: 'On YouTube' });
+    await expect(yt).toContainText(lessonTitle(V1));
+    await yt.getByText('YouTube description').click();
+    await expect(yt).toContainText(`Description of ${V1}`);
+    await expect(page.getByRole('form', { name: /Edit lesson/ }).getByText('Names this row in the portal. Learners see the YouTube title.')).toBeVisible();
+    // unreachable: the stored labels stay, one quiet line explains, nothing breaks
+    await page.unrouteAll({ behavior: 'ignoreErrors' });
+    await mockExternals(page, { youtube: 'fail' });
+    await page.reload();
+    await expect(module(page, 'Basics').getByText('Introduction to print')).toBeVisible({ timeout: 30000 });
+    await expect(page.getByText('YouTube details are unavailable right now; the rows show the stored titles.')).toBeVisible();
+    await expect(page.getByText(/On YouTube:/)).toHaveCount(0);
   });
 
   test('[ADMUI-CUR-007] the import check changes nothing and shows what it would do', async ({ page }) => {

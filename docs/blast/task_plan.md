@@ -303,3 +303,9 @@ Full text: `docs/architecture/admin-portal-draft-preview.md`. Requested by the o
 Full text: `docs/architecture/recorded-courses.md`. New routes `python-foundation` and `git-beginner`; old courses hidden from the catalog and reachable only by enrolled learners and the admin; shared lesson links of old courses open only for enrolled learners; admin enrolment unchanged. Video ids stay blank (no recordings yet); Git outline comes later.
 - [ ] Owner approval and the four pending decisions (section 9 of the full text)
 - [ ] Step 1 access rules, step 2 new course entries and `format`, step 3 learning content, step 4 tests and docs
+
+## 2026-11-14 Curriculum editor parity Blueprint (APPROVED 2026-11-14, built on branch feat/curriculum-editor-parity): everything in data/learning-content.ts doable in the editor
+Full text: `docs/architecture/curriculum-editor-parity.md`. Findings: git lab solution link is dropped on save (bug); document lessons need a direct "Add a document" path; assignment fields carry raw labels; YouTube title, description and thumbnail not shown; exam only a row badge. Owner confirmed: continued assignment = carryOverCode; exam and YouTube details must be visible in the portal.
+- [x] Owner approval; exam stays read-only with a card; no hidden-lesson toggle; the Advanced checkbox relabelled as locked-until-exam
+- [x] Steps 1 to 3 built (library, panel, page); unit tests ADMUI-UNIT-CUR-009..012
+- [ ] Step 4 UI tests ADMUI-CUR-009..012 on QA; step 5 docs; PR
