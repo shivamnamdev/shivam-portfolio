@@ -298,3 +298,8 @@ Full text: `docs/architecture/admin-portal-phase6e-retire-files.md`. Gate: all f
 Full text: `docs/architecture/admin-portal-draft-preview.md`. Requested by the owner: drafts must be visible to the admin only. Recommended design: admin-only `/preview/courses` pages that render the real sales page from the portal's data in any status (public pages untouched and still cacheable); decisions: design A or B, show archived, preview checkout off.
 - [x] Owner approval 2026-11-07 (design A with the real cards and page reused; archived hidden by default with an "archived only" dropdown; read-only preview)
 - [x] Slice 5e built 2026-11-07: `lib/catalog/{preview,previewView}.ts`, shared `components/catalog/{CourseGrid,CourseSalesView,PreviewFilter}.tsx`, `app/preview/**`, entry points; 6 unit and 7 UI tests (see PRD 21 section 6)
+
+## 2026-11-13 Recorded courses Blueprint (PROPOSED, awaiting owner approval): sell only recorded courses, old live courses enrolled-only
+Full text: `docs/architecture/recorded-courses.md`. New routes `python-foundation` and `git-beginner`; old courses hidden from the catalog and reachable only by enrolled learners and the admin; shared lesson links of old courses open only for enrolled learners; admin enrolment unchanged. Video ids stay blank (no recordings yet); Git outline comes later.
+- [ ] Owner approval and the four pending decisions (section 9 of the full text)
+- [ ] Step 1 access rules, step 2 new course entries and `format`, step 3 learning content, step 4 tests and docs
