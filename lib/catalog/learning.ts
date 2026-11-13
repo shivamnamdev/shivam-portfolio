@@ -49,7 +49,8 @@ const cohortAndCourse = unstable_cache(async (slug: string): Promise<LearningCou
   const pitch = ((c.data?.doc as { pitch?: { resources?: Record<string, unknown> } } | undefined)?.pitch) ?? {};
   return {
     id: slug, slug, title: String(cohort.doc.title ?? (c.data?.doc as { title?: string } | undefined)?.title ?? slug), statusText: String(cohort.doc.statusText ?? ""),
-    duration: String(cohort.doc.duration ?? ""), ...(pitch.resources ? { resources: pitch.resources } : {}),   // the cohort's `private` part is never read here
+    duration: String(cohort.doc.duration ?? ""), ...(pitch.resources ? { resources: pitch.resources } : {}),
+    ...(cohort.doc.format === "live" || cohort.doc.format === "recorded" ? { format: cohort.doc.format } : {}),   // the cohort's `private` part is never read here
   };
 }, ["learning-course-v1"], { revalidate: 60, tags: [LEARNING_TAG] });
 
