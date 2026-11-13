@@ -1,15 +1,19 @@
 'use client';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCurriculum } from '@/components/admin/curriculum/useCurriculum';
 import LessonPanel, { type LessonPatch } from '@/components/admin/curriculum/LessonPanel';
 import OutlinePreview from '@/components/admin/curriculum/OutlinePreview';
 import { ConfirmDialog, ErrorNote, PageHeader, Spinner, StatusBadge, buttonClass, ghostButtonClass, inputClass } from '@/components/admin/ui';
 import type { Failure } from '@/lib/adminUi/client';
-import { LIMITS, countLessons, layoutAfterMove, layoutAfterMoveToModule, lessonIdFrom, lessonLabel, moduleOrderAfterMove, type Lesson, type Module } from '@/lib/adminUi/curriculum';
+import {
+  LIMITS, LOCKED_HINT, LOCKED_LABEL, countLessons, documentLessonBody, documentProblems, emptyDocumentForm, examOf, layoutAfterMove, layoutAfterMoveToModule, lessonIdFrom, lessonLabel,
+  moduleOrderAfterMove, parseYoutubeItems, youtubeRequestUrls, type DocumentForm, type Lesson, type Module, type VideoDetails,
+} from '@/lib/adminUi/curriculum';
 
 type Pending = { kind: 'publish' } | { kind: 'discard' } | { kind: 'delete-module'; module: Module } | { kind: 'delete-lesson'; lesson: Lesson };
+type YtState = 'idle' | 'loading' | 'ok' | 'failed' | 'nokey';
 
 export default function CurriculumEditorPage() {
   const { cohort } = useParams<{ cohort: string }>();
@@ -20,13 +24,39 @@ export default function CurriculumEditorPage() {
   const [newModule, setNewModule] = useState('');
   const [renaming, setRenaming] = useState<{ id: string; title: string } | null>(null);
   const [newLesson, setNewLesson] = useState<Record<string, { value: string; title: string }>>({});
+  const [newKind, setNewKind] = useState<Record<string, 'video' | 'document'>>({});
+  const [newDoc, setNewDoc] = useState<Record<string, DocumentForm>>({});
   const [lessonFailure, setLessonFailure] = useState<Failure | null>(null);
+  // What YouTube says about each video (title, length, description, picture): read in the browser with the public key the learner page uses, shown
+  // next to the stored data, never stored. When the key is missing or YouTube cannot be reached the rows simply show the stored labels.
+  const [yt, setYt] = useState<Record<string, VideoDetails>>({});
+  const [ytState, setYtState] = useState<YtState>('idle');
+  const idsKey = (c.data?.modules ?? []).flatMap((m) => m.lessons.map((l) => l.id)).join(',');
+  useEffect(() => {
+    const missing = idsKey.split(',').filter((id) => id && !(id in yt));
+    const urls = youtubeRequestUrls(missing, process.env.NEXT_PUBLIC_YOUTUBE_API_KEY ?? '');
+    if (!urls.length) return;
+    if (!process.env.NEXT_PUBLIC_YOUTUBE_API_KEY) { setYtState('nokey'); return; }
+    let cancelled = false;
+    setYtState('loading');
+    (async () => {
+      try {
+        const found: Record<string, VideoDetails> = {};
+        for (const u of urls) { const r = await fetch(u); if (!r.ok) throw new Error(String(r.status)); Object.assign(found, parseYoutubeItems(await r.json())); }
+        if (!cancelled) { setYt((now) => ({ ...now, ...found })); setYtState('ok'); }
+      } catch { if (!cancelled) setYtState('failed'); }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idsKey]);
 
   if (c.loading && !c.data) return <Spinner />;
   if (!c.data) return <div><ErrorNote failure={c.failure} /><Link href="/admin/curriculum" className="text-sm text-amber-400">Back to curriculum</Link></div>;
   const { data } = c;
   const modules = data.modules;
   const editing = open ? modules.flatMap((m) => m.lessons).find((l) => l.id === open) ?? null : null;
+  const allIds = modules.flatMap((m) => m.lessons.map((l) => l.id));
+  const exam = examOf(modules);
 
   async function confirm() {
     if (!pending) return;
@@ -50,6 +80,16 @@ export default function CurriculumEditorPage() {
       setNewLesson((all) => (all[m.id]?.value === f.value && all[m.id]?.title === f.title ? { ...all, [m.id]: { value: '', title: '' } } : all));   // never wipe what was typed meanwhile
     }
   }
+  async function addDocument(m: Module, e: React.FormEvent) {
+    e.preventDefault();
+    const f = newDoc[m.id]; const body = f ? documentLessonBody(f, allIds) : null;
+    if (!body) return;
+    if (!(await c.act(`/modules/${m.id}/lessons`, 'POST', body))) {
+      setNewDoc((all) => (all[m.id] === f ? { ...all, [m.id]: emptyDocumentForm() } : all));   // never wipe what was typed meanwhile
+    }
+  }
+  const docForm = (id: string): DocumentForm => newDoc[id] ?? emptyDocumentForm();
+  const setDoc = (id: string, patch: Partial<DocumentForm>) => setNewDoc((all) => ({ ...all, [id]: { ...docForm(id), ...patch } }));
   async function saveLesson(patch: LessonPatch) {
     if (!editing) return;
     setLessonFailure(null);
@@ -77,10 +117,26 @@ export default function CurriculumEditorPage() {
         {data.publishedAt && <p className="mt-2 text-xs text-stone-500">Last published {data.publishedAt.slice(0, 16).replace('T', ' ')} UTC</p>}
       </div>
       <div className="mb-4 space-y-2"><ErrorNote failure={c.failure} />{stale && <button type="button" className={ghostButtonClass} onClick={() => { c.setFailure(null); setLessonFailure(null); void c.reload(); }}>Reload the latest version</button>}</div>
+      {ytState === 'failed' && <p className="mb-4 text-xs text-stone-500">YouTube details are unavailable right now; the rows show the stored titles.</p>}
+      {ytState === 'nokey' && <p className="mb-4 text-xs text-stone-500">YouTube details are off: this deployment has no public YouTube key.</p>}
 
       {view === 'preview' ? <OutlinePreview modules={modules} /> : (
         <div className={`grid gap-6 ${editing ? 'xl:grid-cols-[1fr_minmax(0,28rem)]' : ''}`}>
           <div className="space-y-4">
+            <section aria-label="Final exam" className="rounded-xl border border-sky-500/30 bg-sky-500/[0.06] p-4">
+              {exam ? (<>
+                <h2 className="font-display text-base font-bold text-white">Final exam: {lessonLabel(exam.lesson)}</h2>
+                <p className="mt-1 text-sm text-stone-300">Lesson {exam.number} in <span className="font-semibold">{exam.moduleTitle}</span>{exam.serverGraded ? ' · graded on the server' : ''}. Modules marked “{LOCKED_LABEL}” open once a learner passes it.</p>
+                {exam.files.length > 0 && <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">{exam.files.map((f) => <li key={f.label}><a href={f.url} target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:text-amber-300">{f.label} ↗</a></li>)}</ul>}
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <button type="button" className={ghostButtonClass} onClick={() => { setLessonFailure(null); c.setFailure(null); setOpen(exam.lesson.id); }}>Go to the exam lesson</button>
+                  <span className="text-xs text-stone-500">Which lesson is the exam, and its grader, are set in the repository and imported; they cannot be moved or created here.</span>
+                </div>
+              </>) : (<>
+                <h2 className="font-display text-base font-bold text-white">Final exam: none</h2>
+                <p className="mt-1 text-sm text-stone-400">This course has no final exam. An exam and its grader are set in the repository and imported; they cannot be created here.</p>
+              </>)}
+            </section>
             {modules.map((m, mi) => (
               <section key={m.id} aria-label={`Module ${m.title}`} className="rounded-xl border border-white/10 bg-white/[0.02]">
                 <div className="flex flex-wrap items-center gap-2 border-b border-white/10 p-3">
@@ -89,7 +145,7 @@ export default function CurriculumEditorPage() {
                       <button type="submit" disabled={c.busy || !renaming.title.trim()} className={buttonClass}>Save</button><button type="button" className={ghostButtonClass} onClick={() => setRenaming(null)}>Cancel</button></form>
                   ) : (<>
                     <h2 className="flex-1 font-display text-base font-bold text-white">{m.title}</h2>
-                    <label className="flex items-center gap-1.5 text-xs text-stone-300"><input type="checkbox" checked={m.advanced} disabled={c.busy} onChange={(e) => void c.act(`/modules/${m.id}`, 'PATCH', { advanced: e.target.checked })} />Advanced</label>
+                    <label className="flex items-center gap-1.5 text-xs text-stone-300" title={LOCKED_HINT}><input type="checkbox" checked={m.advanced} disabled={c.busy} onChange={(e) => void c.act(`/modules/${m.id}`, 'PATCH', { advanced: e.target.checked })} />{LOCKED_LABEL}</label>
                     <button type="button" className="text-xs font-semibold text-amber-400" onClick={() => setRenaming({ id: m.id, title: m.title })}>Rename</button>
                     <button type="button" aria-label={`Move module ${m.title} up`} disabled={c.busy || mi === 0} className="rounded border border-white/15 px-2 py-1 text-xs disabled:opacity-30" onClick={() => { const ids = moduleOrderAfterMove(modules, m.id, -1); if (ids) void c.act('/modules/reorder', 'POST', { moduleIds: ids }); }}>↑</button>
                     <button type="button" aria-label={`Move module ${m.title} down`} disabled={c.busy || mi === modules.length - 1} className="rounded border border-white/15 px-2 py-1 text-xs disabled:opacity-30" onClick={() => { const ids = moduleOrderAfterMove(modules, m.id, 1); if (ids) void c.act('/modules/reorder', 'POST', { moduleIds: ids }); }}>↓</button>
@@ -100,7 +156,12 @@ export default function CurriculumEditorPage() {
                   {m.lessons.map((l, li) => (
                     <li key={l.id} className={`flex flex-wrap items-center gap-2 px-3 py-2 text-sm ${open === l.id ? 'bg-amber-500/10' : ''}`}>
                       <span className="w-14 shrink-0 text-xs text-stone-500">Lesson {li + 1}</span>
-                      <span className="min-w-0 flex-1 truncate text-stone-200" title={l.id}>{lessonLabel(l)}</span>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      {yt[l.id] && <img src={yt[l.id].thumbnail} alt="" width={64} height={36} loading="lazy" className="h-9 w-16 shrink-0 rounded object-cover" />}
+                      <span className="min-w-0 flex-1" title={l.id}>
+                        <span className="block truncate text-stone-200">{lessonLabel(l)}</span>
+                        {yt[l.id] && <span className="block truncate text-xs text-stone-500">On YouTube: {yt[l.id].title || 'untitled'}{yt[l.id].duration ? ` · ${yt[l.id].duration}` : ''}</span>}
+                      </span>
                       {l.assignment && <span className="rounded-full bg-sky-500/20 px-2 py-0.5 text-[11px] text-sky-300">{l.assignment.isExam ? 'Exam' : 'Assignment'}</span>}
                       {!!l.resources?.length && <span className="rounded-full bg-stone-500/20 px-2 py-0.5 text-[11px] text-stone-300">{l.resources.length} res.</span>}
                       <button type="button" aria-label={`Edit lesson ${lessonLabel(l)}`} className="text-xs font-semibold text-amber-400" onClick={() => { setLessonFailure(null); c.setFailure(null); setOpen(l.id); }}>Edit</button>
@@ -117,11 +178,27 @@ export default function CurriculumEditorPage() {
                   {m.lessons.length === 0 && <li className="px-3 py-3 text-sm text-stone-500">No lessons in this module.</li>}
                 </ul>
                 {m.lessons.length < LIMITS.lessonsPerModule && (
-                  <form onSubmit={(e) => void addLesson(m, e)} aria-label={`Add a lesson to ${m.title}`} className="grid gap-2 border-t border-white/10 p-3 sm:grid-cols-[1.4fr_1fr_auto]">
-                    <label className="text-xs font-semibold text-stone-400">YouTube link or id, or doc-… id<input value={newLesson[m.id]?.value ?? ''} onChange={(e) => setNewLesson({ ...newLesson, [m.id]: { value: e.target.value, title: newLesson[m.id]?.title ?? '' } })} aria-invalid={!!newLesson[m.id]?.value && !lessonIdFrom(newLesson[m.id].value)} className={`${inputClass} mt-1 font-mono text-xs font-normal`} /></label>
-                    <label className="text-xs font-semibold text-stone-400">Title (optional)<input value={newLesson[m.id]?.title ?? ''} maxLength={200} onChange={(e) => setNewLesson({ ...newLesson, [m.id]: { value: newLesson[m.id]?.value ?? '', title: e.target.value } })} className={`${inputClass} mt-1 font-normal`} /></label>
-                    <div className="flex items-end"><button type="submit" disabled={c.busy || !lessonIdFrom(newLesson[m.id]?.value ?? '')} className={ghostButtonClass}>Add lesson</button></div>
-                  </form>
+                  <div className="border-t border-white/10 p-3">
+                    <div role="radiogroup" aria-label={`What to add to ${m.title}`} className="mb-2 flex gap-4 text-xs text-stone-300">
+                      {(['video', 'document'] as const).map((k) => <label key={k} className="flex items-center gap-1.5"><input type="radio" name={`add-${m.id}`} checked={(newKind[m.id] ?? 'video') === k} onChange={() => setNewKind({ ...newKind, [m.id]: k })} />{k === 'video' ? 'Video' : 'Document (PDF, notes, cheat sheet)'}</label>)}
+                    </div>
+                    {(newKind[m.id] ?? 'video') === 'video' ? (
+                      <form onSubmit={(e) => void addLesson(m, e)} aria-label={`Add a lesson to ${m.title}`} className="grid gap-2 sm:grid-cols-[1.4fr_1fr_auto]">
+                        <label className="text-xs font-semibold text-stone-400">YouTube link or id, or doc-… id<input value={newLesson[m.id]?.value ?? ''} onChange={(e) => setNewLesson({ ...newLesson, [m.id]: { value: e.target.value, title: newLesson[m.id]?.title ?? '' } })} aria-invalid={!!newLesson[m.id]?.value && !lessonIdFrom(newLesson[m.id].value)} placeholder="https://www.youtube.com/watch?v=…" className={`${inputClass} mt-1 font-mono text-xs font-normal`} /></label>
+                        <label className="text-xs font-semibold text-stone-400">Title (optional)<input value={newLesson[m.id]?.title ?? ''} maxLength={200} onChange={(e) => setNewLesson({ ...newLesson, [m.id]: { value: newLesson[m.id]?.value ?? '', title: e.target.value } })} className={`${inputClass} mt-1 font-normal`} /></label>
+                        <div className="flex items-end"><button type="submit" disabled={c.busy || !lessonIdFrom(newLesson[m.id]?.value ?? '')} className={ghostButtonClass}>Add lesson</button></div>
+                      </form>
+                    ) : (
+                      <form onSubmit={(e) => void addDocument(m, e)} aria-label={`Add a document to ${m.title}`} className="grid gap-2 sm:grid-cols-[1fr_1.4fr_120px_auto]">
+                        <label className="text-xs font-semibold text-stone-400">Document title<input value={docForm(m.id).title} maxLength={200} onChange={(e) => setDoc(m.id, { title: e.target.value })} className={`${inputClass} mt-1 font-normal`} /></label>
+                        <label className="text-xs font-semibold text-stone-400">Document link<input value={docForm(m.id).url} onChange={(e) => setDoc(m.id, { url: e.target.value })} placeholder="https://s3.ap-south-1.amazonaws.com/… or a GitHub or Drive link" className={`${inputClass} mt-1 font-mono text-xs font-normal`} /></label>
+                        <label className="text-xs font-semibold text-stone-400">Document type<select value={docForm(m.id).type} onChange={(e) => setDoc(m.id, { type: e.target.value as DocumentForm['type'] })} className={`${inputClass} mt-1 font-normal`}><option>PDF</option><option>Document</option><option>Link</option></select></label>
+                        <div className="flex items-end"><button type="submit" disabled={c.busy || !documentLessonBody(docForm(m.id), allIds)} className={ghostButtonClass}>Add document</button></div>
+                        <label className="text-xs font-semibold text-stone-400 sm:col-span-4">Short description (optional)<input value={docForm(m.id).description} maxLength={500} onChange={(e) => setDoc(m.id, { description: e.target.value })} className={`${inputClass} mt-1 font-normal`} /></label>
+                        {(docForm(m.id).title || docForm(m.id).url) && documentProblems(docForm(m.id)).length > 0 && <ul className="list-disc pl-5 text-xs text-amber-200 sm:col-span-4">{documentProblems(docForm(m.id)).map((p) => <li key={p}>{p}</li>)}</ul>}
+                      </form>
+                    )}
+                  </div>
                 )}
               </section>
             ))}
@@ -132,7 +209,7 @@ export default function CurriculumEditorPage() {
               </form>
             )}
           </div>
-          {editing && <aside><LessonPanel key={editing.id} lesson={editing} busy={c.busy} failure={lessonFailure} onSave={(p) => void saveLesson(p)} onClose={() => { setOpen(null); setLessonFailure(null); }} /></aside>}
+          {editing && <aside><LessonPanel key={editing.id} lesson={editing} details={yt[editing.id]} busy={c.busy} failure={lessonFailure} onSave={(p) => void saveLesson(p)} onClose={() => { setOpen(null); setLessonFailure(null); }} /></aside>}
         </div>
       )}
 

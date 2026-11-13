@@ -1,4 +1,4 @@
-# Curriculum editor parity with the data files (Blueprint, PROPOSED, awaiting owner approval)
+# Curriculum editor parity with the data files (Blueprint, APPROVED 2026-11-14)
 
 Requested by the owner on 2026-11-14 after checking the imported curricula in the portal against `data/learning-content.ts`. Rule from CONSTITUTION §2: no implementation code until this is approved.
 
