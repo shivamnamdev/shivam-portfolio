@@ -44,7 +44,9 @@ test.describe('PRD14 database integrity (QA project) @regression', () => {
 
     test('[DBI-SCH-002] the columns match docs/DATABASE.md', async () => {
       const cols = (t: string) => Object.keys(defs[t].properties).sort();
-      expect(cols('user_enrollments')).toEqual(['coupon_used', 'course_slug', 'enrolled_at', 'id', 'user_email', 'user_id', 'user_name']);
+      // plan_id is optional: plan-based courses add it (docs/SUPABASE_PLAN_COLUMN.md) and the code falls back when it is missing.
+      expect(cols('user_enrollments').filter((c) => c !== 'plan_id')).toEqual(['coupon_used', 'course_slug', 'enrolled_at', 'id', 'user_email', 'user_id', 'user_name']);
+      if (defs.user_enrollments.properties.plan_id) expect(defs.user_enrollments.properties.plan_id.type).toBe('string');
       expect(cols('video_progress')).toEqual(['completed_at', 'course_slug', 'id', 'user_id', 'video_id']);
       expect(cols('assignment_progress')).toEqual(['completed_at', 'course_slug', 'id', 'submitted_code', 'user_id', 'user_name', 'video_id']);
       expect(cols('video_comments')).toEqual(['content', 'created_at', 'id', 'user_id', 'user_image', 'user_name', 'video_id']);
