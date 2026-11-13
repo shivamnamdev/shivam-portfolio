@@ -6,7 +6,7 @@ import { formatPrice, parsePrice } from "@/lib/pricing";
 // The course cards of the catalog, shared by the public /courses page and the admin-only preview. In the preview each card also carries the
 // state of its cohort (draft, published, archived; archived is greyed out) and a note when something is missing.
 export type GridCourse = {
-  id: string; slug: string; title: string; statusText: string; duration: string; enrollmentClosed: boolean;
+  id: string; slug: string; title: string; statusText: string; duration: string; enrollmentClosed: boolean; format?: "live" | "recorded";
   pricing?: { inr: { currentPrice: string } }; pricingPlans?: Array<{ price: string }>;
   previewStatus?: "draft" | "published" | "archived"; previewNote?: string;
 };
@@ -33,7 +33,7 @@ export default function CourseGrid({ courses, hrefBase = "/courses" }: { courses
                 
                 <span className={`text-2xl font-black ${course.enrollmentClosed ? 'text-stone-500' : 'text-white'}`}>
                   {course.enrollmentClosed
-                    ? "Closed"
+                    ? (course.format === 'recorded' ? "Soon" : "Closed")
                     : course.pricingPlans?.length
                       ? `From ${formatPrice(Math.min(...course.pricingPlans.map((p: { price: string }) => parsePrice(p.price))), "INR")}`
                       : course.pricing?.inr.currentPrice}

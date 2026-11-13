@@ -138,7 +138,7 @@ test.describe('PRD02 CTA state context and conversion (fixture course) @regressi
 
 test.describe('PRD02 CTA on real (closed) course pages @regression', () => {
   test('[PUB-CTA-001][PUB-CTA-002] a visitor on a closed paid course sees View Open Cohorts, which leads to the catalog', async ({ page }) => {
-    await page.goto(`/courses/${COURSE.A}`);
+    await page.goto(`/courses/${COURSE.B}`);   // Course A is a hidden old cohort now (docs/architecture/recorded-courses.md); Git is still listed and closed
     await page.waitForLoadState('networkidle'); // the click does nothing before the page hydrates
     const cta = page.getByRole('link', { name: 'View Open Cohorts' }).first();   // a link on the current page; there are two
     await expect(cta).toBeVisible();
@@ -248,7 +248,8 @@ test.describe('PRD02 share links and redirects @regression', () => {
 
   test('[PUB-REDIR-010][PUB-REDIR-013][PUB-E2E-015] a visitor following a public link to a protected area keeps the access rules', async ({ page }) => {
     await page.goto(`/share/${SHARE_A}`);
-    await expect.poll(() => new URL(page.url()).pathname, { timeout: 20000 }).toBe(`/courses/${COURSE.A}`);
+    // Course A is hidden: its share link sends a visitor to the catalog, never to its own page.
+    await expect.poll(() => new URL(page.url()).pathname, { timeout: 20000 }).toBe('/courses');
     await page.goto(`/learning/${COURSE.A}`);
     await expect.poll(() => new URL(page.url()).pathname, { timeout: 25000 }).not.toBe(`/learning/${COURSE.A}`);
     await expect(page.getByText('Course Content')).toHaveCount(0);
@@ -295,7 +296,7 @@ test.describe('PRD02 end-to-end journeys @regression', () => {
   });
 
   test('[PUB-E2E-007][PUB-E2E-008] reading legal information from a course returns to the journey', async ({ page }) => {
-    await page.goto(`/courses/${COURSE.A}`);
+    await page.goto(`/courses/${COURSE.B}`);
     await page.getByRole('link', { name: 'Refund Policy' }).click();
     await expectOnPath(page, '/refund');
     await page.getByRole('navigation').getByRole('link', { name: 'Courses', exact: true }).first().click();

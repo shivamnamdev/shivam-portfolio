@@ -2,6 +2,8 @@
 import { Metadata } from 'next';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { findLesson } from '@/lib/catalog/learning';
+import { getCourse } from '@/lib/catalog/catalog';
+import { shareDestination, sharePreviewIsPublic } from '@/lib/courseAccess';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { isAdminEmail } from '@/lib/admin';
 import { getPrimaryEmail } from '@/lib/serverAuth';
@@ -13,6 +15,14 @@ const getVideoDetails = findLesson;
 export async function generateMetadata(props: { params: Promise<{ videoId: string }> }): Promise<Metadata> {
   const params = await props.params;
   const details = await getVideoDetails(params.videoId);
+  // A hidden (old live) course shows no lesson title and no thumbnail in the preview: the preview is public to any crawler.
+  if (details && !sharePreviewIsPublic(await isListed(details.slug))) {
+    return {
+      title: "Exclusive Lesson | Shivam Academy",
+      description: "Sign in to open this lesson on your student dashboard.",
+      robots: { index: false, follow: false },
+    };
+  }
   const title = details ? `${details.title} | ${details.courseTitle}` : "Exclusive Lesson | Shivam Academy";
 
   // 🚨 THE FIX: Use 0.jpg which is guaranteed to exist even for Unlisted YouTube videos!
@@ -36,17 +46,24 @@ export async function generateMetadata(props: { params: Promise<{ videoId: strin
   }
 }
 
+// A course missing from the catalog counts as listed (nothing to hide).
+async function isListed(slug: string): Promise<boolean> {
+  return (await getCourse(slug))?.listed !== false;
+}
+
 async function resolveDestination(videoId: string) {
   const details = await getVideoDetails(videoId);
   if (!details) return '/learning';
+  const listed = await isListed(details.slug);
+  const to = (hasAccess: boolean) => shareDestination({ slug: details.slug, videoId, listed, hasAccess });
 
   const { userId } = await auth();
-  if (!userId) return `/courses/${details.slug}`;
+  if (!userId) return to(false);
 
   const clerkUser = await currentUser();
   // Server-side Clerk users expose emailAddresses + primaryEmailAddressId, not primaryEmailAddress.
   const isAdmin = isAdminEmail(getPrimaryEmail(clerkUser));
-  if (isAdmin) return `/learning/${details.slug}?v=${videoId}`;
+  if (isAdmin) return to(true);
 
   try {
     const { data, error } = await supabaseAdmin
@@ -56,14 +73,12 @@ async function resolveDestination(videoId: string) {
       .eq('course_slug', details.slug)
       .limit(1);
 
-    if (!error && data && data.length > 0) {
-      return `/learning/${details.slug}?v=${videoId}`;
-    }
+    if (!error && data && data.length > 0) return to(true);
   } catch (err) {
     // Default-deny on any server error.
   }
 
-  return `/courses/${details.slug}`;
+  return to(false);
 }
 
 // 3. 🚨 THE FIX: A 200 OK page with a Client-Side JavaScript Redirect

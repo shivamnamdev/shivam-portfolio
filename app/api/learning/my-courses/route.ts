@@ -1,4 +1,4 @@
-// GET /api/learning/my-courses  ->  { success, courses: [{ id, slug, title, statusText, duration, resources? }] }
+// GET /api/learning/my-courses  ->  { success, courses: [{ id, slug, title, statusText, duration, resources?, format? }] }
 // The cards of the courses the signed-in learner holds (no private link). The dashboard used to filter a bundled list of every course.
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";

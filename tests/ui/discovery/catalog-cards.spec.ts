@@ -30,7 +30,8 @@ test.describe('PRD03 Course discovery cards @regression', () => {
 
   test('[CDP-006] pricing badge: closed cohorts say "Closed", open cohorts show the INR price', async ({ page }) => {
     for (const c of listed) {
-      const expected = c.enrollmentClosed ? 'Closed' : c.pricing.inr.currentPrice;
+      // an upcoming recorded course says "Soon", a closed live cohort says "Closed"
+      const expected = c.enrollmentClosed ? ((c as { format?: string }).format === 'recorded' ? 'Soon' : 'Closed') : c.pricing.inr.currentPrice;
       await expect(card(page, c.title).getByText(expected, { exact: true })).toBeVisible();
     }
   });

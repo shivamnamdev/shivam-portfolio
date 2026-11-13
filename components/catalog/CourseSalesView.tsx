@@ -95,12 +95,12 @@ export default function CourseSalesView({ course, support, couponCheck, preview 
           </h2>
           <p className="text-stone-400 text-lg mb-8">
             {course.enrollmentClosed
-              ? 'This cohort has started. Check the catalog for the next open batch.'
+              ? (course.format === 'recorded' ? 'Enrollment opens soon. Browse the catalog in the meantime.' : 'This cohort has started. Check the catalog for the next open batch.')
               : `${course.duration}. Starting at ${startingPrice}, inclusive of all taxes.`}
           </p>
           {course.enrollmentClosed ? (
             <Link href="/courses" className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white text-black font-black text-lg hover:bg-stone-200 transition-colors">
-              View Open Cohorts <ChevronRight size={20} />
+              {course.format === 'recorded' ? 'Browse Courses' : 'View Open Cohorts'} <ChevronRight size={20} />
             </Link>
           ) : (
             <a href={`#${enrollTarget}`} className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-amber-500 text-black font-black text-lg hover:bg-amber-400 transition-colors">

@@ -124,9 +124,10 @@ export default function LearningDashboard() {
                   
                   {/* 🚨 THE FIX: Styled the buttons to pop beautifully against the black card */}
                   <div className="flex flex-col sm:flex-row gap-4 relative z-10">
+                    {course.format !== 'recorded' && (
                     <button onClick={() => router.push(`/live/${course.slug}`)} className="flex-1 py-4 rounded-xl bg-stone-900 border border-stone-700 text-white font-bold flex items-center justify-center gap-2 hover:bg-stone-800 transition-colors shadow-md">
                       <PlayCircle size={18} /> Join Live Class
-                    </button>
+                    </button>)}
                     <button onClick={() => router.push(`/learning/${course.slug}`)} className="flex-1 py-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-black font-black flex items-center justify-center gap-2 hover:from-amber-400 hover:to-amber-500 transition-all shadow-[0_0_20px_rgba(245,158,11,0.2)]">
                       <Video size={18} /> View Recordings
                     </button>

@@ -148,11 +148,132 @@ modules: [
 
 
 },
+  // 🎬 RECORDED: Python Foundation. Replaces the live cohorts for new students (docs/architecture/recorded-courses.md).
+  // Upcoming: enrollment stays closed until the recordings are ready; the owner opens it by setting enrollmentClosed to false.
+  {
+    id: "python-foundation",
+    slug: "python-foundation",
+    title: "Python Foundation",
+    format: "recorded",
+    statusText: "Coming Soon",
+    demoOffer: "Enrollment Opens Soon",
+    duration: "17 Recorded Sessions | Learn at Your Own Pace",
+    contactPhone: "7057034840",
+    enrollmentClosed: true,
+    liveLink: "",
+    whatsappLink: "",
+
+    vsl: {
+      headlinePart1: "Don't just learn Python.",
+      headlineHighlight: "THINK IN PYTHON",
+      subheadline: "From print(\"Hello World\") to loops, strings, lists, dictionaries, files, exceptions, functions and OOPs: 17 recorded sessions that teach you to read, debug and build Python programs on your own.",
+      videoCoverUrl: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?q=80&w=2000&auto=format&fit=crop",
+      ctaLabel: "Enroll Now & Learn Python The Right Way",
+      facts: ["17 Sessions", "Self-Paced", "Certificate"]
+    },
+
+    differentiatorsTagline: "Read, Understand, Debug & Build Python Programs Independently",
+
+    painPoints: {
+      oldWay: [
+        "Watching tutorials but unable to write code from scratch",
+        "Struggling to build strong programming logic",
+        "Feeling overwhelmed by complex coding jargon",
+        "Learning syntax but failing to solve real problems"
+      ],
+      newWay: [
+        "Building strong coding logic step-by-step from scratch",
+        "Writing Python programs confidently and independently",
+        "Working on real-world mini projects, not just theory",
+        "Becoming job-ready for entry-level roles"
+      ]
+    },
+
+    pricing: {
+      inr: { currentPrice: "₹1,999", originalPrice: "₹2,499", savingsText: "Launch Price", currencyCode: "INR" },
+      usd: { currentPrice: "$25", originalPrice: "$35", savingsText: "Launch Price (Global)", currencyCode: "USD" }
+    },
+
+    // Plan-based pricing (INR only, GST inclusive), same prices as the live course. Live-class wording removed.
+    pricingPlans: [
+      {
+        id: "community",
+        name: "Community Plan",
+        subtitle: "For aspiring engineers ready to start the journey.",
+        price: "₹1999",
+        originalPrice: "₹2499",
+        features: [
+          "All 17 recorded sessions",
+          "Course completion certificate",
+          "Discord community access",
+          "Assignments with solutions"
+        ],
+        isPopular: false
+      },
+      {
+        id: "personal",
+        name: "Personal Plan",
+        subtitle: "For serious learners who want direct mentorship.",
+        price: "₹2999",
+        originalPrice: "₹4999",
+        features: [
+          "Everything in Community Plan",
+          "1-on-1 Doubt Solving Call",
+          "Bonus: Advanced Python Recordings",
+          "Direct WhatsApp access to Shivam"
+        ],
+        isPopular: true
+      }
+    ],
+
+    resources: {
+      syllabusPdf: "/syllabus/Python_Foundation_Cohort_Syllabus_Updated_Fixed.pdf",
+      syllabusLabel: "Download Full Syllabus (PDF)"
+    },
+
+    differentiators: [
+      { icon: "accountability", title: "ASSIGNMENTS", description: "Practice after every session, with solutions to check yourself" },
+      { icon: "visualiser", title: "CODE VISUALISER", description: "Visualise code execution and understand deeply" },
+      { icon: "recordings", title: "LEARN YOUR WAY", description: "Watch, pause and revisit every session on our portal" },
+      { icon: "certificate", title: "CERTIFICATE", description: "Earn a certificate by completing the requirements" }
+    ],
+
+    cohortHighlights: [
+      "17 Recorded Sessions, Beginner to OOPs",
+      "Real-Life Examples and Metaphors for every concept",
+      "Assignments with Solutions",
+      "Two Mini Projects: Student Profile Automation and JSON File Persistence",
+      "Bonus Sessions: Loop Logical Programs and Logical Thinking",
+      "AI-assisted coding with GitHub Copilot and Claude"
+    ],
+
+    outcomes: [
+      "Understands & writes code",
+      "Debugs with confidence",
+      "Solves problems logically",
+      "Builds real programs on own"
+    ],
+
+    bonuses: [
+      "Score Above 70-80% & Get Access to Advance Python Recordings:",
+      "List Comprehension, Decorator, Generators, Lambda Function, Recursion"
+    ],
+
+    modules: [
+      { week: "MODULE 1", title: "Think Like a Programmer", topics: ["Foundation: variables, input and output", "Conditional Statements", "While Loop", "For Loops"] },
+      { week: "MODULE 2", title: "Build Logic Confidence", topics: ["Loop Logical Programs (Bonus)", "Patterns", "Logical Thinking (Bonus)"] },
+      { week: "MODULE 3", title: "Work With Data", topics: ["Strings", "Lists", "Tuples & Sets", "Dictionaries"] },
+      { week: "MODULE 4", title: "Write Real Programs", topics: ["File Handling", "Exception Handling", "Functions"] },
+      { week: "MODULE 5", title: "OOPs, Projects & AI Tools", topics: ["Object-Oriented Programming", "Mini Projects", "GitHub Copilot and Claude"] }
+    ]
+  },
+
   // 🚀 BRAND NEW: BATCH 3 (Active Pricing & New VSL Data)
   {
     id: "python-beginners-batch-2",
     slug: "python-beginners-batch-2",
     title: "Python Live Session (Batch 2)",
+    listed: false, // old live cohort: hidden from /courses and from visitors; its learners and the admin still reach it (lib/courseAccess.ts)
     statusText: "🔒 Cohort Completed",
     demoOffer: "Enrollment Closed",
     duration: "6-8 Weeks | Weekends Only (Sat & Sun)",

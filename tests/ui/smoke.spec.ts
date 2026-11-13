@@ -40,8 +40,8 @@ test.describe('Protected pages redirect anonymous users @smoke', () => {
 });
 
 test.describe('Share page previews @smoke', () => {
-  const [slug] = Object.keys(courseCurriculumMap);
-  const videoId = courseCurriculumMap[slug][0].videoIds[0];
+  // a lesson of a listed course (the old Python cohorts are hidden and show a generic preview, CAC-UI-006)
+  const videoId = courseCurriculumMap['git-beginner-batch-1'][0].videoIds[0];
 
   test('known video exposes Open Graph tags with its thumbnail', async ({ request }) => {
     const res = await request.get(`/share/${videoId}`, { headers: { 'User-Agent': 'WhatsApp/2.23' } });
