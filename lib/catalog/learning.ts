@@ -14,8 +14,8 @@ import { LEARNING_TAG } from "./tags";
 import { lessonIn } from "./lessons";
 import { chooseSource, readWithFallback } from "./source";
 
-export type LearningCourse = { id: string; slug: string; title: string; statusText: string; duration: string; resources?: Record<string, unknown> };
-type FileCourse = { id: string; slug: string; title: string; statusText?: string; duration?: string; resources?: Record<string, unknown>; liveLink?: string; whatsappLink?: string };
+export type LearningCourse = { id: string; slug: string; title: string; statusText: string; duration: string; resources?: Record<string, unknown>; format?: "live" | "recorded" };
+type FileCourse = { id: string; slug: string; title: string; statusText?: string; duration?: string; resources?: Record<string, unknown>; format?: "live" | "recorded"; liveLink?: string; whatsappLink?: string };
 
 const source = () => chooseSource(process.env.PORTAL_LEARNING);
 const files = () => activeCourses as unknown as FileCourse[];
@@ -53,7 +53,7 @@ const cohortAndCourse = unstable_cache(async (slug: string): Promise<LearningCou
   };
 }, ["learning-course-v1"], { revalidate: 60, tags: [LEARNING_TAG] });
 
-const toCourse = (c: FileCourse): LearningCourse => ({ id: c.id, slug: c.slug, title: c.title, statusText: c.statusText ?? "", duration: c.duration ?? "", ...(c.resources ? { resources: c.resources } : {}) });
+const toCourse = (c: FileCourse): LearningCourse => ({ id: c.id, slug: c.slug, title: c.title, statusText: c.statusText ?? "", duration: c.duration ?? "", ...(c.resources ? { resources: c.resources } : {}), ...(c.format ? { format: c.format } : {}) });
 
 // A cohort's title, status text, duration and syllabus: whatever a learner may see on a card or in a heading. Never a link.
 export async function getLearningCourse(slug: string): Promise<LearningCourse | null> {

@@ -130,7 +130,7 @@ export default function CoursePricing({ course, couponCheck = 'browser' }: { cou
                 <PartyPopper size={36} className="text-green-400" />
               </div>
               <h3 className="text-3xl font-black text-white mb-3">Welcome Aboard!</h3>
-              <p className="text-stone-400 mb-8 leading-relaxed">Your enrollment is confirmed. Join the official WhatsApp group so you don't miss any live class links.</p>
+              <p className="text-stone-400 mb-8 leading-relaxed">Your enrollment is confirmed. {course.format === 'recorded' ? 'Join the official WhatsApp group for updates and doubt support.' : "Join the official WhatsApp group so you don't miss any live class links."}</p>
               <div className="space-y-4">
                 <a href={success.whatsappLink} target="_blank" rel="noreferrer" className="w-full py-4 rounded-xl bg-[#25D366] text-white font-black text-lg flex items-center justify-center gap-2 hover:bg-[#20bd5a] transition-colors">
                   Join WhatsApp Group <ExternalLink size={20} />
@@ -146,10 +146,10 @@ export default function CoursePricing({ course, couponCheck = 'browser' }: { cou
 
       <div className="text-center mb-12">
         <span className={`inline-block font-bold px-4 py-1 rounded-full text-xs uppercase tracking-widest mb-4 border ${isClosed ? 'bg-white/5 border-white/10 text-stone-400' : 'bg-amber-500/10 border-amber-500/20 text-amber-400'}`}>
-          {isClosed ? 'Enrollment Closed' : 'Enrollment Open'}
+          {isClosed ? (course.format === 'recorded' ? 'Enrollment Opens Soon' : 'Enrollment Closed') : 'Enrollment Open'}
         </span>
         <h2 className="text-4xl md:text-5xl font-display font-black text-white mb-4">Flexible Pricing <span className="text-amber-500">Plans</span></h2>
-        <p className="text-stone-400 text-lg">{isClosed ? 'This cohort is no longer accepting new students — plans are shown for reference.' : 'Choose the plan that suits you best.'}</p>
+        <p className="text-stone-400 text-lg">{isClosed ? (course.format === 'recorded' ? 'Enrollment has not opened yet — plans are shown for reference.' : 'This cohort is no longer accepting new students — plans are shown for reference.') : 'Choose the plan that suits you best.'}</p>
       </div>
 
       {!isClosed && !isAlreadyEnrolled && (
@@ -205,7 +205,7 @@ export default function CoursePricing({ course, couponCheck = 'browser' }: { cou
                 </button>
               ) : isClosed ? (
                 <button disabled className="w-full py-4 rounded-full font-black text-lg bg-white/5 border border-white/10 text-stone-500 flex justify-center items-center gap-2 cursor-not-allowed">
-                  <Lock size={18} /> Enrollment Closed
+                  <Lock size={18} /> {course.format === 'recorded' ? 'Opens Soon' : 'Enrollment Closed'}
                 </button>
               ) : (
                 <button

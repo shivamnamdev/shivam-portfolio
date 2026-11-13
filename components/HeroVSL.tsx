@@ -51,9 +51,12 @@ export default function HeroVSL({ course }: HeroVSLProps) {
         </motion.div>
       </div>
 
+      {course.vsl.flyerUrl && (
+
       <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, duration: 0.6 }} className="w-full max-w-5xl rounded-3xl overflow-hidden border border-white/10 bg-[#0a0a0a]">
         <img src={course.vsl.flyerUrl} alt={`${course.title} overview`} className="w-full h-auto object-cover" />
       </motion.div>
+      )}
     </section>
   );
 }
