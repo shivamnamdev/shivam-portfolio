@@ -95,4 +95,6 @@ Stage 6 went before stage 5: Next 16 removed the synchronous `headers()` that Cl
 
 **CI (found along the way, PR #92):** `ubuntu-latest` became 26.04, which Playwright 1.59.1 cannot install browsers on, and `lts/*` became Node 26, where the browser download hangs on extraction (earlier main runs were cancelled after 60 minutes). The workflow now pins `ubuntu-24.04` and Node 24.
 
-**Open follow-ups:** rename `middleware.ts` to `proxy.ts` (Next 16 deprecation); React 18 support ends in Next 17 (React 19 migration); Clerk deprecates `createRouteMatcher` (move auth checks into each route); `outputFileTracingRoot` warning from the stray `~/package-lock.json`; Vercel preview checks of sign-in, Razorpay test checkout, exam grade cold start and memory, admin pages, `/api-docs`.
+**Follow-up done 2026-11-13 (branch `chore/SCP-87-proxy-rename`):** `middleware.ts` renamed to `proxy.ts`; the public/API path rules moved to `lib/routeAccess.ts` (plain path checks, unit tests `RTE-UNIT-001` to `005`), so `createRouteMatcher` is no longer used. The gate is still path-based; Clerk's advice to check auth inside every page and route is a larger change and is not done.
+
+**Open follow-ups:** React 18 support ends in Next 17 (React 19 migration); `outputFileTracingRoot` warning from the stray `~/package-lock.json`; Vercel preview checks of sign-in, Razorpay test checkout, exam grade cold start and memory, admin pages, `/api-docs`.
