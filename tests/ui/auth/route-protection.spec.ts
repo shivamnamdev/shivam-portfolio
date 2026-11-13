@@ -118,12 +118,17 @@ test.describe('PRD01 Visitor blocked from protected routes @regression', () => {
     });
   }
 
+  // Hidden (old) courses: the share link sends a visitor to the catalog. A listed course: to its own page.
   for (const url of ['/share/a9nrrH5XkG0?t=1788926719351', '/share/OkK3E7ApZ4Q']) {
-    test(`[AUTH-PROT-010] share link ${url} sends a visitor to the course page`, async ({ page }) => {
+    test(`[AUTH-PROT-010] share link ${url} sends a visitor to the catalog`, async ({ page }) => {
       await page.goto(url);
-      await expect.poll(() => new URL(page.url()).pathname, { timeout: 20000 }).toMatch(/^\/courses\/[a-z0-9-]+$/);
+      await expect.poll(() => new URL(page.url()).pathname, { timeout: 20000 }).toBe('/courses');
     });
   }
+  test('[AUTH-PROT-010] a share link of a listed course sends a visitor to that course page', async ({ page }) => {
+    await page.goto(`/share/${courseCurriculumMap['git-beginner-batch-1'][0].videoIds[0]}`);
+    await expect.poll(() => new URL(page.url()).pathname, { timeout: 20000 }).toBe('/courses/git-beginner-batch-1');
+  });
 
   test('[AUTH-PROT-012] trailing slash gets the same protection', async ({ request }) => {
     await expectServerDeniesVisitor(request, '/learning/');
