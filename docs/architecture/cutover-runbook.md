@@ -5,7 +5,7 @@ Applies to `PORTAL_CATALOG`, `PORTAL_LEARNING`, `PORTAL_ENGAGEMENT`, `PORTAL_COU
 ## 0. Once, before the first flag
 1. Production SQL applied: `step4` to `step8` in `docs/testing/sql/` (the owner ran them on 2026-11-06). For plans: the `plan_id` column of `docs/SUPABASE_PLAN_COLUMN.md`.
 2. `course-cta-update-3` merged to `main` (slice 5d is built on it) and the phase 4 and 5 branches merged.
-3. The import has run and what you want live is **published** in the portal: courses, cohorts (prices, open or closed, private links), curriculum, settings (support phone), banners and e-mail templates if you want them.
+3. The import has run (`POST /import/curriculum` for lessons, `POST /import/catalog` for courses and cohorts; dry run first, then apply) and what you want live is **published** in the portal: courses, cohorts (prices, open or closed, private links), curriculum, settings (support phone), banners and e-mail templates if you want them.
 4. Recreate the coupons you still need in the portal (**the four old file codes stop working** when `PORTAL_COUPONS` is `database`; `QA100` stays environment-driven and exists only where the QA fixture variables are set).
 5. Run the check against the project the site uses (it reads counts only and prints no secret; it uses `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` from the environment or `.env.local`):
    `node scripts/cutover-check.mjs` (all flags) or `node scripts/cutover-check.mjs PORTAL_CATALOG` (one). Exit code 0 means every asked flag is ready, 1 means a line says why not. Fix what it names first.
@@ -27,3 +27,7 @@ Run the full learner suites once with all four flags `database` and once with al
 
 ## 3. After the soak (slice 6e, only on the owner's word)
 Count fallback lines in the production logs (the prefixes above) over the soak period (14 days proposed). With zero, the owner may ask for slice 6e, which stops reading `data/courses.ts`, `data/coupons.ts`, `data/notifications.ts` and the static curriculum at run time. That slice has its own approval; **until then the files stay the safety net**, and the old file coupon codes stay in the client bundle (SCP-53 closes with 6e).
+
+## Known difference when `PORTAL_LEARNING=database`
+
+The curriculum import drops what it cannot keep (listed under `dropped` in its report). For `python-beginners` it drops one assignment ("Iterator", its link is not https), so the portal course has 61 tasks where the files have 62. Certificate percent and the "x/y Completed" counter follow the source in use. The learner suites count the same way (`courseLayout` in `tests/support/learning.ts`).

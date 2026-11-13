@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { EMAIL, COURSE } from '../support/personas';
-import { courseCurriculumMap } from '../../data/learning-content';
+import { courseLayout } from '../support/learning';
 import { clerkUserId } from '../support/clerk';
 import { adminDb } from '../support/db';
 import { requireSeed } from '../support/guards';
@@ -83,7 +83,7 @@ test.describe('PRD13 AI tutor, certificate, track-time and xp/sync @regression',
       test.beforeEach(() => requireSeed());
       let s: Session, uid = '';
       const CERT = COURSE.C;   // python-beginners: the only course with a final exam
-      const modules = courseCurriculumMap[CERT] as any[];
+      const modules = courseLayout(CERT);
       const lessons: string[] = modules.flatMap(m => m.videoIds);
       const assignments: string[] = modules.flatMap(m => Object.keys(m.githubAssignments ?? {}));
       const total = lessons.length + assignments.length;

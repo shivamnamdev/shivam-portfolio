@@ -3,8 +3,7 @@ import { EMAIL, COURSE } from '../../support/personas';
 import { requireSeed } from '../../support/guards';
 import { adminDb, grantTestEnrolment, revokeTestEnrolment } from '../../support/db';
 import { clerkUserId } from '../../support/clerk';
-import { courseCurriculumMap } from '../../../data/learning-content';
-import { clearProgress, labReady, lessonButton, lessonIds, openCourse, progressRows, sidebar, tab } from '../../support/learning';
+import { clearProgress, courseLayout, labReady, lessonButton, lessonIds, openCourse, progressRows, sidebar, tab } from '../../support/learning';
 
 // PRD 07 exam, locked advanced lessons, certificate and likes. The exam exists only in Course C (python-beginners), which
 // no persona owns, so U = edu gets a temporary grant (removed after every test) and its exam/progress rows are cleared.
@@ -24,7 +23,7 @@ async function setExam(attempts: number, passed: boolean) {
 async function completeEverything() {
   const uid = await clerkUserId(U);
   const ids = lessonIds(SLUG);
-  const assignments = (courseCurriculumMap[SLUG] as any[]).flatMap(m => Object.keys(m.githubAssignments ?? {}));
+  const assignments = courseLayout(SLUG).flatMap(m => Object.keys(m.githubAssignments ?? {}));
   const v = await adminDb().from('video_progress').insert(ids.map(video_id => ({ user_id: uid, course_slug: SLUG, video_id })));
   if (v.error) throw v.error;
   const a = await adminDb().from('assignment_progress').insert(assignments.map(video_id => ({

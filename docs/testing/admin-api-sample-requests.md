@@ -213,6 +213,10 @@ Apply one course:
 { "cohorts": ["git-beginner-batch-1"], "apply": true }
 ```
 Apply all three (`python-beginners`, `python-beginners-batch-2`, `git-beginner-batch-1`): `{ "apply": true }`.
+
+### Courses and cohorts
+
+`POST /import/catalog` copies the courses and cohorts of `data/courses.ts` (the four sold cohorts), published. Dry run first, read the report, then `{ "apply": true }`. Add `"slugs": ["python-foundation"]` for one. The report names each course and cohort `create`, `unchanged` or `differs` and whether a private link is set (never the link).
 Run it again: every course says `unchanged`. If someone edited a curriculum in the admin API, the import says `differs` and leaves it; `{ "apply": true, "overwrite": true }` replaces it with the files.
 Imported curricula are published. An API key cannot run it (403), only the signed-in owner.
 

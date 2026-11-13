@@ -1,4 +1,4 @@
-# Existing courses in the admin portal (Blueprint, PROPOSED, awaiting owner approval)
+# Existing courses in the admin portal (Blueprint, APPROVED 2026-11-13)
 
 Requested by the owner on 2026-11-13. Rule from CONSTITUTION §2: no implementation code until this is approved.
 
