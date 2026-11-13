@@ -14,12 +14,12 @@ Everything the owner used to write by hand in `data/learning-content.ts` can be 
 | 2 | Git lab `solutionUrl` (both Git days have one) | **Missing from the git lab form; saving a git lesson drops it.** | Add the field. Bug. |
 | 3–6 | `rawUrl`, `solutionUrl`, `starterCodeUrl`, `carryOverCode`, `instructionsUrl`, `starterRepoUrl`, `expectedStateUrl`, `validatorUrl` | Present inside Edit lesson, labelled with the raw field names. | Plain-language labels and one-line hints; carry-over worded "Continue from the previous assignment's code". |
 | 7 | Materials on a video (`resources`) | Present ("Resources"). | None. |
-| 8 | Advanced module | Present (checkbox). | None. |
+| 8 | Advanced module (`isAdvancedModule: true`: its videos are locked until the exam is passed) | Present as a module checkbox labelled only "Advanced"; the owner did not recognise it (2026-11-14). | Relabel to **"Locked until the exam is passed"** with a hint; preview badge reads "Locked until exam". Module level, as the learner page implements it. |
 | 9 | Final exam (`isExam`, `serverGraded`, `expectedOutcomeUrl`) | Row badge "Exam"; the panel says the exam is fixed in the repository (rule R6 of phase 2). | **Exam card** at the top of the cohort's curriculum: which lesson is the exam, its files, what the grader checks; links to the row. Stays read-only (section 4.4). |
 | 10 | Video title, description, thumbnail (the learner page reads them from YouTube) | Not shown; rows read "Video <id>". | **Show them in the editor**, read from YouTube in the browser, like the learner page. Not stored. |
 | 11 | Commented-out video ids | No per-lesson hide; delete the lesson instead. | Not in this slice. |
 
-Owner confirmations (2026-11-14): "continued assignment" = `carryOverCode`; the exam must be listed in the portal; the YouTube title, description and thumbnail must be visible in the portal.
+Owner confirmations (2026-11-14): "continued assignment" = `carryOverCode`; the exam-locked toggle (`isAdvancedModule`) must be recognisable; the exam must be listed in the portal; the YouTube title, description and thumbnail must be visible in the portal.
 
 ## 3. Design
 
@@ -32,6 +32,8 @@ Owner confirmations (2026-11-14): "continued assignment" = `carryOverCode`; the 
 - Document lesson: the panel shows *Document file* (title, link, type) as the first and only resource, plus "Extra materials" for the rest, so the owner never has to know which resource is the document.
 
 **3.3 Video details from YouTube (read only).** The page fetches `snippet(title, description, thumbnails)` for the video ids of the cohort in one request per 50 ids with `NEXT_PUBLIC_YOUTUBE_API_KEY`, the same call the learner page makes. Rows show the thumbnail (`mqdefault`), the YouTube title and the duration; the panel shows the description. Nothing is stored and nothing goes through the admin API. When the key is missing or the call fails, rows fall back to today's label and a one-line note says "YouTube details unavailable". The learner keeps reading titles from YouTube, so the portal `title` remains an admin-only label and is described as such in the panel.
+
+**3.3b Locked module.** The module checkbox reads "Locked until the exam is passed" with the hint "Learners see these videos after passing the final exam; admins always see them". The outline preview badge changes from "Advanced" to "Locked until exam". Same field (`advanced`), no API change.
 
 **3.4 Exam card.** Above the module list, when any lesson has `assignment.isExam`: "Final exam: <lesson label> in <module>", with the exam file, add-on file and expected result as links (read only) and a "Go to lesson" button that opens the row. When no lesson is an exam the card says the course has no exam. Rule R6 stands: `isExam`, `serverGraded` and `expectedOutcomeUrl` cannot be set or moved through the portal, because the grader for each exam is server code in `lib/examGraders.ts` and is reviewed in git. Making a new exam is a code change plus a curriculum import; the card says so in one line.
 
