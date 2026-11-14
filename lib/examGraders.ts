@@ -4,6 +4,9 @@
 // A grader reads the learner's printed text (sys.stdout.getvalue()) and the learner's definitions (globals()),
 // sets the global `score` (0-100) and prints EXAM_SCORE:<n> for the report.
 
+// Which courses have a grader in code. The portal may only mark an exam for these (docs/architecture/exam-switch.md, E1).
+export const examGraderExists = (courseSlug: string): boolean => Object.prototype.hasOwnProperty.call(EXAM_GRADERS, courseSlug);
+
 export const EXAM_GRADERS: Record<string, string> = {
   "python-beginners": `
           # ---------------------------------------------------------

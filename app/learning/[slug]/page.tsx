@@ -1477,6 +1477,7 @@ sys.settrace(_trace_calls)
   const totalTasks = totalVideos + totalAssignments;
   const completedTasks = completedVideos.length + completedAssignments.length;
   const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const courseHasExam = playlist.some((m: any) => m.videos.some((v: any) => v.githubAssignment?.isExam));   // an exam is optional; when the course has one, passing it is part of the certificate
   
   const isVideoCompleted = activeVideo ? completedVideos.includes(activeVideo.id) : false;
   const isAssignmentCompleted = activeVideo ? completedAssignments.includes(activeVideo.id) : false;
@@ -1502,7 +1503,7 @@ sys.settrace(_trace_calls)
                <div className="h-full rounded-full bg-green-500 transition-all duration-1000" style={{ width: `${progressPercentage}%` }}></div>
              </div>
           </div>
-          {((progressPercentage >= 80 && examStatus.is_passed) || isAdmin) && (
+          {((progressPercentage >= 80 && (!courseHasExam || examStatus.is_passed)) || isAdmin) && (
             <button onClick={handleGenerateCertificate} className="flex items-center gap-1 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-3 py-1.5 text-[10px] font-bold text-black shadow-lg transition-transform hover:scale-105 md:text-xs">
               <Award size={14} /> Certificate
             </button>

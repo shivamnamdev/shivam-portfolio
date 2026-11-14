@@ -25,8 +25,8 @@ export async function POST(req: NextRequest) {
       const result = await certificateEligibility(userId, course.slug);
       if (!result.eligible) {
         return NextResponse.json({
-          error: "The certificate is available after 80% of the course and a passed final exam",
-          percent: result.percent, examPassed: result.examPassed,
+          error: result.examRequired ? "The certificate is available after 80% of the course and a passed final exam" : "The certificate is available after 80% of the course",
+          percent: result.percent, examPassed: result.examPassed, examRequired: result.examRequired,
         }, { status: 403 });
       }
     }

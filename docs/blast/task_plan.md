@@ -321,3 +321,9 @@ Full text: `docs/architecture/portal-existing-courses.md`. Owner decisions: less
 - [x] Steps 1 to 3 built with unit and API tests (AAPI-UNIT-CAT-001..010, AAPI-IMP-004..007); QA rehearsal run
 - [ ] Step 5 docs, PR
 - [ ] Owner production actions (section 7)
+
+## 2026-11-14 Exam switch Blueprint (APPROVED 2026-11-14, built on branch feat/exam-switch): mark the final exam in the portal, rule R6 amended
+Full text: `docs/architecture/exam-switch.md`. Owner decision: exam marking moves into the portal (dedicated `PUT /curriculum/{cohort}/exam`, only for courses with a grader in code; one exam per course; purple "Final exam" badge). Pending: owner and admin or owner only; refuse removal once a learner passed.
+- [x] Owner approval; owner and admin; exam optional, required for the certificate when present (added scope, section 9)
+- [x] Steps 1 to 3 built with unit, API and UI tests; learner exam suite rerun
+- [ ] PR, Jira Story, owner merge; owner decision on a grader for python-foundation (section 10)

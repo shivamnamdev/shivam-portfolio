@@ -18,7 +18,7 @@ The admin can build and change the modules and lessons (videos, documents, assig
 * Every change is audited (summary only) and every write is rate limited and versioned.
 
 ## 3. Rules under test (blueprint section 5)
-R1 unique lesson ids; R2 https links on allowed hosts only; R3 limits (60 modules, 200 lessons, 20 resources); R4 a lesson with learner progress cannot be removed; R5 an empty curriculum cannot be published; R6 exam flags are read-only; R7 the cohort must exist, the first write creates the curriculum; R8 reorders must list every id exactly once.
+R1 unique lesson ids; R2 https links on allowed hosts only; R3 limits (60 modules, 200 lessons, 20 resources); R4 a lesson with learner progress cannot be removed; R5 an empty curriculum cannot be published; R6 exam flags are read-only through the generic lesson calls (amended 2026-11-14, approved: only `PUT /curriculum/{cohort}/exam` may change them, owner and admin keys, for a course with a grader in code; the lesson must be a video with an assignment file outside a locked module; one exam per course; removal refused with 409 once a learner has passed it; see `docs/architecture/exam-switch.md`). Unit `AAPI-UNIT-EXM-001..009`, API `AAPI-EXM-001..007` and `AIA-CRT-006`; R7 the cohort must exist, the first write creates the curriculum; R8 reorders must list every id exactly once.
 
 ## 4. Test coverage
 **Unit (no DB, `tests/unit/admin-api-curriculum.spec.ts`, 17 tests):** `AAPI-UNIT-CUR-001` to `017` (ids, links, resources, bodies, uniqueness and limits, module and lesson operations, reorder rules, publish and discard, removed ids, protected flags, replace, stable ids, round trip on the real three courses, known junk reported, permissions).

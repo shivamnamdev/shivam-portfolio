@@ -9,7 +9,8 @@ import { ifMatchVersion, limitWrites } from "./request";
 import { getRow, insertRow, updateRow } from "./docStore";
 import { writeAudit } from "./audit";
 import { slug as slugCheck } from "./validate";
-import { checkCurriculum, emptyDoc, enforceProtected, hasUnpublishedChanges, removedLessonIds, summary, type CurriculumDoc } from "./curriculum";
+import { checkCurriculum, emptyDoc, enforceProtected, examLessonId, hasUnpublishedChanges, removedLessonIds, summary, type CurriculumDoc } from "./curriculum";
+import { examGraderExists } from "@/lib/examGraders";
 
 export const cohortParam = (s: string): string => { if (!slugCheck(s).ok) throw notFound("cohort not found"); return s; };
 
@@ -19,6 +20,7 @@ export const view = (r: Row) => {
   return {
     cohort: r.key, status: r.status, version: r.version, modules: doc.modules, published: doc.published, publishedAt: doc.publishedAt,
     hasUnpublishedChanges: hasUnpublishedChanges(doc), counts: summary(doc.modules), updatedAt: r.updated_at, updatedBy: r.updated_by,
+    examGrader: examGraderExists(r.key), examLessonId: examLessonId(doc.modules),   // can the portal mark an exam for this course, and which lesson is it now
   };
 };
 

@@ -3,13 +3,13 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useCurriculum } from '@/components/admin/curriculum/useCurriculum';
-import LessonPanel, { type LessonPatch } from '@/components/admin/curriculum/LessonPanel';
+import LessonPanel, { type ExamContext, type LessonPatch } from '@/components/admin/curriculum/LessonPanel';
 import OutlinePreview from '@/components/admin/curriculum/OutlinePreview';
 import { ConfirmDialog, ErrorNote, PageHeader, Spinner, StatusBadge, buttonClass, ghostButtonClass, inputClass } from '@/components/admin/ui';
 import type { Failure } from '@/lib/adminUi/client';
 import {
-  LIMITS, LOCKED_HINT, LOCKED_LABEL, countLessons, documentLessonBody, documentProblems, emptyDocumentForm, examOf, layoutAfterMove, layoutAfterMoveToModule, lessonIdFrom, lessonLabel,
-  moduleOrderAfterMove, parseYoutubeItems, youtubeRequestUrls, type DocumentForm, type Lesson, type Module, type VideoDetails,
+  FINAL_EXAM_BADGE, LIMITS, LOCKED_HINT, LOCKED_LABEL, countLessons, documentLessonBody, documentProblems, emptyDocumentForm, examOf, layoutAfterMove, layoutAfterMoveToModule, lessonIdFrom, lessonLabel,
+  moduleOrderAfterMove, parseYoutubeItems, youtubeRequestUrls, type DocumentForm, type ExamChange, type Lesson, type Module, type VideoDetails,
 } from '@/lib/adminUi/curriculum';
 
 type Pending = { kind: 'publish' } | { kind: 'discard' } | { kind: 'delete-module'; module: Module } | { kind: 'delete-lesson'; lesson: Lesson };
@@ -57,6 +57,7 @@ export default function CurriculumEditorPage() {
   const editing = open ? modules.flatMap((m) => m.lessons).find((l) => l.id === open) ?? null : null;
   const allIds = modules.flatMap((m) => m.lessons.map((l) => l.id));
   const exam = examOf(modules);
+  const examContext = (lessonId: string): ExamContext => ({ grader: data.examGrader, moduleLocked: !!modules.find((m) => m.lessons.some((l) => l.id === lessonId))?.advanced, currentId: exam?.lesson.id ?? null, currentLabel: exam ? lessonLabel(exam.lesson) : '' });
 
   async function confirm() {
     if (!pending) return;
@@ -90,11 +91,19 @@ export default function CurriculumEditorPage() {
   }
   const docForm = (id: string): DocumentForm => newDoc[id] ?? emptyDocumentForm();
   const setDoc = (id: string, patch: Partial<DocumentForm>) => setNewDoc((all) => ({ ...all, [id]: { ...docForm(id), ...patch } }));
-  async function saveLesson(patch: LessonPatch) {
+  // The lesson's own fields first (the exam needs its assignment file to exist), then the exam switch through its dedicated call.
+  async function saveLesson(patch: LessonPatch, exam: ExamChange | null) {
     if (!editing) return;
     setLessonFailure(null);
-    const failed = await c.act(`/lessons/${encodeURIComponent(editing.id)}`, 'PATCH', patch, true);
-    if (failed) setLessonFailure(failed); else setOpen(null);
+    if (Object.keys(patch).length) {
+      const failed = await c.act(`/lessons/${encodeURIComponent(editing.id)}`, 'PATCH', patch, true);
+      if (failed) { setLessonFailure(failed); return; }
+    }
+    if (exam) {
+      const failed = await c.act('/exam', 'PUT', exam, true);
+      if (failed) { setLessonFailure(failed); return; }
+    }
+    setOpen(null);
   }
   const stale = [c.failure, lessonFailure].some((f) => f?.status === 409 || f?.status === 428);
 
@@ -125,16 +134,16 @@ export default function CurriculumEditorPage() {
           <div className="space-y-4">
             <section aria-label="Final exam" className="rounded-xl border border-sky-500/30 bg-sky-500/[0.06] p-4">
               {exam ? (<>
-                <h2 className="font-display text-base font-bold text-white">Final exam: {lessonLabel(exam.lesson)}</h2>
-                <p className="mt-1 text-sm text-stone-300">Lesson {exam.number} in <span className="font-semibold">{exam.moduleTitle}</span>{exam.serverGraded ? ' · graded on the server' : ''}. Modules marked “{LOCKED_LABEL}” open once a learner passes it.</p>
+                <h2 className="font-display text-base font-bold text-white"><span className="mr-2 rounded-full bg-purple-500/25 px-2 py-0.5 text-[11px] font-semibold text-purple-200">{FINAL_EXAM_BADGE}</span>Final exam: {lessonLabel(exam.lesson)}</h2>
+                <p className="mt-1 text-sm text-stone-300">Lesson {exam.number} in <span className="font-semibold">{exam.moduleTitle}</span>{exam.serverGraded ? ' · graded on the server' : ''}. Learners must pass it to get the certificate, and modules marked “{LOCKED_LABEL}” open once they do.</p>
                 {exam.files.length > 0 && <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">{exam.files.map((f) => <li key={f.label}><a href={f.url} target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:text-amber-300">{f.label} ↗</a></li>)}</ul>}
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <button type="button" className={ghostButtonClass} onClick={() => { setLessonFailure(null); c.setFailure(null); setOpen(exam.lesson.id); }}>Go to the exam lesson</button>
-                  <span className="text-xs text-stone-500">Which lesson is the exam, and its grader, are set in the repository and imported; they cannot be moved or created here.</span>
+                  <span className="text-xs text-stone-500">To move the exam, open another lesson that has an assignment and turn on “This lesson is the final exam”. Learners keep their results.</span>
                 </div>
               </>) : (<>
                 <h2 className="font-display text-base font-bold text-white">Final exam: none</h2>
-                <p className="mt-1 text-sm text-stone-400">This course has no final exam. An exam and its grader are set in the repository and imported; they cannot be created here.</p>
+                <p className="mt-1 text-sm text-stone-400">{data.examGrader ? 'An exam is optional. To add one, open a lesson that has an assignment file and turn on “This lesson is the final exam”; learners must then pass it to get the certificate.' : 'An exam is optional, and this course has none. To offer one, a grader first has to be added in the code; after that the switch appears on the lesson.'}</p>
               </>)}
             </section>
             {modules.map((m, mi) => (
@@ -163,7 +172,7 @@ export default function CurriculumEditorPage() {
                         <span className="block truncate text-stone-200">{l.title?.trim() || yt[l.id]?.title || lessonLabel(l)}</span>
                         {yt[l.id] && <span className="block truncate text-xs text-stone-500">{l.title?.trim() ? `On YouTube: ${yt[l.id].title || 'untitled'}` : l.id}{yt[l.id].duration ? ` · ${yt[l.id].duration}` : ''}</span>}
                       </span>
-                      {l.assignment && <span className="rounded-full bg-sky-500/20 px-2 py-0.5 text-[11px] text-sky-300">{l.assignment.isExam ? 'Exam' : 'Assignment'}</span>}
+                      {l.assignment && (l.assignment.isExam ? <span className="rounded-full bg-purple-500/25 px-2 py-0.5 text-[11px] font-semibold text-purple-200">{FINAL_EXAM_BADGE}</span> : <span className="rounded-full bg-sky-500/20 px-2 py-0.5 text-[11px] text-sky-300">Assignment</span>)}
                       {!!l.resources?.length && <span className="rounded-full bg-stone-500/20 px-2 py-0.5 text-[11px] text-stone-300">{l.resources.length} res.</span>}
                       <button type="button" aria-label={`Edit lesson ${lessonLabel(l)}`} className="text-xs font-semibold text-amber-400" onClick={() => { setLessonFailure(null); c.setFailure(null); setOpen(l.id); }}>Edit</button>
                       <button type="button" aria-label={`Move lesson ${lessonLabel(l)} up`} disabled={c.busy || li === 0} className="rounded border border-white/15 px-2 py-0.5 text-xs disabled:opacity-30" onClick={() => { const lay = layoutAfterMove(modules, l.id, -1); if (lay) void c.act('/lessons/reorder', 'POST', { layout: lay }); }}>↑</button>
@@ -210,7 +219,7 @@ export default function CurriculumEditorPage() {
               </form>
             )}
           </div>
-          {editing && <aside><LessonPanel key={editing.id} lesson={editing} details={yt[editing.id]} busy={c.busy} failure={lessonFailure} onSave={(p) => void saveLesson(p)} onClose={() => { setOpen(null); setLessonFailure(null); }} /></aside>}
+          {editing && <aside><LessonPanel key={editing.id} lesson={editing} details={yt[editing.id]} exam={examContext(editing.id)} busy={c.busy} failure={lessonFailure} onSave={(p, x) => void saveLesson(p, x)} onClose={() => { setOpen(null); setLessonFailure(null); }} /></aside>}
         </div>
       )}
 

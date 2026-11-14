@@ -4,9 +4,12 @@ import { ErrorNote, buttonClass, ghostButtonClass, inputClass } from '../ui';
 import type { Failure } from '@/lib/adminUi/client';
 import { sameJson } from '@/lib/adminUi/forms';
 import {
-  CARRY_OVER_LABEL, FIELD_LABELS, LIMITS, assignmentProblems, assignmentToForm, cleanResources, documentFile, formToAssignment, lessonLabel, resourceProblems, urlFieldsFor,
-  type AssignmentForm, type Lesson, type Resource, type VideoDetails,
+  ASSIGNMENT_HOSTS, CARRY_OVER_LABEL, FIELD_LABELS, LIMITS, assignmentProblems, assignmentToForm, cleanResources, documentFile, examChange, examSwitchBlock, formToAssignment, lessonLabel, linkProblem,
+  resourceProblems, urlFieldsFor, type AssignmentForm, type ExamChange, type Lesson, type Resource, type VideoDetails,
 } from '@/lib/adminUi/curriculum';
+
+// What the panel needs to know about the course's exam (from the curriculum read): can an exam be marked here, is the lesson in a locked module, which lesson is the exam now.
+export type ExamContext = { grader: boolean; moduleLocked: boolean; currentId: string | null; currentLabel: string };
 
 export type LessonPatch = { title?: string; description?: string; assignment?: ReturnType<typeof formToAssignment> | null; resources?: Resource[] };
 
@@ -17,7 +20,7 @@ const emptyResource = (): Resource => ({ title: '', url: '', type: 'Link' });
 // resource is the document itself and is edited as "Document file"; the rest are extra materials. Every link field has a plain label and a hint (the
 // owner never sees a field name). The exam flags are read-only: they are set in the repo, never here, and an exam's assignment cannot be removed.
 // `details` are the video's title, length and description read from YouTube by the page (shown, never stored). Hints inform; the server has the last word.
-export default function LessonPanel({ lesson, details, busy, failure, onSave, onClose }: { lesson: Lesson; details?: VideoDetails; busy: boolean; failure: Failure | null; onSave: (patch: LessonPatch) => void; onClose: () => void }) {
+export default function LessonPanel({ lesson, details, exam: examCtx, busy, failure, onSave, onClose }: { lesson: Lesson; details?: VideoDetails; exam: ExamContext; busy: boolean; failure: Failure | null; onSave: (patch: LessonPatch, exam: ExamChange | null) => void; onClose: () => void }) {
   const isDoc = lesson.kind === 'document';
   const split = documentFile(lesson);
   const [title, setTitle] = useState(lesson.title ?? '');
@@ -26,11 +29,14 @@ export default function LessonPanel({ lesson, details, busy, failure, onSave, on
   const [form, setForm] = useState<AssignmentForm>(assignmentToForm(lesson.assignment));
   const [file, setFile] = useState<Resource>(split.file ?? { title: '', url: '', type: 'PDF' });
   const [extras, setExtras] = useState<Resource[]>(split.extras);
-  const exam = !!lesson.assignment?.isExam;
+  const exam = !!lesson.assignment?.isExam;           // is the exam today
+  const [isExam, setIsExam] = useState(exam);           // the switch
+  const [outcome, setOutcome] = useState(lesson.assignment?.expectedOutcomeUrl ?? '');
   const showAssignment = !isDoc || !!lesson.assignment;   // a document is a file to read; an assignment on one is only shown when it already exists
 
   const allResources = (): Resource[] => (isDoc ? [file, ...extras] : extras);
-  const aProblems = hasAssignment && showAssignment ? assignmentProblems(form) : [];
+  const aProblems = [...(hasAssignment && showAssignment ? assignmentProblems(form) : []), ...(isExam && outcome.trim() ? [linkProblem(outcome, ASSIGNMENT_HOSTS)].filter(Boolean).map((p) => `Expected result ${p}`) : [])];
+  const switchBlock = examSwitchBlock({ grader: examCtx.grader, kind: lesson.kind, moduleLocked: examCtx.moduleLocked, hasAssignment, assignmentFileSet: !!form.rawUrl.trim(), isExamNow: exam });
   // the document's own problems are worded as such; the extras keep their numbering as the learner sees them
   const fileProblems = isDoc ? resourceProblems([file]).map((p) => p.replace(/^Resource 1 link/, 'The document link').replace(/^Resource 1/, 'The document')) : [];
   const rProblems = resourceProblems(extras);
@@ -49,8 +55,9 @@ export default function LessonPanel({ lesson, details, busy, failure, onSave, on
     }
     const nextRes = cleanResources(allResources());
     if (!sameJson(nextRes, lesson.resources ?? [])) patch.resources = nextRes;
-    if (!Object.keys(patch).length) { onClose(); return; }
-    onSave(patch);
+    const change = examChange({ lessonId: lesson.id, wasExam: exam, isExam, wasOutcome: lesson.assignment?.expectedOutcomeUrl ?? '', outcome });
+    if (!Object.keys(patch).length && !change) { onClose(); return; }
+    onSave(patch, change);
   }
 
   const resourceRow = (r: Resource, onChange: (patch: Partial<Resource>) => void, labels: { title: string; url: string; type: string }, remove?: () => void, removeLabel?: string) => (
@@ -65,7 +72,7 @@ export default function LessonPanel({ lesson, details, busy, failure, onSave, on
   return (
     <form onSubmit={save} aria-label={`Edit lesson ${lessonLabel(lesson)}`} className="space-y-4 rounded-xl border border-amber-500/30 bg-[#111] p-4">
       <div className="flex items-start justify-between gap-3">
-        <div><h3 className="text-base font-bold text-white">Edit lesson</h3><p className="break-all font-mono text-xs text-stone-500">{lesson.id} · {lesson.kind}{exam ? ' · exam' : ''}</p></div>
+        <div><h3 className="text-base font-bold text-white">{exam ? '🏆 Final exam' : 'Edit lesson'}</h3><p className="break-all font-mono text-xs text-stone-500">{lesson.id} · {lesson.kind}{exam ? ' · exam' : ''}</p></div>
         <button type="button" onClick={onClose} className="text-sm font-semibold text-stone-400 hover:text-white">Close</button>
       </div>
 
@@ -99,7 +106,7 @@ export default function LessonPanel({ lesson, details, busy, failure, onSave, on
         <fieldset className="rounded-lg border border-white/10 p-3">
           <legend className="px-2 text-sm font-bold text-white">Assignment</legend>
           <label className="mb-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={hasAssignment} disabled={exam} onChange={(e) => setHasAssignment(e.target.checked)} />This lesson has an assignment</label>
-          {exam && <p className="mb-3 text-xs text-amber-300">This lesson holds the final exam. Which lesson is the exam and how it is graded are fixed in the repository and cannot be changed or removed here; the files below can.</p>}
+          {exam && <p className="mb-3 text-xs text-purple-300">This lesson is the final exam. Learners must pass it to get the certificate. Turn the switch below off to make it an ordinary assignment.</p>}
           {hasAssignment && (
             <div className="space-y-3">
               <label className="block text-xs font-semibold text-stone-400">Assignment title<input value={form.title} maxLength={200} onChange={(e) => setForm({ ...form, title: e.target.value })} className={`${inputClass} mt-1 font-normal`} /></label>
@@ -112,6 +119,17 @@ export default function LessonPanel({ lesson, details, busy, failure, onSave, on
                   <p className={hintClass}>{FIELD_LABELS[k].hint}</p>
                 </div>
               ))}
+              {form.labType === 'python' && (
+                <div className="rounded-lg border border-purple-500/30 bg-purple-500/[0.06] p-3">
+                  <label className="flex items-start gap-2 text-sm font-semibold text-white"><input type="checkbox" className="mt-1" checked={isExam} disabled={!!switchBlock} onChange={(e) => setIsExam(e.target.checked)} /><span>This lesson is the final exam</span></label>
+                  {switchBlock && <p role="note" className="mt-1 text-xs text-amber-300">{switchBlock}</p>}
+                  {!switchBlock && !exam && examCtx.currentId && examCtx.currentId !== lesson.id && <p className="mt-1 text-xs text-stone-400">This moves the exam from “{examCtx.currentLabel}”, which stays an ordinary assignment. Learners keep their exam results.</p>}
+                  {!switchBlock && <p className="mt-1 text-xs text-stone-500">An exam is optional. With one, learners must pass it (graded on the server) to get the certificate; the exam file is this lesson's assignment file.</p>}
+                  {isExam && (
+                    <label className="mt-2 block text-xs font-semibold text-stone-400">Expected result (optional)<input value={outcome} onChange={(e) => setOutcome(e.target.value)} placeholder="https://raw.githubusercontent.com/…" className={`${inputClass} mt-1 font-mono text-xs font-normal`} /></label>
+                  )}
+                </div>
+              )}
               <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={form.carryOverCode} onChange={(e) => setForm({ ...form, carryOverCode: e.target.checked })} /><span>{CARRY_OVER_LABEL}</span></label>
             </div>
           )}

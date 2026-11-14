@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import {
   ASSIGNMENT_HOSTS, RESOURCE_HOSTS, LIMITS, assignmentProblems, assignmentToForm, cleanResources, countLessons, emptyAssignmentForm, formToAssignment, layoutAfterMove,
   layoutAfterMoveToModule, lessonIdFrom, lessonKindOf, lessonLabel, linkProblem, moduleOrderAfterMove, moved, outline, resourceProblems, urlFieldsFor, type Module,
-  FIELD_LABELS, GIT_FIELDS, PYTHON_FIELDS, documentFile, documentIdFrom, documentLessonBody, documentProblems, emptyDocumentForm, examOf, formatDuration, parseYoutubeItems, thumbnailUrl, youtubeRequestUrls, type Lesson,
+  FINAL_EXAM_BADGE, examChange, examSwitchBlock, FIELD_LABELS, GIT_FIELDS, PYTHON_FIELDS, documentFile, documentIdFrom, documentLessonBody, documentProblems, emptyDocumentForm, examOf, formatDuration, parseYoutubeItems, thumbnailUrl, youtubeRequestUrls, type Lesson,
 } from '../../lib/adminUi/curriculum';
 import { ASSIGNMENT_HOSTS as SERVER_ASSIGNMENT_HOSTS, RESOURCE_HOSTS as SERVER_RESOURCE_HOSTS, LIMITS as SERVER_LIMITS, reorderLessons, reorderModules, patchLesson, addLesson, lessonCheck } from '../../lib/adminApi/curriculum';
 import { courseCurriculumMap } from '../../data/learning-content';
@@ -188,5 +188,23 @@ test.describe('Admin UI curriculum @regression', () => {
     expect(parsed['d9nrrH5XkG3'].thumbnail).toBe(thumbnailUrl('d9nrrH5XkG3'));   // only an i.ytimg.com picture is trusted
     expect(parseYoutubeItems(null)).toEqual({}); expect(parseYoutubeItems({ error: 'quota' })).toEqual({});
     expect(formatDuration('PT5M30S')).toBe('5:30'); expect(formatDuration('PT45S')).toBe('0:45'); expect(formatDuration('PT2H')).toBe('2:00:00'); expect(formatDuration('nope')).toBe(''); expect(formatDuration(undefined)).toBe('');
+  });
+  test('[ADMUI-UNIT-CUR-013] the exam switch in the panel: off with a reason when it cannot work, never blocks switching an existing exam off; the body sent is only what changed', () => {
+    const ok = { grader: true, kind: 'video' as const, moduleLocked: false, hasAssignment: true, assignmentFileSet: true, isExamNow: false };
+    expect(examSwitchBlock(ok)).toBeNull();
+    expect(examSwitchBlock({ ...ok, grader: false })).toMatch(/no exam grader yet.*optional/);
+    expect(examSwitchBlock({ ...ok, kind: 'document' })).toMatch(/document cannot be the exam/);
+    expect(examSwitchBlock({ ...ok, moduleLocked: true })).toMatch(/Locked until the exam is passed/);
+    expect(examSwitchBlock({ ...ok, hasAssignment: false })).toMatch(/assignment/);
+    expect(examSwitchBlock({ ...ok, assignmentFileSet: false })).toMatch(/Assignment file/);
+    expect(examSwitchBlock({ ...ok, grader: false, moduleLocked: true, isExamNow: true })).toBeNull();   // an existing exam can always be switched off
+    const base = { lessonId: V1, wasExam: false, isExam: false, wasOutcome: '', outcome: '' };
+    expect(examChange(base)).toBeNull();
+    expect(examChange({ ...base, isExam: true })).toEqual({ lessonId: V1 });
+    expect(examChange({ ...base, isExam: true, outcome: ' https://raw.githubusercontent.com/o/r/e.py ' })).toEqual({ lessonId: V1, expectedOutcomeUrl: 'https://raw.githubusercontent.com/o/r/e.py' });
+    expect(examChange({ ...base, wasExam: true, isExam: true })).toBeNull();
+    expect(examChange({ ...base, wasExam: true, isExam: true, wasOutcome: 'https://raw.githubusercontent.com/o/r/e.py', outcome: '' })).toEqual({ lessonId: V1, expectedOutcomeUrl: '' });
+    expect(examChange({ ...base, wasExam: true, isExam: false, wasOutcome: 'x' })).toEqual({ lessonId: null });
+    expect(FINAL_EXAM_BADGE).toContain('Final exam');
   });
 });
