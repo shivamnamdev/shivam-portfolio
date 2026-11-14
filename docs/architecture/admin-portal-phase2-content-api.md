@@ -53,7 +53,7 @@ All writes need `If-Match`, are audited with a **summary** (counts, version, ids
 - R3 Limits: 60 modules, 200 lessons per module, 20 resources per lesson, text lengths as phase 1.
 - R4 A lesson that has learner progress (`video_progress` or `assignment_progress`) **cannot be deleted or have its id changed** (422), because the learner's progress would be orphaned. It can be moved or renamed.
 - R5 A published curriculum cannot be emptied (0 modules) (422).
-- R6 `isExam` and `serverGraded` cannot be set through the API; an import keeps what is already there. Exam graders stay in `lib/examGraders.ts` (reviewed in git, runs on the server).
+- R6 `isExam` and `serverGraded` cannot be set through the generic lesson endpoints; an import keeps what is already there. Exam graders stay in `lib/examGraders.ts` (reviewed in git, runs on the server). **Amended 2026-11-14 (owner request, proposed in `exam-switch.md`, pending approval):** the flags can be changed only through the dedicated `PUT /curriculum/{cohort}/exam`, and only for a course that already has a grader in code.
 - R7 The cohort must exist as a `cohort` row; an unknown cohort is 404. The first write to a cohort without a curriculum creates an empty one (no `If-Match` needed that once).
 - R8 Reorder lists must contain exactly the current ids (no missing, no extra, no duplicates), otherwise 400 and nothing changes.
 
