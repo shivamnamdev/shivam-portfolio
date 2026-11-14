@@ -327,3 +327,7 @@ Full text: `docs/architecture/exam-switch.md`. Owner decision: exam marking move
 - [x] Owner approval; owner and admin; exam optional, required for the certificate when present (added scope, section 9)
 - [x] Steps 1 to 3 built with unit, API and UI tests; learner exam suite rerun
 - [ ] PR, Jira Story, owner merge; owner decision on a grader for python-foundation (section 10)
+
+## Catalog import screen (2026-11-14, SCP-110, PR #105)
+- [x] Owner approved; panel "Courses and cohorts from the data files" on `/admin/curriculum` built with unit (`ADMUI-UNIT-CUR-014`) and UI (`ADMUI-CUR-016`) tests
+- [ ] Owner: merge PR #105, wait for the deploy, then on production: Check courses, Apply, lessons helper; later `PORTAL_CATALOG` and `PORTAL_LEARNING=database` (cutover runbook)
