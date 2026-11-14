@@ -14,14 +14,14 @@ type CohortPricing = { kind: "single"; inr: Price; usd?: Price } | { kind: "plan
 
 export type CohortView = {
   slug: string; courseSlug: string; title: string; statusText?: string; demoOffer?: string; duration?: string; contactPhone?: string;
-  enrollmentClosed?: boolean; listed?: boolean; pricing: CohortPricing;
+  enrollmentClosed?: boolean; listed?: boolean; format?: "live" | "recorded"; pricing: CohortPricing;
 };
 // The named fields of a cohort document that a page may read. The document's `private` part (the links) is never read here.
 export function cohortFromDoc(key: string, d: Record<string, unknown>, fallbackTitle: string): CohortView {
   return {
     slug: key, courseSlug: String(d.courseSlug), title: String(d.title ?? fallbackTitle), statusText: d.statusText as string | undefined, demoOffer: d.demoOffer as string | undefined,
     duration: d.duration as string | undefined, contactPhone: d.contactPhone as string | undefined, enrollmentClosed: d.enrollmentClosed as boolean | undefined,
-    listed: d.listed as boolean | undefined, pricing: d.pricing as CohortPricing,
+    listed: d.listed as boolean | undefined, ...(d.format === "live" || d.format === "recorded" ? { format: d.format } : {}), pricing: d.pricing as CohortPricing,
   };
 }
 export type CourseView = { slug: string; title: string; summary?: string; pitch?: Record<string, unknown> };
@@ -29,7 +29,7 @@ export type FileEntry = { slug: string; enrollmentClosed?: boolean; pricing?: Pr
 
 // The sales fields the pitch may carry, as in data/courses.ts. Anything else in the pitch is ignored, so a free-form pitch can never override
 // an identity, price, status or link field of the page.
-export const PITCH_KEYS = ["vsl", "painPoints", "resources", "differentiators", "cohortHighlights", "courseTestimonials", "outcomes", "bonuses", "modules"] as const;
+export const PITCH_KEYS = ["vsl", "painPoints", "resources", "differentiators", "differentiatorsTagline", "cohortHighlights", "courseTestimonials", "outcomes", "bonuses", "modules"] as const;
 
 export type CatalogCourse = {
   id: string; slug: string; title: string; statusText: string; demoOffer: string; duration: string; contactPhone: string;
@@ -108,7 +108,7 @@ export function buildCourse(cohort: CohortView, course: CourseView, priceFrom: S
     ...(pricingPlans ? { pricingPlans } : {}),   // a block the owner left out stays absent: every sales component already hides or defaults a missing block
     id: cohort.slug, slug: cohort.slug, courseSlug: cohort.courseSlug, title: cohort.title,
     statusText: cohort.statusText ?? "", demoOffer: cohort.demoOffer ?? "", duration: cohort.duration ?? "", contactPhone: cohort.contactPhone ?? "",
-    enrollmentClosed, listed: cohort.listed !== false, pricing,
+    enrollmentClosed, listed: cohort.listed !== false, ...(cohort.format ? { format: cohort.format } : {}), pricing,
     // Tells the page which coupon check to use: only a course priced from the portal asks the server (a fallback to the files behaves exactly like `files`).
     ...(useFiles ? {} : { pricedBy: "database" as const }),
   };

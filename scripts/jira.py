@@ -1,11 +1,13 @@
 """Small Jira helper for the bug-fix workflow (.claude/skills/bug-fix-workflow/SKILL.md). Reads .env.jira (git-ignored): JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN, JIRA_PROJECT_KEY.
 
   python3 -I scripts/jira.py create-bug --parent SCP-2 --priority High --labels a,b --summary "..." --description-file desc.txt
+  python3 -I scripts/jira.py create-bug --type Story ...               (Bug by default; Story or Task for feature work under the same epic)
+  python3 -I scripts/jira.py set-type SCP-106 Story                    (change an issue's type in place)
   python3 -I scripts/jira.py comment SCP-85 --file comment.txt        (paragraphs separated by a blank line; lines starting with "- " become bullets)
   python3 -I scripts/jira.py link SCP-85 SCP-44                       (type Relates)
   python3 -I scripts/jira.py transition SCP-85 "In Review"
 
-Only these four actions exist on purpose. Text files are plain text, never HTML.
+Only these five actions exist on purpose. Text files are plain text, never HTML.
 """
 import argparse, base64, json, sys, urllib.request
 from pathlib import Path
@@ -37,14 +39,20 @@ def main():
     sub = p.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("create-bug"); c.add_argument("--summary", required=True); c.add_argument("--description-file", required=True)
     c.add_argument("--parent", default="SCP-2"); c.add_argument("--priority", default="Medium"); c.add_argument("--labels", default="qa-automation")
+    c.add_argument("--type", default="Bug", choices=["Bug", "Story", "Task"])
+    s = sub.add_parser("set-type"); s.add_argument("key"); s.add_argument("type", choices=["Bug", "Story", "Task"])
     m = sub.add_parser("comment"); m.add_argument("key"); m.add_argument("--file", required=True)
     l = sub.add_parser("link"); l.add_argument("a"); l.add_argument("b")
     t = sub.add_parser("transition"); t.add_argument("key"); t.add_argument("name")
     a = p.parse_args()
     if a.cmd == "create-bug":
-        r = call("/rest/api/3/issue", {"fields": {"project": {"key": ENV["JIRA_PROJECT_KEY"]}, "issuetype": {"name": "Bug"}, "parent": {"key": a.parent},
+        r = call("/rest/api/3/issue", {"fields": {"project": {"key": ENV["JIRA_PROJECT_KEY"]}, "issuetype": {"name": a.type}, "parent": {"key": a.parent},
               "priority": {"name": a.priority}, "labels": a.labels.split(","), "summary": a.summary, "description": adf(Path(a.description_file).read_text())}})
         print(r["key"])
+    elif a.cmd == "set-type":
+        call(f"/rest/api/3/issue/{a.key}", {"fields": {"issuetype": {"name": a.type}}}, method="PUT")
+        now = call(f"/rest/api/3/issue/{a.key}?fields=issuetype")["fields"]["issuetype"]["name"]
+        print(a.key, "->", now)
     elif a.cmd == "comment":
         call(f"/rest/api/3/issue/{a.key}/comment", {"body": adf(Path(a.file).read_text())}); print("commented", a.key)
     elif a.cmd == "link":

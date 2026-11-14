@@ -48,6 +48,7 @@ export const cohortCreateShape = {
   contactPhone: optional(str({ max: 20, pattern: /^[0-9+\- ]{5,20}$/ })),
   enrollmentClosed: optional(bool),
   listed: optional(bool),
+  format: optional(oneOf("live", "recorded")),   // recorded: no live class, so the learner screens hide "Join Live Class"
   startsAt: optional(isoDate),
   endsAt: optional(isoDate),
   pricing,
@@ -62,6 +63,7 @@ export const cohortUpdateShape = {
   contactPhone: optional(str({ max: 20, pattern: /^[0-9+\- ]{5,20}$/ })),
   enrollmentClosed: optional(bool),
   listed: optional(bool),
+  format: optional(oneOf("live", "recorded")),   // recorded: no live class, so the learner screens hide "Join Live Class"
   startsAt: optional(isoDate),
   endsAt: optional(isoDate),
   pricing: optional(pricing),
