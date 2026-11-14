@@ -77,3 +77,7 @@ Input: `{ apply?: boolean; overwrite?: boolean }`. Output: `{ data: { applied: b
 1. Approve this Blueprint.
 2. One course per cohort (4.1) as the starting point: yes or group Python now?
 3. Publish on import (4.3): yes, as the files are live today.
+
+## Screen (2026-11-14)
+
+The owner could not run the import on production without an API request, and `/admin/curriculum` lists cohorts, so curricula imported without a cohort were invisible there. `/admin/curriculum` now has a "Courses and cohorts from the data files" panel (Check, then Apply, owner only) that calls `POST /import/catalog`. No new server rule, no SQL, no new package. Tests `ADMUI-UNIT-CUR-014`, `ADMUI-CUR-016`.

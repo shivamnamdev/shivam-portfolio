@@ -254,3 +254,10 @@ export const outline = (mods: Module[]): OutlineRow[] => mods.map((m) => ({
   moduleTitle: m.title, advanced: m.advanced,
   lessons: m.lessons.map((l, i) => ({ number: i + 1, label: lessonLabel(l), assignment: !!l.assignment, exam: !!l.assignment?.isExam, resources: l.resources?.length ?? 0 })),
 }));
+
+// The catalog import helper (courses and cohorts of data/courses.ts): what one part (course or cohort) of a result row says.
+export type CatalogAction = 'create' | 'unchanged' | 'differs' | 'overwrite';
+const CATALOG_CHECK_TEXT: Record<CatalogAction, string> = { create: 'Will be created', unchanged: 'Already the same', differs: 'Edited in the portal (skipped unless you overwrite)', overwrite: 'Will be replaced' };
+export const catalogActionText = (action: CatalogAction, dryRun: boolean, applied: boolean): string =>
+  dryRun ? CATALOG_CHECK_TEXT[action] : applied ? 'Written' : CATALOG_CHECK_TEXT[action];
+export const catalogWouldChange = (rows: Array<{ course: CatalogAction; cohort: CatalogAction }>): boolean => rows.some((r) => [r.course, r.cohort].some((a) => a === 'create' || a === 'overwrite'));

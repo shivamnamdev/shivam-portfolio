@@ -725,3 +725,6 @@ _Last generated: 2026-11-13 from `9694b61` on branch `docs/SCP-87-upgrade-record
 ### 2026-11-14 (hand-written) SCP-105
 - Found while opening PR #101: the PR smoke check fails on three sales pages. Cause is PR #99 (recorded courses): two unlisted cohorts and the recorded "Opens Soon" wording; the spec still expected the old behaviour. Fixed the spec; first attempt also asserted "no h1" on the not-found page, which is wrong (the 404 page has one), replaced by "the hero headline is absent". `tests/ui/sales-funnel.spec.ts` 5/5 locally.
 
+
+### 2026-11-14 — Catalog import screen
+- Owner saw "Already the same" for all lessons but no courses in the production admin: curricula existed, cohort records did not (localhost uses the QA database where the import had been run). Added the "Courses and cohorts from the data files" panel. Type check clean; `ADMUI-UNIT-CUR-014` and the 13 specs of `admin-curriculum.spec.ts` pass on QA (one locator needed scoping to the panel).

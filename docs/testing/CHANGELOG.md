@@ -295,3 +295,7 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 - 2026-11-14 SCP-105: `tests/ui/sales-funnel.spec.ts` follows the recorded-courses decisions — an unlisted cohort's sales page is "not found" for a visitor (CAC-UI-001..006 cover learners and admins), and a closed recorded course says "Opens Soon" on its plan buttons. The PR smoke check had been red since PR #99 merged (its own smoke run failed; every push run on main was cancelled by concurrency, so main never showed it).
 - 2026-11-13 — PRD 18: catalog import (`POST /import/catalog`) and cohort `format`; `AAPI-UNIT-CAT-001..010`, `AAPI-IMP-004..007` — existing courses appear in the admin portal so videos can be added there. A QA run found that a second import said "differs" (keys set to undefined vanish in JSON); fixed in the planner and covered by `AAPI-UNIT-CAT-010`.
 - 2026-11-13 — `courseLayout` helper in `tests/support/learning.ts`; `AIA-CRT-005` and `LRN-EXM-009` count tasks on the source in use — with `PORTAL_LEARNING=database` the imported python-beginners has one assignment fewer (a dropped junk entry), which moved the 80% boundary. Learner suites with the flag `database` and `files` both pass for these (lab cases `LRN-PY-008/014/017` flake under load and pass alone).
+
+## 2026-11-14 (catalog import screen)
+
+- Added `ADMUI-UNIT-CUR-014` and `ADMUI-CUR-016` for the "Courses and cohorts from the data files" panel on `/admin/curriculum` — the owner needs to run the catalog import on production without an API request.
