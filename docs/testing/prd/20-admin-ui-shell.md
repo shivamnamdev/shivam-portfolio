@@ -57,8 +57,17 @@ Screens: `/admin/curriculum` (every cohort with its curriculum, "Create curricul
 * **Preview as learner:** a read-only outline of the working copy (modules in order, lessons numbered per module, advanced modules, assignments, exam, resources). It writes nothing and calls no learner API. The true learner-page preview comes with phase 5.
 * **Import helper (owner only):** "Check" writes nothing and shows per cohort what would be created, left alone or replaced, with the entries the importer drops; "Apply" is only enabled after a check and asks first (a stronger warning when replacing existing curricula).
 
-**Unit (`tests/unit/admin-ui-curriculum.spec.ts`, 8 tests):** `ADMUI-UNIT-CUR-001` to `008`, including drift guards against the server's host lists, limits, reorder and patch logic.
-**UI (`tests/ui/admin/admin-curriculum.spec.ts`, 8 tests):** `ADMUI-CUR-001` to `008`. The course and cohort are made through the API and everything is named `qa-admui-cur...` and removed afterwards.
+* **Parity with the data files (owner request, 2026-11-14; blueprint `docs/architecture/curriculum-editor-parity.md`):**
+  * **Add a document:** the add form offers *Video* or *Document*. A document takes a title, a link (S3, GitHub, Drive) and a type; the `doc-…` id comes from the title, with `-2`, `-3`… on a clash, and the document is the lesson's first resource. The raw id box stays for a video or a typed id.
+  * **Plain labels:** every assignment link reads as words with a hint (*Assignment file*, *Solution file*, *Starter code / add-on file*; *Instructions (.md)*, *Starter repository (.json)*, *Expected state (.json)*, *Validator (.json)*); hints and problems never show a field name. Carry-over reads "Continue from the previous assignment's code".
+  * **Git lab solution:** the git lab form has a *Solution file*; the data files carry one on every git day and the editor used to drop it on save.
+  * **Document lesson panel:** the document itself is edited as *Document file*; further resources are *Extra materials*.
+  * **Locked until the exam is passed:** the module checkbox (stored as `advanced`, the files' `isAdvancedModule`) is labelled so, with a hint; the preview badge reads "Locked until exam".
+  * **Exam card:** at the top of the editor, "Final exam: <lesson>" with its module, lesson number, "graded on the server", its files as links and "Go to the exam lesson"; "Final exam: none" otherwise. The exam stays read-only (rule R6): the card says it is set in the repository and imported.
+  * **YouTube details:** rows show the video's picture, title and length, the panel its description, read in the browser with `NEXT_PUBLIC_YOUTUBE_API_KEY` (one request per 50 videos, the learner page's call) and never stored. Without a key, or when YouTube cannot be reached, the rows show the stored labels and one quiet line says so. The lesson *Title* is described as the portal's label (learners see the YouTube title).
+
+**Unit (`tests/unit/admin-ui-curriculum.spec.ts`, 12 tests):** `ADMUI-UNIT-CUR-001` to `012`, including drift guards against the server's host lists, limits, reorder and patch logic; `009` to `012` cover the git round trip (the real Git Day 01 entry), the document body (accepted by the server's own `lessonCheck` and `addLesson`), the exam lookup (the real Python exam) and the YouTube request and answer parsing.
+**UI (`tests/ui/admin/admin-curriculum.spec.ts`, 12 tests):** `ADMUI-CUR-001` to `012` (`009` add and edit a document, `010` git lab keeps its solution, `011` exam card, `012` YouTube details and the quiet fallback). The course and cohort are made through the API and everything is named `qa-admui-cur...` and removed afterwards.
 **Not automated:** the visual look of the editor and a screen-reader pass (shown to the owner before the slice is finalised); the import "Apply" path (it changes real curricula, so it is a manual case).
 
 ---

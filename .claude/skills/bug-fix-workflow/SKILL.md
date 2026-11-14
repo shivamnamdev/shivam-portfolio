@@ -30,6 +30,7 @@ python3 -I scripts/jira.py create-bug --parent SCP-2 --priority <Highest|High|Me
 python3 -I scripts/jira.py link SCP-<n> SCP-<related>      # the bug it comes from, the story or the earlier defect
 ```
 
+- Issue type: `create-bug` makes a Bug; feature work takes `--type Story` (or `Task`) under the same epic, and `set-type <KEY> Story` changes an existing issue in place.
 - Parent epic: **SCP-2 "Dev Areas"** for code defects. **SCP-3 "QA Areas"** is for test stories (for example the run log SCP-78).
 - Description (plain text): steps to reproduce, expected, actual, impact, the test ids that show it, and a line saying that the RCA, fix and PR come as a comment.
 - Search first (`parent=SCP-2` and `parent=SCP-3` plus the failing test ids in `docs/testing/runs/`) so a known defect gets a comment instead of a duplicate. Rename the branch now.
