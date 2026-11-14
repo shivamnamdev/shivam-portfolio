@@ -1,4 +1,4 @@
-import { outline, type Module } from '@/lib/adminUi/curriculum';
+import { FINAL_EXAM_BADGE, outline, type Module } from '@/lib/adminUi/curriculum';
 
 // A read-only preview of the working copy the way a learner will see the outline: modules in order, lessons numbered per module, modules locked until the exam,
 // assignments, the exam and resources flagged. It writes nothing and calls no learner API.
@@ -15,7 +15,7 @@ export default function OutlinePreview({ modules }: { modules: Module[] }) {
             <ol className="mt-3 space-y-1.5">
               {m.lessons.map((l) => (
                 <li key={l.number} className="flex flex-wrap items-center gap-2 text-sm text-stone-300"><span className="w-14 shrink-0 text-xs text-stone-500">Lesson {l.number}</span><span>{l.label}</span>
-                  {l.assignment && <span className="rounded-full bg-sky-500/20 px-2 py-0.5 text-[11px] text-sky-300">{l.exam ? 'Exam' : 'Assignment'}</span>}
+                  {l.assignment && (l.exam ? <span className="rounded-full bg-purple-500/25 px-2 py-0.5 text-[11px] font-semibold text-purple-200">{FINAL_EXAM_BADGE}</span> : <span className="rounded-full bg-sky-500/20 px-2 py-0.5 text-[11px] text-sky-300">Assignment</span>)}
                   {l.resources > 0 && <span className="rounded-full bg-stone-500/20 px-2 py-0.5 text-[11px] text-stone-300">{l.resources} resource{l.resources === 1 ? '' : 's'}</span>}</li>
               ))}
             </ol>

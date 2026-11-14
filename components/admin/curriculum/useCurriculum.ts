@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { adminFetch } from '../useAdminApi';
 import { ifMatchHeader, type Failure } from '@/lib/adminUi/client';
 import type { Module } from '@/lib/adminUi/curriculum';
@@ -7,6 +7,7 @@ import type { Module } from '@/lib/adminUi/curriculum';
 export type CurriculumData = {
   cohort: string; status: string; version: number; modules: Module[]; published: Module[] | null; publishedAt?: string;
   hasUnpublishedChanges: boolean; counts: { modules: number; lessons: number }; updatedAt: string; updatedBy: string;
+  examGrader: boolean; examLessonId: string | null;   // can the portal mark an exam for this course (a grader exists in code), and which lesson is it
 };
 
 // Every curriculum call answers with the whole updated curriculum, so the screen never edits its own copy: each action is one server call and the
@@ -17,6 +18,8 @@ export function useCurriculum(cohort: string) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const base = `/curriculum/${encodeURIComponent(cohort)}`;
+  const latest = useRef<CurriculumData | null>(null);   // the newest copy, so two calls in one handler (save a lesson, then mark the exam) use the right version
+  latest.current = data;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -29,11 +32,12 @@ export function useCurriculum(cohort: string) {
   // `sub` is the path below the cohort ("/modules", "/lessons/abc"). Returns null when the server accepted the change, otherwise the failure
   // (which is also shown at the top of the screen unless `quiet`, used when the caller shows it next to its own form).
   async function act(sub: string, method: 'POST' | 'PATCH' | 'DELETE' | 'PUT', body?: unknown, quiet = false): Promise<Failure | null> {
-    if (!data) return { status: 0, code: 'not_loaded', message: 'The curriculum is not loaded yet' };
+    const current = latest.current;
+    if (!current) return { status: 0, code: 'not_loaded', message: 'The curriculum is not loaded yet' };
     setBusy(true); setFailure(null);
-    const r = await adminFetch<CurriculumData>(`${base}${sub}`, { method, body, headers: ifMatchHeader(data.version) });
+    const r = await adminFetch<CurriculumData>(`${base}${sub}`, { method, body, headers: ifMatchHeader(current.version) });
     setBusy(false);
-    if (r.ok) { setData(r.data); return null; }
+    if (r.ok) { latest.current = r.data; setData(r.data); return null; }
     if (!quiet) setFailure(r.failure);
     return r.failure;
   }
