@@ -315,3 +315,9 @@ Full text: `docs/architecture/curriculum-editor-parity.md`. Findings: git lab so
 - [x] Fix in the spec only (behaviour is as decided in `docs/architecture/recorded-courses.md`); 5/5 pass locally
 - [ ] Smoke and neighbour runs green, PR opened, Jira comment, owner merge
 
+## 2026-11-13 Existing courses in the admin portal Blueprint (APPROVED 2026-11-13, built on branch feat/portal-existing-courses): add videos from the portal
+Full text: `docs/architecture/portal-existing-courses.md`. Owner decisions: lessons and course records only (catalog, prices, coupons stay in the files), a one-off import of courses and cohorts, all four cohorts. New: `POST /api/admin/v1/import/catalog` and `format` on portal cohorts; then `PORTAL_LEARNING=database` on QA and production so videos added in the curriculum editor reach learners.
+- [x] Owner approval; one course per cohort and publish on import accepted
+- [x] Steps 1 to 3 built with unit and API tests (AAPI-UNIT-CAT-001..010, AAPI-IMP-004..007); QA rehearsal run
+- [ ] Step 5 docs, PR
+- [ ] Owner production actions (section 7)

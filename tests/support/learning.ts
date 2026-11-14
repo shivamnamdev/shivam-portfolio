@@ -2,12 +2,20 @@ import { expect, type Page, type Route } from '@playwright/test';
 import { signInAs, clerkUserId } from './clerk';
 import { adminDb } from './db';
 import { courseCurriculumMap } from '../../data/learning-content';
+import { fromLegacy } from '../../lib/adminApi/curriculum';
+import { layoutFor } from '../../lib/adminApi/progress';
 
 // Helpers for the PRD 07 (Learning Experience) automation. External services (YouTube Data API, YouTube embed,
 // GitHub raw files) are answered locally so lesson titles and lab text are deterministic and nothing depends on them.
 
+// The lessons a learner sees. With PORTAL_LEARNING=database they come from the imported curriculum, which leaves out what the import drops
+// (e.g. the python-beginners "Iterator" assignment with an invalid link), so totals must be counted on that shape, not on the raw file.
+export const courseLayout = (slug: string): any[] =>
+  process.env.PORTAL_LEARNING === 'database'
+    ? (layoutFor(fromLegacy(slug, courseCurriculumMap[slug] as any).modules, undefined) as any[])
+    : (courseCurriculumMap[slug] as any[]);
 export const lessonIds = (slug: string): string[] =>
-  courseCurriculumMap[slug].flatMap((m: any) => m.videoIds as string[]);
+  courseLayout(slug).flatMap((m: any) => m.videoIds as string[]);
 export const firstVideoId = (slug: string): string => lessonIds(slug).find(id => !id.startsWith('doc-'))!;
 export const lessonTitle = (id: string) => `QA Lesson ${id}`;
 
