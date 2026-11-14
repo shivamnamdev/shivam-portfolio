@@ -322,6 +322,21 @@ test.describe('ADMUI curriculum editor @regression', () => {
     expect((await adminDb().from('content_docs').select('key', { count: 'exact', head: true }).eq('kind', 'curriculum')).count).toBe(before);
   });
 
+  test('[ADMUI-CUR-016] the courses check changes nothing, must come before apply, and lists the sold courses with a create or unchanged result', async ({ page }) => {
+    const count = async () => (await adminDb().from('content_docs').select('key', { count: 'exact', head: true }).in('kind', ['course', 'cohort'])).count;
+    const before = await count();
+    await signInAs(page, EMAIL.admin);
+    await page.goto('/admin/curriculum');
+    await expect(page.getByRole('heading', { name: 'Courses and cohorts from the data files' })).toBeVisible({ timeout: 30000 });
+    await expect(page.getByRole('button', { name: 'Apply what the course check showed' })).toBeDisabled();
+    await page.getByRole('button', { name: 'Check courses (changes nothing)' }).click();
+    await expect(page.getByText('Course check result (nothing was written)')).toBeVisible({ timeout: 30000 });
+    const panel = page.getByRole('region', { name: 'Courses and cohorts from the data files' });
+    await expect(panel.getByText('python-beginners', { exact: true })).toBeVisible();
+    await expect(panel.getByText(/Will be created|Already the same/).first()).toBeVisible();
+    expect(await count()).toBe(before);
+  });
+
   test('[ADMUI-CUR-008] on a phone the curriculum screens do not scroll sideways', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 800 });
     await signInAs(page, EMAIL.admin);

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import {
   ASSIGNMENT_HOSTS, RESOURCE_HOSTS, LIMITS, assignmentProblems, assignmentToForm, cleanResources, countLessons, emptyAssignmentForm, formToAssignment, layoutAfterMove,
   layoutAfterMoveToModule, lessonIdFrom, lessonKindOf, lessonLabel, linkProblem, moduleOrderAfterMove, moved, outline, resourceProblems, urlFieldsFor, type Module,
-  FINAL_EXAM_BADGE, examChange, examSwitchBlock, FIELD_LABELS, GIT_FIELDS, PYTHON_FIELDS, documentFile, documentIdFrom, documentLessonBody, documentProblems, emptyDocumentForm, examOf, formatDuration, parseYoutubeItems, thumbnailUrl, youtubeRequestUrls, type Lesson,
+  FINAL_EXAM_BADGE, catalogActionText, catalogWouldChange, examChange, examSwitchBlock, FIELD_LABELS, GIT_FIELDS, PYTHON_FIELDS, documentFile, documentIdFrom, documentLessonBody, documentProblems, emptyDocumentForm, examOf, formatDuration, parseYoutubeItems, thumbnailUrl, youtubeRequestUrls, type Lesson,
 } from '../../lib/adminUi/curriculum';
 import { ASSIGNMENT_HOSTS as SERVER_ASSIGNMENT_HOSTS, RESOURCE_HOSTS as SERVER_RESOURCE_HOSTS, LIMITS as SERVER_LIMITS, reorderLessons, reorderModules, patchLesson, addLesson, lessonCheck } from '../../lib/adminApi/curriculum';
 import { courseCurriculumMap } from '../../data/learning-content';
@@ -206,5 +206,18 @@ test.describe('Admin UI curriculum @regression', () => {
     expect(examChange({ ...base, wasExam: true, isExam: true, wasOutcome: 'https://raw.githubusercontent.com/o/r/e.py', outcome: '' })).toEqual({ lessonId: V1, expectedOutcomeUrl: '' });
     expect(examChange({ ...base, wasExam: true, isExam: false, wasOutcome: 'x' })).toEqual({ lessonId: null });
     expect(FINAL_EXAM_BADGE).toContain('Final exam');
+  });
+
+  test('[ADMUI-UNIT-CUR-014] catalog import rows: plain words for a check and for an applied run; apply is offered only when something would be created or replaced', () => {
+    expect(catalogActionText('create', true, false)).toBe('Will be created');
+    expect(catalogActionText('unchanged', true, false)).toBe('Already the same');
+    expect(catalogActionText('differs', true, false)).toMatch(/skipped unless you overwrite/);
+    expect(catalogActionText('overwrite', true, false)).toBe('Will be replaced');
+    expect(catalogActionText('create', false, true)).toBe('Written');
+    expect(catalogActionText('differs', false, false)).toMatch(/skipped/);     // not written, and it says why
+    expect(catalogWouldChange([{ course: 'unchanged', cohort: 'unchanged' }, { course: 'differs', cohort: 'differs' }])).toBe(false);
+    expect(catalogWouldChange([{ course: 'unchanged', cohort: 'create' }])).toBe(true);
+    expect(catalogWouldChange([{ course: 'overwrite', cohort: 'unchanged' }])).toBe(true);
+    expect(catalogWouldChange([])).toBe(false);
   });
 });

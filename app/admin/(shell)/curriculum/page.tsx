@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { adminFetch, useAdminGet } from '@/components/admin/useAdminApi';
 import ImportPanel from '@/components/admin/curriculum/ImportPanel';
+import CatalogImportPanel from '@/components/admin/curriculum/CatalogImportPanel';
 import { DataTable, ErrorNote, PageHeader, Spinner, StatusBadge, buttonClass, ghostButtonClass } from '@/components/admin/ui';
 import { timeAgo, type Failure } from '@/lib/adminUi/client';
 
@@ -43,6 +44,7 @@ export default function CurriculumListPage() {
               : <button type="button" disabled={busy === c.slug} className={buttonClass} onClick={() => void create(c.slug)}>{busy === c.slug ? 'Creating…' : 'Create curriculum'}</button>) },
           ]} />
       )}
+      <CatalogImportPanel onApplied={() => { void cohorts.reload(); void sums.reload(); }} />
       <ImportPanel onApplied={() => { void sums.reload(); }} />
     </div>
   );
