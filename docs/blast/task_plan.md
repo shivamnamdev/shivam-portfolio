@@ -316,7 +316,8 @@ Full text: `docs/architecture/curriculum-editor-parity.md`. Findings: git lab so
 - [ ] Smoke and neighbour runs green, PR opened, Jira comment, owner merge
 
 
-## 2026-11-14 Exam switch Blueprint (PROPOSED, awaiting owner approval): mark the final exam in the portal, rule R6 amended
+## 2026-11-14 Exam switch Blueprint (APPROVED 2026-11-14, built on branch feat/exam-switch): mark the final exam in the portal, rule R6 amended
 Full text: `docs/architecture/exam-switch.md`. Owner decision: exam marking moves into the portal (dedicated `PUT /curriculum/{cohort}/exam`, only for courses with a grader in code; one exam per course; purple "Final exam" badge). Pending: owner and admin or owner only; refuse removal once a learner passed.
-- [ ] Owner approval and the two decisions (section 8)
-- [ ] Steps 1 to 5 with unit, API and UI tests; QA run
+- [x] Owner approval; owner and admin; exam optional, required for the certificate when present (added scope, section 9)
+- [x] Steps 1 to 3 built with unit, API and UI tests; learner exam suite rerun
+- [ ] PR, Jira Story, owner merge; owner decision on a grader for python-foundation (section 10)

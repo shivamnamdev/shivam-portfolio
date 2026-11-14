@@ -265,7 +265,7 @@ test.describe('ADMUI curriculum editor @regression', () => {
     expect((await modules()).modules.flatMap((m) => m.lessons).find((l) => l.id === V2)!.assignment).toEqual(saved);
   });
 
-  test('[ADMUI-CUR-011] the exam card: none for a course without an exam; names the exam lesson, its files and its module when the repository marks one; the lesson stays read-only', async ({ page }) => {
+  test('[ADMUI-CUR-011] the exam card: none for a course without an exam; names the exam lesson, its files and its module when the repository marks one; its assignment stays and only the exam is switched off', async ({ page }) => {
     await signInAs(page, EMAIL.admin);
     await page.goto(`/admin/curriculum/${COHORT}`);
     const card = page.getByRole('region', { name: 'Final exam' });
@@ -284,9 +284,9 @@ test.describe('ADMUI curriculum editor @regression', () => {
     await expect(card.getByRole('link', { name: /Expected result/ })).toHaveAttribute('href', `${RAW}/expected.py`);
     await card.getByRole('button', { name: 'Go to the exam lesson' }).click();
     const panel = page.getByRole('form', { name: `Edit lesson Video ${V2}` });
-    await expect(panel.getByText(/This lesson holds the final exam/)).toBeVisible();
+    await expect(panel.getByText(/This lesson is the final exam\. Learners must pass it/)).toBeVisible();
     await expect(panel.getByLabel('This lesson has an assignment')).toBeDisabled();
-    await expect(module(page, 'Loops').getByText('Exam', { exact: true })).toBeVisible();
+    await expect(module(page, 'Loops').getByText('🏆 Final exam')).toBeVisible();
   });
 
   test('[ADMUI-CUR-012] video rows and the panel show what YouTube says (title, length, picture, description) and fall back quietly when YouTube is unreachable', async ({ page }) => {

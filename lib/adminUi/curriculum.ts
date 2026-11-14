@@ -188,6 +188,26 @@ export function examOf(mods: Module[]): ExamInfo | null {
   return null;
 }
 
+// What the exam switch in the lesson panel may do (docs/architecture/exam-switch.md). A reason means the switch is off and says why; the server enforces the same rules.
+export function examSwitchBlock(o: { grader: boolean; kind: Lesson["kind"]; moduleLocked: boolean; hasAssignment: boolean; assignmentFileSet: boolean; isExamNow: boolean }): string | null {
+  if (o.isExamNow) return null;   // an exam can always be switched off (the server refuses once a learner has passed it)
+  if (!o.grader) return "This course has no exam grader yet. A grader has to be added in the code first; an exam is optional.";
+  if (o.kind !== "video") return "A document cannot be the exam; pick a video lesson.";
+  if (o.moduleLocked) return `This module is "${LOCKED_LABEL}", so learners could not reach the exam. Move the lesson to an open module first.`;
+  if (!o.hasAssignment || !o.assignmentFileSet) return "Add the assignment and its Assignment file first: the exam is the lesson's assignment.";
+  return null;
+}
+// The body of PUT /exam for what the owner did in the panel, or null when nothing exam-related changed.
+export type ExamChange = { lessonId: string | null; expectedOutcomeUrl?: string };
+export function examChange(o: { lessonId: string; wasExam: boolean; isExam: boolean; wasOutcome: string; outcome: string }): ExamChange | null {
+  const outcome = o.outcome.trim(), was = o.wasOutcome.trim();
+  if (o.wasExam && !o.isExam) return { lessonId: null };
+  if (!o.wasExam && o.isExam) return { lessonId: o.lessonId, ...(outcome ? { expectedOutcomeUrl: outcome } : {}) };
+  if (o.isExam && outcome !== was) return { lessonId: o.lessonId, expectedOutcomeUrl: outcome };   // "" removes it
+  return null;
+}
+export const FINAL_EXAM_BADGE = "🏆 Final exam";
+
 // ---- video details from YouTube (read only, shown in the editor, never stored) ----------------------------------------------------------------
 // The same public call the learner page makes (NEXT_PUBLIC_YOUTUBE_API_KEY), at most 50 ids per request. Document ids are never sent.
 export type VideoDetails = { title: string; description: string; duration: string; thumbnail: string };

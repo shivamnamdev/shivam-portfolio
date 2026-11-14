@@ -1,4 +1,4 @@
-# Marking the final exam in the portal (Blueprint, PROPOSED, awaiting owner approval)
+# Marking the final exam in the portal (Blueprint, APPROVED 2026-11-14)
 
 Requested by the owner on 2026-11-14: "how to mark a particular video as exam, not assignment, I couldn't differentiate it" and, after the options were shown, "I want to make it through portal, so update R6 and ready the plan." Rule from CONSTITUTION §2: no implementation code until this is approved.
 
@@ -55,8 +55,16 @@ Response: the whole updated curriculum (as the other curriculum calls), plus on 
 - A course without a grader can show no exam switch: intended (E1); the card explains why.
 - Publish still gates what learners see: an exam marked in the working copy is invisible to them until the curriculum is published.
 
-## 8. Owner decisions pending
+## 8. Owner decisions (2026-11-14)
 
-1. Approve this Blueprint (it changes rule R6).
-2. Who may mark the exam: **owner and admin** (as proposed) or owner only?
-3. Removing the exam once a learner has passed it: **refuse** (as proposed) or allow with a warning?
+1. Approved; this changes rule R6.
+2. Who may mark the exam: **owner and admin** (permission `curriculum:write`, as built).
+3. **An exam is optional in any course; when a course has one, the learner must pass it to get the certificate.** Git has no exam yet; Python needs one to collect submissions. This added a second change (section 9). Removing an exam once a learner has passed it stays refused (the proposal's default; the owner's answer did not ask for a change): moving it is always allowed.
+
+## 9. Added scope: the certificate follows the exam only when there is one
+
+Found while checking the owner's answer: `certificateEligibility` and the learner page both demanded a passed exam for **every** course, so a course without an exam (Git) could never issue a certificate. New rule, pure and unit-tested in `lib/examRule.ts` (`layoutHasExam`, `certificateAllowed`): 80% of the tasks always; the exam passed **only if the course has one**. The server reply to a refused certificate carries `examRequired`; the 403 message no longer mentions an exam when none is required. Tests `AAPI-UNIT-EXM-009`, API `AIA-CRT-006` (Git, no exam, 80% gives the PDF) and the existing `AIA-CRT-005` (Python, exam required).
+
+## 10. Still open
+
+Only `python-beginners` (Python Batch 1) has a grader in code. For `python-foundation` and the new Git to have an exam, a grader must be written for each in `lib/examGraders.ts`. Whether Python Foundation should reuse the Python Batch 1 exam (same five questions) is a content decision for the owner; until then its exam switch is off with the reason shown.

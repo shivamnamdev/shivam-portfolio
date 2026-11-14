@@ -6,9 +6,11 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { courseCurriculumMap } from "@/data/learning-content";
 import { getLayout } from "@/lib/catalog/learning";
 
-export const CERTIFICATE_MIN_PERCENT = 80;
+import { CERTIFICATE_MIN_PERCENT, certificateAllowed, layoutHasExam } from "@/lib/examRule";
+export { CERTIFICATE_MIN_PERCENT };
 
-export type Eligibility = { eligible: boolean; percent: number; examPassed: boolean; hasCourse: boolean };
+// examRequired: the course has an exam, so passing it is part of the certificate rule (none, none required).
+export type Eligibility = { eligible: boolean; percent: number; examPassed: boolean; examRequired: boolean; hasCourse: boolean };
 
 type Modules = Array<{ videoIds?: string[]; githubAssignments?: Record<string, unknown> }>;
 // Pure part: easy to unit-test. `layout` is the course's lessons (the data files unless the caller passes the portal's published curriculum).
@@ -24,7 +26,7 @@ export function certificatePercent(slug: string, doneVideos: string[], doneAssig
 
 export async function certificateEligibility(userId: string, slug: string): Promise<Eligibility> {
   const layout = await getLayout(slug);
-  if (!layout) return { eligible: false, percent: 0, examPassed: false, hasCourse: false };
+  if (!layout) return { eligible: false, percent: 0, examPassed: false, examRequired: false, hasCourse: false };
   const [v, a, e] = await Promise.all([
     supabaseAdmin.from("video_progress").select("video_id").eq("user_id", userId).eq("course_slug", slug),
     supabaseAdmin.from("assignment_progress").select("video_id").eq("user_id", userId).eq("course_slug", slug),
@@ -35,5 +37,6 @@ export async function certificateEligibility(userId: string, slug: string): Prom
   if (e.error) throw e.error;
   const percent = certificatePercent(slug, [...new Set((v.data ?? []).map(r => r.video_id as string))], [...new Set((a.data ?? []).map(r => r.video_id as string))], layout);
   const examPassed = !!e.data?.is_passed;
-  return { eligible: percent >= CERTIFICATE_MIN_PERCENT && examPassed, percent, examPassed, hasCourse: true };
+  const examRequired = layoutHasExam(layout as never);
+  return { eligible: certificateAllowed(percent, examRequired, examPassed), percent, examPassed, examRequired, hasCourse: true };
 }

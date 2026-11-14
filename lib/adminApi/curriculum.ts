@@ -243,6 +243,38 @@ export function enforceProtected(before: Module[], after: Module[], allowProtect
   return out;
 }
 
+// ---------- the final exam (R6 amended 2026-11-14, docs/architecture/exam-switch.md) ----------
+// The generic lesson calls still cannot touch the exam flags (enforceProtected). Only the dedicated exam call uses these two functions, which keep the rules together.
+export const examLessonId = (mods: Module[]): string | null => allLessons(mods).find((l) => l.assignment?.isExam)?.id ?? null;
+const stripExam = (a: Assignment): void => { delete a.isExam; delete a.serverGraded; delete a.expectedOutcomeUrl; };
+
+// Removes the exam from the course: the lesson keeps its assignment as an ordinary one.
+export function clearExam(mods: Module[]): Module[] {
+  const next = copy(mods);
+  for (const l of allLessons(next)) if (l.assignment) stripExam(l.assignment);
+  return next;
+}
+
+// Makes `lessonId` the one exam of the course (E1 to E5). `graderExists`: the course has a grader in lib/examGraders.ts. `expectedOutcomeUrl`: undefined keeps the
+// current one when the lesson already is the exam, "" removes it.
+export function setExam(mods: Module[], lessonId: string, o: { graderExists: boolean; expectedOutcomeUrl?: string }): Module[] {
+  if (!o.graderExists) throw unprocessable("This course has no exam grader yet. A grader has to be added in the code first");
+  const next = copy(mods);
+  const { mi, li } = lessonPos(next, lessonId);
+  const mod = next[mi]; const lesson = mod.lessons[li];
+  if (lesson.kind !== "video") throw unprocessable("A document cannot be the exam; pick a video lesson");
+  if (!lesson.assignment?.rawUrl) throw unprocessable("Add the assignment file to this lesson first: the exam is its assignment");
+  if (mod.advanced) throw unprocessable("This lesson is in a module that is locked until the exam is passed, so learners could never reach the exam. Move it to an open module first");
+  const wasExam = !!lesson.assignment.isExam;
+  const keep = wasExam ? lesson.assignment.expectedOutcomeUrl : undefined;
+  for (const l of allLessons(next)) if (l.assignment) stripExam(l.assignment);
+  lesson.assignment.isExam = true;
+  lesson.assignment.serverGraded = true;
+  const url = o.expectedOutcomeUrl === undefined ? keep : o.expectedOutcomeUrl;
+  if (url) lesson.assignment.expectedOutcomeUrl = url;
+  return next;
+}
+
 // Lesson ids present before and gone after (R4 checks these against learner progress).
 export const removedLessonIds = (before: Module[], after: Module[]): string[] => {
   const keep = new Set(lessonIds(after));
