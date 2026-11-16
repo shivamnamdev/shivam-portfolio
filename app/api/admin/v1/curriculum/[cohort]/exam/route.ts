@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { conflict, handle } from "@/lib/adminApi/envelope";
-import { checkExamChange, chooseExamId, clearExam, setExam } from "@/lib/adminApi/curriculum";
+import { allLessons, checkExamChange, chooseExamId, clearExam, setExam } from "@/lib/adminApi/curriculum";
 import { curriculumWrite, cohortParam, writeActor } from "@/lib/adminApi/curriculumStore";
 import { parseObject, readBody, optional, str, type Check } from "@/lib/adminApi/validate";
-import { courseDefaultExam, examIdExists } from "@/lib/examGraders";
+import { courseDefaultExam, examIdExists, examLinks } from "@/lib/examGraders";
 
 // R6 (amended 2026-11-14, docs/architecture/exam-switch.md): the ONLY call that may set, move or remove the final exam. The generic lesson calls still refuse the exam flags.
 // Owner and admin keys (permission curriculum:write). Exam library, step 1 (docs/architecture/exam-library.md): `examId` picks which library exam the course uses (X1, X2);
@@ -34,9 +34,13 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ cohort: s
     const passed = input.examId ? await passedCount(cohort) : 0;
     return curriculumWrite(req, cohort, (doc) => {
       const chosen = chooseExamId({ requested: input.examId, stored: doc.examId, courseDefault: courseDefaultExam(cohort), exists: examIdExists });
-      const current = doc.examId && examIdExists(doc.examId) ? doc.examId : courseDefaultExam(cohort);
+      // the exam the course is graded with today: the stored one, else the course's default while its exam lesson is graded on the server (a new exam has no grader)
+      const gradedNow = allLessons(doc.modules).some((l) => l.assignment?.isExam && l.assignment.serverGraded);
+      const current = doc.examId && examIdExists(doc.examId) ? doc.examId : gradedNow ? courseDefaultExam(cohort) : undefined;
       checkExamChange({ current, chosen, passed });
-      return { ...doc, examId: chosen, modules: setExam(doc.modules, id, { graderExists: true, expectedOutcomeUrl: input.expectedOutcomeUrl }) };
+      const library = chosen ? examLinks(chosen) : undefined;   // X5: a library exam fills the lesson's assignment; the pasted expected result is ignored
+      const { examId: _old, ...rest } = doc;
+      return { ...rest, ...(chosen ? { examId: chosen } : {}), modules: setExam(doc.modules, id, { library, expectedOutcomeUrl: library ? undefined : input.expectedOutcomeUrl }) };
     }, { actor, action: "exam.set", allowProtected: true, resourceNote: { exam: id, examId: input.examId ?? null } });
   });
 }

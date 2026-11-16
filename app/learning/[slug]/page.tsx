@@ -18,6 +18,7 @@ import Editor from '@monaco-editor/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GitGraphVisualizer from '@/components/GitGraphVisualizer';
 import { ADMIN_EMAIL } from '@/lib/admin';
+import { isGradedExam } from '@/lib/examRule';
 
 // XP is recomputed server-side from progress rows; fire-and-forget after progress changes.
 const syncXp = () => fetch('/api/xp/sync', { method: 'POST' }).catch(() => {});
@@ -878,7 +879,7 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
       return;
     }
 
-    const isExam = activeVideo.githubAssignment?.isExam;
+    const isExam = isGradedExam(activeVideo.githubAssignment);   // a new exam with no grader is submitted like an ordinary assignment
 
     if (isExam) {
       if (examStatus.attempts_used >= 5 && !examStatus.is_passed && !isAdmin) {
@@ -1477,7 +1478,7 @@ sys.settrace(_trace_calls)
   const totalTasks = totalVideos + totalAssignments;
   const completedTasks = completedVideos.length + completedAssignments.length;
   const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-  const courseHasExam = playlist.some((m: any) => m.videos.some((v: any) => v.githubAssignment?.isExam));   // an exam is optional; when the course has one, passing it is part of the certificate
+  const courseHasExam = playlist.some((m: any) => m.videos.some((v: any) => isGradedExam(v.githubAssignment)));   // an exam is optional; when the course has one, passing it is part of the certificate
   
   const isVideoCompleted = activeVideo ? completedVideos.includes(activeVideo.id) : false;
   const isAssignmentCompleted = activeVideo ? completedAssignments.includes(activeVideo.id) : false;
@@ -1830,8 +1831,8 @@ sys.settrace(_trace_calls)
                               </button>
                             ) : (
                               <button onClick={submitAssignment} disabled={isSubmittingAssignment} className={`px-4 py-2 rounded-lg text-xs font-bold flex justify-center items-center gap-2 transition-colors shadow-md ${activeVideo.githubAssignment?.isExam && !examStatus.is_passed ? 'bg-purple-600 hover:bg-purple-500 text-white' : isAssignmentCompleted ? 'bg-green-600 text-white' : 'bg-amber-500 hover:bg-amber-400 text-stone-900'}`}>
-                                {isSubmittingAssignment ? <Loader2 size={14} className="animate-spin"/> : activeVideo.githubAssignment?.isExam ? <Award size={14}/> : <CheckCircle2 size={14}/>} 
-                                {activeVideo.githubAssignment?.isExam ? `Submit Exam (${examStatus.attempts_used}/5)` : isAssignmentCompleted ? "Update" : "Submit"}
+                                {isSubmittingAssignment ? <Loader2 size={14} className="animate-spin"/> : isGradedExam(activeVideo.githubAssignment) ? <Award size={14}/> : <CheckCircle2 size={14}/>} 
+                                {isGradedExam(activeVideo.githubAssignment) ? `Submit Exam (${examStatus.attempts_used}/5)` : isAssignmentCompleted ? "Update" : "Submit"}
                               </button>
                             )}
                           </div>

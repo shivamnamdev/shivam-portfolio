@@ -336,3 +336,8 @@ Full text: `docs/architecture/exam-switch.md`. Owner decision: exam marking move
 - [x] Owner approved step 1; built with unit, API and UI tests
 - [ ] Owner: merge the PR; choose the exam for Python Foundation in the curriculum editor
 - [ ] Later, each needs its own approval: creating new exams (A, B, C or D), model-assisted grading and its consent notice (`docs/architecture/exam-library.md` sections 9 to 11)
+
+## Exam library step 2 (2026-11-17, SCP-112, branch feat/SCP-112-exam-library-links)
+- [x] Owner approved the Blueprint in chat (exam switch always usable; "Which exam?" = None or an exam of a course; library exam fills the lesson read-only; None keeps pasted links and never blocks the certificate)
+- [x] Built with unit, API and UI tests (`docs/architecture/exam-library.md` section 13)
+- [ ] Owner: merge the PR; on Python Foundation tick the exam on a lesson and pick "Python Batch 1 final exam"

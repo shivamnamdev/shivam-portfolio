@@ -15,13 +15,15 @@ import { courseDefaultExam, examIdExists, examList } from "@/lib/examGraders";
 export const cohortParam = (s: string): string => { if (!slugCheck(s).ok) throw notFound("cohort not found"); return s; };
 
 type Row = Awaited<ReturnType<typeof getRow>>;
+// the exam lesson is graded on the server (a new exam with pasted files is not)
+const graded = (doc: CurriculumDoc) => doc.modules.some((m) => m.lessons.some((l) => l.assignment?.isExam && l.assignment.serverGraded));
 export const view = (r: Row) => {
   const doc = r.doc as unknown as CurriculumDoc;
   return {
     cohort: r.key, status: r.status, version: r.version, modules: doc.modules, published: doc.published, publishedAt: doc.publishedAt,
     hasUnpublishedChanges: hasUnpublishedChanges(doc), counts: summary(doc.modules), updatedAt: r.updated_at, updatedBy: r.updated_by,
     // the library is not empty (an exam can be marked), the exam this course uses, the library to pick from (no scripts), and which lesson is the exam now
-    examGrader: examList().length > 0, examId: doc.examId && examIdExists(doc.examId) ? doc.examId : courseDefaultExam(r.key) ?? null, exams: examList(), examLessonId: examLessonId(doc.modules),
+    examGrader: examList().length > 0, examId: doc.examId && examIdExists(doc.examId) ? doc.examId : (graded(doc) ? courseDefaultExam(r.key) : undefined) ?? null, exams: examList(), examLessonId: examLessonId(doc.modules),
   };
 };
 

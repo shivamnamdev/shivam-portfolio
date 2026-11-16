@@ -775,3 +775,9 @@ _Last generated: 2026-11-15 from `1e6f997` on branch `chore/progress-log-scp-110
 
 ### 2026-11-16 — Exam library step 1
 - Built the library, the `examId` choice and the dropdown. Errors met: my first AAPI-EXM-009 asserted a score of 100 where the grader gives 80 for the copied sample (pass mark is 80; fixed); ADMUI-CUR-015 and AAPI-EXM-001/002 asserted the old "no grader" wording (updated). Results: 275 unit passed; API exam, curriculum, grading, certificate and import specs pass; exam and curriculum UI and the learner exam UI pass on QA.
+
+### 2026-11-17 — exam library step 2 (SCP-112)
+- Built: exam switch always usable; library exam fills the lesson read-only; None = new exam, pasted links, no grader, never blocks the certificate.
+- Errors met and fixed: `AAPI-EXM-010` failed because an earlier test had replaced the lesson's file with the library one (test now resets it); `ADMUI-CUR-011/013/014/017` asserted the old panel (updated); a curriculum UI run with `-g` skipped the test that creates its cohort (run the whole file).
+- Results: unit 280 passed, 3 skipped; tsc clean; exam API 11, exam UI 5, curriculum API 7, curriculum UI 13, certificate 1, exam grading 10 passed; learner exam spec passed except `LRN-EXM-006`, which failed once under load and passed on its own re-run.
+

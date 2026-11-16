@@ -88,3 +88,15 @@ Rules (enforced in code and tested): P1 only the learner's code, the program's o
 - Panel: "Which exam?" dropdown on the exam switch (Python lab lessons).
 - Tests: `AAPI-UNIT-EXL-001..007`, `ADMUI-UNIT-CUR-015`, `AAPI-EXM-001/002` updated and `008/009` added (a new course picks the shared exam and is graded with it only after publishing; its result belongs to that course), `ADMUI-CUR-015` updated, `ADMUI-CUR-017`.
 - Not built: creating a new exam, model-assisted grading and its consent notice (sections 9 and 10, separate approval); X3 is unit-tested only, because the API cannot switch between exams while the library has one.
+
+## 13. Step 2: the exam brings its own files; "None" is a new exam (2026-11-17, SCP-112, approved by the owner in chat)
+
+Owner feedback on step 1: the exam checkbox stayed grey until an assignment link was typed, and the dropdown could not be left empty. Why type links for an exam that already exists? Decision: ticking the box is always possible on a video lesson in an open module, and it asks **which exam**: an exam of a course, or **None** (a new exam with its own links).
+
+- **Library exam** (any course's exam): the library stores the exam's own files (`links` in `lib/examGraders.ts`: title, assignment file, add-on file, expected result; for Batch 1 these are the data file's three links). The server fills the lesson's assignment from them (rule X5), creating it when the lesson had none and keeping other fields (solution, carry-over). The panel shows them read-only. Results stay per course.
+- **None** (rule X4): the owner pastes the assignment file, add-on and expected result. The lesson is marked `isExam` but **not** `serverGraded` and no `examId` is stored: there is no grader yet (creating one is options A to D above), so the server cannot mark it. It is shown as the final exam and **does not hold back the certificate** (`isGradedExam` in `lib/examRule.ts`: the certificate, the learner page's exam submit and the attempts counter only apply to graded exams).
+- Unticking works as before (the flags go, the assignment and its links stay as an ordinary assignment).
+- `PUT /curriculum/{cohort}/exam`: `examId: "none"` selects a new exam; a library `examId` ignores any pasted `expectedOutcomeUrl`. X3 also applies to switching from a graded exam to None after a learner passed (409). `GET` returns `exams[].links`; `examId` is null for a course whose exam is a new one.
+- The grey lock and the old "Add the assignment first" reason are gone (`examSwitchBlock` no longer looks at the assignment).
+- Tests: `AAPI-UNIT-EXL-008..011`, `ADMUI-UNIT-CUR-016`, `AAPI-EXM-010/011`, `ADMUI-CUR-018`; updated `AAPI-UNIT-EXM-002/004/007`, `ADMUI-UNIT-CUR-013/015`, `AAPI-EXM-002/003/004/008`, `ADMUI-CUR-014/015/017`.
+- Limits to know: a new exam cannot be graded until a grader exists; Python Foundation should pick "Python Batch 1 final exam" to get the same marking as Batch 1.

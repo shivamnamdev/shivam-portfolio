@@ -190,14 +190,12 @@ test.describe('Admin UI curriculum @regression', () => {
     expect(formatDuration('PT5M30S')).toBe('5:30'); expect(formatDuration('PT45S')).toBe('0:45'); expect(formatDuration('PT2H')).toBe('2:00:00'); expect(formatDuration('nope')).toBe(''); expect(formatDuration(undefined)).toBe('');
   });
   test('[ADMUI-UNIT-CUR-013] the exam switch in the panel: off with a reason when it cannot work, never blocks switching an existing exam off; the body sent is only what changed', () => {
-    const ok = { grader: true, kind: 'video' as const, moduleLocked: false, hasAssignment: true, assignmentFileSet: true, isExamNow: false };
+    const ok = { kind: 'video' as const, moduleLocked: false, isExamNow: false };
     expect(examSwitchBlock(ok)).toBeNull();
-    expect(examSwitchBlock({ ...ok, grader: false })).toMatch(/no exam grader yet.*optional/);
     expect(examSwitchBlock({ ...ok, kind: 'document' })).toMatch(/document cannot be the exam/);
     expect(examSwitchBlock({ ...ok, moduleLocked: true })).toMatch(/Locked until the exam is passed/);
-    expect(examSwitchBlock({ ...ok, hasAssignment: false })).toMatch(/assignment/);
-    expect(examSwitchBlock({ ...ok, assignmentFileSet: false })).toMatch(/Assignment file/);
-    expect(examSwitchBlock({ ...ok, grader: false, moduleLocked: true, isExamNow: true })).toBeNull();   // an existing exam can always be switched off
+    expect(examSwitchBlock(ok)).toBeNull();   // no assignment or file needed first: a library exam brings its own, a new exam is typed after the switch is on
+    expect(examSwitchBlock({ ...ok, moduleLocked: true, isExamNow: true })).toBeNull();   // an existing exam can always be switched off
     const base = { lessonId: V1, wasExam: false, isExam: false, wasOutcome: '', outcome: '' };
     expect(examChange(base)).toBeNull();
     expect(examChange({ ...base, isExam: true })).toEqual({ lessonId: V1 });
@@ -228,7 +226,7 @@ test.describe('Admin UI curriculum @regression', () => {
     expect(examChange({ ...base, wasExam: true, isExam: true, wasExamId: 'a-exam', examId: 'b-exam' })).toEqual({ lessonId: V1, examId: 'b-exam' });   // only the exam changed: the expected result is left alone
     expect(examChange({ ...base, wasExam: true, isExam: true, wasExamId: 'a-exam', examId: 'b-exam', wasOutcome: 'x', outcome: 'y' })).toEqual({ lessonId: V1, expectedOutcomeUrl: 'y', examId: 'b-exam' });
     expect(examChange({ ...base, wasExam: true, isExam: false, wasExamId: 'a-exam', examId: 'b-exam' })).toEqual({ lessonId: null });   // switching off sends no exam id
-    expect(examPickProblem(true, '')).toMatch(/Choose which exam/);
+    expect(examPickProblem(true, '')).toMatch(/Choose an exam from a course/);
     expect(examPickProblem(true, 'python-batch-1-final')).toBeNull();
     expect(examPickProblem(false, '')).toBeNull();
   });

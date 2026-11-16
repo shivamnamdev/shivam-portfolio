@@ -207,16 +207,18 @@ export function replaceModules(input: Array<{ id?: string; title: string; advanc
 }
 
 // Which library exam a course uses when the exam is marked (X1, X2): the one asked for, else the one already chosen, else the course's default.
-// `exists` and `courseDefault` come from lib/examGraders.ts so this stays pure.
-export function chooseExamId(o: { requested?: string; stored?: string; courseDefault?: string; exists: (id: string) => boolean }): string {
+// "none" (X4) means a new exam with its own pasted files and no grader: the answer is null. `exists` and `courseDefault` come from lib/examGraders.ts so this stays pure.
+export const NO_LIBRARY_EXAM = "none";
+export function chooseExamId(o: { requested?: string; stored?: string; courseDefault?: string; exists: (id: string) => boolean }): string | null {
+  if (o.requested === NO_LIBRARY_EXAM) return null;
   if (o.requested !== undefined && !o.exists(o.requested)) throw unprocessable(`There is no exam "${o.requested}" in the library`);
   const id = o.requested ?? (o.stored && o.exists(o.stored) ? o.stored : undefined) ?? o.courseDefault;
-  if (!id) throw unprocessable("Choose which exam this course uses. No exam is selected yet");
+  if (!id) throw unprocessable("Choose an exam from a course, or None for a new exam. No exam is selected yet");
   return id;
 }
 
-// X3: once a learner has passed the exam, the course cannot switch to a different one (their pass would not count for it). Moving the lesson is fine.
-export function checkExamChange(o: { current?: string; chosen: string; passed: number }): void {
+// X3: once a learner has passed the exam, the course cannot switch to a different one (their pass would not count for it), nor to None. Moving the lesson is fine.
+export function checkExamChange(o: { current?: string; chosen: string | null; passed: number }): void {
   if (o.current && o.chosen !== o.current && o.passed > 0)
     throw conflict(`${o.passed} learner(s) have passed the exam "${o.current}". Their pass would not count for a different exam. Keep this exam, or move it to another lesson`);
 }
@@ -273,23 +275,29 @@ export function clearExam(mods: Module[]): Module[] {
   return next;
 }
 
-// Makes `lessonId` the one exam of the course (E1 to E5). `graderExists`: the course has a grader in lib/examGraders.ts. `expectedOutcomeUrl`: undefined keeps the
-// current one when the lesson already is the exam, "" removes it.
-export function setExam(mods: Module[], lessonId: string, o: { graderExists: boolean; expectedOutcomeUrl?: string }): Module[] {
-  if (!o.graderExists) throw unprocessable("This course has no exam grader yet. A grader has to be added in the code first");
+// Makes `lessonId` the one exam of the course (E1 to E5).
+// `library`: the files of the library exam the course uses. The lesson's assignment becomes that exam (title, questions, add-on, expected result), created when the lesson
+// has none, and the lesson is graded on the server (X5). Without it the exam is a new one (X4): the lesson's own assignment file is required, nothing is graded on
+// the server, so it never holds back the certificate. `expectedOutcomeUrl` (new exams only): undefined keeps the current one when the lesson already is the exam, "" removes it.
+export type ExamFill = { title: string; rawUrl: string; starterCodeUrl: string; expectedOutcomeUrl: string };
+export function setExam(mods: Module[], lessonId: string, o: { library?: ExamFill; expectedOutcomeUrl?: string }): Module[] {
   const next = copy(mods);
   const { mi, li } = lessonPos(next, lessonId);
   const mod = next[mi]; const lesson = mod.lessons[li];
   if (lesson.kind !== "video") throw unprocessable("A document cannot be the exam; pick a video lesson");
-  if (!lesson.assignment?.rawUrl) throw unprocessable("Add the assignment file to this lesson first: the exam is its assignment");
+  if (!o.library && !lesson.assignment?.rawUrl) throw unprocessable("Add the assignment file to this lesson first: a new exam is its assignment");
   if (mod.advanced) throw unprocessable("This lesson is in a module that is locked until the exam is passed, so learners could never reach the exam. Move it to an open module first");
-  const wasExam = !!lesson.assignment.isExam;
-  const keep = wasExam ? lesson.assignment.expectedOutcomeUrl : undefined;
+  const wasExam = !!lesson.assignment?.isExam;
+  const keep = wasExam ? lesson.assignment?.expectedOutcomeUrl : undefined;
   for (const l of allLessons(next)) if (l.assignment) stripExam(l.assignment);
-  lesson.assignment.isExam = true;
-  lesson.assignment.serverGraded = true;
+  if (o.library) {
+    lesson.assignment = { ...(lesson.assignment ?? { labType: "python" as const }), title: o.library.title, rawUrl: o.library.rawUrl, starterCodeUrl: o.library.starterCodeUrl, expectedOutcomeUrl: o.library.expectedOutcomeUrl, isExam: true, serverGraded: true };
+    return next;
+  }
+  const a = lesson.assignment!;
+  a.isExam = true;
   const url = o.expectedOutcomeUrl === undefined ? keep : o.expectedOutcomeUrl;
-  if (url) lesson.assignment.expectedOutcomeUrl = url;
+  if (url) a.expectedOutcomeUrl = url;
   return next;
 }
 
