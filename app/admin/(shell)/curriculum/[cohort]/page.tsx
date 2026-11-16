@@ -143,7 +143,7 @@ export default function CurriculumEditorPage() {
                 </div>
               </>) : (<>
                 <h2 className="font-display text-base font-bold text-white">Final exam: none</h2>
-                <p className="mt-1 text-sm text-stone-400">{data.examGrader ? 'An exam is optional. To add one, open a lesson that has an assignment file and turn on “This lesson is the final exam”; learners must then pass it to get the certificate.' : 'An exam is optional, and this course has none. The library has no exam yet, so one has to be added in the code first.'}</p>
+                <p className="mt-1 text-sm text-stone-400">{data.examGrader ? 'An exam is optional. To add one, open a video lesson and turn on “This lesson is the final exam”, then use the exam of another course or add a new one. An exam with a grader must be passed to get the certificate.' : 'An exam is optional, and this course has none. The library has no exam yet, so one has to be added in the code first.'}</p>
               </>)}
             </section>
             {modules.map((m, mi) => (

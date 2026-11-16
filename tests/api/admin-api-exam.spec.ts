@@ -58,11 +58,11 @@ test.describe('AAPI exam switch @regression', () => {
     const d = await read(NO_GRADER);
     const res = await put(d.version, { lessonId: 'qaexm000001' }, NO_GRADER);
     expect(res.status()).toBe(422);
-    expect((await res.json()).error.message).toMatch(/Choose which exam/);
+    expect((await res.json()).error.message).toMatch(/Choose an exam from a course, or None/);
     expect(exams(await read(NO_GRADER))).toEqual([]);
   });
 
-  test('[AAPI-EXM-003] marking another lesson moves the exam: one exam only, the old lesson keeps its assignment, the expected result follows what is sent', async () => {
+  test('[AAPI-EXM-003] marking another lesson moves the exam: one exam only, the old lesson keeps its assignment, the new one gets the library exam\'s files (a pasted expected result is ignored)', async () => {
     touched = true;
     let d = await read(); const other = candidate(d);
     const res = await put(d.version, { lessonId: other, expectedOutcomeUrl: `${RAW}/expected.py` });
@@ -70,22 +70,21 @@ test.describe('AAPI exam switch @regression', () => {
     d = (await res.json()).data;
     expect(exams(d)).toEqual([other]);
     expect(d.examLessonId).toBe(other);
-    expect(lessons(d).find((l) => l.id === other)!.assignment).toMatchObject({ isExam: true, serverGraded: true, expectedOutcomeUrl: `${RAW}/expected.py` });
+    const lib = d.exams[0].links;
+    expect(lessons(d).find((l) => l.id === other)!.assignment).toMatchObject({ isExam: true, serverGraded: true, title: lib.title, rawUrl: lib.rawUrl, starterCodeUrl: lib.starterCodeUrl, expectedOutcomeUrl: lib.expectedOutcomeUrl });
     const old = lessons(d).find((l) => l.id === 'WhP2F-xk3Kk')!.assignment!;
     expect(old).toMatchObject({ title: 'Final Foundation Certification Exam' });
     for (const f of ['isExam', 'serverGraded', 'expectedOutcomeUrl']) expect(old).not.toHaveProperty(f);
     expect(d.hasUnpublishedChanges).toBe(true);   // learners see it only after publishing
-    // the same lesson again with no url keeps it; an empty url removes it
-    expect(lessons((await (await put(d.version, { lessonId: other })).json()).data).find((l) => l.id === other)!.assignment!.expectedOutcomeUrl).toBe(`${RAW}/expected.py`);
-    d = await read();
-    expect(lessons((await (await put(d.version, { lessonId: other, expectedOutcomeUrl: '' })).json()).data).find((l) => l.id === other)!.assignment).not.toHaveProperty('expectedOutcomeUrl');
+    // the same lesson again changes nothing visible
+    expect(lessons((await (await put(d.version, { lessonId: other })).json()).data).find((l) => l.id === other)!.assignment!.expectedOutcomeUrl).toBe(lib.expectedOutcomeUrl);
   });
 
-  test('[AAPI-EXM-004] refusals: unknown lesson 404, a lesson without an assignment file or in a locked module 422, bad body 400, missing If-Match 428, stale version 409; nothing changes', async () => {
+  test('[AAPI-EXM-004] refusals: unknown lesson 404, a new exam without an assignment file or a lesson in a locked module 422, bad body 400, missing If-Match 428, stale version 409; nothing changes', async () => {
     const d = await read(); const before = JSON.stringify(exams(d));
     expect((await put(d.version, { lessonId: 'zzzzzzzzzzz' })).status()).toBe(404);
     const noAssignment = lessons(d).find((l) => l.kind === 'video' && !l.assignment)!.id;
-    expect((await put(d.version, { lessonId: noAssignment })).status()).toBe(422);
+    expect((await put(d.version, { lessonId: noAssignment, examId: 'none' })).status()).toBe(422);   // a new exam needs its own assignment file; a library exam brings its own
     const locked = d.modules.find((m: Mod) => m.advanced)!.lessons[0].id;
     expect((await put(d.version, { lessonId: locked })).status()).toBe(422);
     for (const bad of [{}, { lessonId: 5 }, { lessonId: 'short' }, { lessonId: candidate(d), expectedOutcomeUrl: 'https://evil.example/x.py' }, { lessonId: candidate(d), expectedOutcomeUrl: 'http://raw.githubusercontent.com/x' }, { lessonId: candidate(d), extra: 1 }]) {
@@ -169,7 +168,7 @@ class Hospital:
 
   test('[AAPI-EXM-008] a new course picks an exam from the library: the read lists the library without any grader script, unknown or malformed ids are refused, a pick marks the lesson', async () => {
     let d = await read(NO_GRADER);
-    expect(d.exams).toEqual([{ id: LIB, title: 'Python Batch 1 final exam', questions: 5 }]);
+    expect(d.exams).toEqual([{ id: LIB, title: 'Python Batch 1 final exam', questions: 5, links: expect.objectContaining({ rawUrl: expect.stringMatching(/v1\.docx$/) }) }]);
     expect(JSON.stringify(d)).not.toMatch(/EXAM_SCORE|Jaskeerat|student_output/);
     const unknown = await put(d.version, { lessonId: LESSON, examId: 'no-such-exam' }, NO_GRADER);
     expect(unknown.status()).toBe(422); expect((await unknown.json()).error.message).toMatch(/no exam "no-such-exam" in the library/);
@@ -179,7 +178,7 @@ class Hospital:
     expect(ok.status()).toBe(200);
     d = (await ok.json()).data;
     expect(d).toMatchObject({ examId: LIB, examLessonId: LESSON, hasUnpublishedChanges: true });
-    expect(lessons(d).find((l) => l.id === LESSON)!.assignment).toMatchObject({ isExam: true, serverGraded: true });
+    expect(lessons(d).find((l) => l.id === LESSON)!.assignment).toMatchObject({ isExam: true, serverGraded: true, rawUrl: expect.stringMatching(/v1\.docx$/), expectedOutcomeUrl: expect.stringMatching(/v1_expected_result\.py$/) });   // the lesson's own file was replaced by the library exam's
     expect(await doc()).toMatchObject({ examId: LIB }); expect((await doc()).publishedExamId).toBeUndefined();   // learners are not graded with it yet
   });
 
@@ -211,5 +210,45 @@ class Hospital:
       await reset();
       expect((await gradeAs()).status()).toBe(404);
     } finally { await reset(); }
+  });
+
+  const MODS = [{ title: 'M', lessons: [{ id: LESSON, kind: 'video', assignment: { title: 'A', rawUrl: `${RAW}/a` } }] }];
+  // Exam library, step 2 (exam-library.md section 13): "None" is a new exam made of pasted files, with no grader.
+  test('[AAPI-EXM-010] a new exam ("none"): marks the lesson with its own files, is not graded on the server, has no library exam, and the pasted expected result follows what is sent', async () => {
+    let d = await read(NO_GRADER);
+    const own = await admin.request.put(url(NO_GRADER), { data: { modules: MODS }, headers: { 'If-Match': String(d.version) } });   // the lesson's own file again (008 replaced it with the library exam's)
+    expect(own.status()).toBe(200);
+    d = (await own.json()).data;
+    const res = await put(d.version, { lessonId: LESSON, examId: 'none', expectedOutcomeUrl: `${RAW}/e.py` }, NO_GRADER);
+    expect(res.status()).toBe(200);
+    d = (await res.json()).data;
+    expect(d).toMatchObject({ examId: null, examLessonId: LESSON });
+    const a = lessons(d).find((l) => l.id === LESSON)!.assignment!;
+    expect(a).toMatchObject({ isExam: true, rawUrl: `${RAW}/a`, expectedOutcomeUrl: `${RAW}/e.py` });   // the lesson's own file, nothing from the library
+    expect(a).not.toHaveProperty('serverGraded');
+    expect((await doc()).examId).toBeUndefined();
+    d = await read(NO_GRADER);
+    const again = (await (await put(d.version, { lessonId: LESSON, examId: 'none', expectedOutcomeUrl: '' }, NO_GRADER)).json()).data;
+    expect(lessons(again).find((l) => l.id === LESSON)!.assignment).not.toHaveProperty('expectedOutcomeUrl');   // an empty text removes it
+    d = await read(NO_GRADER);
+    expect((await admin.request.post(url(NO_GRADER, '/publish'), { headers: { 'If-Match': String(d.version) } })).status()).toBe(200);
+    expect((await gradeAs()).status()).toBe(404);                                  // no grader: the server never marks it
+  });
+
+  test('[AAPI-EXM-011] a library exam needs no assignment first: a lesson without one gets the exam\'s files; "none" then "library" and back keep one exam only', async () => {
+    let d = await read(NO_GRADER);
+    const set = await admin.request.put(url(NO_GRADER), { data: { modules: [{ ...MODS[0], lessons: [...MODS[0].lessons, { id: 'qaexm000002', kind: 'video' }] }] }, headers: { 'If-Match': String(d.version) } });
+    expect(set.status()).toBe(200);
+    d = (await set.json()).data;
+    expect(lessons(d).find((l) => l.id === 'qaexm000002')!.assignment).toBeUndefined();
+    const ok = await put(d.version, { lessonId: 'qaexm000002', examId: LIB }, NO_GRADER);
+    expect(ok.status()).toBe(200);
+    d = (await ok.json()).data;
+    expect(d).toMatchObject({ examId: LIB, examLessonId: 'qaexm000002' });
+    expect(lessons(d).find((l) => l.id === 'qaexm000002')!.assignment).toMatchObject({ labType: 'python', isExam: true, serverGraded: true, rawUrl: expect.stringMatching(/v1\.docx$/) });
+    expect(exams(d)).toEqual(['qaexm000002']);
+    const back = await put(d.version, { lessonId: LESSON, examId: 'none' }, NO_GRADER);     // nobody has passed this course's exam
+    expect(back.status()).toBe(200);
+    expect(exams((await back.json()).data)).toEqual([LESSON]);
   });
 });

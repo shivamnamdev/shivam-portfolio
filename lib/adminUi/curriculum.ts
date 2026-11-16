@@ -188,15 +188,17 @@ export function examOf(mods: Module[]): ExamInfo | null {
   return null;
 }
 
-// What the exam switch in the lesson panel may do (docs/architecture/exam-switch.md). A reason means the switch is off and says why; the server enforces the same rules.
-export function examSwitchBlock(o: { grader: boolean; kind: Lesson["kind"]; moduleLocked: boolean; hasAssignment: boolean; assignmentFileSet: boolean; isExamNow: boolean }): string | null {
+// What the exam switch in the lesson panel may do (docs/architecture/exam-switch.md, exam-library.md step 2). A reason means the switch is off and says why; the server enforces the same rules.
+// The switch no longer waits for an assignment: a library exam brings its own files, and a new exam is typed in after the switch is on.
+export function examSwitchBlock(o: { kind: Lesson["kind"]; moduleLocked: boolean; isExamNow: boolean }): string | null {
   if (o.isExamNow) return null;   // an exam can always be switched off (the server refuses once a learner has passed it)
-  if (!o.grader) return "This course has no exam grader yet. A grader has to be added in the code first; an exam is optional.";
   if (o.kind !== "video") return "A document cannot be the exam; pick a video lesson.";
   if (o.moduleLocked) return `This module is "${LOCKED_LABEL}", so learners could not reach the exam. Move the lesson to an open module first.`;
-  if (!o.hasAssignment || !o.assignmentFileSet) return "Add the assignment and its Assignment file first: the exam is the lesson's assignment.";
   return null;
 }
+// "Which exam?": nothing chosen yet, a new exam (own pasted files, no grader), or the id of an exam of a course.
+export const NEW_EXAM = "none";
+export const isLibraryPick = (pick: string): boolean => pick !== "" && pick !== NEW_EXAM;
 // The body of PUT /exam for what the owner did in the panel, or null when nothing exam-related changed.
 export type ExamChange = { lessonId: string | null; expectedOutcomeUrl?: string; examId?: string };
 // `examId` is the library exam picked in the panel and `wasExamId` the one the course uses now (exam library, step 1). The expected result is sent only when it changed.
@@ -209,7 +211,9 @@ export function examChange(o: { lessonId: string; wasExam: boolean; isExam: bool
   return null;
 }
 // Marking an exam needs an exam picked from the library; says what is missing, or null.
-export const examPickProblem = (isExam: boolean, examId: string): string | null => (isExam && !examId ? "Choose which exam this course uses." : null);
+export const examPickProblem = (isExam: boolean, examId: string): string | null => (isExam && !examId ? "Choose an exam from a course, or None for a new exam." : null);
+// A new exam is made of the files pasted in the panel: the assignment file is the exam itself.
+export const newExamProblem = (isExam: boolean, pick: string, rawUrl: string): string | null => (isExam && pick === NEW_EXAM && !rawUrl.trim() ? "Paste the assignment file link for the new exam." : null);
 export const FINAL_EXAM_BADGE = "🏆 Final exam";
 
 // ---- video details from YouTube (read only, shown in the editor, never stored) ----------------------------------------------------------------

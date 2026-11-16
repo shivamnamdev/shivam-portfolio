@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { courseCurriculumMap } from '../../data/learning-content';
 import { clearExam, enforceProtected, examLessonId, fromLegacy, patchLesson, setExam, toLegacy, type Module } from '../../lib/adminApi/curriculum';
-import { courseDefaultExam } from '../../lib/examGraders';
+import { courseDefaultExam, examLinks } from '../../lib/examGraders';
 import { CERTIFICATE_MIN_PERCENT, certificateAllowed, layoutHasExam } from '../../lib/examRule';
 
 // Unit level: marking the final exam in the portal (docs/architecture/exam-switch.md) and the optional-exam certificate rule. No database, no network.
@@ -26,32 +26,31 @@ test.describe('Exam switch @regression', () => {
     expect(examLessonId([])).toBeNull();
   });
 
-  test('[AAPI-UNIT-EXM-002] setting the exam moves it: the old lesson keeps its assignment as an ordinary one, there is only ever one exam, the flags are set together', () => {
-    const next = setExam(mods(), V(1), { graderExists: true });
-    expect(find(next, V(1)).assignment).toEqual({ title: 'Day 1', rawUrl: `${RAW}/a1`, isExam: true, serverGraded: true });
+  test('[AAPI-UNIT-EXM-002] setting the exam moves it: the old lesson keeps its assignment as an ordinary one, there is only ever one exam, the flag is set', () => {
+    const next = setExam(mods(), V(1), {});
+    expect(find(next, V(1)).assignment).toEqual({ title: 'Day 1', rawUrl: `${RAW}/a1`, isExam: true });   // a new exam (no library exam): marked, not graded on the server
     expect(find(next, V(2)).assignment).toEqual({ title: 'Final', rawUrl: `${RAW}/exam.docx`, starterCodeUrl: `${RAW}/addon.docx` });   // exam flags and expected result gone, files kept
     expect(next.flatMap((m) => m.lessons).filter((l) => l.assignment?.isExam).map((l) => l.id)).toEqual([V(1)]);
     expect(mods()[0].lessons[1].assignment!.isExam).toBe(true);                       // the input is not changed
   });
 
   test('[AAPI-UNIT-EXM-003] the expected result: kept when the same lesson stays the exam, replaced when given, removed with an empty text, not carried to a new exam lesson', () => {
-    expect(find(setExam(mods(), V(2), { graderExists: true }), V(2)).assignment!.expectedOutcomeUrl).toBe(`${RAW}/expected.py`);
-    expect(find(setExam(mods(), V(2), { graderExists: true, expectedOutcomeUrl: `${RAW}/new.py` }), V(2)).assignment!.expectedOutcomeUrl).toBe(`${RAW}/new.py`);
-    expect(find(setExam(mods(), V(2), { graderExists: true, expectedOutcomeUrl: '' }), V(2)).assignment).not.toHaveProperty('expectedOutcomeUrl');
-    expect(find(setExam(mods(), V(1), { graderExists: true }), V(1)).assignment).not.toHaveProperty('expectedOutcomeUrl');
-    expect(find(setExam(mods(), V(1), { graderExists: true, expectedOutcomeUrl: `${RAW}/e1.py` }), V(1)).assignment!.expectedOutcomeUrl).toBe(`${RAW}/e1.py`);
+    expect(find(setExam(mods(), V(2), {}), V(2)).assignment!.expectedOutcomeUrl).toBe(`${RAW}/expected.py`);
+    expect(find(setExam(mods(), V(2), { expectedOutcomeUrl: `${RAW}/new.py` }), V(2)).assignment!.expectedOutcomeUrl).toBe(`${RAW}/new.py`);
+    expect(find(setExam(mods(), V(2), { expectedOutcomeUrl: '' }), V(2)).assignment).not.toHaveProperty('expectedOutcomeUrl');
+    expect(find(setExam(mods(), V(1), {}), V(1)).assignment).not.toHaveProperty('expectedOutcomeUrl');
+    expect(find(setExam(mods(), V(1), { expectedOutcomeUrl: `${RAW}/e1.py` }), V(1)).assignment!.expectedOutcomeUrl).toBe(`${RAW}/e1.py`);
   });
 
-  test('[AAPI-UNIT-EXM-004] refusals: no grader in code, unknown lesson, a document, no assignment file, a module locked until the exam; nothing changes on a refusal', () => {
+  test('[AAPI-UNIT-EXM-004] refusals: unknown lesson, a document, no assignment file, a module locked until the exam; nothing changes on a refusal', () => {
     const before = JSON.stringify(mods());
-    expect(refusal(() => setExam(mods(), V(1), { graderExists: false })).message).toMatch(/no exam grader yet/);
-    expect(refusal(() => setExam(mods(), 'zzzzzzzzzzz', { graderExists: true })).status).toBe(404);
-    expect(refusal(() => setExam(mods(), 'doc-notes', { graderExists: true })).message).toMatch(/document cannot be the exam/);
-    expect(refusal(() => setExam(mods(), V(3), { graderExists: true })).message).toMatch(/assignment file/);   // no assignment at all
+    expect(refusal(() => setExam(mods(), 'zzzzzzzzzzz', {})).status).toBe(404);
+    expect(refusal(() => setExam(mods(), 'doc-notes', {})).message).toMatch(/document cannot be the exam/);
+    expect(refusal(() => setExam(mods(), V(3), {})).message).toMatch(/assignment file/);   // no assignment at all
     const noFile = mods(); noFile[0].lessons[0].assignment = { title: 'No file' };
-    expect(refusal(() => setExam(noFile, V(1), { graderExists: true })).message).toMatch(/assignment file/);
-    expect(refusal(() => setExam(mods(), V(4), { graderExists: true })).message).toMatch(/locked until the exam is passed/);
-    for (const code of [refusal(() => setExam(mods(), V(1), { graderExists: false })), refusal(() => setExam(mods(), V(4), { graderExists: true }))]) expect(code.status).toBe(422);
+    expect(refusal(() => setExam(noFile, V(1), {})).message).toMatch(/assignment file/);
+    expect(refusal(() => setExam(mods(), V(4), {})).message).toMatch(/locked until the exam is passed/);
+    for (const code of [refusal(() => setExam(mods(), V(3), {})), refusal(() => setExam(mods(), V(4), {}))]) expect(code.status).toBe(422);
     expect(JSON.stringify(mods())).toBe(before);
   });
 
@@ -69,15 +68,16 @@ test.describe('Exam switch @regression', () => {
     const removeAssignment = JSON.parse(JSON.stringify(stored)) as Module[]; delete removeAssignment[0].lessons[1].assignment;
     expect(refusal(() => enforceProtected(stored, removeAssignment)).status).toBe(422);
     expect(patchLesson(stored, V(2), { title: 'Renamed' })[0].lessons[1].assignment!.isExam).toBe(true);   // an ordinary edit keeps it
-    expect(enforceProtected(stored, setExam(stored, V(1), { graderExists: true }), true)[0].lessons[0].assignment!.isExam).toBe(true);   // allowProtected: the dedicated call and the import
+    expect(enforceProtected(stored, setExam(stored, V(1), {}), true)[0].lessons[0].assignment!.isExam).toBe(true);   // allowProtected: the dedicated call and the import
   });
 
   test('[AAPI-UNIT-EXM-007] the real Python exam round trips: the files mark it, the portal finds it, the learner shape keeps the flags, and re-marking the same lesson changes nothing', () => {
     const slug = 'python-beginners';
     const { modules } = fromLegacy(slug, courseCurriculumMap[slug] as never);
     expect(examLessonId(modules)).toBe('WhP2F-xk3Kk');
-    expect(setExam(modules, 'WhP2F-xk3Kk', { graderExists: true })).toEqual(modules);
-    const legacy = toLegacy(setExam(modules, 'WhP2F-xk3Kk', { graderExists: true })) as Array<{ githubAssignments: Record<string, any> }>;
+    const lib = examLinks('python-batch-1-final')!;   // the library's files are the data file's files, so re-marking with the library exam changes nothing
+    expect(setExam(modules, 'WhP2F-xk3Kk', { library: lib })).toEqual(modules);
+    const legacy = toLegacy(setExam(modules, 'WhP2F-xk3Kk', { library: lib })) as Array<{ githubAssignments: Record<string, any> }>;
     expect(layoutHasExam(legacy)).toBe(true);
     expect(legacy.flatMap((m) => Object.entries(m.githubAssignments)).find(([, a]) => a.isExam)![1]).toMatchObject({ serverGraded: true, expectedOutcomeUrl: expect.stringMatching(/^https:\/\/raw\.githubusercontent\.com\//) });
     expect(layoutHasExam(toLegacy(clearExam(modules)) as never)).toBe(false);

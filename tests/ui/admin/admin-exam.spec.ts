@@ -48,10 +48,9 @@ test.describe('ADMUI exam switch @regression', () => {
     await expect(toggle).toBeEnabled();
     await expect(panel.getByText(/This moves the exam from/)).toBeVisible();
     await toggle.check();
-    await panel.getByLabel(/^Expected result/).fill('https://evil.example/x.py');
-    await expect(panel.getByText(/Expected result must be a link on raw\.githubusercontent\.com/)).toBeVisible();
-    await expect(panel.getByRole('button', { name: 'Save lesson' })).toBeDisabled();
-    await panel.getByLabel(/^Expected result/).fill(`${RAW}/expected.py`);
+    await expect(panel.getByLabel('Which exam?')).toHaveValue('python-batch-1-final');   // moving the exam keeps the course's exam
+    await expect(panel.getByLabel(/^Expected result/)).toHaveCount(0);                   // the exam's own files fill the lesson
+    await expect(panel.getByLabel('Exam files')).toContainText('v1_expected_result.py');
     await panel.getByRole('button', { name: 'Save lesson' }).click();
     await expect(page.getByRole('form', { name: /Edit lesson/ })).toHaveCount(0, { timeout: 20000 });
     await expect(card(page)).toContainText(`Final exam: Video ${FIRST}`);
@@ -59,7 +58,7 @@ test.describe('ADMUI exam switch @regression', () => {
     await expect(page.locator('li', { hasText: REAL_EXAM }).getByText('Assignment', { exact: true })).toBeVisible();
     expect(await exams()).toEqual([FIRST]);
     const stored = (await modules()).flatMap((m) => m.lessons).find((l) => l.id === FIRST)!.assignment!;
-    expect(stored).toMatchObject({ isExam: true, serverGraded: true, expectedOutcomeUrl: `${RAW}/expected.py` });
+    expect(stored).toMatchObject({ isExam: true, serverGraded: true, expectedOutcomeUrl: expect.stringMatching(/v1_expected_result\.py$/), rawUrl: expect.stringMatching(/v1\.docx$/) });
     await page.getByRole('button', { name: 'Preview as learner' }).click();
     await expect(page.getByLabel('Learner outline preview').getByText('🏆 Final exam')).toHaveCount(1);
   });
@@ -69,20 +68,20 @@ test.describe('ADMUI exam switch @regression', () => {
     await signInAs(page, EMAIL.admin);
     await page.goto(`/admin/curriculum/${SLUG}`);
     const panel = await openLesson(page, FIRST);
-    await expect(panel.getByText('This lesson is the final exam. Learners must pass it to get the certificate.')).toBeVisible();
-    await expect(panel.getByLabel('This lesson has an assignment')).toBeDisabled();   // the assignment stays: switch the exam off instead
+    await expect(panel.getByLabel('Exam files')).toContainText('v1.docx');          // a library exam's files are shown, not typed
+    await expect(panel.getByLabel('Assignment title')).toHaveCount(0);              // and cannot be edited here
     await panel.getByLabel('This lesson is the final exam').uncheck();
     await panel.getByRole('button', { name: 'Save lesson' }).click();
     await expect(page.getByRole('form', { name: /Edit lesson/ })).toHaveCount(0, { timeout: 20000 });
     await expect(card(page)).toContainText('Final exam: none');
     await expect(card(page)).toContainText('An exam is optional');
-    await expect(card(page)).toContainText('turn on “This lesson is the final exam”');
+    await expect(card(page)).toContainText('turn on “This lesson is the final exam”');   // the assignment files stay, as ordinary fields
     expect(await exams()).toEqual([]);
     expect((await modules()).flatMap((m) => m.lessons).filter((l) => l.assignment).length).toBe(before);
     await expect(page.getByText('🏆 Final exam')).toHaveCount(0);
   });
 
-  test('[ADMUI-CUR-015] a new course that has not picked an exam shows the card as none; marking one asks which exam first (the locked-module and missing-file reasons are unit-tested, ADMUI-UNIT-CUR-013)', async ({ page }) => {
+  test('[ADMUI-CUR-015] a new course that has not picked an exam shows the card as none; marking one asks which exam first (the locked-module reason is unit-tested, ADMUI-UNIT-CUR-013)', async ({ page }) => {
     // the portal-only cohort made through the API has no exam yet: use a throwaway one
     const COURSE = 'qa-admui-exm-course', COHORT = 'qa-admui-exm-batch';
     const mk = await import('../../support/adminApi');
@@ -94,24 +93,24 @@ test.describe('ADMUI exam switch @regression', () => {
       await signInAs(page, EMAIL.admin);
       await page.goto(`/admin/curriculum/${COHORT}`);
       await expect(card(page)).toContainText('Final exam: none', { timeout: 30000 });
-      await expect(card(page)).toContainText('An exam is optional. To add one, open a lesson that has an assignment file');
+      await expect(card(page)).toContainText('An exam is optional. To add one, open a video lesson');
       await page.getByRole('button', { name: 'Edit lesson Video qaexmui0001' }).click();
       const panel = page.getByRole('form', { name: 'Edit lesson Video qaexmui0001' });
       const toggle = panel.getByLabel('This lesson is the final exam');
       await expect(toggle).toBeEnabled();
       await toggle.check();
       await expect(panel.getByLabel('Which exam?')).toHaveValue('');                       // nothing picked yet
-      await expect(panel.getByText('Choose which exam this course uses.')).toBeVisible();
+      await expect(panel.getByText('Choose an exam from a course, or None for a new exam.')).toBeVisible();
       await expect(panel.getByRole('button', { name: 'Save lesson' })).toBeDisabled();     // marking needs a pick
       await panel.getByLabel('Which exam?').selectOption('python-batch-1-final');
-      await expect(panel.getByText('Choose which exam this course uses.')).toHaveCount(0);
+      await expect(panel.getByText('Choose an exam from a course, or None for a new exam.')).toHaveCount(0);
       await expect(panel.getByRole('button', { name: 'Save lesson' })).toBeEnabled();
     } finally {
       await adminDb().from('content_docs').delete().like('key', 'qa-admui-exm%');
     }
   });
 
-  test('[ADMUI-CUR-017] the exam switch asks which exam from the library: Python Batch 1 shows the exam it uses, the choice is explained, and nothing is saved by looking', async ({ page }) => {
+  test('[ADMUI-CUR-017] the exam switch asks which exam from the library: nothing is chosen for the owner, the choice is explained, and nothing is saved by looking', async ({ page }) => {
     const before = JSON.stringify(await exams());
     await signInAs(page, EMAIL.admin);
     await page.goto(`/admin/curriculum/${SLUG}`);
@@ -120,11 +119,62 @@ test.describe('ADMUI exam switch @regression', () => {
     await expect(toggle).toBeEnabled({ timeout: 30000 });
     await toggle.check();
     const pick = panel.getByLabel('Which exam?');
-    await expect(pick).toHaveValue('python-batch-1-final');                       // the course already uses it: no extra choice to make
-    await expect(pick.locator('option')).toHaveText(['Python Batch 1 final exam (5 questions)']);
-    await expect(panel.getByText(/An exam from another course means the same questions/)).toBeVisible();
-    await expect(panel.getByText('Choose which exam this course uses.')).toHaveCount(0);
+    await expect(pick).toHaveValue('');                                           // the course has no exam now (014 removed it): nothing is chosen for the owner
+    await expect(pick.locator('option')).toHaveText(['Choose an exam…', 'None: a new exam (paste its links below)', 'Python Batch 1 final exam (5 questions)']);
+    await expect(panel.getByRole('button', { name: 'Save lesson' })).toBeDisabled();   // marking needs a choice
+    await pick.selectOption('python-batch-1-final');
+    await expect(panel.getByText(/gets that exam's title, questions, add-on file and expected result/)).toBeVisible();
+    await expect(panel.getByText('Choose an exam from a course, or None for a new exam.')).toHaveCount(0);
     await panel.getByRole('button', { name: 'Close' }).click();
     expect(JSON.stringify(await exams())).toBe(before);
+  });
+
+  test('[ADMUI-CUR-018] the exam switch needs no assignment first: a lesson with none can use another course\'s exam (files filled and read-only, saved from the library) or a new exam (own links, no grader)', async ({ page }) => {
+    const COURSE = 'qa-admui-exm2-course', COHORT = 'qa-admui-exm2-batch';
+    const mk = await import('../../support/adminApi');
+    await admin.request.post(`${BASE}/courses`, { data: mk.course(COURSE) });
+    await admin.request.post(`${BASE}/cohorts`, { data: mk.cohort(COHORT, COURSE) });
+    const stored = async () => (((await adminDb().from('content_docs').select('doc').eq('kind', 'curriculum').eq('key', COHORT).single()).data!.doc as { modules: Array<{ lessons: Array<{ id: string; assignment?: Record<string, unknown> }> }>; examId?: string }));
+    try {
+      expect((await admin.request.put(`${BASE}/curriculum/${COHORT}`, { data: { modules: [{ title: 'Open', lessons: [{ id: 'qaexmui0001' }, { id: 'qaexmui0002' }] }] } })).status()).toBe(201);
+      await signInAs(page, EMAIL.admin);
+      await page.goto(`/admin/curriculum/${COHORT}`);
+      await page.getByRole('button', { name: 'Edit lesson Video qaexmui0001' }).click({ timeout: 30000 });
+      const panel = page.getByRole('form', { name: 'Edit lesson Video qaexmui0001' });
+      const toggle = panel.getByLabel('This lesson is the final exam');
+      await expect(toggle).toBeEnabled();                                              // no assignment, no link, still usable
+      await toggle.check();
+      await panel.getByLabel('Which exam?').selectOption('python-batch-1-final');
+      await expect(panel.getByLabel('Exam files')).toContainText('v1_expected_result.py');
+      await expect(panel.getByLabel('Assignment title')).toHaveCount(0);               // read-only: nothing to type
+      await panel.getByRole('button', { name: 'Save lesson' }).click();
+      await expect(page.getByRole('form', { name: /Edit lesson/ })).toHaveCount(0, { timeout: 20000 });
+      let doc = await stored();
+      expect(doc.examId).toBe('python-batch-1-final');
+      expect(doc.modules[0].lessons[0].assignment).toMatchObject({ isExam: true, serverGraded: true, rawUrl: expect.stringMatching(/v1\.docx$/), starterCodeUrl: expect.stringMatching(/v1_addon\.docx$/) });
+      // the second lesson: a new exam, its own links
+      await page.getByRole('button', { name: 'Edit lesson Video qaexmui0002' }).click();
+      const second = page.getByRole('form', { name: 'Edit lesson Video qaexmui0002' });
+      await second.getByLabel('This lesson is the final exam').check();
+      await second.getByLabel('Which exam?').selectOption('none');
+      await expect(second.getByText('Paste the assignment file link for the new exam.')).toBeVisible();
+      await expect(second.getByRole('button', { name: 'Save lesson' })).toBeDisabled();
+      await second.getByLabel('Assignment title').fill('My new exam');
+      await second.getByLabel('Assignment file').fill(`${RAW}/new-exam.docx`);
+      await second.getByLabel('Expected result (optional)').fill('https://evil.example/x.py');
+      await expect(second.getByText(/Expected result must be a link on raw\.githubusercontent\.com/)).toBeVisible();
+      await expect(second.getByRole('button', { name: 'Save lesson' })).toBeDisabled();
+      await second.getByLabel('Expected result (optional)').fill(`${RAW}/new-expected.py`);
+      await second.getByRole('button', { name: 'Save lesson' }).click();
+      await expect(page.getByRole('form', { name: /Edit lesson/ })).toHaveCount(0, { timeout: 20000 });
+      doc = await stored();
+      expect(doc.examId).toBeUndefined();
+      const a = doc.modules[0].lessons[1].assignment!;
+      expect(a).toMatchObject({ title: 'My new exam', rawUrl: `${RAW}/new-exam.docx`, isExam: true, expectedOutcomeUrl: `${RAW}/new-expected.py` });
+      expect(a).not.toHaveProperty('serverGraded');
+      expect(doc.modules[0].lessons[0].assignment).not.toHaveProperty('isExam');       // one exam only
+    } finally {
+      await adminDb().from('content_docs').delete().like('key', 'qa-admui-exm2%');
+    }
   });
 });

@@ -284,8 +284,8 @@ test.describe('ADMUI curriculum editor @regression', () => {
     await expect(card.getByRole('link', { name: /Expected result/ })).toHaveAttribute('href', `${RAW}/expected.py`);
     await card.getByRole('button', { name: 'Go to the exam lesson' }).click();
     const panel = page.getByRole('form', { name: `Edit lesson Video ${V2}` });
-    await expect(panel.getByText(/This lesson is the final exam\. Learners must pass it/)).toBeVisible();
-    await expect(panel.getByLabel('This lesson has an assignment')).toBeDisabled();
+    await expect(panel.getByLabel('This lesson is the final exam')).toBeChecked();
+    await expect(panel.getByLabel('Which exam?')).toBeVisible();                       // the exam switch shows which exam the lesson uses
     await expect(module(page, 'Loops').getByText('🏆 Final exam')).toBeVisible();
   });
 

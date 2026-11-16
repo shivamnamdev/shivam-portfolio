@@ -7,7 +7,7 @@ import type { Module } from '@/lib/adminUi/curriculum';
 export type CurriculumData = {
   cohort: string; status: string; version: number; modules: Module[]; published: Module[] | null; publishedAt?: string;
   hasUnpublishedChanges: boolean; counts: { modules: number; lessons: number }; updatedAt: string; updatedBy: string;
-  examGrader: boolean; examId: string | null; exams: Array<{ id: string; title: string; questions: number }>; examLessonId: string | null;   // can the portal mark an exam for this course (a grader exists in code), and which lesson is it
+  examGrader: boolean; examId: string | null; exams: Array<{ id: string; title: string; questions: number; links: { title: string; rawUrl: string; starterCodeUrl: string; expectedOutcomeUrl: string } }>; examLessonId: string | null;   // can the portal mark an exam for this course (a grader exists in code), and which lesson is it
 };
 
 // Every curriculum call answers with the whole updated curriculum, so the screen never edits its own copy: each action is one server call and the
