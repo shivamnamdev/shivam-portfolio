@@ -10,7 +10,7 @@ import { getRow, insertRow, updateRow } from "./docStore";
 import { writeAudit } from "./audit";
 import { slug as slugCheck } from "./validate";
 import { checkCurriculum, emptyDoc, enforceProtected, examLessonId, hasUnpublishedChanges, removedLessonIds, summary, type CurriculumDoc } from "./curriculum";
-import { examGraderExists } from "@/lib/examGraders";
+import { courseDefaultExam, examIdExists, examList } from "@/lib/examGraders";
 
 export const cohortParam = (s: string): string => { if (!slugCheck(s).ok) throw notFound("cohort not found"); return s; };
 
@@ -20,7 +20,8 @@ export const view = (r: Row) => {
   return {
     cohort: r.key, status: r.status, version: r.version, modules: doc.modules, published: doc.published, publishedAt: doc.publishedAt,
     hasUnpublishedChanges: hasUnpublishedChanges(doc), counts: summary(doc.modules), updatedAt: r.updated_at, updatedBy: r.updated_by,
-    examGrader: examGraderExists(r.key), examLessonId: examLessonId(doc.modules),   // can the portal mark an exam for this course, and which lesson is it now
+    // the library is not empty (an exam can be marked), the exam this course uses, the library to pick from (no scripts), and which lesson is the exam now
+    examGrader: examList().length > 0, examId: doc.examId && examIdExists(doc.examId) ? doc.examId : courseDefaultExam(r.key) ?? null, exams: examList(), examLessonId: examLessonId(doc.modules),
   };
 };
 

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { courseCurriculumMap } from '../../data/learning-content';
 import { clearExam, enforceProtected, examLessonId, fromLegacy, patchLesson, setExam, toLegacy, type Module } from '../../lib/adminApi/curriculum';
-import { examGraderExists } from '../../lib/examGraders';
+import { courseDefaultExam } from '../../lib/examGraders';
 import { CERTIFICATE_MIN_PERCENT, certificateAllowed, layoutHasExam } from '../../lib/examRule';
 
 // Unit level: marking the final exam in the portal (docs/architecture/exam-switch.md) and the optional-exam certificate rule. No database, no network.
@@ -83,9 +83,9 @@ test.describe('Exam switch @regression', () => {
     expect(layoutHasExam(toLegacy(clearExam(modules)) as never)).toBe(false);
   });
 
-  test('[AAPI-UNIT-EXM-008] only courses with a grader in code can have an exam marked: Python Batch 1 yes, Git and the new recorded courses not yet', () => {
-    expect(examGraderExists('python-beginners')).toBe(true);
-    for (const slug of ['git-beginner-batch-1', 'git-beginner', 'python-foundation', 'toString', '__proto__', 'constructor']) expect(examGraderExists(slug), slug).toBe(false);
+  test('[AAPI-UNIT-EXM-008] only Python Batch 1 has an exam by default; every other course must pick one from the library (see AAPI-UNIT-EXL-*)', () => {
+    expect(courseDefaultExam('python-beginners')).toBe('python-batch-1-final');
+    for (const slug of ['git-beginner-batch-1', 'git-beginner', 'python-foundation', 'toString', '__proto__', 'constructor']) expect(courseDefaultExam(slug), slug).toBeUndefined();
   });
 
   test('[AAPI-UNIT-EXM-009] certificate rule: an exam is optional; when the course has one it must be passed, and 80% of the tasks is always needed', () => {

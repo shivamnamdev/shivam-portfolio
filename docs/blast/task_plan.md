@@ -331,3 +331,8 @@ Full text: `docs/architecture/exam-switch.md`. Owner decision: exam marking move
 ## Catalog import screen (2026-11-14, SCP-110, PR #105)
 - [x] Owner approved; panel "Courses and cohorts from the data files" on `/admin/curriculum` built with unit (`ADMUI-UNIT-CUR-014`) and UI (`ADMUI-CUR-016`) tests
 - [ ] Owner: merge PR #105, wait for the deploy, then on production: Check courses, Apply, lessons helper; later `PORTAL_CATALOG` and `PORTAL_LEARNING=database` (cutover runbook)
+
+## Exam library step 1 (2026-11-16, SCP-111)
+- [x] Owner approved step 1; built with unit, API and UI tests
+- [ ] Owner: merge the PR; choose the exam for Python Foundation in the curriculum editor
+- [ ] Later, each needs its own approval: creating new exams (A, B, C or D), model-assisted grading and its consent notice (`docs/architecture/exam-library.md` sections 9 to 11)

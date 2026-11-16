@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import {
   ASSIGNMENT_HOSTS, RESOURCE_HOSTS, LIMITS, assignmentProblems, assignmentToForm, cleanResources, countLessons, emptyAssignmentForm, formToAssignment, layoutAfterMove,
   layoutAfterMoveToModule, lessonIdFrom, lessonKindOf, lessonLabel, linkProblem, moduleOrderAfterMove, moved, outline, resourceProblems, urlFieldsFor, type Module,
-  FINAL_EXAM_BADGE, catalogActionText, catalogWouldChange, examChange, examSwitchBlock, FIELD_LABELS, GIT_FIELDS, PYTHON_FIELDS, documentFile, documentIdFrom, documentLessonBody, documentProblems, emptyDocumentForm, examOf, formatDuration, parseYoutubeItems, thumbnailUrl, youtubeRequestUrls, type Lesson,
+  FINAL_EXAM_BADGE, catalogActionText, catalogWouldChange, examChange, examPickProblem, examSwitchBlock, FIELD_LABELS, GIT_FIELDS, PYTHON_FIELDS, documentFile, documentIdFrom, documentLessonBody, documentProblems, emptyDocumentForm, examOf, formatDuration, parseYoutubeItems, thumbnailUrl, youtubeRequestUrls, type Lesson,
 } from '../../lib/adminUi/curriculum';
 import { ASSIGNMENT_HOSTS as SERVER_ASSIGNMENT_HOSTS, RESOURCE_HOSTS as SERVER_RESOURCE_HOSTS, LIMITS as SERVER_LIMITS, reorderLessons, reorderModules, patchLesson, addLesson, lessonCheck } from '../../lib/adminApi/curriculum';
 import { courseCurriculumMap } from '../../data/learning-content';
@@ -219,5 +219,17 @@ test.describe('Admin UI curriculum @regression', () => {
     expect(catalogWouldChange([{ course: 'unchanged', cohort: 'create' }])).toBe(true);
     expect(catalogWouldChange([{ course: 'overwrite', cohort: 'unchanged' }])).toBe(true);
     expect(catalogWouldChange([])).toBe(false);
+  });
+
+  test('[ADMUI-UNIT-CUR-015] picking the exam from the library: sent when marking and when it changes, never alongside an unchanged expected result; marking needs a pick', () => {
+    const base = { lessonId: V1, wasExam: false, isExam: false, wasOutcome: '', outcome: '', wasExamId: null as string | null };
+    expect(examChange({ ...base, isExam: true, examId: 'python-batch-1-final' })).toEqual({ lessonId: V1, examId: 'python-batch-1-final' });
+    expect(examChange({ ...base, wasExam: true, isExam: true, wasExamId: 'a-exam', examId: 'a-exam' })).toBeNull();                      // nothing changed
+    expect(examChange({ ...base, wasExam: true, isExam: true, wasExamId: 'a-exam', examId: 'b-exam' })).toEqual({ lessonId: V1, examId: 'b-exam' });   // only the exam changed: the expected result is left alone
+    expect(examChange({ ...base, wasExam: true, isExam: true, wasExamId: 'a-exam', examId: 'b-exam', wasOutcome: 'x', outcome: 'y' })).toEqual({ lessonId: V1, expectedOutcomeUrl: 'y', examId: 'b-exam' });
+    expect(examChange({ ...base, wasExam: true, isExam: false, wasExamId: 'a-exam', examId: 'b-exam' })).toEqual({ lessonId: null });   // switching off sends no exam id
+    expect(examPickProblem(true, '')).toMatch(/Choose which exam/);
+    expect(examPickProblem(true, 'python-batch-1-final')).toBeNull();
+    expect(examPickProblem(false, '')).toBeNull();
   });
 });

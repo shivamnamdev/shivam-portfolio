@@ -198,14 +198,18 @@ export function examSwitchBlock(o: { grader: boolean; kind: Lesson["kind"]; modu
   return null;
 }
 // The body of PUT /exam for what the owner did in the panel, or null when nothing exam-related changed.
-export type ExamChange = { lessonId: string | null; expectedOutcomeUrl?: string };
-export function examChange(o: { lessonId: string; wasExam: boolean; isExam: boolean; wasOutcome: string; outcome: string }): ExamChange | null {
+export type ExamChange = { lessonId: string | null; expectedOutcomeUrl?: string; examId?: string };
+// `examId` is the library exam picked in the panel and `wasExamId` the one the course uses now (exam library, step 1). The expected result is sent only when it changed.
+export function examChange(o: { lessonId: string; wasExam: boolean; isExam: boolean; wasOutcome: string; outcome: string; examId?: string; wasExamId?: string | null }): ExamChange | null {
   const outcome = o.outcome.trim(), was = o.wasOutcome.trim();
+  const picked = o.examId && o.examId !== (o.wasExamId ?? '') ? { examId: o.examId } : {};
   if (o.wasExam && !o.isExam) return { lessonId: null };
-  if (!o.wasExam && o.isExam) return { lessonId: o.lessonId, ...(outcome ? { expectedOutcomeUrl: outcome } : {}) };
-  if (o.isExam && outcome !== was) return { lessonId: o.lessonId, expectedOutcomeUrl: outcome };   // "" removes it
+  if (!o.wasExam && o.isExam) return { lessonId: o.lessonId, ...(outcome ? { expectedOutcomeUrl: outcome } : {}), ...(o.examId ? { examId: o.examId } : {}) };   // marking always says which exam
+  if (o.isExam && (outcome !== was || picked.examId)) return { lessonId: o.lessonId, ...(outcome !== was ? { expectedOutcomeUrl: outcome } : {}), ...picked };   // "" removes the expected result
   return null;
 }
+// Marking an exam needs an exam picked from the library; says what is missing, or null.
+export const examPickProblem = (isExam: boolean, examId: string): string | null => (isExam && !examId ? "Choose which exam this course uses." : null);
 export const FINAL_EXAM_BADGE = "🏆 Final exam";
 
 // ---- video details from YouTube (read only, shown in the editor, never stored) ----------------------------------------------------------------

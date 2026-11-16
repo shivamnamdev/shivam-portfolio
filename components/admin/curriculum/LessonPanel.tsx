@@ -4,12 +4,12 @@ import { ErrorNote, buttonClass, ghostButtonClass, inputClass } from '../ui';
 import type { Failure } from '@/lib/adminUi/client';
 import { sameJson } from '@/lib/adminUi/forms';
 import {
-  ASSIGNMENT_HOSTS, CARRY_OVER_LABEL, FIELD_LABELS, LIMITS, assignmentProblems, assignmentToForm, cleanResources, documentFile, examChange, examSwitchBlock, formToAssignment, lessonLabel, linkProblem,
+  ASSIGNMENT_HOSTS, CARRY_OVER_LABEL, FIELD_LABELS, LIMITS, assignmentProblems, assignmentToForm, cleanResources, documentFile, examChange, examPickProblem, examSwitchBlock, formToAssignment, lessonLabel, linkProblem,
   resourceProblems, urlFieldsFor, type AssignmentForm, type ExamChange, type Lesson, type Resource, type VideoDetails,
 } from '@/lib/adminUi/curriculum';
 
 // What the panel needs to know about the course's exam (from the curriculum read): can an exam be marked here, is the lesson in a locked module, which lesson is the exam now.
-export type ExamContext = { grader: boolean; moduleLocked: boolean; currentId: string | null; currentLabel: string };
+export type ExamContext = { grader: boolean; moduleLocked: boolean; currentId: string | null; currentLabel: string; examId: string | null; exams: Array<{ id: string; title: string; questions: number }> };
 
 export type LessonPatch = { title?: string; description?: string; assignment?: ReturnType<typeof formToAssignment> | null; resources?: Resource[] };
 
@@ -32,10 +32,11 @@ export default function LessonPanel({ lesson, details, exam: examCtx, busy, fail
   const exam = !!lesson.assignment?.isExam;           // is the exam today
   const [isExam, setIsExam] = useState(exam);           // the switch
   const [outcome, setOutcome] = useState(lesson.assignment?.expectedOutcomeUrl ?? '');
+  const [examPick, setExamPick] = useState(examCtx.examId ?? '');   // which library exam the course uses
   const showAssignment = !isDoc || !!lesson.assignment;   // a document is a file to read; an assignment on one is only shown when it already exists
 
   const allResources = (): Resource[] => (isDoc ? [file, ...extras] : extras);
-  const aProblems = [...(hasAssignment && showAssignment ? assignmentProblems(form) : []), ...(isExam && outcome.trim() ? [linkProblem(outcome, ASSIGNMENT_HOSTS)].filter(Boolean).map((p) => `Expected result ${p}`) : [])];
+  const aProblems = [...(examPickProblem(isExam, examPick) ? [examPickProblem(isExam, examPick)!] : []), ...(hasAssignment && showAssignment ? assignmentProblems(form) : []), ...(isExam && outcome.trim() ? [linkProblem(outcome, ASSIGNMENT_HOSTS)].filter(Boolean).map((p) => `Expected result ${p}`) : [])];
   const switchBlock = examSwitchBlock({ grader: examCtx.grader, kind: lesson.kind, moduleLocked: examCtx.moduleLocked, hasAssignment, assignmentFileSet: !!form.rawUrl.trim(), isExamNow: exam });
   // the document's own problems are worded as such; the extras keep their numbering as the learner sees them
   const fileProblems = isDoc ? resourceProblems([file]).map((p) => p.replace(/^Resource 1 link/, 'The document link').replace(/^Resource 1/, 'The document')) : [];
@@ -55,7 +56,7 @@ export default function LessonPanel({ lesson, details, exam: examCtx, busy, fail
     }
     const nextRes = cleanResources(allResources());
     if (!sameJson(nextRes, lesson.resources ?? [])) patch.resources = nextRes;
-    const change = examChange({ lessonId: lesson.id, wasExam: exam, isExam, wasOutcome: lesson.assignment?.expectedOutcomeUrl ?? '', outcome });
+    const change = examChange({ lessonId: lesson.id, wasExam: exam, isExam, wasOutcome: lesson.assignment?.expectedOutcomeUrl ?? '', outcome, examId: examPick, wasExamId: examCtx.examId });
     if (!Object.keys(patch).length && !change) { onClose(); return; }
     onSave(patch, change);
   }
@@ -125,6 +126,17 @@ export default function LessonPanel({ lesson, details, exam: examCtx, busy, fail
                   {switchBlock && <p role="note" className="mt-1 text-xs text-amber-300">{switchBlock}</p>}
                   {!switchBlock && !exam && examCtx.currentId && examCtx.currentId !== lesson.id && <p className="mt-1 text-xs text-stone-400">This moves the exam from “{examCtx.currentLabel}”, which stays an ordinary assignment. Learners keep their exam results.</p>}
                   {!switchBlock && <p className="mt-1 text-xs text-stone-500">An exam is optional. With one, learners must pass it (graded on the server) to get the certificate; the exam file is this lesson's assignment file.</p>}
+                  {isExam && (
+                    <div className="mt-2">
+                      <label className="block text-xs font-semibold text-stone-400">Which exam?
+                        <select value={examPick} onChange={(e) => setExamPick(e.target.value)} className={`${inputClass} mt-1 font-normal`}>
+                          {!examPick && <option value="">Choose an exam…</option>}
+                          {examCtx.exams.map((x) => <option key={x.id} value={x.id}>{x.title} ({x.questions} questions)</option>)}
+                        </select>
+                      </label>
+                      <p className={hintClass}>An exam from another course means the same questions. Point this lesson's assignment file at that exam's document. Learners' results stay separate for each course.</p>
+                    </div>
+                  )}
                   {isExam && (
                     <label className="mt-2 block text-xs font-semibold text-stone-400">Expected result (optional)<input value={outcome} onChange={(e) => setOutcome(e.target.value)} placeholder="https://raw.githubusercontent.com/…" className={`${inputClass} mt-1 font-mono text-xs font-normal`} /></label>
                   )}

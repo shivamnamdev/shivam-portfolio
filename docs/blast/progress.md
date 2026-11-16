@@ -772,3 +772,6 @@ _Last generated: 2026-11-15 from `1e6f997` on branch `chore/progress-log-scp-110
 ### 2026-03-25
 
 - `3740792` Initial commit from Create Next App — Shivam-Namdev (19 files, +6922/−0)
+
+### 2026-11-16 — Exam library step 1
+- Built the library, the `examId` choice and the dropdown. Errors met: my first AAPI-EXM-009 asserted a score of 100 where the grader gives 80 for the copied sample (pass mark is 80; fixed); ADMUI-CUR-015 and AAPI-EXM-001/002 asserted the old "no grader" wording (updated). Results: 275 unit passed; API exam, curriculum, grading, certificate and import specs pass; exam and curriculum UI and the learner exam UI pass on QA.

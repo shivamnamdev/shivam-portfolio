@@ -82,8 +82,8 @@ test.describe('ADMUI exam switch @regression', () => {
     await expect(page.getByText('🏆 Final exam')).toHaveCount(0);
   });
 
-  test('[ADMUI-CUR-015] a course without a grader in code shows the card and the switch off with the reason (the locked-module and missing-file reasons are unit-tested, ADMUI-UNIT-CUR-013)', async ({ page }) => {
-    // the portal-only cohort made through the API has no grader: use a throwaway one
+  test('[ADMUI-CUR-015] a new course that has not picked an exam shows the card as none; marking one asks which exam first (the locked-module and missing-file reasons are unit-tested, ADMUI-UNIT-CUR-013)', async ({ page }) => {
+    // the portal-only cohort made through the API has no exam yet: use a throwaway one
     const COURSE = 'qa-admui-exm-course', COHORT = 'qa-admui-exm-batch';
     const mk = await import('../../support/adminApi');
     await admin.request.post(`${BASE}/courses`, { data: mk.course(COURSE) });
@@ -94,13 +94,37 @@ test.describe('ADMUI exam switch @regression', () => {
       await signInAs(page, EMAIL.admin);
       await page.goto(`/admin/curriculum/${COHORT}`);
       await expect(card(page)).toContainText('Final exam: none', { timeout: 30000 });
-      await expect(card(page)).toContainText('a grader first has to be added in the code');
+      await expect(card(page)).toContainText('An exam is optional. To add one, open a lesson that has an assignment file');
       await page.getByRole('button', { name: 'Edit lesson Video qaexmui0001' }).click();
       const panel = page.getByRole('form', { name: 'Edit lesson Video qaexmui0001' });
-      await expect(panel.getByLabel('This lesson is the final exam')).toBeDisabled();
-      await expect(panel.getByRole('note')).toContainText('no exam grader yet');
+      const toggle = panel.getByLabel('This lesson is the final exam');
+      await expect(toggle).toBeEnabled();
+      await toggle.check();
+      await expect(panel.getByLabel('Which exam?')).toHaveValue('');                       // nothing picked yet
+      await expect(panel.getByText('Choose which exam this course uses.')).toBeVisible();
+      await expect(panel.getByRole('button', { name: 'Save lesson' })).toBeDisabled();     // marking needs a pick
+      await panel.getByLabel('Which exam?').selectOption('python-batch-1-final');
+      await expect(panel.getByText('Choose which exam this course uses.')).toHaveCount(0);
+      await expect(panel.getByRole('button', { name: 'Save lesson' })).toBeEnabled();
     } finally {
       await adminDb().from('content_docs').delete().like('key', 'qa-admui-exm%');
     }
+  });
+
+  test('[ADMUI-CUR-017] the exam switch asks which exam from the library: Python Batch 1 shows the exam it uses, the choice is explained, and nothing is saved by looking', async ({ page }) => {
+    const before = JSON.stringify(await exams());
+    await signInAs(page, EMAIL.admin);
+    await page.goto(`/admin/curriculum/${SLUG}`);
+    const panel = await openLesson(page, FIRST);
+    const toggle = panel.getByLabel('This lesson is the final exam');
+    await expect(toggle).toBeEnabled({ timeout: 30000 });
+    await toggle.check();
+    const pick = panel.getByLabel('Which exam?');
+    await expect(pick).toHaveValue('python-batch-1-final');                       // the course already uses it: no extra choice to make
+    await expect(pick.locator('option')).toHaveText(['Python Batch 1 final exam (5 questions)']);
+    await expect(panel.getByText(/An exam from another course means the same questions/)).toBeVisible();
+    await expect(panel.getByText('Choose which exam this course uses.')).toHaveCount(0);
+    await panel.getByRole('button', { name: 'Close' }).click();
+    expect(JSON.stringify(await exams())).toBe(before);
   });
 });

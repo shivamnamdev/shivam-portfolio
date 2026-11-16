@@ -57,7 +57,7 @@ export default function CurriculumEditorPage() {
   const editing = open ? modules.flatMap((m) => m.lessons).find((l) => l.id === open) ?? null : null;
   const allIds = modules.flatMap((m) => m.lessons.map((l) => l.id));
   const exam = examOf(modules);
-  const examContext = (lessonId: string): ExamContext => ({ grader: data.examGrader, moduleLocked: !!modules.find((m) => m.lessons.some((l) => l.id === lessonId))?.advanced, currentId: exam?.lesson.id ?? null, currentLabel: exam ? lessonLabel(exam.lesson) : '' });
+  const examContext = (lessonId: string): ExamContext => ({ grader: data.examGrader, moduleLocked: !!modules.find((m) => m.lessons.some((l) => l.id === lessonId))?.advanced, currentId: exam?.lesson.id ?? null, currentLabel: exam ? lessonLabel(exam.lesson) : '', examId: data.examId, exams: data.exams });
 
   async function confirm() {
     if (!pending) return;
@@ -143,7 +143,7 @@ export default function CurriculumEditorPage() {
                 </div>
               </>) : (<>
                 <h2 className="font-display text-base font-bold text-white">Final exam: none</h2>
-                <p className="mt-1 text-sm text-stone-400">{data.examGrader ? 'An exam is optional. To add one, open a lesson that has an assignment file and turn on “This lesson is the final exam”; learners must then pass it to get the certificate.' : 'An exam is optional, and this course has none. To offer one, a grader first has to be added in the code; after that the switch appears on the lesson.'}</p>
+                <p className="mt-1 text-sm text-stone-400">{data.examGrader ? 'An exam is optional. To add one, open a lesson that has an assignment file and turn on “This lesson is the final exam”; learners must then pass it to get the certificate.' : 'An exam is optional, and this course has none. The library has no exam yet, so one has to be added in the code first.'}</p>
               </>)}
             </section>
             {modules.map((m, mi) => (
