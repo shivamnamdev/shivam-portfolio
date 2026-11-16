@@ -1,4 +1,4 @@
-# Exam library: reuse an exam from another course, or create a new one (Blueprint, PROPOSED 2026-11-16)
+# Exam library: reuse an exam from another course, or create a new one (Blueprint; step 1 APPROVED and BUILT 2026-11-16, SCP-111)
 
 Requested by the owner on 2026-11-16: "there must be an option to utilize existing exams from other courses or create a new one." Rule from CONSTITUTION §2: no implementation code until approved.
 
@@ -79,3 +79,12 @@ Rules (enforced in code and tested): P1 only the learner's code, the program's o
 
 ## 11. Still open
 1. Step 1 of this Blueprint (reuse an existing exam): approved? 2. Step 2 option: the owner has chosen model-assisted grading (D); keep A for exams written in code in the meantime? 3. Python Foundation uses the Python Batch 1 exam right away? 4. A learner who does not consent: marked by hand by the owner, or cannot take the exam? (Consent that is forced may not count as consent; ask a lawyer under India's DPDP Act 2023 before launch.) 5. Provider, retention period and data location to fill into the notice.
+
+## 12. Step 1 as built (2026-11-16, SCP-111)
+
+- `lib/examGraders.ts`: `EXAM_LIBRARY` (first entry `python-batch-1-final`), `COURSE_EXAM` (Python Batch 1 keeps its exam with no data change), `examList` (no scripts), `resolveExamId`, `graderFor`.
+- The choice lives on the curriculum document: `examId` (working copy) and `publishedExamId` (copied on publish, restored on discard). No SQL, no new package. Learners are graded with the **published** choice, read by `POST /api/learning/exam-grade`; if the database cannot be read and the course has no default the answer is 503, never a guess.
+- `PUT /curriculum/{cohort}/exam` takes `examId`; `GET /curriculum/{cohort}` returns `examId` and `exams`. Rules X1 (unknown id 422), X2 (marking needs a pick, 422), X3 (switching to a different exam after a learner passed: 409). `examGrader` now means "the library is not empty".
+- Panel: "Which exam?" dropdown on the exam switch (Python lab lessons).
+- Tests: `AAPI-UNIT-EXL-001..007`, `ADMUI-UNIT-CUR-015`, `AAPI-EXM-001/002` updated and `008/009` added (a new course picks the shared exam and is graded with it only after publishing; its result belongs to that course), `ADMUI-CUR-015` updated, `ADMUI-CUR-017`.
+- Not built: creating a new exam, model-assisted grading and its consent notice (sections 9 and 10, separate approval); X3 is unit-tested only, because the API cannot switch between exams while the library has one.

@@ -299,3 +299,7 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 ## 2026-11-14 (catalog import screen)
 
 - Added `ADMUI-UNIT-CUR-014` and `ADMUI-CUR-016` for the "Courses and cohorts from the data files" panel on `/admin/curriculum` — the owner needs to run the catalog import on production without an API request.
+
+## 2026-11-16 (exam library, step 1)
+
+- Added `AAPI-UNIT-EXL-001..007`, `ADMUI-UNIT-CUR-015`, `AAPI-EXM-008/009`, `ADMUI-CUR-017`; updated `AAPI-UNIT-EXM-008`, `AAPI-EXM-001/002`, `ADMUI-CUR-015` — a course picks an exam from the library (SCP-111), so "a course without a grader" no longer exists.

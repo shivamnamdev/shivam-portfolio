@@ -4,11 +4,7 @@
 // A grader reads the learner's printed text (sys.stdout.getvalue()) and the learner's definitions (globals()),
 // sets the global `score` (0-100) and prints EXAM_SCORE:<n> for the report.
 
-// Which courses have a grader in code. The portal may only mark an exam for these (docs/architecture/exam-switch.md, E1).
-export const examGraderExists = (courseSlug: string): boolean => Object.prototype.hasOwnProperty.call(EXAM_GRADERS, courseSlug);
-
-export const EXAM_GRADERS: Record<string, string> = {
-  "python-beginners": `
+const PYTHON_BATCH_1_FINAL = `
           # ---------------------------------------------------------
           # SHIVAM ACADEMY: FINAL EXAM AUTO-GRADER
           # ---------------------------------------------------------
@@ -147,5 +143,23 @@ export const EXAM_GRADERS: Record<string, string> = {
           print("="*50)
           print(f"EXAM_SCORE:{score}")
           print("="*50)
-          `,
+          `;
+
+// ---- the exam library (docs/architecture/exam-library.md, step 1) ----------------------------------------------------------------------------
+// Each grader has an exam id. A course uses the exam named by its curriculum (`examId`, chosen in the portal) and, until one is chosen, the
+// default below. Learner results stay per course (exam_progress is keyed by course slug), so two courses sharing an exam never share results.
+type LibraryExam = { title: string; questions: number; script: string };
+const EXAM_LIBRARY: Record<string, LibraryExam> = {
+  "python-batch-1-final": { title: "Python Batch 1 final exam", questions: 5, script: PYTHON_BATCH_1_FINAL },
 };
+export const COURSE_EXAM: Record<string, string> = { "python-beginners": "python-batch-1-final" };
+
+const has = (o: object, k: string) => Object.prototype.hasOwnProperty.call(o, k);
+export const examIdExists = (id: string): boolean => has(EXAM_LIBRARY, id);
+export const graderFor = (examId: string): string | undefined => (has(EXAM_LIBRARY, examId) ? EXAM_LIBRARY[examId].script : undefined);
+/** What the portal may show: id, title, number of questions. Never the script. */
+export const examList = (): Array<{ id: string; title: string; questions: number }> => Object.entries(EXAM_LIBRARY).map(([id, e]) => ({ id, title: e.title, questions: e.questions }));
+export const courseDefaultExam = (courseSlug: string): string | undefined => (has(COURSE_EXAM, courseSlug) ? COURSE_EXAM[courseSlug] : undefined);
+/** The exam a course is graded with: the one its published curriculum names (if it still exists in the library), else the course's default. */
+export const resolveExamId = (courseSlug: string, publishedExamId?: string | null): string | undefined =>
+  publishedExamId && examIdExists(publishedExamId) ? publishedExamId : courseDefaultExam(courseSlug);

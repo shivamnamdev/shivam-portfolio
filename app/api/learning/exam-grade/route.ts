@@ -7,7 +7,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { fail, hasCourseAccess, isSlug, readJson, requireLearner } from "@/lib/learnerApi";
 import { isAdminEmail } from "@/lib/admin";
 import { getPrimaryEmail } from "@/lib/serverAuth";
-import { EXAM_GRADERS } from "@/lib/examGraders";
+import { courseDefaultExam, graderFor, resolveExamId } from "@/lib/examGraders";
 import { runExam } from "@/lib/runExam";
 
 export const maxDuration = 60;
@@ -48,7 +48,11 @@ export async function POST(req: Request) {
     !body || !isSlug(body.courseSlug) || code === null || !Array.isArray(inputs) || inputs.length > MAX_INPUTS ||
     !inputs.every(i => typeof i === "string" && i.length <= MAX_INPUT_CHARS)
   ) return fail(400, "Invalid request");
-  const grader = EXAM_GRADERS[body.courseSlug];
+  // The exam a course uses is named by its published curriculum (exam library, step 1); a course the portal has not given one uses its default.
+  const { data: curriculum, error: curriculumError } = await supabaseAdmin.from("content_docs").select("doc").eq("kind", "curriculum").eq("key", body.courseSlug).maybeSingle();
+  if (curriculumError && !courseDefaultExam(body.courseSlug)) return fail(503, "The exam could not be loaded. Try again in a minute");   // never guess a grader when the choice cannot be read
+  const examId = resolveExamId(body.courseSlug, curriculumError ? undefined : (curriculum?.doc as { publishedExamId?: string } | undefined)?.publishedExamId);
+  const grader = examId ? graderFor(examId) : undefined;
   if (!grader) return fail(404, "This course has no exam");
 
   if (grading.has(who.userId)) return fail(429, "Your exam is already being graded");

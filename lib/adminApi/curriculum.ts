@@ -3,7 +3,7 @@
 // so every rule is unit-tested (tests/unit/admin-api-curriculum.spec.ts). The store and routes are in curriculumStore.ts and app/api/admin/v1/curriculum.
 // Blueprint: docs/architecture/admin-portal-phase2-content-api.md
 import { createHash, randomBytes } from "node:crypto";
-import { badRequest, notFound, unprocessable } from "./envelope";
+import { badRequest, conflict, notFound, unprocessable } from "./envelope";
 import { arrayOf, bool, httpsUrl, objectOf, oneOf, optional, str, type Check } from "./validate";
 
 export const LIMITS = { modules: 60, lessonsPerModule: 200, resourcesPerLesson: 20 } as const;
@@ -22,7 +22,8 @@ export type Assignment = {
 };
 export type Lesson = { id: string; kind: "video" | "document"; title?: string; description?: string; assignment?: Assignment; resources?: Resource[] };
 export type Module = { id: string; title: string; advanced: boolean; lessons: Lesson[] };
-export type CurriculumDoc = { modules: Module[]; published: Module[] | null; publishedAt?: string };
+// examId: which exam of the library the course uses (set with the exam switch); publishedExamId: the one learners are graded with (copied on publish).
+export type CurriculumDoc = { modules: Module[]; published: Module[] | null; publishedAt?: string; examId?: string; publishedExamId?: string };
 
 export const emptyDoc = (): CurriculumDoc => ({ modules: [], published: null });
 
@@ -205,18 +206,35 @@ export function replaceModules(input: Array<{ id?: string; title: string; advanc
   return mods;
 }
 
+// Which library exam a course uses when the exam is marked (X1, X2): the one asked for, else the one already chosen, else the course's default.
+// `exists` and `courseDefault` come from lib/examGraders.ts so this stays pure.
+export function chooseExamId(o: { requested?: string; stored?: string; courseDefault?: string; exists: (id: string) => boolean }): string {
+  if (o.requested !== undefined && !o.exists(o.requested)) throw unprocessable(`There is no exam "${o.requested}" in the library`);
+  const id = o.requested ?? (o.stored && o.exists(o.stored) ? o.stored : undefined) ?? o.courseDefault;
+  if (!id) throw unprocessable("Choose which exam this course uses. No exam is selected yet");
+  return id;
+}
+
+// X3: once a learner has passed the exam, the course cannot switch to a different one (their pass would not count for it). Moving the lesson is fine.
+export function checkExamChange(o: { current?: string; chosen: string; passed: number }): void {
+  if (o.current && o.chosen !== o.current && o.passed > 0)
+    throw conflict(`${o.passed} learner(s) have passed the exam "${o.current}". Their pass would not count for a different exam. Keep this exam, or move it to another lesson`);
+}
+
 // ---------- publish, discard ----------
 
 export function publishDoc(doc: CurriculumDoc, now = new Date().toISOString()): CurriculumDoc {
   if (doc.modules.length === 0) throw unprocessable("An empty curriculum cannot be published");
-  return { ...doc, published: copy(doc.modules), publishedAt: now };
+  const { publishedExamId: _drop, ...rest } = doc;
+  return { ...rest, published: copy(doc.modules), publishedAt: now, ...(doc.examId ? { publishedExamId: doc.examId } : {}) };
 }
 export function discardDoc(doc: CurriculumDoc): CurriculumDoc {
   if (!doc.published) throw unprocessable("Nothing is published yet, so there is nothing to go back to");
-  return { ...doc, modules: copy(doc.published) };
+  const { examId: _drop, ...rest } = doc;
+  return { ...rest, modules: copy(doc.published), ...(doc.publishedExamId ? { examId: doc.publishedExamId } : {}) };
 }
 export const hasUnpublishedChanges = (doc: CurriculumDoc): boolean =>
-  doc.published === null ? doc.modules.length > 0 : JSON.stringify(doc.modules) !== JSON.stringify(doc.published);
+  doc.published === null ? doc.modules.length > 0 : JSON.stringify(doc.modules) !== JSON.stringify(doc.published) || (doc.examId ?? null) !== (doc.publishedExamId ?? null);
 
 // ---------- protected fields (R6) and removed lessons (R4) ----------
 

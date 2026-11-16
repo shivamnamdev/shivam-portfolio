@@ -46,20 +46,19 @@ test.describe('AAPI exam switch @regression', () => {
     await cleanupAdminApi(); await clearWriteLimits(); await admin?.close();
   });
 
-  test('[AAPI-EXM-001] a read says whether the course can have an exam and which lesson is it: Python Batch 1 yes (the real exam), a course without a grader no', async () => {
+  test('[AAPI-EXM-001] a read says which exam the course uses and which lesson is it: Python Batch 1 uses the Batch 1 exam (the real one), a new course has not picked one', async () => {
     const d = await read();
-    expect(d).toMatchObject({ examGrader: true, examLessonId: 'WhP2F-xk3Kk' });
+    expect(d).toMatchObject({ examGrader: true, examId: 'python-batch-1-final', examLessonId: 'WhP2F-xk3Kk' });
     expect(exams(d)).toEqual(['WhP2F-xk3Kk']);
-    expect(await read(NO_GRADER).catch(() => null)).toBeNull;   // no curriculum yet is a 404 below
     expect((await admin.request.put(url(NO_GRADER), { data: { modules: [{ title: 'M', lessons: [{ id: 'qaexm000001', assignment: { title: 'A', rawUrl: `${RAW}/a` } }] }] } })).status()).toBe(201);
-    expect(await read(NO_GRADER)).toMatchObject({ examGrader: false, examLessonId: null });
+    expect(await read(NO_GRADER)).toMatchObject({ examGrader: true, examId: null, examLessonId: null });   // the library has an exam to pick; this course has not picked one
   });
 
-  test('[AAPI-EXM-002] a course without a grader in code cannot have an exam marked (422 with the reason)', async () => {
+  test('[AAPI-EXM-002] a course that has not picked an exam from the library cannot have one marked (422 with the reason)', async () => {
     const d = await read(NO_GRADER);
     const res = await put(d.version, { lessonId: 'qaexm000001' }, NO_GRADER);
     expect(res.status()).toBe(422);
-    expect((await res.json()).error.message).toMatch(/no exam grader yet/);
+    expect((await res.json()).error.message).toMatch(/Choose which exam/);
     expect(exams(await read(NO_GRADER))).toEqual([]);
   });
 
@@ -142,5 +141,75 @@ test.describe('AAPI exam switch @regression', () => {
     expect(audit.length).toBeGreaterThan(0);
     expect(JSON.stringify(audit)).not.toMatch(/raw\.githubusercontent|qa-exam/);
     expect(d.examLessonId).toBe(id);
+  });
+
+  // Exam library, step 1 (docs/architecture/exam-library.md): a course that has not picked an exam picks one from the library; learners are graded with the PUBLISHED choice.
+  const PASSING = `
+print("Jaskeerat Amit Smeeta")
+print("Rahul -> Yes"); print("Smeeta -> No"); print("Amit -> No"); print("Jaskeerat -> Yes"); print("Niraj -> Yes")
+print("2 9 5 Py***5! Medium")
+print("Finance 54000 55000 28000 Senior Mid")
+def create_log_file(): pass
+def add_task(): pass
+def read_tasks(): pass
+def search_task(): pass
+def delete_task(): pass
+def generate_report(): pass
+class Doctor:
+    def show_cabin(self): pass
+class Patient:
+    def calculate_discount(self): pass
+class Hospital:
+    def discharge_patient(self): pass
+    def get_doctor_report(self): pass
+`;
+  const LIB = 'python-batch-1-final'; const LESSON = 'qaexm000001';
+  const doc = async () => ((await adminDb().from('content_docs').select('doc').eq('kind', 'curriculum').eq('key', NO_GRADER).single()).data!.doc as { examId?: string; publishedExamId?: string });
+  const gradeAs = () => admin.request.post('/api/learning/exam-grade', { data: { courseSlug: NO_GRADER, files: [{ 'main.py': PASSING }], inputs: [] } });
+
+  test('[AAPI-EXM-008] a new course picks an exam from the library: the read lists the library without any grader script, unknown or malformed ids are refused, a pick marks the lesson', async () => {
+    let d = await read(NO_GRADER);
+    expect(d.exams).toEqual([{ id: LIB, title: 'Python Batch 1 final exam', questions: 5 }]);
+    expect(JSON.stringify(d)).not.toMatch(/EXAM_SCORE|Jaskeerat|student_output/);
+    const unknown = await put(d.version, { lessonId: LESSON, examId: 'no-such-exam' }, NO_GRADER);
+    expect(unknown.status()).toBe(422); expect((await unknown.json()).error.message).toMatch(/no exam "no-such-exam" in the library/);
+    for (const bad of [{ examId: 5 }, { examId: 'Bad Id' }, { examId: '../x' }, { examId: '__proto__x/' }, { examId: '' }, { examId: 'a'.repeat(65) }]) expect((await put(d.version, { lessonId: LESSON, ...bad }, NO_GRADER)).status(), JSON.stringify(bad)).toBe(400);
+    expect((await read(NO_GRADER)).examLessonId).toBeNull();                       // nothing changed by the refusals
+    const ok = await put(d.version, { lessonId: LESSON, examId: LIB }, NO_GRADER);
+    expect(ok.status()).toBe(200);
+    d = (await ok.json()).data;
+    expect(d).toMatchObject({ examId: LIB, examLessonId: LESSON, hasUnpublishedChanges: true });
+    expect(lessons(d).find((l) => l.id === LESSON)!.assignment).toMatchObject({ isExam: true, serverGraded: true });
+    expect(await doc()).toMatchObject({ examId: LIB }); expect((await doc()).publishedExamId).toBeUndefined();   // learners are not graded with it yet
+  });
+
+  test('[AAPI-EXM-009] learners are graded with the published choice only: before publishing the course has no exam, after publishing it is graded with the shared exam, removing the exam and publishing again ends it', async () => {
+    const db = adminDb();
+    const adminId = await clerkUserId(EMAIL.admin);
+    const reset = () => db.from('exam_progress').delete().eq('user_id', adminId).eq('course_slug', NO_GRADER);
+    await reset();
+    try {
+      expect((await gradeAs()).status()).toBe(404);                                 // chosen in the working copy, not published
+      let d = await read(NO_GRADER);
+      expect((await admin.request.post(url(NO_GRADER, '/publish'), { headers: { 'If-Match': String(d.version) } })).status()).toBe(200);
+      expect((await doc()).publishedExamId).toBe(LIB);
+      const res = await gradeAs();
+      expect(res.status()).toBe(200);
+      const graded = await res.json();
+      expect(graded).toMatchObject({ success: true, is_passed: true });
+      expect(graded.score).toBeGreaterThanOrEqual(80);                              // the same grader and pass mark as Python Batch 1
+      expect((await db.from('exam_progress').select('is_passed').eq('user_id', adminId).eq('course_slug', NO_GRADER)).data).toEqual([{ is_passed: true }]);   // the result belongs to THIS course
+      expect((await db.from('exam_progress').select('is_passed').eq('user_id', adminId).eq('course_slug', SLUG)).data?.length ?? 0).toBe(0);   // and not to Python Batch 1
+      await reset();                                                                // nobody has passed: the exam may be removed
+      d = await read(NO_GRADER);
+      expect((await put(d.version, { lessonId: null }, NO_GRADER)).status()).toBe(200);
+      expect((await doc()).examId).toBeUndefined();
+      expect((await gradeAs()).status()).toBe(200);                                 // still the published choice until the removal is published
+      d = await read(NO_GRADER);
+      expect((await admin.request.post(url(NO_GRADER, '/publish'), { headers: { 'If-Match': String(d.version) } })).status()).toBe(200);
+      expect((await doc()).publishedExamId).toBeUndefined();
+      await reset();
+      expect((await gradeAs()).status()).toBe(404);
+    } finally { await reset(); }
   });
 });
