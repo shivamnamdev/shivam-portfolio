@@ -3,17 +3,68 @@
 Date-wise log of changes, generated from `git log` (see [CONSTITUTION.md](../../CONSTITUTION.md) §2).
 Newest first. Format: `hash` subject — author (files changed, +added/−deleted). Merge commits are tagged **[merge]**; commits on other branches but not yet in `origin/main` are tagged **[not in main]**.
 
-_Last generated: 2026-11-13 from `9694b61` on branch `docs/SCP-87-upgrade-records`._
+_Last generated: 2026-11-15 from `1e6f997` on branch `chore/progress-log-scp-110`._
 
 ## Working tree (not yet committed)
 
 
 ## Commit history
 
+### 2026-11-14
+
+- `1e6f997` docs(blast): record the catalog import screen and the QA vs production data difference (SCP-110) **[not in main]** — shivamnamdev (2 files, +5/−0)
+- `613b52e` docs(blast): record the catalog import screen and the QA vs production data difference (SCP-110) **[not in main]** — shivamnamdev (2 files, +5/−0)
+- `93774d1` Merge pull request #105 from shivamnamdev/feat/SCP-110-catalog-import-screen **[merge]** — SHIVAM NAMDEV
+- `f58080a` feat(admin): screen for the catalog import (SCP-110) — shivamnamdev (10 files, +103/−2)
+- `18bfef7` Merge pull request #104 from shivamnamdev/feat/exam-switch **[merge]** — SHIVAM NAMDEV
+- `8031ab5` Merge origin/main into feat/exam-switch (keep both record entries) **[merge]** — shivamnamdev
+- `5ca7af8` Merge pull request #100 from shivamnamdev/feat/portal-existing-courses **[merge]** — SHIVAM NAMDEV
+- `d4060d8` Merge origin/main into feat/portal-existing-courses (keep both record entries) **[merge]** — shivamnamdev
+- `37b2128` Merge pull request #103 from shivamnamdev/chore/jira-issue-type **[merge]** — SHIVAM NAMDEV
+- `2724271` feat(admin): exam switch in the lesson panel, purple Final exam badge in the preview, newest-version hook — shivamnamdev (3 files, +37/−15)
+- `17b1c2d` feat: mark the final exam in the portal (R6 amended) and require it for the certificate only when a course has one — shivamnamdev (23 files, +583/−35)
+- `c8520e0` docs: Blueprint for marking the final exam in the portal; rule R6 amended (proposed, awaiting owner approval) — shivamnamdev (4 files, +69/−2)
+- `da21144` chore(jira): create-bug takes --type (Bug, Story, Task) and set-type changes an issue's type in place — shivamnamdev (2 files, +11/−2)
+- `5466897` Merge pull request #102 from shivamnamdev/fix/SCP-105-sales-funnel-smoke **[merge]** — SHIVAM NAMDEV
+- `f0f632d` Merge origin/main into fix/SCP-105-sales-funnel-smoke (keep both record entries) **[merge]** — shivamnamdev
+- `62ace7c` Merge pull request #101 from shivamnamdev/feat/curriculum-editor-parity **[merge]** — SHIVAM NAMDEV
+- `65ac757` fix(tests): sales-funnel smoke follows the recorded-courses decisions (SCP-105) — shivamnamdev (5 files, +28/−1)
+- `33abc3a` feat(admin): a video row's headline is the YouTube title when no title is stored — shivamnamdev (1 files, +3/−2)
+- `64e3028` feat(admin): curriculum editor parity with the data files — shivamnamdev (11 files, +490/−66)
+- `37323d8` docs: Blueprint — relabel the Advanced module checkbox as locked-until-exam — shivamnamdev (1 files, +4/−2)
+- `02f7a6f` docs: Blueprint for curriculum editor parity with the data files (proposed, awaiting owner approval) — shivamnamdev (2 files, +67/−0)
+- `3515f75` docs: constitution maintenance log for the catalog import — shivamnamdev (1 files, +1/−0)
+- `70e6eea` docs+tests: catalog import docs, source-aware task counts for certificate tests, runbook note — shivamnamdev (10 files, +36/−12)
+
 ### 2026-11-13
 
-- `9694b61` docs(SCP-87): upgrade plan outcome, three run records, changelog, PRD 16 and constitution log **[not in main]** — shivamnamdev (8 files, +808/−3)
-- `673a6c1` fix(ci): pin ubuntu-24.04 and Node 24 so Playwright can install browsers (SCP-87) **[not in main]** — shivamnamdev (1 files, +4/−2)
+- `ba0ab4b` feat: import courses and cohorts into the admin portal (POST /import/catalog) and a recorded format on portal cohorts — shivamnamdev (8 files, +354/−8)
+- `0905e4f` docs: Blueprint for existing courses in the admin portal (proposed, awaiting owner approval) — shivamnamdev (2 files, +85/−0)
+- `5e22983` Merge pull request #99 from shivamnamdev/feat/recorded-courses **[merge]** — SHIVAM NAMDEV
+- `dffa040` Merge remote-tracking branch 'origin/main' into feat/recorded-courses **[merge]** — shivamnamdev
+- `742e537` Merge pull request #98 from shivamnamdev/fix/SCP-104-certificate-budget-body **[merge]** — SHIVAM NAMDEV
+- `e11842f` Merge pull request #97 from shivamnamdev/fix/SCP-103-send-email-burst-429 **[merge]** — SHIVAM NAMDEV
+- `b23f779` Merge remote-tracking branch 'origin/fix/SCP-103-send-email-burst-429' into fix/SCP-104-certificate-budget-body **[merge]** — shivamnamdev
+- `b29d564` Merge remote-tracking branch 'origin/main' into fix/SCP-104-certificate-budget-body **[merge]** — shivamnamdev
+- `d3b8ceb` Merge main into fix/SCP-103-send-email-burst-429 (keep both changelog lines) **[merge]** — shivamnamdev
+- `b88375b` Merge pull request #96 from shivamnamdev/fix/SCP-102-user-enrollments-plan-id **[merge]** — SHIVAM NAMDEV
+- `ebb9c46` fix(perf): PRF-API-004 posts the current certificate request body (SCP-104) — shivamnamdev (2 files, +7/−3)
+- `4479dfa` fix(perf): PRF-LOD-003 accepts 429 from the send-email rate limit (SCP-103) — shivamnamdev (2 files, +3/−1)
+- `103d990` fix(db): DBI-SCH-002 accepts the optional plan_id column and DATABASE.md lists it (SCP-102) — shivamnamdev (3 files, +8/−1)
+- `beb135a` test(courses): add the missing curriculum import to the route protection spec — shivamnamdev (1 files, +1/−0)
+- `321ed92` feat(courses): add the upcoming recorded course python-foundation — shivamnamdev (11 files, +224/−14)
+- `86ed69c` feat(courses): hide old live cohorts from visitors, enrolled learners and admin only — shivamnamdev (8 files, +148/−13)
+- `bd335d6` docs: Blueprint for recorded courses (proposed, awaiting owner approval) — shivamnamdev (2 files, +87/−0)
+- `a588218` Merge pull request #95 from shivamnamdev/fix/SCP-101-python-live-title-batch-2 **[merge]** — SHIVAM NAMDEV
+- `f8df39f` fix(dashboard): name the live Python course Python Live Session (Batch 2) again (SCP-101) — shivamnamdev (1 files, +1/−1)
+- `a9736be` Merge pull request #94 from shivamnamdev/chore/SCP-87-proxy-rename **[merge]** — SHIVAM NAMDEV
+- `a1bbb8f` chore(SCP-87): drop the unrelated AGENTS.md rewrite that next dev made — shivamnamdev (1 files, +2/−6)
+- `0da3bca` chore(SCP-87): rename middleware.ts to proxy.ts and replace createRouteMatcher with unit-tested path rules — shivamnamdev (8 files, +118/−46)
+- `112c520` Merge pull request #92 from shivamnamdev/fix/SCP-87-ci-ubuntu-24-04 **[merge]** — SHIVAM NAMDEV
+- `3e13fdc` Merge pull request #93 from shivamnamdev/docs/SCP-87-upgrade-records **[merge]** — SHIVAM NAMDEV
+- `c5b25ce` docs(SCP-87): say plainly that stages 1 to 3 had no separate full run; regenerate progress.md — shivamnamdev (2 files, +133/−11)
+- `9694b61` docs(SCP-87): upgrade plan outcome, three run records, changelog, PRD 16 and constitution log — shivamnamdev (8 files, +808/−3)
+- `673a6c1` fix(ci): pin ubuntu-24.04 and Node 24 so Playwright can install browsers (SCP-87) — shivamnamdev (1 files, +4/−2)
 - `3698bd4` Merge pull request #91 from shivamnamdev/fix/SCP-87-stage5-next-16 **[merge]** — SHIVAM NAMDEV
 - `fbf32b5` fix(deps): stage 5 next 15 to 16.4.6 (SCP-87) — shivamnamdev (1 files, +3/−1)
 
@@ -721,10 +772,3 @@ _Last generated: 2026-11-13 from `9694b61` on branch `docs/SCP-87-upgrade-record
 ### 2026-03-25
 
 - `3740792` Initial commit from Create Next App — Shivam-Namdev (19 files, +6922/−0)
-
-### 2026-11-14 (hand-written) SCP-105
-- Found while opening PR #101: the PR smoke check fails on three sales pages. Cause is PR #99 (recorded courses): two unlisted cohorts and the recorded "Opens Soon" wording; the spec still expected the old behaviour. Fixed the spec; first attempt also asserted "no h1" on the not-found page, which is wrong (the 404 page has one), replaced by "the hero headline is absent". `tests/ui/sales-funnel.spec.ts` 5/5 locally.
-
-
-### 2026-11-14 — Catalog import screen
-- Owner saw "Already the same" for all lessons but no courses in the production admin: curricula existed, cohort records did not (localhost uses the QA database where the import had been run). Added the "Courses and cohorts from the data files" panel. Type check clean; `ADMUI-UNIT-CUR-014` and the 13 specs of `admin-curriculum.spec.ts` pass on QA (one locator needed scoping to the panel).
