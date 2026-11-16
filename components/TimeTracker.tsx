@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { usePathname } from 'next/navigation';
+import { isPreviewAddress } from '@/lib/learnerPreview';
 
 export default function TimeTracker() {
   const { isSignedIn } = useUser();
@@ -14,7 +15,7 @@ export default function TimeTracker() {
     // Send a ping every 60 seconds
     const interval = setInterval(() => {
       // SMART FEATURE: Only count time if the browser tab is actively visible on their screen!
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && !isPreviewAddress(window.location.search)) {   // the admin's draft preview is not study time
         fetch('/api/track-time', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -59,7 +59,7 @@ test.describe('ADMUI exam switch @regression', () => {
     expect(await exams()).toEqual([FIRST]);
     const stored = (await modules()).flatMap((m) => m.lessons).find((l) => l.id === FIRST)!.assignment!;
     expect(stored).toMatchObject({ isExam: true, serverGraded: true, expectedOutcomeUrl: expect.stringMatching(/v1_expected_result\.py$/), rawUrl: expect.stringMatching(/v1\.docx$/) });
-    await page.getByRole('button', { name: 'Preview as learner' }).click();
+    await page.getByRole('button', { name: 'Outline' }).click();
     await expect(page.getByLabel('Learner outline preview').getByText('🏆 Final exam')).toHaveCount(1);
   });
 

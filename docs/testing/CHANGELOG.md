@@ -307,3 +307,7 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 ## 2026-11-17 (exam library, step 2)
 
 - Added `AAPI-UNIT-EXL-008..011`, `ADMUI-UNIT-CUR-016`, `AAPI-EXM-010/011`, `ADMUI-CUR-018`; updated `AAPI-UNIT-EXM-002/004/007`, `ADMUI-UNIT-CUR-013/015`, `AAPI-EXM-002/003/004/008`, `ADMUI-CUR-014/015/017` — the exam switch needs no assignment first; a library exam fills the lesson's files; "None" is a new exam with no grader that never blocks the certificate (SCP-112).
+
+## 2026-11-17 (learner draft preview)
+
+- Added `ADMUI-UNIT-PRV-001..004`, `LRNP-API-001/002`, `ADMUI-PRV-001/002`; the plain-list button is now "Outline" (two older specs click it) — "Preview as learner" opens the real course page with the draft in a new tab (SCP-113).

@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GitGraphVisualizer from '@/components/GitGraphVisualizer';
 import { ADMIN_EMAIL } from '@/lib/admin';
 import { isGradedExam } from '@/lib/examRule';
+import { PREVIEW_BANNER, PREVIEW_BLOCKED, contentUrl, isDraftPreview } from '@/lib/learnerPreview';
 
 // XP is recomputed server-side from progress rows; fire-and-forget after progress changes.
 const syncXp = () => fetch('/api/xp/sync', { method: 'POST' }).catch(() => {});
@@ -45,6 +46,10 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
   const params = use(props.params);
   const { user, isLoaded } = useUser();
   const isAdmin = user?.primaryEmailAddress?.emailAddress === ADMIN_EMAIL;
+  // The admin's preview from the curriculum editor: the unpublished draft, read only (nothing below writes while it is on).
+  const [previewFlag, setPreviewFlag] = useState<string | null | undefined>(undefined);   // undefined until the address has been read
+  useEffect(() => { setPreviewFlag(new URLSearchParams(window.location.search).get('preview')); }, []);
+  const preview = isDraftPreview(isAdmin, previewFlag);
   const siteOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://shivamnamdev.com';
   const [hasAccess, setHasAccess] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
@@ -540,9 +545,9 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
 
   useEffect(() => {
     async function loadCourseData() {
-      if (!isLoaded || !user?.id || isVerifying || !hasAccess) return;
+      if (!isLoaded || !user?.id || isVerifying || !hasAccess || previewFlag === undefined) return;
       try {
-        const contentRes = await fetch(`/api/learning/content/${encodeURIComponent(params.slug)}`);
+        const contentRes = await fetch(contentUrl(params.slug, preview));
         const content = await contentRes.json();
         if (!content.success) throw new Error(content.error || 'Could not load the course');
         setCourseDetails({ title: content.title, hasLiveLink: !!content.hasLiveLink });
@@ -553,8 +558,8 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
         // 🚨 NEW: Filter out Standalone Document IDs so we don't crash YouTube!
         const ytVideoIds = allItemIds.filter(id => !id.startsWith('doc-'));
 
-        const progressRes = await fetch(`/api/learning/progress?courseSlug=${encodeURIComponent(params.slug)}`);
-        const progress = await progressRes.json();
+        // the preview shows the course as a new learner sees it: no stored progress is read
+        const progress = preview ? { success: true, completedVideoIds: [], completedAssignmentIds: [], assignments: {}, exam: null } : await (await fetch(`/api/learning/progress?courseSlug=${encodeURIComponent(params.slug)}`)).json();
         if (!progress.success) throw new Error(progress.error || 'Could not load progress');
 
         setCompletedVideos(progress.completedVideoIds);
@@ -656,7 +661,7 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
       }
     }
     loadCourseData();
-  },[hasAccess, isLoaded, isVerifying, params.slug, user?.id]);
+  },[hasAccess, isLoaded, isVerifying, params.slug, user?.id, preview, previewFlag]);
 
   const refreshCommentsAndLikes = async (videoId?: string) => {
     const targetVideoId = videoId ?? activeVideo?.id;
@@ -779,6 +784,7 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
 
   const toggleLike = async () => {
     if (!user || !activeVideo) return;
+    if (preview) { showToast('Preview', PREVIEW_BLOCKED); return; }
     try {
       // Optimistic update, then settle on the server's answer (the call toggles the caller's like).
       setHasLiked(!hasLiked);
@@ -801,6 +807,7 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
   const handlePostComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim() || !user || !activeVideo || activeVideo.type === 'document') return;
+    if (preview) { showToast('Preview', PREVIEW_BLOCKED); return; }
 
     setIsPosting(true);
     const trimmedComment = newComment.trim();
@@ -819,6 +826,7 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
 
   const markAsComplete = async () => {
     if (!user || !activeVideo || isMarking || !hasAccess) return;
+    if (preview) { showToast('Preview', PREVIEW_BLOCKED); return; }
     setIsMarking(true);
     try {
       await postJson('/api/learning/complete-video', { courseSlug: params.slug, videoId: activeVideo.id });
@@ -831,6 +839,7 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
 
   const submitAssignment = async () => {
     if (!user || !activeVideo || isSubmittingAssignment || !hasAccess) return;
+    if (preview) { showToast('Preview', PREVIEW_BLOCKED); return; }   // no submission, no exam attempt is stored
 
     const saveCurrentStepFiles = () => {
       const currentFiles = { ...files };
@@ -1485,10 +1494,16 @@ sys.settrace(_trace_calls)
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-[#0d1117] text-white font-sans">
+      {preview && (
+        <div role="status" className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 bg-amber-500 px-4 py-2 text-center text-sm font-bold text-black">
+          <span>{PREVIEW_BANNER}</span>
+          <Link href={`/admin/curriculum/${encodeURIComponent(params.slug)}`} className="underline">Back to the editor</Link>
+        </div>
+      )}
       <Banners placement="learning" />
       <header className="z-50 flex h-16 shrink-0 items-center justify-between border-b border-white/10 bg-[#161b22] px-3 md:px-4">
         <div className="flex items-center gap-3">
-          <Link href="/learning" className="flex items-center gap-2 text-sm font-bold text-stone-400 transition-colors hover:text-amber-500">
+          <Link href={preview ? `/admin/curriculum/${encodeURIComponent(params.slug)}` : '/learning'} className="flex items-center gap-2 text-sm font-bold text-stone-400 transition-colors hover:text-amber-500">
             <ChevronLeft size={16} /> <span className="hidden sm:inline">Back</span>
           </Link>
           <div className="hidden h-6 w-px bg-white/10 md:block"></div>
