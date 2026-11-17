@@ -53,6 +53,7 @@ export type GatewayMock = {
   rzp: () => Promise<{ opened: number; options: any } | null>;
   paySuccess: () => Promise<void>;
   payFail: () => Promise<void>;
+  dismiss: () => Promise<void>;
 };
 
 type MockOpts = {
@@ -78,6 +79,7 @@ export async function mockGateway(page: Page, opts: MockOpts = {}): Promise<Gate
       razorpay_order_id: 'order_mock', razorpay_payment_id: 'pay_mock', razorpay_signature: 'sig_mock',
     })),
     payFail: () => page.evaluate(() => (window as any).__rzp.handlers['payment.failed']({ error: { description: 'mock failure' } })),
+    dismiss: () => page.evaluate(() => (window as any).__rzp.options.modal?.ondismiss?.()),   // the learner closes the Razorpay window
   };
   const delay = opts.delayMs ?? 700;
   const json = (route: Route, status: number, body: unknown) =>
