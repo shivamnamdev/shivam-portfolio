@@ -97,7 +97,9 @@ export default function ActiveCohorts({ course: propCourse, hideCurriculum = fal
       openSignIn();
       return;
     }
+    if (isProcessing) return;   // SCP-50: one order at a time, also if the button is pressed again while the payment window is open
     setIsProcessing(true);
+    let windowOpen = false;     // while the Razorpay window is open the button stays on Processing (released on dismiss or when the payment ends)
 
     try {
       if (displayPriceNumeric === 0) {
@@ -150,6 +152,7 @@ export default function ActiveCohorts({ course: propCourse, hideCurriculum = fal
         order_id: data.order.id,
         prefill: { name: user?.fullName || "", email: user?.primaryEmailAddress?.emailAddress || "" },
         theme: { color: "#f59e0b" },
+        modal: { ondismiss: () => setIsProcessing(false) },
         handler: async function (response: any) {
           try {
             const verifyRes = await fetch('/api/verify-payment', {
@@ -169,6 +172,7 @@ export default function ActiveCohorts({ course: propCourse, hideCurriculum = fal
               alert(verifyData.error || "Error verifying enrollment.");
             }
           } catch (err) { alert("Error verifying enrollment."); }
+          finally { setIsProcessing(false); }
         },
       };
 
@@ -176,12 +180,13 @@ export default function ActiveCohorts({ course: propCourse, hideCurriculum = fal
       const paymentObject = new RazorpayConstructor(options);
       paymentObject.on("payment.failed", function () { alert("Payment failed or was cancelled. Please try again."); });
       paymentObject.open();
+      windowOpen = true;
 
     } catch (error: any) {
       console.error("Payment Error:", error);
       alert(error.message || "Something went wrong connecting to the payment gateway.");
     } finally {
-      setIsProcessing(false);
+      if (!windowOpen) setIsProcessing(false);
     }
   };
 

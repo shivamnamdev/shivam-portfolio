@@ -313,3 +313,5 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 - Added `ADMUI-UNIT-PRV-001..004`, `LRNP-API-001/002`, `ADMUI-PRV-001/002`; the plain-list button is now "Outline" (two older specs click it) — "Preview as learner" opens the real course page with the draft in a new tab (SCP-113).
 
 - 2026-11-17 SCP-28: the live lobby header has the account menu (Clerk UserButton) so a learner can sign out there; new case `DSH-LOB-014` in `tests/ui/dashboard/dashboard-learners.spec.ts`. No SQL, no new package.
+
+- 2026-11-17 SCP-50: Buy Now stays on Processing while the Razorpay window is open and is given back when the learner closes it or the payment ends; `CHK-FAIL-005` is now a real test (was `test.fixme`, risk R-CK-5). `gw.dismiss()` added to the gateway stub; `CDP-PAY-009`, `CHK-ORDER-002`, `CHK-FAIL-002`, `CDP-PAY-008` and `CHK-IDEM-007` close the window before expecting Buy Now. No SQL, no new package.
