@@ -184,7 +184,7 @@ test.describe('PRD15 production build @perf-prod', () => {
   test('[PRF-PRD-012] (SCP-80) the home page is built once and served static (not rendered for every visitor)', async ({ request }) => {
     const res = await request.get('/', { headers: { 'User-Agent': API_UA } });
     note('x-nextjs-cache / x-nextjs-prerender', `${res.headers()['x-nextjs-cache'] ?? 'none'} / ${res.headers()['x-nextjs-prerender'] ?? 'none'}`);
-    expect(res.headers()['x-nextjs-cache'] ?? res.headers()['x-nextjs-prerender'], 'the build marks every page as dynamic (ƒ), so none is prerendered').toBeTruthy();
+    expect(res.headers()['x-nextjs-cache'] ?? res.headers()['x-nextjs-prerender'], 'the home page must be prerendered, not rendered per visitor').toBeTruthy();
   });
 
   test.fixme('[PRF-PRD-013] k6 browse-and-checkout load: 50 virtual users for 5 minutes, error rate under 1 %, p95 under 3 s (needs k6 installed; script in tests/perf/k6/browse-checkout.js)', async () => {});

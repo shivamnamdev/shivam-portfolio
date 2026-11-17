@@ -333,3 +333,4 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 - 2026-11-17: SCP-58 — the phone menu toggle and the code review close button get accessible names; PUB-A11Y-012 checks a phone viewport
 - 2026-11-17: SCP-77 — the dashboard starts the course, stats/XP and leaderboard requests together and shows the course list as soon as the courses answer; dashboard folder 49 passed (the free-enrolment journey needs NEXT_PUBLIC_QA_FREE_COUPON_USERS)
 - 2026-11-17: SCP-83 — docs/testing/sql/step9-indexes.sql (two indexes, idempotent; not yet run on QA or production) — owner runs it; no application code changed
+- 2026-11-17: SCP-80 closed without a code change: public pages are static since the Next 16 upgrade (SCP-87); PRF-PRD-003 and PRF-PRD-012 pass on a production build (docs/architecture/static-public-pages.md)
