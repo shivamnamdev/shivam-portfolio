@@ -128,7 +128,7 @@ test.describe('PRD09 create-order and verify-payment @regression', () => {
       expect(order.amount).toBe(800);
     });
 
-    test('[PAYA-AMT-004] a coupon that would make the price zero or below one unit still creates an order of one unit (SCP-51)', async () => {
+    test('[PAYA-AMT-004] a coupon that would make the price zero or below one unit still creates an order of one unit (SCP-51: the minimum charge is 1 rupee or 1 dollar)', async () => {
       const usd = (await (await create(s.request, { courseId: SLUG, currency: 'USD', couponCode: 'BIRTHDAY20' })).json()).order;
       expect(usd.amount).toBe(100);
       const free = (await (await create(s.request, { courseId: SLUG, currency: 'INR', couponCode: 'QA100' })).json()).order;

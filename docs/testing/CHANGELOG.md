@@ -320,3 +320,7 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 - 2026-11-17 SCP-42: the success modal says "You are enrolled." for a free enrolment and keeps "Your payment is verified." for a paid one; after either, the page behind the modal shows "You are Enrolled!" without a reload (`FRE-POS-006`, `FRE-SUC-004` were `test.fixme`, risk R-FE-3; `CHK-POST-002` also checks the enrolled button). No SQL, no new package.
 
 - 2026-11-17 SCP-54, SCP-56, SCP-32 (Python lab): View Solution appears only after the learner has submitted the lesson (`LRN-PY-012`); an empty editor is refused with "Write some code first." by the page and by `POST /api/learning/submit-assignment` (400, no row, no XP; `LRN-PY-019`, `LRNA-VAL-001`); the solution window has a dialog label, focus starts on its close button and Esc closes it (`LRN-PY-016`). Rules live in `lib/labRules.ts` (`LABR-UNIT-001..005`). Three `test.fixme` cases now run. No SQL, no new package.
+
+- 2026-11-17 SCP-65: Buy Now and Enroll for Free give up after 30 seconds with "The request took too long. Please check your connection and try again." (`lib/fetchTimeout.ts`, `FTO-UNIT-001..004`; `CHK-ORDER-012` was `test.fixme` and now runs). No SQL, no new package.
+
+- 2026-11-17 SCP-51 (owner decision): the minimum charge is 1 rupee or 1 dollar. A coupon that takes a price above 0 below 1 charges 1, and the sales page shows that price (`minimumCharge` and `MIN_CHARGE` in `lib/pricing.ts`, `CDP-MIN-001..003`, `CHK-AMT-019`); exactly 0 stays a free enrolment. No SQL, no new package.

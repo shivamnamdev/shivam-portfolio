@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { auth } from "@clerk/nextjs/server";
-import { applyCoupon, getBasePrice, toCurrencyCode, toMinorUnits } from "@/lib/pricing";
+import { applyCoupon, getBasePrice, MIN_CHARGE, toCurrencyCode, toMinorUnits } from "@/lib/pricing";
 import { checkCoupon, getSellable, holdCoupon, settleCoupon } from "@/lib/catalog/commerce";
 
 // Playwright API tests authenticate with x-api-key instead of a Clerk session.
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     if (!hold.ok) return NextResponse.json({ success: false, error: hold.error }, { status: hold.status });
     const basePrice = base.amount;
     // Free (100% off) checkouts go through /api/enroll-free; a paid order is never below 1 unit.
-    const finalAmount = Math.max(applyCoupon(basePrice, couponResult.coupon, currency), 1);
+    const finalAmount = Math.max(applyCoupon(basePrice, couponResult.coupon, currency), MIN_CHARGE);   // SCP-51: never below 1 unit; the sales page shows the same price (minimumCharge)
 
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,

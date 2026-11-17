@@ -183,7 +183,7 @@ test.describe('PRD03 Coupons, pricing and CTA state @regression', () => {
   test('[CDP-PRICE-007][CDP-CUR-015][CHK-AMT-014] coupon + currency: the discounted price follows the currency, both ways', async ({ page }) => {
     await applyCode(page, 'BIRTHDAY20');
     await ui.usd(page).click();
-    await expect(ui.finalPrice(page)).toHaveText('$0.80');
+    await expect(ui.finalPrice(page)).toHaveText('$1');   // SCP-51: 20% off $1 would be $0.80; the minimum charge is 1
     await ui.inr(page).click();
     await expect(ui.finalPrice(page)).toHaveText('₹8');
   });
@@ -263,7 +263,7 @@ test.describe('PRD03 Mobile pricing @regression', () => {
     await expect(ui.finalPrice(page)).toHaveText('$1');
     await applyCode(page, 'BIRTHDAY20');
     await expect(page.getByText('Coupon applied successfully!')).toBeVisible();
-    await expect(ui.finalPrice(page)).toHaveText('$0.80');
+    await expect(ui.finalPrice(page)).toHaveText('$1');   // SCP-51: 20% off $1 would be $0.80; the minimum charge is 1
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
     await ctx.close();
   });
