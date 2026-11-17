@@ -27,7 +27,9 @@ export default function LearningDashboard() {
     async function fetchDashboardData() {
       if (!isLoaded || !user) return;
       setIsFetchingData(true);
-      try {
+      // SCP-77: the three requests below do not depend on the course list, so they start together with it; the page is shown as soon as
+      // the courses have answered, and the XP number and the leaderboard fill in when they arrive.
+      const loadCourses = async () => {
         try {
           const enrollRes = await fetch('/api/learning/my-courses');
           const enrollData = await enrollRes.json();
@@ -37,13 +39,17 @@ export default function LearningDashboard() {
           console.error("Could not load the courses:", coursesError);
           setCoursesFailed(true);
         }
-
-        // Streak and stats live on the server (the browser has no access to the stats table).
-        const statsRes = await fetch('/api/learning/stats', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }) });
-        const statsData = await statsRes.json();
-        if (statsData.success) setStats({ streak: statsData.streak, points: statsData.points });
-
-        // XP is computed server-side from progress rows (also backfills existing students).
+      };
+      // Streak and stats live on the server (the browser has no access to the stats table); XP is computed server-side from progress rows
+      // (also backfills existing students). XP runs after stats so its number is the one that stays on screen.
+      const loadStatsAndXp = async () => {
+        try {
+          const statsRes = await fetch('/api/learning/stats', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }) });
+          const statsData = await statsRes.json();
+          if (statsData.success) setStats({ streak: statsData.streak, points: statsData.points });
+        } catch (statsError) {
+          console.error("Could not load the stats:", statsError);
+        }
         try {
           const xpRes = await fetch('/api/xp/sync', { method: 'POST' });
           const xp = await xpRes.json();
@@ -51,15 +57,23 @@ export default function LearningDashboard() {
         } catch (xpError) {
           console.error("XP sync failed:", xpError);
         }
-
-        const boardRes = await fetch('/api/learning/leaderboard');
-        const board = await boardRes.json();
-        if (board.success) setLeaderboard(board.leaders);
-      } catch (error) {
-        console.error("Error fetching dashboard:", error);
+      };
+      const loadLeaderboard = async () => {
+        try {
+          const boardRes = await fetch('/api/learning/leaderboard');
+          const board = await boardRes.json();
+          if (board.success) setLeaderboard(board.leaders);
+        } catch (boardError) {
+          console.error("Could not load the leaderboard:", boardError);
+        }
+      };
+      const others = Promise.all([loadStatsAndXp(), loadLeaderboard()]);
+      try {
+        await loadCourses();
       } finally {
         setIsFetchingData(false);
       }
+      await others;
     }
     fetchDashboardData();
   }, [isLoaded, user, reloadKey]);

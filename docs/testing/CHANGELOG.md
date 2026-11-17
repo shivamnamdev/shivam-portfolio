@@ -331,3 +331,4 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 
 - 2026-11-17 SCP-55: the Git lab has a Reset button in its status strip that clears the terminal, the commit count and the Git Graph (`LRN-GIT-010`, was `test.fixme`). Nothing is saved until Submit. No SQL, no new package.
 - 2026-11-17: SCP-58 — the phone menu toggle and the code review close button get accessible names; PUB-A11Y-012 checks a phone viewport
+- 2026-11-17: SCP-77 — the dashboard starts the course, stats/XP and leaderboard requests together and shows the course list as soon as the courses answer; dashboard folder 49 passed (the free-enrolment journey needs NEXT_PUBLIC_QA_FREE_COUPON_USERS)
