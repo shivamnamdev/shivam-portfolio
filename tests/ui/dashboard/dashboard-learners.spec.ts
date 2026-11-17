@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { EMAIL, COURSE } from '../../support/personas';
 import { requireSeed } from '../../support/guards';
 import { signInAs } from '../../support/clerk';
-import { expectDeniedForVisitor, expectOnPath } from '../../support/assertions';
+import { expectDeniedForVisitor, expectOnPath, signOutThroughUi } from '../../support/assertions';
 import { trackPageErrors } from '../../support/checkout';
 import { DASH_TITLE, cards, denied, emptyState, failRoute, lobby, noHorizontalScroll, openDashboard, slowRoute } from '../../support/dashboard';
 
@@ -82,6 +82,13 @@ test.describe('PRD06 student dashboard: enrolled learners @regression', () => {
     await page.getByRole('link', { name: /Dashboard/ }).click();
     await expectOnPath(page, '/learning');
     await expect(page.getByRole('heading', { name: DASH_TITLE.A })).toBeVisible();
+  });
+
+  test('[DSH-LOB-014] the lobby has the account menu and signing out returns to the signed-out page (SCP-28)', async ({ page }) => {
+    await signInAs(page, S2);
+    await page.goto(`/live/${COURSE.A}`);
+    await expect(lobby(page)).toBeVisible({ timeout: 25000 });
+    await signOutThroughUi(page);
   });
 
   test('[DSH-LOB-012][DSH-LOB-013] a learner cannot open the lobby of a course they do not own', async ({ page }) => {
