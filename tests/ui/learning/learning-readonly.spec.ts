@@ -81,7 +81,6 @@ test.describe('PRD07 learning page: reads @regression', () => {
   });
 
   test('[LRN-EXT-001] YouTube API failure: lessons still list and open with fallback titles', async ({ page }) => {
-    test.fixme(true, 'Defect: when the YouTube Data API request fails, the whole curriculum load is abandoned and the sidebar is empty (catch in loadCourseData); the PRD expects fallback titles');
     await openCourse(page, S1, SLUG, { youtube: 'fail' });
     await expect(sidebar(page).getByRole('button').first()).toBeVisible();
     await sidebar(page).getByRole('button').nth(1).click();

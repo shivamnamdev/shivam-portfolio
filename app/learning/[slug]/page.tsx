@@ -284,7 +284,9 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
     verifyAccess();
   }, [isLoaded, isAdmin, params.slug, user?.id]);
 
-  const loadGithubAssignment = async (assignmentObj: any, fallbackSubmission?: string) => {
+  // `videoId`: the lesson being opened. The caller passes it because `activeVideo` is still the previous value (null on a reload) when this runs (SCP-48).
+  const loadGithubAssignment = async (assignmentObj: any, fallbackSubmission?: string, videoId?: string) => {
+    const lessonId = videoId ?? activeVideo?.id;
     setIsFetchingCode(true);
     try {
       const response = await fetch(`${assignmentObj.rawUrl}?t=${Date.now()}`);
@@ -328,8 +330,8 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
       let finalFilesArray = initialFilesArray;
       let restoredStepIndex = 0;
       try {
-        if (typeof window !== 'undefined' && activeVideo?.id) {
-          const draftKey = getAssignmentDraftKey(activeVideo.id);
+        if (typeof window !== 'undefined' && lessonId) {
+          const draftKey = getAssignmentDraftKey(lessonId);
           const rawDraft = window.localStorage.getItem(draftKey);
           if (rawDraft) {
             const parsed = JSON.parse(rawDraft);
@@ -337,7 +339,7 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
               finalFilesArray = parsed.stepFiles;
               restoredStepIndex = typeof parsed.currentStepIndex === 'number' ? parsed.currentStepIndex : 0;
             } else {
-              const savedSubmission = fallbackSubmission ?? (activeVideo.id ? assignmentSubmissionsRef.current[activeVideo.id] : null);
+              const savedSubmission = fallbackSubmission ?? (lessonId ? assignmentSubmissionsRef.current[lessonId] : null);
               if (savedSubmission) {
                 const parsedFromDb = parseSubmittedCode(savedSubmission);
                 if (Array.isArray(parsedFromDb) && parsedFromDb.length > 0) {
@@ -346,7 +348,7 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
               }
             }
           } else {
-            const savedSubmission = fallbackSubmission ?? (activeVideo.id ? assignmentSubmissionsRef.current[activeVideo.id] : null);
+            const savedSubmission = fallbackSubmission ?? (lessonId ? assignmentSubmissionsRef.current[lessonId] : null);
             if (savedSubmission) {
               const parsedFromDb = parseSubmittedCode(savedSubmission);
               if (Array.isArray(parsedFromDb) && parsedFromDb.length > 0) {
@@ -449,7 +451,8 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
 
   // Autosave assignment drafts to localStorage per video
   useEffect(() => {
-    if (typeof window === 'undefined' || !activeVideo || !activeVideo.githubAssignment || assignmentSteps.length === 0) return;
+    // SCP-48: not while the assignment is still loading, or the editor's default content overwrites the learner's saved draft before it is read
+    if (typeof window === 'undefined' || !activeVideo || !activeVideo.githubAssignment || assignmentSteps.length === 0 || isFetchingCode) return;
     const hasMeaningfulContent = stepFiles.some(step => Object.keys(step || {}).some(key => (step[key] || '').trim().length > 0));
     if (!hasMeaningfulContent && !files['main.py']?.trim()) return;
     try {
@@ -457,7 +460,7 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
       const payload = { stepFiles, currentStepIndex };
       window.localStorage.setItem(draftKey, JSON.stringify(payload));
     } catch (e) {}
-  }, [stepFiles, currentStepIndex, activeVideo, assignmentSteps.length, files]);
+  }, [stepFiles, currentStepIndex, activeVideo, assignmentSteps.length, files, isFetchingCode]);
 
   useEffect(() => {
     if (!activeVideo) return;
@@ -579,14 +582,17 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
         const ytDataMap: Record<string, any> = {};
         if (ytVideoIds.length > 0) {
           const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
-          const ytRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${ytVideoIds.join(',')}&key=${apiKey}`);
-          const ytData = await ytRes.json();
-
-          
-          if (ytData.items) {
-            ytData.items.forEach((item: any) => {
-              ytDataMap[item.id] = { title: item.snippet.title, duration: formatYouTubeDuration(item.contentDetails.duration), description: item.snippet.description };
-            });
+          // SCP-47: if YouTube cannot be reached the lessons still list, with fallback titles ("Lesson n")
+          try {
+            const ytRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${ytVideoIds.join(',')}&key=${apiKey}`);
+            const ytData = await ytRes.json();
+            if (ytData.items) {
+              ytData.items.forEach((item: any) => {
+                ytDataMap[item.id] = { title: item.snippet.title, duration: formatYouTubeDuration(item.contentDetails.duration), description: item.snippet.description };
+              });
+            }
+          } catch (err) {
+            console.error("YouTube details could not be loaded, using fallback titles:", err);
           }
         }
 
@@ -650,7 +656,7 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
               setAssignmentSteps(["Git lab ready. Start with a command below."]);
               loadGitLabAssignment(initialVideo.githubAssignment);
             } else {
-              loadGithubAssignment(initialVideo.githubAssignment, submissionMap[initialVideo.id]);
+              loadGithubAssignment(initialVideo.githubAssignment, submissionMap[initialVideo.id], initialVideo.id);
             }
           }
         }
@@ -729,7 +735,7 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
         setAssignmentSteps(["Loading instructions..."]);
         setFiles({ "main.py": "# Loading workspace..." });
         setActiveFile("main.py");
-        loadGithubAssignment(video.githubAssignment, assignmentSubmissionsRef.current[video.id]);
+        loadGithubAssignment(video.githubAssignment, assignmentSubmissionsRef.current[video.id], video.id);
       }
     } else {
       setStepFiles([]);

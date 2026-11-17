@@ -313,3 +313,5 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 - Added `ADMUI-UNIT-PRV-001..004`, `LRNP-API-001/002`, `ADMUI-PRV-001/002`; the plain-list button is now "Outline" (two older specs click it) — "Preview as learner" opens the real course page with the draft in a new tab (SCP-113).
 
 - 2026-11-17 SCP-28: the live lobby header has the account menu (Clerk UserButton) so a learner can sign out there; new case `DSH-LOB-014` in `tests/ui/dashboard/dashboard-learners.spec.ts`. No SQL, no new package.
+
+- 2026-11-17 SCP-47 and SCP-48: the learner page lists lessons with fallback titles when the YouTube request fails (`LRN-EXT-001`), and a reload shows the learner's submitted code again (`LRN-PY-010`; the loader now receives the lesson id, and the draft autosave waits until the assignment has loaded). Both were `test.fixme`; both now run. No SQL, no new package.
