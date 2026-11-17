@@ -4,6 +4,7 @@ import { isQaFixture } from "@/data/courses";
 import { getCatalog } from "@/lib/catalog/catalog";
 import Banners from "@/components/Banners";
 import CourseGrid from "@/components/catalog/CourseGrid";
+import { toGridCourse } from "@/lib/catalogCard";
 
 export default async function CoursesPage() {
   const catalog = await getCatalog();
@@ -24,7 +25,7 @@ export default async function CoursesPage() {
 
         <div className="w-full max-w-5xl"><Banners placement="courses" /></div>
 
-        <CourseGrid courses={catalog.filter((course) => !isQaFixture(course.slug) && course.listed !== false)} />
+        <CourseGrid courses={catalog.filter((course) => !isQaFixture(course.slug) && course.listed !== false).map(toGridCourse)} />
       </main>
       <Footer />
     </div>

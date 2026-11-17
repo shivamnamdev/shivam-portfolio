@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CourseGrid from '@/components/catalog/CourseGrid';
+import { toGridCourse } from '@/lib/catalogCard';
 import PreviewFilter from '@/components/catalog/PreviewFilter';
 import { listPreview } from '@/lib/catalog/preview';
 import { parseMode } from '@/lib/catalog/previewView';
@@ -26,7 +27,7 @@ export default async function PreviewCatalog(props: { searchParams: Promise<{ sh
         </div>
         {courses.length === 0
           ? <p data-testid="preview-empty" className="text-stone-400">{mode === 'archived' ? 'No archived cohorts.' : 'No draft or published cohorts yet. Create one in the admin portal.'}</p>
-          : <CourseGrid courses={courses} hrefBase="/preview/courses" />}
+          : <CourseGrid courses={courses.map(toGridCourse)} hrefBase="/preview/courses" />}
       </main>
       <Footer />
     </div>
