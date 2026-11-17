@@ -311,3 +311,5 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 ## 2026-11-17 (learner draft preview)
 
 - Added `ADMUI-UNIT-PRV-001..004`, `LRNP-API-001/002`, `ADMUI-PRV-001/002`; the plain-list button is now "Outline" (two older specs click it) — "Preview as learner" opens the real course page with the draft in a new tab (SCP-113).
+
+- 2026-11-17 SCP-28: the live lobby header has the account menu (Clerk UserButton) so a learner can sign out there; new case `DSH-LOB-014` in `tests/ui/dashboard/dashboard-learners.spec.ts`. No SQL, no new package.

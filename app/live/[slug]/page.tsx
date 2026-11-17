@@ -1,5 +1,5 @@
 'use client';
-import { useUser } from '@clerk/nextjs';
+import { useUser, UserButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, use } from 'react';
 import Navbar from '@/components/Navbar';
@@ -78,6 +78,8 @@ export default function LiveClassLobby(props: { params: Promise<{ slug: string }
             <span className="text-stone-900 font-bold text-sm tracking-wide uppercase">Secure Lobby</span>
           </div>
         </div>
+        {/* SCP-28: the account menu (with Sign out), as in the navigation of the other pages */}
+        <UserButton />
       </div>
 
       {/* The Secure Gateway UI */}
