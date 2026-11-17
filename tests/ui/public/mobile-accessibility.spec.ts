@@ -226,6 +226,26 @@ test.describe('PRD02 Keyboard accessibility @regression', () => {
     }
     expect(unnamed, 'controls without a name').toEqual([]);
   });
+  test('[PUB-A11Y-012] (SCP-58) on a phone the menu toggle has a name and every visible control is named', async ({ browser }) => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, baseURL: `http://localhost:${process.env.PORT ?? '3000'}` });
+    const page = await ctx.newPage();
+    const unnamed: string[] = [];
+    for (const path of ['/', `/courses/${first.slug}`]) {
+      await page.goto(path);
+      await page.waitForLoadState('networkidle');
+      const bad = await page.evaluate(() => [...document.querySelectorAll('a, button')]
+        .filter(el => (el as HTMLElement).offsetParent !== null)
+        .filter(el => !(el.textContent || '').trim() && !el.getAttribute('aria-label') && !el.getAttribute('title') && !el.querySelector('img[alt]:not([alt=""])'))
+        .map(el => `${el.tagName.toLowerCase()}.${(el.getAttribute('class') || '').split(' ').slice(0, 2).join('.')}`));
+      unnamed.push(...bad.map(b => `${path}: ${b}`));
+    }
+    expect(unnamed, 'controls without a name on a phone').toEqual([]);
+    const toggle = page.getByRole('button', { name: 'Open menu' });
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await toggle.click();
+    await expect(page.getByRole('button', { name: 'Close menu' })).toHaveAttribute('aria-expanded', 'true');
+    await ctx.close();
+  });
 });
 
 void requireSignIn;
