@@ -349,4 +349,5 @@ Full text: `docs/architecture/exam-switch.md`. Owner decision: exam marking move
 
 ## Static public pages (2026-11-17, SCP-80, branch docs/SCP-80-static-pages-plan)
 - [x] Researched on a production build: public pages are already static since SCP-87 (`docs/architecture/static-public-pages.md`)
-- [ ] Owner: approve slice 1 (`revalidate` on the catalog page, tests, runbook line), the maximum age, and slice 2 yes/no
+- [x] Owner decided: no change needed, slice 1 and 2 not pursued; PRF-PRD-003 and PRF-PRD-012 pass on a production build
+- [ ] Owner: merge the PR; SCP-80 closed

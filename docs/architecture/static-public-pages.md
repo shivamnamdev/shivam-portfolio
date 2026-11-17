@@ -1,6 +1,6 @@
 # Static public pages (SCP-80): finding and plan
 
-Status: **plan, awaiting owner approval.** No application code has been changed.
+Status: **closed, no code change needed (owner decision 2026-11-17).** The ticket's problem was fixed by the SCP-87 upgrade. The tests that were written to fail until it was fixed (`PRF-PRD-003`, `PRF-PRD-012`) pass on a production build (confirmed 2026-11-17). Sections 2 and 3 are kept as a record of what could still be improved; slice 1 and slice 2 are **not** being done.
 
 ## 1. Finding: the ticket's premise is out of date
 
@@ -12,7 +12,7 @@ SCP-80 (written 2026-10-31 on Next 14 with `authMiddleware`) says every page is 
 | `/courses/[slug]` | `ƒ` dynamic | `Cache-Control: private, no-cache, no-store` |
 | `/learning`, `/live`, `/preview`, `/share`, `/admin/*`, every `/api/*` | `ƒ` dynamic | not cacheable (correct: personal or protected) |
 
-The proxy still runs for every page (it sets `x-clerk-auth-*` headers) but no longer stops prerendering. `PRF-PRD-003` and `PRF-PRD-012` were written as "fail on purpose until fixed"; by this evidence they should pass now (to be confirmed with `PERF_PRODUCTION=1`).
+The proxy still runs for every page (it sets `x-clerk-auth-*` headers) but no longer stops prerendering. `PRF-PRD-003` and `PRF-PRD-012` were written as "fail on purpose until fixed"; by this evidence they should pass now (confirmed: both pass with `PERF_PRODUCTION=1`).
 
 ## 2. What is still open
 
@@ -30,12 +30,9 @@ The proxy still runs for every page (it sets `x-clerk-auth-*` headers) but no lo
 
 **Slice 2 (optional, larger).** Make listed sales pages static: `generateStaticParams` over listed courses with `dynamicParams` for the rest, and move the hidden-course access check (`canOpenSalesPage`) so that only unlisted slugs take the dynamic path. Benefit: the highest-traffic page stops running the server per visit. Risk: the hidden-course rule is an access rule (PRD section 13), so it needs its own Blueprint and tests. I recommend doing it only if traffic or cost shows a need.
 
-## 4. Decisions needed from the owner
+## 4. Decisions (owner)
 
-1. Approve slice 1? (recommended)
-2. Is five minutes the right maximum age for the catalog, or do you want 60 seconds (more server work) or one hour?
-3. Slice 2 now, later, or not at all?
-4. After slice 1 merges: Jira SCP-80 is closed with this finding, and SCP-81 stays open for its production-build check.
+Slice 1 and slice 2: not pursued. SCP-80 is closed with this finding; SCP-81 stays open for its production-build check. Known caveat kept on record: the catalog page refreshes only on an admin write or a deploy (section 2, point 1), so after changing data by SQL or flipping a `PORTAL_*` flag, redeploy or save once in the portal.
 
 ## 5. Data shapes, integrations, source of truth
 
