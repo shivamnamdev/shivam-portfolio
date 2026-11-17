@@ -324,3 +324,5 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 - 2026-11-17 SCP-65: Buy Now and Enroll for Free give up after 30 seconds with "The request took too long. Please check your connection and try again." (`lib/fetchTimeout.ts`, `FTO-UNIT-001..004`; `CHK-ORDER-012` was `test.fixme` and now runs). No SQL, no new package.
 
 - 2026-11-17 SCP-51 (owner decision): the minimum charge is 1 rupee or 1 dollar. A coupon that takes a price above 0 below 1 charges 1, and the sales page shows that price (`minimumCharge` and `MIN_CHARGE` in `lib/pricing.ts`, `CDP-MIN-001..003`, `CHK-AMT-019`); exactly 0 stays a free enrolment. No SQL, no new package.
+
+- 2026-11-17 SCP-46: a failed course request on the dashboard shows "We couldn't load your courses" with a Try again button instead of "No courses yet!", and the stats and leaderboard still load (`DSH-ERR-001`, was `test.fixme`, risk R-SD-4). "No courses yet!" appears only when the request succeeded with zero courses. No SQL, no new package.

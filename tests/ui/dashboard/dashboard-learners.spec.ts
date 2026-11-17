@@ -135,12 +135,17 @@ test.describe('PRD06 student dashboard: enrolled learners @regression', () => {
   });
 
   test('[DSH-ERR-001] a failed enrolment request tells the learner something went wrong instead of "No courses yet!" (SCP-46)', async ({ page }) => {
-    test.fixme(true, 'SCP-46: dashboard shows the empty state when the enrolment request fails');
     await signInAs(page, S2);
     await failRoute(page, '**/api/learning/my-courses');
     await page.goto('/learning');
     await expect(page.getByText('My Enrolled Courses')).toBeVisible({ timeout: 25000 });
+    await expect(page.getByText("We couldn't load your courses")).toBeVisible();
     await expect(emptyState(page)).toHaveCount(0);
+    await expect(page.getByText('Global Leaderboard')).toBeVisible();   // the rest of the dashboard still loads
+    await page.unroute('**/api/learning/my-courses');
+    await page.getByRole('button', { name: 'Try again' }).click();
+    await expect(page.getByRole('heading', { name: DASH_TITLE.A })).toBeVisible({ timeout: 25000 });   // the retry shows the learner's course
+    await expect(page.getByText("We couldn't load your courses")).toHaveCount(0);
   });
 
   test('[DSH-ERR-003][DSH-STAT-008] leaderboard/stats request failures keep the course cards', async ({ page }) => {

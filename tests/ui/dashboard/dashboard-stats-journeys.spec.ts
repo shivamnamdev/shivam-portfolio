@@ -151,7 +151,7 @@ test.describe('PRD06 stats, lobby link, expiry and learner journeys', () => {
         await applyCode(page, 'QA100');
         await ui.enrollFree(page).click();
         await expect(ui.successModal(page)).toBeVisible();
-        await page.getByRole('button', { name: /Go to Dashboard/ }).click();
+        await page.getByRole('button', { name: 'Go to Dashboard', exact: true }).click();
         await expectOnPath(page, '/learning');
         await expect(cards(page)).toHaveCount(1);
         await expect(page.getByRole('heading', { name: 'QA Checkout Sandbox' })).toBeVisible();
