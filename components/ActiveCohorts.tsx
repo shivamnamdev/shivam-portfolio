@@ -2,6 +2,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { CheckCircle2, ChevronDown, Gift, Calendar, Code2, Download, CreditCard, Loader2, Globe, Tag, PartyPopper, ExternalLink } from 'lucide-react';
+import { CTA_LOOK, CTA_TRUST } from './ctaLook';
+import { useCtaVariant } from './useCtaVariant';
 import { applyCoupon, formatPrice, minimumCharge, parsePrice, resolveCoupon, toCurrencyCode, type Coupon } from '@/lib/pricing';
 import { checkCouponOnServer } from '@/lib/couponClient';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -60,6 +62,7 @@ export default function ActiveCohorts({ course: propCourse, hideCurriculum = fal
 
   const activePricing = displayCourse.pricing[region];
 
+  const cta = useCtaVariant();   // TEMPORARY (SCP-30)
   const currencyCode = toCurrencyCode(activePricing.currencyCode);
   // Same rules the server re-applies in /api/create-order and /api/enroll-free.
   // SCP-51: the price shown is the price charged, so a coupon never shows less than 1 unit unless it makes the course free
@@ -321,10 +324,14 @@ export default function ActiveCohorts({ course: propCourse, hideCurriculum = fal
                           <CheckCircle2 size={24} /> You are Enrolled! Go to Dashboard
                         </button>
                       ) : (
-                        <button onClick={handlePayment} disabled={isProcessing} className="w-full py-4 rounded-xl bg-amber-500 text-black font-black text-lg flex items-center justify-center gap-2 hover:scale-[1.02] hover:bg-amber-400 transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] disabled:opacity-70">
+                        <>
+                        <button onClick={handlePayment} disabled={isProcessing} className={`w-full py-4 rounded-xl font-black text-lg flex items-center justify-center gap-2 transition-all disabled:opacity-70 ${cta ? CTA_LOOK[cta] : 'bg-amber-500 text-black hover:scale-[1.02] hover:bg-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.3)]'}`}>
                           {isProcessing ? <Loader2 className="animate-spin text-black" size={24} /> : <CreditCard size={24} className="text-black" />}
                           {isProcessing ? "Processing..." : displayPriceNumeric === 0 ? "Enroll for Free" : `Buy Now (${activePricing.currencyCode})`}
+                          {cta === 'b' && !isProcessing && displayPriceNumeric > 0 && <span className="rounded-lg bg-amber-500 px-2.5 py-0.5 text-base">{formatPrice(displayPriceNumeric, currencyCode)}</span>}
                         </button>
+                        {cta && <ul className="-mt-1 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-stone-400">{CTA_TRUST[cta].map((t) => <li key={t}><span className="font-black text-amber-500">✓</span> {t}</li>)}</ul>}
+                        </>
                       )}
                       
                       {syllabusPdf ? (
