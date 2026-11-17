@@ -64,6 +64,10 @@ test.describe('LRN learner routes @regression', () => {
     expect((await post('/api/learning/complete-video', { courseSlug: SLUG })).status()).toBe(400);
     expect((await post('/api/learning/submit-assignment', { courseSlug: SLUG, videoId: VIDEO, submittedCode: '' })).status()).toBe(400);
     expect((await post('/api/learning/submit-assignment', { courseSlug: SLUG, videoId: VIDEO, submittedCode: 'x'.repeat(200_001) })).status()).toBe(400);
+    // SCP-56: file headers over empty files are not code
+    const noCode = await post('/api/learning/submit-assignment', { courseSlug: SLUG, videoId: VIDEO, submittedCode: '# === Step 1 ===\n# --- File: main.py ---\n\n' });
+    expect(noCode.status()).toBe(400);
+    expect((await noCode.json()).error).toBe('Write some code first.');
     for (const bad of [{ files: [] }, { files: 'x' }, { files: [{ 'main.py': 5 }] }, { files: [{ 'main.py': 'x'.repeat(200_001) }] }, { files: [{ 'main.py': 'print(1)' }], inputs: 'a' },
       { files: [{ 'main.py': 'print(1)' }], inputs: Array(201).fill('a') }, { files: [{ 'main.py': 'print(1)' }], inputs: [1] }]) {
       expect((await post('/api/learning/exam-grade', { courseSlug: 'python-beginners', ...bad })).status(), JSON.stringify(bad).slice(0, 40)).toBe(400);

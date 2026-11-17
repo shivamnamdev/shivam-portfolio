@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GitGraphVisualizer from '@/components/GitGraphVisualizer';
 import { ADMIN_EMAIL } from '@/lib/admin';
 import { isGradedExam } from '@/lib/examRule';
+import { canViewSolution, hasCode, NO_CODE_MESSAGE } from '@/lib/labRules';
 import { PREVIEW_BANNER, PREVIEW_BLOCKED, contentUrl, isDraftPreview } from '@/lib/learnerPreview';
 
 // XP is recomputed server-side from progress rows; fire-and-forget after progress changes.
@@ -168,6 +169,15 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
   
   const [officialSolutionSteps, setOfficialSolutionSteps] = useState<string[]>([]);
   const [showSolutionModal, setShowSolutionModal] = useState(false);
+  const solutionCloseRef = useRef<HTMLButtonElement>(null);
+  // SCP-32: the solution window closes with Esc and keyboard focus starts on its close button (the code editor inside would trap Tab)
+  useEffect(() => {
+    if (!showSolutionModal) return;
+    solutionCloseRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowSolutionModal(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showSolutionModal]);
  
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
 
@@ -996,6 +1006,11 @@ sys.settrace(_exam_trace)
         }).join('\n\n');
       }
 
+      if (!hasCode(combinedCode)) {   // SCP-56: nothing to submit, nothing saved, no XP
+        showToast("Nothing to submit", NO_CODE_MESSAGE, "error");
+        return;
+      }
+
       const result = await postJson('/api/learning/submit-assignment', {
         courseSlug: params.slug, videoId: activeVideo.id, submittedCode: combinedCode,
         title: activeVideo.githubAssignment?.title || activeVideo.title
@@ -1625,10 +1640,10 @@ sys.settrace(_trace_calls)
           <AnimatePresence>
             {showSolutionModal && (
               <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 md:p-8">
-                <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-[#0d1117] w-full max-w-6xl rounded-3xl border border-stone-700 shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
+                <motion.div role="dialog" aria-modal="true" aria-label="Official Solution and Code Review" initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-[#0d1117] w-full max-w-6xl rounded-3xl border border-stone-700 shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
                   <div className="px-6 py-4 border-b border-stone-800 flex justify-between items-center bg-[#161b22]">
                     <h3 className="text-xl font-bold text-white flex items-center gap-2"><Award className="text-amber-500" /> Official Solution & Code Review</h3>
-                    <button onClick={() => setShowSolutionModal(false)} className="text-stone-400 hover:text-white transition-colors"><X size={24} /></button>
+                    <button ref={solutionCloseRef} aria-label="Close solution" onClick={() => setShowSolutionModal(false)} className="text-stone-400 hover:text-white transition-colors"><X size={24} /></button>
                   </div>
                   <div className="flex flex-col md:flex-row flex-grow overflow-hidden h-[60vh]">
                      <div className="w-full md:w-1/2 border-r border-stone-800 flex flex-col">
@@ -1842,7 +1857,7 @@ sys.settrace(_trace_calls)
                               </button>
                             )}
 
-                            {officialSolutionSteps.length > 0 && (
+                            {officialSolutionSteps.length > 0 && canViewSolution(assignmentSubmissions[activeVideo.id]) && (   /* SCP-54: only after the learner has submitted */
                               <button onClick={() => setShowSolutionModal(true)} className="px-3 py-2 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg text-xs font-bold transition-colors border border-stone-700">View Solution</button>
                             )}
                             

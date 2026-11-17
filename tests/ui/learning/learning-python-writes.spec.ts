@@ -181,7 +181,7 @@ test.describe('PRD07 Python course: progress, Q&A and lab (writes)', () => {
         await page.getByRole('button', { name: /^Submit$/ }).click();
         await expect(page.getByText('Your code has been securely saved.')).toBeVisible({ timeout: 20000 });
         await expect(page.getByText('Official Solution & Code Review')).toBeVisible();   // solution opens after submit
-        await page.getByRole('button', { name: 'Close' }).click();                          // mouse close
+        await page.getByRole('button', { name: 'Close Code Review' }).click();               // mouse close
         await expect(page.getByText('Official Solution & Code Review')).toHaveCount(0);
         await expect(sidebarSubmitted(page)).toBeVisible();
         let rows = await progressRows(S2, SLUG, 'assignment_progress');
@@ -284,7 +284,17 @@ test.describe('PRD07 Python course: progress, Q&A and lab (writes)', () => {
         await expect.poll(() => getCode(page)).toContain("print('one')");
       });
 
-      test.fixme('[LRN-PY-012] View Solution is not available before the learner has submitted (SCP-54)', async () => {});
+      test('[LRN-PY-012] View Solution is not available before the learner has submitted (SCP-54)', async ({ page }) => {
+        await toLab(page);
+        await expect(page.getByRole('button', { name: 'Run' }).first()).toBeVisible();
+        await expect(page.getByRole('button', { name: 'View Solution' })).toHaveCount(0);
+        await setCode(page, "print('my answer')");
+        await page.waitForTimeout(500);
+        await page.getByRole('button', { name: /^Submit$/ }).click();
+        await expect(page.getByText('Official Solution & Code Review')).toBeVisible({ timeout: 20000 });
+        await page.getByRole('button', { name: 'Close Code Review' }).click();
+        await expect(page.getByRole('button', { name: 'View Solution' })).toBeVisible();   // available once submitted
+      });
 
       test('[LRN-PY-014] the reference solution produces the expected outcome', async ({ page }) => {
         // Uses the real GitHub files of the first lesson (the only test here that does): answer them from the network.
@@ -299,7 +309,16 @@ test.describe('PRD07 Python course: progress, Q&A and lab (writes)', () => {
         await expect(terminal(page)).not.toHaveText('', { timeout: 30000 });
       });
 
-      test.fixme('[LRN-PY-016] the solution window closes with the keyboard (Esc does nothing; SCP-32)', async () => {});
+      test('[LRN-PY-016] the solution window closes with the keyboard: focus starts on the close button and Esc closes it (SCP-32)', async ({ page }) => {
+        await toLab(page);
+        await setCode(page, "print('my answer')");
+        await page.waitForTimeout(500);
+        await page.getByRole('button', { name: /^Submit$/ }).click();
+        await expect(page.getByRole('dialog', { name: 'Official Solution and Code Review' })).toBeVisible({ timeout: 20000 });
+        await expect(page.getByRole('button', { name: 'Close solution' })).toBeFocused();
+        await page.keyboard.press('Escape');
+        await expect(page.getByText('Official Solution & Code Review')).toHaveCount(0);
+      });
 
       test('[LRN-PY-017] typing "pri" suggests print', async ({ page }) => {
         await toLab(page);
@@ -309,14 +328,16 @@ test.describe('PRD07 Python course: progress, Q&A and lab (writes)', () => {
         await expect(page.locator('.suggest-widget').getByText('print').first()).toBeVisible({ timeout: 10000 });
       });
 
-      test('[LRN-PY-019] submitting an empty editor does not crash and shows feedback (it is saved as a submission: SCP-56)', async ({ page }) => {
+      test('[LRN-PY-019] submitting an empty editor is refused with a message and saves nothing (SCP-56)', async ({ page }) => {
         const errors: string[] = [];
         page.on('pageerror', e => errors.push(e.message));
         await toLab(page);
         await setCode(page, '');
         await page.waitForTimeout(500);
         await page.getByRole('button', { name: /^Submit$/ }).click();
-        await expect(page.getByText(/securely saved|Failed to submit|empty|write some code/i).first()).toBeVisible({ timeout: 20000 });
+        await expect(page.getByText('Write some code first.')).toBeVisible({ timeout: 20000 });
+        await expect(page.getByText('Your code has been securely saved.')).toHaveCount(0);
+        expect(await progressRows(S2, SLUG, 'assignment_progress')).toHaveLength(0);
         expect(errors).toEqual([]);
       });
 
