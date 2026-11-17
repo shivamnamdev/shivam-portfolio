@@ -781,3 +781,9 @@ _Last generated: 2026-11-15 from `1e6f997` on branch `chore/progress-log-scp-110
 - Errors met and fixed: `AAPI-EXM-010` failed because an earlier test had replaced the lesson's file with the library one (test now resets it); `ADMUI-CUR-011/013/014/017` asserted the old panel (updated); a curriculum UI run with `-g` skipped the test that creates its cohort (run the whole file).
 - Results: unit 280 passed, 3 skipped; tsc clean; exam API 11, exam UI 5, curriculum API 7, curriculum UI 13, certificate 1, exam grading 10 passed; learner exam spec passed except `LRN-EXM-006`, which failed once under load and passed on its own re-run.
 
+### 2026-11-17 — learner draft preview (SCP-113)
+- Built: "Preview as learner" opens `/learning/<cohort>?preview=draft` in a new tab (admin only, read only, banner); the old list is "Outline".
+- Errors met and fixed: none in the new code; `ADMUI-CUR` and exam UI specs clicked the old button (now "Outline").
+- Results: unit 284 passed, 3 skipped; tsc clean; new `LRNP-API-001/002`, `ADMUI-PRV-001/002` passed; curriculum UI, exam UI, learner read-only, learner exam, bundle-secrets and Python writes specs passed except `LRN-PY-017` (Monaco autocomplete).
+- `LRN-PY-017` check: failed 3 of 3 on this branch and 2 of 3 on `main` with the same command (`-g "leftover lab" --repeat-each=3`), and passed once on `main` in a full-file run: a known flaky test (changelog 2026-10-31), not caused by this change.
+

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useCurriculum } from '@/components/admin/curriculum/useCurriculum';
 import LessonPanel, { type ExamContext, type LessonPatch } from '@/components/admin/curriculum/LessonPanel';
 import OutlinePreview from '@/components/admin/curriculum/OutlinePreview';
+import { previewUrl } from '@/lib/learnerPreview';
 import { ConfirmDialog, ErrorNote, PageHeader, Spinner, StatusBadge, buttonClass, ghostButtonClass, inputClass } from '@/components/admin/ui';
 import type { Failure } from '@/lib/adminUi/client';
 import {
@@ -112,7 +113,8 @@ export default function CurriculumEditorPage() {
       <p className="mb-2 text-sm"><Link href="/admin/curriculum" className="text-amber-400 hover:text-amber-300">Curriculum</Link> / <span className="font-mono text-stone-400">{data.cohort}</span></p>
       <PageHeader title="Curriculum" subtitle={`${data.counts.modules} modules, ${data.counts.lessons} lessons · version ${data.version}`}
         actions={<>
-          <button type="button" className={ghostButtonClass} aria-pressed={view === 'preview'} onClick={() => setView(view === 'edit' ? 'preview' : 'edit')}>{view === 'edit' ? 'Preview as learner' : 'Back to editing'}</button>
+          <a href={previewUrl(data.cohort)} target="_blank" rel="noopener noreferrer" className={ghostButtonClass}>Preview as learner ↗</a>
+          <button type="button" className={ghostButtonClass} aria-pressed={view === 'preview'} onClick={() => setView(view === 'edit' ? 'preview' : 'edit')}>{view === 'edit' ? 'Outline' : 'Back to editing'}</button>
         </>} />
       <div className="mb-6 rounded-xl border border-white/10 bg-white/[0.03] p-4">
         <div className="flex flex-wrap items-center gap-3">

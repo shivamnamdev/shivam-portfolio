@@ -341,3 +341,8 @@ Full text: `docs/architecture/exam-switch.md`. Owner decision: exam marking move
 - [x] Owner approved the Blueprint in chat (exam switch always usable; "Which exam?" = None or an exam of a course; library exam fills the lesson read-only; None keeps pasted links and never blocks the certificate)
 - [x] Built with unit, API and UI tests (`docs/architecture/exam-library.md` section 13)
 - [ ] Owner: merge the PR; on Python Foundation tick the exam on a lesson and pick "Python Batch 1 final exam"
+
+## Learner draft preview (2026-11-17, SCP-113, branch feat/SCP-113-learner-draft-preview)
+- [x] Owner approved the Blueprint in chat (new tab, keep the outline as "Outline")
+- [x] Built with unit, API and UI tests (`docs/architecture/learner-draft-preview.md`)
+- [ ] Owner: merge the PR

@@ -36,6 +36,13 @@ export async function getLayout(slug: string): Promise<Layout | null> {
   return value;
 }
 
+// The admin's working copy (the draft) in the same shape, for the learner preview in the curriculum editor. Never cached, never used for learners.
+export async function getDraftLayout(slug: string): Promise<Layout | null> {
+  const { data, error } = await supabaseAdmin.from("content_docs").select("doc").eq("kind", "curriculum").eq("key", slug).maybeSingle();
+  if (error) throw error;
+  return layoutFor((data?.doc as { modules?: Module[] | null } | undefined)?.modules, undefined);
+}
+
 // ---- course ----------------------------------------------------------------------------------------------------------------------------------
 type CohortRow = { doc: Record<string, unknown> };
 const cohortAndCourse = unstable_cache(async (slug: string): Promise<LearningCourse | null> => {

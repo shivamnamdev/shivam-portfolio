@@ -148,7 +148,7 @@ test.describe('ADMUI curriculum editor @regression', () => {
     await add.getByLabel('New module title').fill('Extra module');
     await add.getByRole('button', { name: 'Add module' }).click();
     await expect(page.getByText('Changes not published yet.')).toBeVisible();
-    await page.getByRole('button', { name: 'Preview as learner' }).click();
+    await page.getByRole('button', { name: 'Outline' }).click();
     const preview = page.getByLabel('Learner outline preview');
     await expect(preview.getByText('Extra module')).toBeVisible();
     await expect(preview.getByText('Lesson 1').first()).toBeVisible();
