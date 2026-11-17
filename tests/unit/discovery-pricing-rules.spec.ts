@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { activeCoupons } from '../../data/coupons';
 import { activeCourses } from '../../data/courses';
-import { applyCoupon, formatPrice, parsePrice, resolveCoupon, toMinorUnits } from '../../lib/pricing';
+import { applyCoupon, formatPrice, MIN_CHARGE, minimumCharge, parsePrice, resolveCoupon, toMinorUnits } from '../../lib/pricing';
 
 // PRD 03 pricing/coupon rules at the logic layer (the same functions the sales page and the payment APIs use).
 const course = activeCourses.find(c => c.slug === 'python-beginners-batch-2')!; // ₹1,999 / $25
@@ -86,4 +86,28 @@ test.describe('PRD03 pricing rules @regression', () => {
   // The coupon model has no expiry date and no usage counter, so these two cases cannot pass today.
   test.fixme('[CDP-COUP-007] expired coupon is rejected (coupon model has no expiry field)', () => {});
   test.fixme('[CDP-COUP-008] coupon usage limit is enforced (coupon model has no usage counter)', () => {});
+});
+
+
+// SCP-51 (owner's decision 2026-11-17): a paid order is never below 1 unit, in rupees or dollars; a price of exactly 0 is a free enrolment.
+test.describe('PRD 03 minimum charge @unit', () => {
+  test('[CDP-MIN-001] a price between 0 and 1 is raised to 1; 1 and above are untouched', () => {
+    expect(MIN_CHARGE).toBe(1);
+    expect(minimumCharge(0.8)).toBe(1);
+    expect(minimumCharge(0.01)).toBe(1);
+    expect(minimumCharge(0.99)).toBe(1);
+    expect(minimumCharge(1)).toBe(1);
+    expect(minimumCharge(1.5)).toBe(1.5);
+    expect(minimumCharge(1999)).toBe(1999);
+  });
+
+  test('[CDP-MIN-002] a price of exactly 0 stays 0: a 100% coupon is a free enrolment, not a paid order', () => {
+    expect(minimumCharge(0)).toBe(0);
+  });
+
+  test('[CDP-MIN-003] a 20% coupon on a 1 dollar course shows and charges 1 dollar; an ordinary price is unchanged', () => {
+    expect(minimumCharge(applyCoupon(1, percent, 'USD'))).toBe(1);
+    expect(minimumCharge(applyCoupon(usd, percent, 'USD'))).toBe(applyCoupon(usd, percent, 'USD'));
+    expect(toMinorUnits(minimumCharge(applyCoupon(1, percent, 'USD')))).toBe(100);
+  });
 });

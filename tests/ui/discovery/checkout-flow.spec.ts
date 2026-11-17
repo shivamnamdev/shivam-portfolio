@@ -174,7 +174,7 @@ test.describe('PRD03 Paid checkout (mocked gateway) @regression', () => {
     await ui.usd(page).click();
     await ui.inr(page).click();
     await ui.usd(page).click();
-    await expect(ui.finalPrice(page)).toHaveText('$0.80');
+    await expect(ui.finalPrice(page)).toHaveText('$1');   // SCP-51: 20% off $1 would be $0.80; the minimum charge is 1
     await expect(ui.buyNow(page, 'USD')).toBeVisible();
   });
 

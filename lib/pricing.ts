@@ -26,6 +26,13 @@ export function toMinorUnits(amount: number): number {
   return Math.round(amount * 100);
 }
 
+// The smallest amount a paid order can have, in rupees or dollars (SCP-51, owner's decision 2026-11-17): a coupon that takes a price above 0 below this
+// charges this. A price of exactly 0 is a free enrolment (/api/enroll-free), not a paid order, so it stays 0.
+export const MIN_CHARGE = 1;
+export function minimumCharge(price: number): number {
+  return price > 0 && price < MIN_CHARGE ? MIN_CHARGE : price;
+}
+
 export function formatPrice(amount: number, currency: CurrencyCode): string {
   const symbol = currency === "USD" ? "$" : "₹";
   return `${symbol}${Number.isInteger(amount) ? amount : amount.toFixed(2)}`;

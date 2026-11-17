@@ -2,11 +2,12 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { CheckCircle2, ChevronDown, Gift, Calendar, Code2, Download, CreditCard, Loader2, Globe, Tag, PartyPopper, ExternalLink } from 'lucide-react';
-import { applyCoupon, formatPrice, parsePrice, resolveCoupon, toCurrencyCode, type Coupon } from '@/lib/pricing';
+import { applyCoupon, formatPrice, minimumCharge, parsePrice, resolveCoupon, toCurrencyCode, type Coupon } from '@/lib/pricing';
 import { checkCouponOnServer } from '@/lib/couponClient';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import SpotlightCard from '@/components/SpotlightCard';
+import { fetchWithTimeout } from '@/lib/fetchTimeout';
 
 interface ActiveCohortsProps {
   course?: any;
@@ -61,7 +62,8 @@ export default function ActiveCohorts({ course: propCourse, hideCurriculum = fal
 
   const currencyCode = toCurrencyCode(activePricing.currencyCode);
   // Same rules the server re-applies in /api/create-order and /api/enroll-free.
-  const displayPriceNumeric = applyCoupon(parsePrice(activePricing.currentPrice), appliedCoupon, currencyCode);
+  // SCP-51: the price shown is the price charged, so a coupon never shows less than 1 unit unless it makes the course free
+  const displayPriceNumeric = minimumCharge(applyCoupon(parsePrice(activePricing.currentPrice), appliedCoupon, currencyCode));
 
   const handleApplyCoupon = async () => {
     if (!isSignedIn) {
@@ -103,7 +105,7 @@ export default function ActiveCohorts({ course: propCourse, hideCurriculum = fal
 
     try {
       if (displayPriceNumeric === 0) {
-        const res = await fetch('/api/enroll-free', {
+        const res = await fetchWithTimeout('/api/enroll-free', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -131,7 +133,7 @@ export default function ActiveCohorts({ course: propCourse, hideCurriculum = fal
         return;
       }
 
-      const orderResponse = await fetch('/api/create-order', {
+      const orderResponse = await fetchWithTimeout('/api/create-order', {   // SCP-65: ends after 30 s with a message
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

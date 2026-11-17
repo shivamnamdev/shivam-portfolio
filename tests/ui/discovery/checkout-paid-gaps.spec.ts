@@ -84,15 +84,14 @@ test.describe('PRD04 paid checkout: order, errors and success screen (mocked gat
   test('[CHK-ORDER-008] create-order 400 shows the server message and recovers', orderError(400, 'Enrollment is closed for this course'));
   test('[CHK-ORDER-009] create-order 403 shows the server message and recovers', orderError(403, 'This coupon is restricted'));
 
-  // Not met today: handlePayment has no timeout, so a request that never answers leaves the button on Processing...
-  test.fixme('[CHK-ORDER-012] an order request that never answers ends the loading state with a message after about 30 seconds (no timeout exists: SCP-65)', async ({ page }) => {
+  test('[CHK-ORDER-012] an order request that never answers ends the loading state with a message after about 30 seconds', async ({ page }) => {
     test.setTimeout(90000);
     const dialogs = trackDialogs(page);
     await mockGateway(page, { order: 'slow', delayMs: 45000 });
     await openFixture(page, USER);
     await buy(page);
     await expect(ui.buyNow(page, 'INR')).toBeEnabled({ timeout: 40000 });
-    expect(dialogs.length).toBeGreaterThan(0);
+    expect(dialogs.join('|')).toContain('The request took too long');
   });
 
   test('[CHK-FAIL-008] refreshing while the order is processing loads the page normally with Buy Now available and no enrolment', async ({ page }) => {
@@ -138,6 +137,17 @@ test.describe('PRD04 paid checkout: order, errors and success screen (mocked gat
     expect(gw.orderBodies).toHaveLength(1);
     await gw.dismiss();
     await expect(ui.buyNow(page, 'INR')).toBeEnabled();   // closing the window gives the button back
+  });
+
+  test('[CHK-AMT-019] a coupon never shows less than 1 dollar: the price shown is the price charged (SCP-51)', async ({ page }) => {
+    trackDialogs(page);
+    await mockGateway(page);
+    await openFixture(page, USER);
+    await ui.usd(page).click();
+    await expect(ui.finalPrice(page)).toHaveText('$1');
+    await applyCode(page, 'BIRTHDAY20');   // 20% off $1 would be $0.80; the minimum charge keeps it at $1
+    await expect(ui.finalPrice(page)).toHaveText('$1');
+    await expect(ui.buyNow(page, 'USD')).toBeVisible();
   });
 
   test('[CHK-PAY-002] a USD purchase creates a USD order and ends in the success modal', async ({ page }) => {
