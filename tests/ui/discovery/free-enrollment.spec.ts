@@ -101,7 +101,7 @@ test.describe('PRD05 free enrolment UI (mocked API) @regression', () => {
     await ui.enrollFree(page).focus();
     await page.keyboard.press('Enter');
     await expect(ui.successModal(page)).toBeVisible();
-    await page.getByRole('button', { name: 'Go to Dashboard' }).focus();
+    await page.getByRole('button', { name: 'Go to Dashboard', exact: true }).focus();
     await page.keyboard.press('Enter');
     await expect.poll(() => new URL(page.url()).pathname).toBe('/learning');
   });
@@ -116,11 +116,10 @@ test.describe('PRD05 free enrolment UI (mocked API) @regression', () => {
     const link = page.getByRole('link', { name: /Join WhatsApp Group/ });
     await expect(link).toHaveAttribute('href', /.+/);
     await expect(link).toHaveAttribute('target', '_blank');
-    await expect(page.getByRole('button', { name: 'Go to Dashboard' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Go to Dashboard', exact: true })).toBeVisible();
   });
 
-  // Known gap R-FE-3 (SCP-42): the page behind the modal is not marked enrolled until it is reloaded.
-  test.fixme('[FRE-POS-006] the button behind the success modal already shows the enrolled state without a reload (SCP-42)', async ({ page }) => {
+  test('[FRE-POS-006] the button behind the success modal already shows the enrolled state without a reload (SCP-42)', async ({ page }) => {
     trackDialogs(page);
     await mockGateway(page);
     await openFixture(page, USER);
@@ -131,7 +130,6 @@ test.describe('PRD05 free enrolment UI (mocked API) @regression', () => {
   });
 
   test('[FRE-SUC-004] the modal copy does not claim a payment for a free enrolment (SCP-42)', async ({ page }) => {
-    test.fixme(true, 'SCP-42: the success modal says "Your payment is verified" for free enrolments too');
     trackDialogs(page);
     await mockGateway(page);
     await openFixture(page, USER);
@@ -163,7 +161,7 @@ test.describe('PRD05 free enrolment UI (mocked API) @regression', () => {
     await applyCode(page, 'QA100');
     await ui.enrollFree(page).click();
     await expect(ui.successModal(page)).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Go to Dashboard' })).toBeInViewport();
+    await expect(page.getByRole('button', { name: 'Go to Dashboard', exact: true })).toBeInViewport();
   });
 
   test('[FRE-MOB-002] with a free coupon applied the page cannot be dragged sideways on a 390 px phone', async ({ page }) => {

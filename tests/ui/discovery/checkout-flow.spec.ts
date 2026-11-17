@@ -59,7 +59,7 @@ test.describe('PRD03 Paid checkout (mocked gateway) @regression', () => {
     await ui.buyNow(page, 'INR').click();
     await expect.poll(async () => (await gw.rzp())?.opened).toBe(1);
     await gw.paySuccess();
-    await page.getByRole('button', { name: 'Go to Dashboard' }).click();
+    await page.getByRole('button', { name: 'Go to Dashboard', exact: true }).click();
     await expect(page).toHaveURL(/\/learning$/, { timeout: 15000 });
     await expectLearningDashboard(page);
   });
@@ -265,7 +265,7 @@ test.describe('PRD03 Free enrollment (mocked API) @regression', () => {
     await openFixture(page, USER);
     await applyCode(page, 'QA100');
     await ui.enrollFree(page).click();
-    await page.getByRole('button', { name: 'Go to Dashboard' }).click();
+    await page.getByRole('button', { name: 'Go to Dashboard', exact: true }).click();
     await expect(page).toHaveURL(/\/learning$/, { timeout: 15000 });
     await expectLearningDashboard(page);
   });
@@ -276,7 +276,7 @@ test.describe('PRD03 Free enrollment (mocked API) @regression', () => {
     await openFixture(page, USER);
     await applyCode(page, 'QA100');
     await ui.enrollFree(page).click();
-    await page.getByRole('button', { name: 'Go to Dashboard' }).click();
+    await page.getByRole('button', { name: 'Go to Dashboard', exact: true }).click();
     await page.waitForURL(/\/learning/);
     await expectLearningDashboard(page);
   });

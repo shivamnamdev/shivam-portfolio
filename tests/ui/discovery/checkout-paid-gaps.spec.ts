@@ -234,11 +234,12 @@ test.describe('PRD04 paid checkout: order, errors and success screen (mocked gat
     await gw.paySuccess();
     await expect(ui.successModal(page)).toBeVisible();
     await expect(page.getByText('Your payment is verified.')).toBeVisible();
+    await expect(ui.enrolled(page)).toBeVisible();   // SCP-42: the page behind the modal is marked enrolled too
     const link = page.getByRole('link', { name: /Join WhatsApp Group/ });
     await expect(link).toHaveAttribute('target', '_blank');
     await expect(link).toHaveAttribute('rel', /noreferrer/);
     await expect(link).toHaveAttribute('href', /.+/);
-    await expect(page.getByRole('button', { name: 'Go to Dashboard' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Go to Dashboard', exact: true })).toBeVisible();
   });
 
   test('[CHK-XB-007] keyboard: the modal Go to Dashboard button is reachable and works with Enter', async ({ page }) => {
@@ -248,7 +249,7 @@ test.describe('PRD04 paid checkout: order, errors and success screen (mocked gat
     await buy(page);
     await expect.poll(async () => (await gw.rzp())?.opened).toBe(1);
     await gw.paySuccess();
-    await page.getByRole('button', { name: 'Go to Dashboard' }).focus();
+    await page.getByRole('button', { name: 'Go to Dashboard', exact: true }).focus();
     await page.keyboard.press('Enter');
     await expect.poll(() => new URL(page.url()).pathname).toBe('/learning');
   });
@@ -263,7 +264,7 @@ test.describe('PRD04 paid checkout: order, errors and success screen (mocked gat
     await gw.paySuccess();
     await expect(ui.successModal(page)).toBeVisible();
     await cannotScrollSideways(page);
-    await expect(page.getByRole('button', { name: 'Go to Dashboard' })).toBeInViewport();
+    await expect(page.getByRole('button', { name: 'Go to Dashboard', exact: true })).toBeInViewport();
   });
 
   test('[CHK-IDEM-006][CHK-ENTRY-011] an enrolled student on a closed cohort sees Go to Dashboard, not Buy Now', async ({ page }) => {

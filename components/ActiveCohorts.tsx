@@ -35,7 +35,7 @@ export default function ActiveCohorts({ course: propCourse, hideCurriculum = fal
   const [couponMessage, setCouponMessage] = useState({ text: "", type: "" });
 
   // 🚨 NEW: State to control the Post-Checkout WhatsApp Modal
-  const [paymentSuccessData, setPaymentSuccessData] = useState<{show: boolean, whatsappLink: string}>({ show: false, whatsappLink: "" });
+  const [paymentSuccessData, setPaymentSuccessData] = useState<{show: boolean, whatsappLink: string, free?: boolean}>({ show: false, whatsappLink: "" });
 
   const { isSignedIn, user } = useUser();
   const { openSignIn } = useClerk();
@@ -115,7 +115,8 @@ export default function ActiveCohorts({ course: propCourse, hideCurriculum = fal
         const data = await res.json();
         if (data.success) {
           // 🚨 THE FIX: Trigger the beautiful success modal instead of an alert!
-          setPaymentSuccessData({ show: true, whatsappLink: data.whatsappLink || "#" });
+          setPaymentSuccessData({ show: true, whatsappLink: data.whatsappLink || "#", free: true });
+          setIsAlreadyEnrolled(true);   // SCP-42: the page behind the modal shows the enrolled state without a reload
         } else {
           alert(data.error || "Failed to process free enrollment.");
         }
@@ -168,6 +169,7 @@ export default function ActiveCohorts({ course: propCourse, hideCurriculum = fal
             if (verifyData.success) {
               // 🚨 THE FIX: Trigger the beautiful success modal instead of an alert!
               setPaymentSuccessData({ show: true, whatsappLink: verifyData.whatsappLink || "#" });
+              setIsAlreadyEnrolled(true);
             } else {
               alert(verifyData.error || "Error verifying enrollment.");
             }
@@ -212,7 +214,7 @@ export default function ActiveCohorts({ course: propCourse, hideCurriculum = fal
               
               <h3 className="text-3xl font-black text-white mb-3 relative z-10">Welcome Aboard!</h3>
               <p className="text-stone-400 mb-8 relative z-10 leading-relaxed">
-                Your payment is verified. To ensure you don't miss any live class links, please join the official WhatsApp group right now.
+                {paymentSuccessData.free ? "You are enrolled." : "Your payment is verified."} To ensure you don't miss any live class links, please join the official WhatsApp group right now.
               </p>
 
               <div className="space-y-4 relative z-10">
