@@ -141,8 +141,24 @@ test.describe('PRD07 Git lab simulator', () => {
       await expect(out(page)).not.toContainText('Initialized empty Git repository');
     });
 
-    // The Git lab has no Reset button (the simulator can only be cleared by changing lesson, see LRN-GIT-012).
-    test.fixme('[LRN-GIT-010] Reset clears the Git lab (no Reset control exists: SCP-55)', async () => {});
+    test('[LRN-GIT-010] Reset clears the terminal, the commit count and the Git Graph, and the lab can be used again (SCP-55)', async ({ page }) => {
+      await toLab(page);
+      await cmd(page, 'git init');
+      await cmd(page, 'touch a.txt');
+      await cmd(page, 'git add a.txt');
+      await cmd(page, 'git commit -m "first commit"');
+      await expect(out(page)).toContainText('first commit');
+      await expect(page.getByText(/1 commits?/)).toBeVisible();
+      await page.getByRole('button', { name: 'Reset the Git lab' }).click();
+      await expect(out(page)).not.toContainText('first commit');
+      await expect(out(page)).not.toContainText('Initialized empty Git repository');
+      await expect(page.getByText(/\d+ commits?/)).toHaveCount(0);
+      await tab(page, /Git Graph/).click();
+      await expect(page.getByText('first commit')).toHaveCount(0);
+      await tab(page, /Practice/).click();
+      await cmd(page, 'git init');
+      await expect(out(page)).toContainText('Initialized empty Git repository');   // a fresh repository can be started again
+    });
 
     test('[LRN-MOB-006][LRN-MOB-007] smoke for Firefox and WebKit: lesson list, lesson switch and a Git command (run with --project=firefox / webkit)', async ({ page }) => {
       await openCourse(page, S1, SLUG);

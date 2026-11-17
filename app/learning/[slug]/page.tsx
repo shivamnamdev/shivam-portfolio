@@ -1887,6 +1887,10 @@ sys.settrace(_trace_calls)
                               {gitRepoState.commits.length > 0 && (
                                 <span className="text-xs font-mono text-blue-400">{gitRepoState.commits.length} commits</span>
                               )}
+                              {/* SCP-55: start the simulator again (clears the terminal and the Git Graph; nothing is saved until Submit) */}
+                              <button onClick={() => { resetGitLabState(); setOutput(""); }} aria-label="Reset the Git lab" className="ml-2 flex items-center gap-1 px-2.5 py-1 rounded-md bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs font-bold border border-stone-700 transition-colors">
+                                <RefreshCw size={12} /> Reset
+                              </button>
                             </div>
                           ) : (
                             <div className="flex">
