@@ -15,6 +15,9 @@ export default function LearningDashboard() {
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [stats, setStats] = useState({ streak: 0, points: 0 });
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  // SCP-46: a failed course request is not "no courses": the learner sees a retry banner and the empty state only when the request succeeded with zero courses
+  const [coursesFailed, setCoursesFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) router.push('/');
@@ -23,10 +26,17 @@ export default function LearningDashboard() {
   useEffect(() => {
     async function fetchDashboardData() {
       if (!isLoaded || !user) return;
+      setIsFetchingData(true);
       try {
-        const enrollRes = await fetch('/api/learning/my-courses');
-        const enrollData = await enrollRes.json();
-        if (enrollData.success) setEnrolledCourses(enrollData.courses);
+        try {
+          const enrollRes = await fetch('/api/learning/my-courses');
+          const enrollData = await enrollRes.json();
+          if (enrollRes.ok && enrollData.success) { setEnrolledCourses(enrollData.courses); setCoursesFailed(false); }
+          else setCoursesFailed(true);
+        } catch (coursesError) {
+          console.error("Could not load the courses:", coursesError);
+          setCoursesFailed(true);
+        }
 
         // Streak and stats live on the server (the browser has no access to the stats table).
         const statsRes = await fetch('/api/learning/stats', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }) });
@@ -52,7 +62,7 @@ export default function LearningDashboard() {
       }
     }
     fetchDashboardData();
-  }, [isLoaded, user]);
+  }, [isLoaded, user, reloadKey]);
 
   if (!isLoaded || !isSignedIn || isFetchingData) {
     return (
@@ -95,7 +105,15 @@ export default function LearningDashboard() {
               <BookOpen size={24} className="text-amber-500" /> My Enrolled Courses
             </h2>
 
-            {enrolledCourses.length === 0 ? (
+            {enrolledCourses.length === 0 && coursesFailed ? (
+              <SpotlightCard className="p-10 text-center flex flex-col items-center bg-[#0a0a0a]">
+                <h3 className="text-2xl font-bold text-white mb-2">We couldn't load your courses</h3>
+                <p className="text-stone-400 mb-8">This is a connection problem, not a problem with your enrolment. Please try again.</p>
+                <button onClick={() => setReloadKey(k => k + 1)} className="px-8 py-3.5 rounded-full bg-amber-500 text-black font-black hover:bg-amber-400 transition-colors">
+                  Try again
+                </button>
+              </SpotlightCard>
+            ) : enrolledCourses.length === 0 ? (
               <SpotlightCard className="p-10 text-center flex flex-col items-center bg-[#0a0a0a]">
                 <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-full flex items-center justify-center mb-6">
                   <BookOpen size={32} className="text-stone-500" />
