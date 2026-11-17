@@ -13,7 +13,7 @@ export default function AboutPage() {
       
       <main className="flex-grow flex flex-col items-center max-w-5xl mx-auto px-6 py-20 w-full relative z-10">
         <div className="text-center mb-20 relative z-10">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-amber-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(600px,100vw)] h-[400px] bg-amber-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
           <h1 className="text-5xl md:text-7xl font-display font-black text-white mb-6">
             The Journey to <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-amber-400">Mastery.</span>
           </h1>

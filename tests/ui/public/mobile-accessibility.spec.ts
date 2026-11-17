@@ -28,6 +28,17 @@ test.describe('PRD02 Mobile navigation @regression', () => {
     expect(overflow, 'no horizontal scrolling').toBeLessThanOrEqual(1);
   });
 
+  // SCP-114: a too-wide element makes a phone browser widen the layout (innerWidth grows), so the check against innerWidth in PUB-MOB-001 cannot see it.
+  test('[PUB-MOB-017] (SCP-114) the page layout is exactly as wide as the phone screen on the main public pages', async ({ page }) => {
+    for (const path of ['/', '/courses', '/about', '/contact', `/courses/${first.slug}`]) {
+      await page.goto(path);
+      await page.waitForLoadState('networkidle');
+      const m = await page.evaluate(() => ({ inner: window.innerWidth, doc: document.documentElement.scrollWidth }));
+      expect(m.inner, `${path}: layout width`).toBe(390);
+      expect(m.doc, `${path}: scroll width`).toBeLessThanOrEqual(390);
+    }
+  });
+
   test('[PUB-MOB-002][PUB-MOB-003] the mobile menu opens and closes', async ({ page }) => {
     await page.goto('/');
     await openMenu(page);

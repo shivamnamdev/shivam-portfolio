@@ -44,7 +44,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           
           {/* 🚨 THE FIX: Global Cyber Grid & Amber Glow */}
           <div className="fixed inset-0 bg-grid-pattern z-[-1] opacity-40 pointer-events-none" />
-          <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-amber-500/10 blur-[150px] rounded-full pointer-events-none z-[-1]" />
+          {/* SCP-114: the glow is wider than a phone; inside a clipping, screen-sized box it can no longer make the browser widen the page. */}
+          <div className="fixed inset-0 overflow-hidden pointer-events-none z-[-1]"><div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-amber-500/10 blur-[150px] rounded-full" /></div>
           
           <ScrollProgress />
           <TimeTracker /> {/* 🚨 ADD THE INVISIBLE TRACKER HERE */}
