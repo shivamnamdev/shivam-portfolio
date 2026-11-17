@@ -30,7 +30,7 @@ test.describe('PRD03 Currency toggle @regression', () => {
 
   test('[CDP-CUR-003] (SCP-62) the course card price on the catalog follows the selected currency', async ({ page }) => {
     await page.goto('/courses');
-    await expect(page.getByRole('button', { name: /USD|International|\$/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /USD/ })).toBeVisible();   // the card price itself is covered by CARD-UNIT-002 to 005 (every listed course is closed today)
   });
 
   test('[CDP-CUR-009][CHK-ENTRY-003] toggling back returns to INR', async ({ page }) => {
