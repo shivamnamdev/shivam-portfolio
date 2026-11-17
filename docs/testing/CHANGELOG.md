@@ -330,3 +330,4 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 - 2026-11-17 SCP-36, SCP-37, SCP-52, SCP-64 (WhatsApp button on phones): the chat bubble shows only from tablet size up; on a phone the button is 56 px and 32 px from the edge so its pulse ring stays on screen (no sideways drag, `FRE-MOB-002` was `test.fixme` and now runs); the button and the bubble's close button have accessible names. A `Go to Dashboard` locator in `conversion-journeys` is exact since the SCP-42 change. No SQL, no new package.
 
 - 2026-11-17 SCP-55: the Git lab has a Reset button in its status strip that clears the terminal, the commit count and the Git Graph (`LRN-GIT-010`, was `test.fixme`). Nothing is saved until Submit. No SQL, no new package.
+- 2026-11-17: SCP-58 — the phone menu toggle and the code review close button get accessible names; PUB-A11Y-012 checks a phone viewport

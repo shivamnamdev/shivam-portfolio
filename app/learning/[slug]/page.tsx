@@ -1620,7 +1620,7 @@ sys.settrace(_trace_calls)
                 <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-[#0d1117] w-full max-w-4xl rounded-3xl border border-stone-700 shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
                   <div className="px-6 py-4 border-b border-stone-800 flex justify-between items-center bg-[#161b22]">
                     <h3 className="text-xl font-bold text-white flex items-center gap-2"><TerminalSquare className="text-amber-500" /> Expected Outcome</h3>
-                    <button onClick={() => setShowOutcomeModal(false)} className="text-stone-400 hover:text-white transition-colors"><X size={24} /></button>
+                    <button aria-label="Close code review" onClick={() => setShowOutcomeModal(false)} className="text-stone-400 hover:text-white transition-colors"><X size={24} /></button>
                   </div>
                   {/* 🚨 THE FIX: Rendering the specific step's outcome instead of the whole file! */}
                   <div className="flex-grow p-6 overflow-y-auto bg-[#0a0c10]">

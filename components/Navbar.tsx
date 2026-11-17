@@ -71,7 +71,7 @@ export default function Navbar() {
             <UserButton />
           </Show>
 
-          <button className="ml-1 rounded-full p-2 text-stone-400 transition-colors hover:bg-white/10 md:hidden" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          <button type="button" aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"} aria-expanded={isMobileMenuOpen} className="ml-1 rounded-full p-2 text-stone-400 transition-colors hover:bg-white/10 md:hidden" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
