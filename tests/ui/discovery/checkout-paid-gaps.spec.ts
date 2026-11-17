@@ -51,10 +51,12 @@ test.describe('PRD04 paid checkout: order, errors and success screen (mocked gat
 
   test('[CHK-ORDER-002] the button recovers once the order response arrives', async ({ page }) => {
     trackDialogs(page);
-    await mockGateway(page, { order: 'slow', delayMs: 800 });
+    const gw = await mockGateway(page, { order: 'slow', delayMs: 800 });
     await openFixture(page, USER);
     await buy(page);
     await expect(page.getByRole('button', { name: 'Processing...' })).toBeVisible();
+    await expect.poll(async () => (await gw.rzp())?.opened, { timeout: 10000 }).toBe(1);   // the order arrived and the window opened
+    await gw.dismiss();                                                                     // SCP-50: the button is given back when the window closes
     await expect(ui.buyNow(page, 'INR')).toBeEnabled({ timeout: 10000 });
   });
 
@@ -125,16 +127,17 @@ test.describe('PRD04 paid checkout: order, errors and success screen (mocked gat
     await expect(ui.buyNow(page, 'INR')).toBeEnabled();
   });
 
-  test('[CHK-FAIL-005] pressing Buy Now again while the Razorpay overlay is open must not create a second order (known gap R-CK-5, SCP-50)', async ({ page }) => {
-    test.fixme(true, 'R-CK-5: the button is re-enabled as soon as the overlay opens, so a second click creates a second order');
+  test('[CHK-FAIL-005] pressing Buy Now again while the Razorpay overlay is open must not create a second order', async ({ page }) => {
     trackDialogs(page);
     const gw = await mockGateway(page);
     await openFixture(page, USER);
     await buy(page);
     await expect.poll(async () => (await gw.rzp())?.opened).toBe(1);
-    await buy(page);
+    await expect(page.getByRole('button', { name: 'Processing...' })).toBeDisabled();
     await page.waitForTimeout(500);
     expect(gw.orderBodies).toHaveLength(1);
+    await gw.dismiss();
+    await expect(ui.buyNow(page, 'INR')).toBeEnabled();   // closing the window gives the button back
   });
 
   test('[CHK-PAY-002] a USD purchase creates a USD order and ends in the success modal', async ({ page }) => {
@@ -203,6 +206,7 @@ test.describe('PRD04 paid checkout: order, errors and success screen (mocked gat
     await expect.poll(() => dialogs.join('|')).toContain('Payment failed or was cancelled. Please try again.');
     expect(gw.verifyBodies).toHaveLength(0);
     await expect(ui.successModal(page)).toHaveCount(0);
+    await gw.dismiss();   // the Razorpay window stays open after a failure (SCP-50); closing it gives Buy Now back
     await expect(ui.couponInput(page)).toHaveValue('BIRTHDAY20');
     await expect(ui.buyNow(page, 'USD')).toBeVisible();
   });

@@ -710,6 +710,8 @@ The following negative scenarios must be validated:
 * Cover with CK-21 and CK-26; treat a failing result as a product defect.
 * Recommend an `ondismiss` handler and keeping the button disabled until the overlay closes.
 
+**Status (2026-11-17, SCP-50):** fixed. The button stays on Processing while the overlay is open and is released by `modal.ondismiss` or when the payment ends; covered by `CHK-FAIL-005`.
+
 ---
 
 ### **Risk R-CK-6 — Blocking `alert()` Dialogs**

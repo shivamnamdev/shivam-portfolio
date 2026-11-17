@@ -86,6 +86,7 @@ test.describe('PRD03 Paid checkout (mocked gateway) @regression', () => {
     await expect.poll(async () => (await gw.rzp())?.opened).toBe(1);
     await gw.payFail();
     await expect.poll(() => dialogs.some(d => /Payment failed/.test(d))).toBe(true);
+    await gw.dismiss();   // the Razorpay window stays open after a failure (SCP-50): Buy Now is available again once the learner closes it
     await expect(ui.buyNow(page, 'INR')).toBeEnabled();
     await ui.buyNow(page, 'INR').click();
     await expect.poll(() => gw.orderBodies.length).toBe(2);
@@ -99,6 +100,8 @@ test.describe('PRD03 Paid checkout (mocked gateway) @regression', () => {
     await openFixture(page, USER);
     await ui.buyNow(page, 'INR').click();
     await expect.poll(async () => (await gw.rzp())?.opened).toBe(1);
+    await expect(page.getByRole('button', { name: 'Processing...' })).toBeDisabled();   // SCP-50: held while the window is open
+    await gw.dismiss();                                                                // the learner closes the popup
     await expect(ui.buyNow(page, 'INR')).toBeEnabled();
   });
 

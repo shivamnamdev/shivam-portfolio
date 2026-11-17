@@ -205,7 +205,7 @@ test.describe('PRD04/05 real flows against the QA database', () => {
       await openFixture(page, USER);                       // tab 1: buys
       const tab2 = await context.newPage();                // tab 2: loaded before the purchase, still shows Buy Now
       await tab2.route('https://checkout.razorpay.com/**', route => route.fulfill({ status: 200, contentType: 'application/javascript',
-        body: 'window.Razorpay = function(o){ window.__opened = 0; this.on = function(){}; this.open = function(){ window.__opened += 1; }; };' }));
+        body: 'window.Razorpay = function(o){ window.__opened = 0; this.on = function(){}; this.open = function(){ window.__opened += 1; setTimeout(function(){ o.modal && o.modal.ondismiss && o.modal.ondismiss(); }, 300); }; };' }));
       tab2.on('dialog', d => d.accept().catch(() => {}));
       await tab2.goto(`/courses/${SLUG}`);
       await tab2.waitForLoadState('networkidle');
