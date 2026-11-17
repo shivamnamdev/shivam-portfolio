@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getDisplayName, getPrimaryEmail } from "@/lib/serverAuth";
+import { hasCode, NO_CODE_MESSAGE } from "@/lib/labRules";
 import { fail, hasCourseAccess, isItemId, isSlug, readJson, requireLearner } from "@/lib/learnerApi";
 
 const MAX_CODE_CHARS = 200_000;
@@ -16,6 +17,7 @@ export async function POST(req: Request) {
   if (typeof body.submittedCode !== "string" || body.submittedCode.length === 0 || body.submittedCode.length > MAX_CODE_CHARS) {
     return fail(400, "Invalid submission");
   }
+  if (body.kind !== "git" && !hasCode(body.submittedCode)) return fail(400, NO_CODE_MESSAGE);   // SCP-56: an empty editor is not a submission
   const title = typeof body.title === "string" ? body.title.slice(0, MAX_TITLE_CHARS) : "";
   const label = body.kind === "git" ? "New Git Lab Submission: " : "New Code Submission: ";
 
