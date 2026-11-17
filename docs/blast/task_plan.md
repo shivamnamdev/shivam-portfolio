@@ -346,3 +346,7 @@ Full text: `docs/architecture/exam-switch.md`. Owner decision: exam marking move
 - [x] Owner approved the Blueprint in chat (new tab, keep the outline as "Outline")
 - [x] Built with unit, API and UI tests (`docs/architecture/learner-draft-preview.md`)
 - [ ] Owner: merge the PR
+
+## Static public pages (2026-11-17, SCP-80, branch docs/SCP-80-static-pages-plan)
+- [x] Researched on a production build: public pages are already static since SCP-87 (`docs/architecture/static-public-pages.md`)
+- [ ] Owner: approve slice 1 (`revalidate` on the catalog page, tests, runbook line), the maximum age, and slice 2 yes/no
