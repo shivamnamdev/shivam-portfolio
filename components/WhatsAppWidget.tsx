@@ -22,22 +22,23 @@ export default function WhatsAppWidget({ topic = "the Python Cohort", liftOnMobi
   },[]);
 
   return (
-    <div className={`fixed ${liftOnMobile ? "bottom-24 md:bottom-6" : "bottom-6"} right-6 z-[100] flex flex-col items-end gap-4 pointer-events-none`}>
+    // Phone (SCP-52, SCP-64): the button is 56 px and 32 px from the edge, so its pulse ring (twice its size) stays inside the screen instead of dragging the page sideways.
+    <div className={`fixed ${liftOnMobile ? "bottom-24 md:bottom-6" : "bottom-6"} right-8 md:right-6 z-[100] flex flex-col items-end gap-4 pointer-events-none`}>
       
-      {/* Tooltip Chat Bubble */}
+      {/* Tooltip Chat Bubble: tablets and up only; on a phone it covered the footer links and the coupon box (SCP-36, SCP-64) */}
       <AnimatePresence>
         {showTooltip && (
           <motion.div 
             initial={{ opacity: 0, y: 10, scale: 0.9 }} 
             animate={{ opacity: 1, y: 0, scale: 1 }} 
             exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-            className="bg-white text-stone-800 px-4 py-3 rounded-2xl shadow-xl border border-stone-200 pointer-events-auto relative flex items-start gap-3"
+            className="hidden md:flex bg-white text-stone-800 px-4 py-3 rounded-2xl shadow-xl border border-stone-200 pointer-events-auto relative items-start gap-3"
           >
             <div className="text-sm font-medium">
               Have doubts about {topic}? <br/>
               <span className="font-bold text-amber-600">Chat with me directly!</span>
             </div>
-            <button onClick={() => setShowTooltip(false)} className="text-stone-400 hover:text-stone-600 mt-0.5">
+            <button onClick={() => setShowTooltip(false)} aria-label="Close message" className="text-stone-400 hover:text-stone-600 mt-0.5">
               <X size={16} />
             </button>
             {/* Chat Bubble Arrow */}
@@ -51,8 +52,9 @@ export default function WhatsAppWidget({ topic = "the Python Cohort", liftOnMobi
         href={`https://wa.me/${number}?text=${message}`} 
         target="_blank" 
         rel="noreferrer"
+        aria-label="Chat with us on WhatsApp"
         onMouseEnter={() => setShowTooltip(true)}
-        className="w-16 h-16 bg-[#25D366] text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-2xl hover:scale-110 transition-all duration-300 pointer-events-auto relative group"
+        className="w-14 h-14 md:w-16 md:h-16 bg-[#25D366] text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-2xl hover:scale-110 transition-all duration-300 pointer-events-auto relative group"
       >
         {/* Pulse effect rings */}
         <span className="absolute w-full h-full rounded-full border-2 border-[#25D366] animate-ping opacity-50"></span>

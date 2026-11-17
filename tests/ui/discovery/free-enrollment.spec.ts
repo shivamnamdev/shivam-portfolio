@@ -165,7 +165,6 @@ test.describe('PRD05 free enrolment UI (mocked API) @regression', () => {
   });
 
   test('[FRE-MOB-002] with a free coupon applied the page cannot be dragged sideways on a 390 px phone', async ({ page }) => {
-    test.fixme(true, 'Defect (SCP-52): after QA100 is applied the sales page scrolls about 10 px sideways at 390 px width');
     await page.setViewportSize({ width: 390, height: 844 });
     trackDialogs(page);
     await openFixture(page, USER);

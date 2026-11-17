@@ -110,7 +110,7 @@ test.describe('PRD02 CTA state context and conversion (fixture course) @regressi
     await gw.paySuccess();
     await expect(ui.successModal(page)).toBeVisible();
     await expect(page.getByRole('link', { name: /Join WhatsApp Group/ })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Go to Dashboard/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Go to Dashboard', exact: true })).toBeVisible();
   });
 
   test('[PUB-CONV-011][PUB-REDIR-003][PUB-REL-009] a free enrolment ends in the success dialog', async ({ page }) => {
