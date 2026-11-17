@@ -199,7 +199,6 @@ test.describe('PRD07 Python course: progress, Q&A and lab (writes)', () => {
 
 
       test('[LRN-PY-010] submitted code is back in the editor after a reload', async ({ page }) => {
-        test.fixme(true, 'SCP-48: on reload the autosaved draft is overwritten with the starter text before the saved submission is read, so the learner sees the starter code, not what they submitted');
         await toLab(page);
         await setCode(page, "print('my answer')");
         await page.waitForTimeout(500);
