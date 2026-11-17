@@ -13,7 +13,7 @@ export default async function CoursesPage() {
       <Navbar />
       
       <main className="flex-grow flex flex-col items-center max-w-7xl mx-auto px-6 py-20 w-full relative z-10">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-amber-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(600px,100vw)] h-[400px] bg-amber-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
 
         <h1 className="text-5xl md:text-7xl font-display font-black text-white mb-6 text-center drop-shadow-lg">
           Course Catalog

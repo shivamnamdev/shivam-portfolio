@@ -11,7 +11,7 @@ export default function Home() {
       
       {/* Background Grid & Glow */}
       <div className="absolute inset-0 bg-grid-pattern z-0" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-amber-500/15 blur-[150px] rounded-full pointer-events-none z-0" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(800px,100vw)] h-[500px] bg-amber-500/15 blur-[150px] rounded-full pointer-events-none z-0" />
       
       <Navbar />
       
