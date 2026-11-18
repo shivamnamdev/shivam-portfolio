@@ -1,4 +1,4 @@
-// POST /api/learning/exam-grade  { courseSlug, files, inputs }  ->  { success, score, is_passed, attempts_used, report }
+// POST /api/learning/exam-grade  { courseSlug, files, inputs }  ->  { success, score, is_passed, attempts_used, attempts_left, report, notes }
 // The server runs the learner's code against the course's grader (lib/examGraders.ts) and records the result itself.
 // The browser never sends a score. `inputs` are the answers the learner typed into input() pop-ups, in order.
 import { NextResponse } from "next/server";
@@ -9,12 +9,11 @@ import { isAdminEmail } from "@/lib/admin";
 import { getPrimaryEmail } from "@/lib/serverAuth";
 import { courseDefaultExam, graderFor, resolveExamId } from "@/lib/examGraders";
 import { runExam } from "@/lib/runExam";
+import { MAX_ATTEMPTS, PASS_MARK, attemptsLeft } from "@/lib/examResult";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
-const MAX_ATTEMPTS = 5;
-const PASS_MARK = 80;
 const MAX_CODE_CHARS = 200_000;
 const MAX_STEPS = 30;
 const MAX_INPUTS = 200;
@@ -89,7 +88,7 @@ export async function POST(req: Request) {
       { onConflict: "user_id,course_slug" },
     );
     if (error) throw error;
-    return NextResponse.json({ success: true, score: run.score, is_passed: passed || alreadyPassed, attempts_used: attempts, report: run.report });
+    return NextResponse.json({ success: true, score: run.score, is_passed: passed || alreadyPassed, attempts_used: attempts, attempts_left: attemptsLeft(attempts), report: run.report, notes: run.notes });
   } catch (error) {
     console.error("Exam grade failed:", error);
     return fail(500, "Failed to grade the exam");

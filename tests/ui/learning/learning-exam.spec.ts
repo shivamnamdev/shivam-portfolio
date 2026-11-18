@@ -86,6 +86,35 @@ test.describe('PRD07 exam, advanced lessons and certificate', () => {
         expect(rows[0]).toMatchObject({ attempts_used: 1, is_passed: false });
       });
 
+      test('[LRN-EXM-013] a failed attempt opens the red result window: passing score, score, motivational note, attempts left, the submitted code and a note per question (SCP-115)', async ({ page }) => {
+        await toExam(page);
+        await page.getByRole('button', { name: 'Submit Exam (0/5)' }).click();
+        const win = page.getByTestId('exam-result');
+        await expect(win).toBeVisible({ timeout: 60000 });
+        await expect(win).toHaveAttribute('data-tone', 'fail');
+        await expect(win.getByText('Passing score: 80%')).toBeVisible();
+        await expect(win.getByTestId('exam-result-message')).toContainText('You have 4 attempts left.');
+        await expect(win.getByTestId('exam-celebration')).toHaveCount(0);
+        await expect(win.getByTestId('exam-submitted-code')).toBeVisible();
+        await expect(win.locator('[data-testid^="exam-note-"]')).toHaveCount(5);
+        await expect(win.getByTestId('exam-note-1')).toHaveAttribute('data-passed', 'false');
+        await page.keyboard.press('Escape');
+        await expect(win).toHaveCount(0);
+      });
+
+      test('[LRN-EXM-014] a pass opens the green result window with the celebration (the grader answer is simulated)', async ({ page }) => {
+        await page.route('**/api/learning/exam-grade', route => route.fulfill({ json: { success: true, score: 90, is_passed: true, attempts_used: 1, attempts_left: 4, report: 'EXAM_SCORE:90',
+          notes: [1, 2, 3, 4, 5].map(q => ({ q, label: `Q${q}`, passed: q !== 3, note: q === 3 ? 'Check the payslips.' : 'Good.' })) } }));
+        await toExam(page);
+        await page.getByRole('button', { name: 'Submit Exam (0/5)' }).click();
+        const win = page.getByTestId('exam-result');
+        await expect(win).toBeVisible({ timeout: 60000 });
+        await expect(win).toHaveAttribute('data-tone', 'pass');
+        await expect(win.getByTestId('exam-result-title')).toContainText('You passed with 90%!');
+        await expect(win.getByTestId('exam-celebration')).toBeAttached();
+        await expect(win.getByTestId('exam-note-3')).toContainText('Check the payslips.');
+      });
+
       test('[LRN-EXM-004] a failed exam keeps the advanced lessons locked', async ({ page }) => {
         await toExam(page);
         await page.getByRole('button', { name: 'Submit Exam (0/5)' }).click();

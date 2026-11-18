@@ -4,11 +4,12 @@
 // were typed earlier in the browser, so a slow typist never counts against the limit.
 import { Worker } from "node:worker_threads";
 import path from "node:path";
+import { splitFeedback, type ExamNote } from "./examNotes";
 
 export const EXAM_TIME_LIMIT_MS = 20_000;
 const REPORT_LIMIT = 64 * 1024;
 
-export type ExamRun = { status: "ok"; score: number; report: string } | { status: "timeout" } | { status: "error" };
+export type ExamRun = { status: "ok"; score: number; report: string; notes: ExamNote[] } | { status: "timeout" } | { status: "error" };
 
 export function runExam(input: { code: string; inputs: string[]; grader: string }): Promise<ExamRun> {
   return new Promise(resolve => {
@@ -21,7 +22,7 @@ export function runExam(input: { code: string; inputs: string[]; grader: string 
     });
     const timer = setTimeout(() => finish({ status: "timeout" }), EXAM_TIME_LIMIT_MS);
     worker.on("message", (m: { score: number; graded: boolean; report: string }) =>
-      finish(m.graded ? { status: "ok", score: m.score, report: m.report.slice(0, REPORT_LIMIT) } : { status: "error" }));
+      finish(m.graded ? (() => { const { report, notes } = splitFeedback(m.report); return { status: "ok" as const, score: m.score, report: report.slice(0, REPORT_LIMIT), notes }; })() : { status: "error" }));
     worker.on("error", () => finish({ status: "error" }));
     worker.on("exit", () => finish({ status: "error" }));
   });

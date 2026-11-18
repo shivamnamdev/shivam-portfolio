@@ -19,6 +19,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GitGraphVisualizer from '@/components/GitGraphVisualizer';
 import { ADMIN_EMAIL } from '@/lib/admin';
 import { isGradedExam } from '@/lib/examRule';
+import { examResultView, PASS_MARK, MAX_ATTEMPTS } from '@/lib/examResult';
+import ExamResultModal, { type ExamResultData } from '@/components/learning/ExamResultModal';
 import { canViewSolution, hasCode, NO_CODE_MESSAGE } from '@/lib/labRules';
 import { PREVIEW_BANNER, PREVIEW_BLOCKED, contentUrl, isDraftPreview } from '@/lib/learnerPreview';
 
@@ -158,6 +160,7 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
   const [stepFiles, setStepFiles] = useState<Record<string, string>[]>([]); 
   
   const [output, setOutput] = useState("");
+  const [examResult, setExamResult] = useState<ExamResultData | null>(null);   // the window shown after an exam submission (SCP-115)
   const [isRunningCode, setIsRunningCode] = useState(false);
   const [isFetchingCode, setIsFetchingCode] = useState(false);
   const [isSubmittingAssignment, setIsSubmittingAssignment] = useState(false);
@@ -975,11 +978,12 @@ sys.settrace(_exam_trace)
         setOutput(result.report || "No report was produced.");
         setExamStatus({ is_passed: result.is_passed, attempts_used: newAttempts });
 
-        if (score >= 80) {
+        if (score >= PASS_MARK) {
           showToast("🏆 EXAM PASSED!", `You scored ${score}%. All Advanced Videos are now unlocked!`, "success");
         } else {
-          showToast("❌ Exam Failed", `You scored ${score}%. You need 80% to pass. Attempts left: ${Math.max(0, 5 - newAttempts)}`, "error");
+          showToast("❌ Exam Failed", `You scored ${score}%. You need ${PASS_MARK}% to pass. Attempts left: ${Math.max(0, MAX_ATTEMPTS - newAttempts)}`, "error");
         }
+        setExamResult({ score, view: examResultView(score, newAttempts, examStatus.is_passed), notes: Array.isArray(result.notes) ? result.notes : [], code: combinedCode });
       } catch (err) {
         showToast("Error", "Failed to grade exam. Try again.", "error");
       } finally {
@@ -1635,6 +1639,8 @@ sys.settrace(_trace_calls)
               </div>
             )}
           </AnimatePresence>
+
+          {examResult && <ExamResultModal result={examResult} onClose={() => setExamResult(null)} />}
 
           {/* Solution Modal */}
           <AnimatePresence>
