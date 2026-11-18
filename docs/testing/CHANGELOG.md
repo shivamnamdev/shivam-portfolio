@@ -344,3 +344,4 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 - 2026-11-18: SCP-81 — every /api answer is sent with Cache-Control: no-store (next.config.mjs); PRF-PRD-004 (production build) now passes, public pages stay cacheable (PRF-PRD-003/012 pass); unit ACH-UNIT-001
 - 2026-11-18: SCP-116 — the admin's own exam submissions are mailed like any learner's; while the exam_attempts table is missing the Exam attempts view shows a message naming the SQL file (list answers 424 not_set_up) instead of an empty table; AAPI-EXA-005 and ADMUI-EXA-004 (run only while the table is missing)
 - 2026-11-19 — SCP-118: the database numbers exam attempts (trigger, step11 SQL, LRNA-EXG-014); no new package
+- 2026-11-19 — SCP-117: exam attempts tests run against the real QA table; reset clears saved attempts, ADMUI-EXA-002/003 find fixture rows by learner name. Result: all table-dependent specs pass (SCP-115)

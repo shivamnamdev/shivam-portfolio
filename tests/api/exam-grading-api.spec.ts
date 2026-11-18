@@ -42,7 +42,8 @@ test.describe('EXG exam grading on the server @regression', () => {
   let learner: Session;
   const grade = (code: string, inputs: string[] = [], s: Session = learner) =>
     s.request.post('/api/learning/exam-grade', { data: { courseSlug: SLUG, files: [{ 'main.py': code }], inputs } });
-  const reset = async () => { await adminDb().from('exam_progress').delete().eq('user_id', await uid()).eq('course_slug', SLUG); };
+  // Saved exam attempts (SCP-115) are cleared with the progress: the attempt number comes from the progress row, so stale rows would collide on the unique key.
+  const reset = async () => { await adminDb().from('exam_progress').delete().eq('user_id', await uid()).eq('course_slug', SLUG); await adminDb().from('exam_attempts').delete().eq('user_id', await uid()).eq('course_slug', SLUG); };
 
   test.beforeAll(async ({ browser }) => {
     await revokeTestEnrolment(U, SLUG).catch(() => {});
