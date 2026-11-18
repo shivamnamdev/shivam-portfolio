@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useState } from 'react';
 import CodeDialog from '@/components/admin/progress/CodeDialog';
+import ExamAttempts from '@/components/admin/progress/ExamAttempts';
 import { useAdminList } from '@/components/admin/useAdminApi';
 import { useCohortSlugs } from '@/components/admin/useCohortSlugs';
 import { DataTable, ErrorNote, PageHeader, Spinner, ghostButtonClass, inputClass } from '@/components/admin/ui';
@@ -10,6 +11,7 @@ import { queryString } from '@/lib/adminUi/client';
 const label = 'text-xs font-semibold text-stone-400';
 
 export default function SubmissionsPage() {
+  const [view, setView] = useState<'assignments' | 'exams'>('assignments');
   const { slugs: cohortSlugs } = useCohortSlugs();
   const [cohort, setCohort] = useState('');
   const [q, setQ] = useState('');
@@ -19,7 +21,13 @@ export default function SubmissionsPage() {
   const close = useCallback(() => setOpen(null), []);
   return (
     <div>
-      <PageHeader title="Code submissions" subtitle="Assignments learners have submitted, newest first. The code is not in this list; open one to read it." />
+      <PageHeader title="Code submissions" subtitle={view === 'assignments' ? 'Assignments learners have submitted, newest first. The code is not in this list; open one to read it.' : 'Exam attempts, with the score and improvement note.'} />
+      <div role="group" aria-label="Kind of submission" className="mb-4 inline-flex rounded-lg border border-white/10 p-1 text-sm">
+        {([['assignments', 'Assignments'], ['exams', 'Exam attempts']] as const).map(([key, text]) => (
+          <button key={key} type="button" aria-pressed={view === key} onClick={() => setView(key)} className={`rounded-md px-3 py-1.5 font-semibold ${view === key ? 'bg-amber-500 text-black' : 'text-stone-300 hover:text-white'}`}>{text}</button>
+        ))}
+      </div>
+      {view === 'exams' ? <ExamAttempts /> : <>
       <form className="mb-4 flex flex-wrap items-end gap-3" aria-label="Filter submissions" onSubmit={(e) => { e.preventDefault(); setAppliedQ(q); }}>
         <label className={label}>Search by name or e-mail<input value={q} maxLength={100} onChange={(e) => setQ(e.target.value)} className={`${inputClass} mt-1 font-normal`} /></label>
         <label className={label}>Cohort<select value={cohort} onChange={(e) => setCohort(e.target.value)} className={`${inputClass} mt-1 font-normal`}><option value="">All</option>{cohortSlugs.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
@@ -39,6 +47,7 @@ export default function SubmissionsPage() {
       )}
       {list.hasMore && <div className="mt-4 text-center"><button type="button" disabled={list.loading} className={ghostButtonClass} onClick={() => void list.loadMore()}>{list.loading ? 'Loading…' : 'Load more'}</button></div>}
       {open && <CodeDialog submission={open} onClose={close} />}
+      </>}
     </div>
   );
 }

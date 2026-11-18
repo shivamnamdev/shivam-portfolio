@@ -371,3 +371,4 @@ Full text: `docs/architecture/exam-switch.md`. Owner decision: exam marking move
 - [ ] B: `exam_attempts` table (owner runs the SQL), saving, e-mails to learner and owner
 - [ ] C: admin API and "Exam attempts" screen
 - [x] B built (`docs/architecture/exam-feedback.md` section 10), branch feat/SCP-115b-exam-attempts-mail; owner runs `step10-exam-attempts.sql` on QA then production, then re-runs LRNA-EXG-013 and submits one real exam to check the mails
+- [x] C built (`docs/architecture/exam-feedback.md` section 11), branch feat/SCP-115c-admin-exam-attempts; the row tests skip until the owner has run `step10-exam-attempts.sql` on QA, then they must be re-run
