@@ -43,6 +43,9 @@ Tracks student code submissions from the Interactive IDE.
 - `completed_at` (Timestamp)
 - *Unique Constraint: user_id + course_slug + video_id*
 ### `exam_attempts` (SCP-115)
+
+`attempt_no` is assigned by a BEFORE INSERT trigger (`docs/testing/sql/step11-exam-attempt-number.sql`, SCP-118): the learner's highest saved number for the course plus one, whatever the server sends.
+
 One row per exam submission, written by `POST /api/learning/exam-grade` (service role only; RLS on, nothing granted to the browser roles). Created by `docs/testing/sql/step10-exam-attempts.sql` (with rollback). If it is missing the exam still grades and mails, and the server logs "exam attempt not saved".
 - `id` (UUID), `user_id` (Text, Clerk id), `user_name`, `user_email`, `course_slug`, `attempt_no` (Integer, 1 or more), `score` (0 to 100), `passed` (Boolean), `code` (Text, the submitted program, at most 200,000 characters), `notes` (JSONB, `[{ q, label, passed, note }]`), `mail_learner` and `mail_owner` (`pending`, `sent`, `failed` or `skipped`), `created_at`.
 - Unique: `user_id + course_slug + attempt_no`. Index: `created_at desc`.
