@@ -158,6 +158,18 @@ for probe in ("js.process.env.SUPABASE_SERVICE_ROLE_KEY", "js.process.env.CLERK_
     await adminDb().from('exam_attempts').delete().eq('user_id', await uid()).eq('course_slug', SLUG);
   });
 
+  test('[LRNA-EXG-014] the database numbers saved attempts, even when the sent number is wrong (SCP-118)', async () => {
+    const probe = await adminDb().from('exam_attempts').select('id').limit(1);
+    test.skip(!!probe.error, 'exam_attempts does not exist on this Supabase project');
+    const row = async () => ({ user_id: await uid(), course_slug: SLUG, attempt_no: 99, score: 0, passed: false, code: 'x' });
+    const a = await adminDb().from('exam_attempts').insert(await row()).select('attempt_no').single();
+    const b = await adminDb().from('exam_attempts').insert(await row()).select('attempt_no').single();
+    const numbers = [a.data?.attempt_no, b.data?.attempt_no];
+    await adminDb().from('exam_attempts').delete().eq('user_id', await uid()).eq('course_slug', SLUG);
+    test.skip(numbers[0] === 99, 'docs/testing/sql/step11-exam-attempt-number.sql has not been run on this project');
+    expect(numbers).toEqual([1, 2]);
+  });
+
   test('[LRNA-EXG-010] a course without an exam answers 404', async () => {
     const res = await learner.request.post('/api/learning/exam-grade', { data: { courseSlug: 'git-beginner-batch-1', files: [{ 'main.py': 'print(1)' }], inputs: [] } });
     expect(res.status()).toBe(404);
