@@ -1,15 +1,17 @@
 // POST /api/learning/exam-grade  { courseSlug, files, inputs }  ->  { success, score, is_passed, attempts_used, attempts_left, report, notes }
 // The server runs the learner's code against the course's grader (lib/examGraders.ts) and records the result itself.
 // The browser never sends a score. `inputs` are the answers the learner typed into input() pop-ups, in order.
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { fail, hasCourseAccess, isSlug, readJson, requireLearner } from "@/lib/learnerApi";
 import { isAdminEmail } from "@/lib/admin";
-import { getPrimaryEmail } from "@/lib/serverAuth";
+import { getDisplayName, getPrimaryEmail } from "@/lib/serverAuth";
 import { courseDefaultExam, graderFor, resolveExamId } from "@/lib/examGraders";
 import { runExam } from "@/lib/runExam";
 import { MAX_ATTEMPTS, PASS_MARK, attemptsLeft } from "@/lib/examResult";
+import { mailAttempt, saveAttempt } from "@/lib/examAttempts";
+import { getLearningCourse } from "@/lib/catalog/learning";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -64,7 +66,9 @@ export async function POST(req: Request) {
 
     const used = current?.attempts_used ?? 0;
     const alreadyPassed = !!current?.is_passed;
-    const isAdmin = isAdminEmail(getPrimaryEmail(await currentUser()));
+    const clerkUser = await currentUser();
+    const email = getPrimaryEmail(clerkUser);
+    const isAdmin = isAdminEmail(email);
     if (used >= MAX_ATTEMPTS && !alreadyPassed && !isAdmin) return fail(403, "No exam attempts left");
 
     // The attempt is counted before grading: a crash or a timeout still uses it.
@@ -88,6 +92,19 @@ export async function POST(req: Request) {
       { onConflict: "user_id,course_slug" },
     );
     if (error) throw error;
+
+    // SCP-115: keep the attempt (code, score, notes) and e-mail the learner and the owner. Neither can fail the grading: the save is
+    // logged when it cannot be done, and the mails go out after the response, so the learner is not kept waiting for them.
+    const name = getDisplayName(clerkUser);
+    const slug = body.courseSlug as string;
+    const attemptId = await saveAttempt({ userId: who.userId, userName: name, userEmail: email, courseSlug: slug, attemptNo: attempts, score: run.score, passed, code, notes: run.notes });
+    after(async () => {
+      const course = await getLearningCourse(slug).catch(() => null);
+      await mailAttempt(attemptId, {
+        learnerName: name, learnerEmail: email, courseTitle: course?.title ?? slug, courseSlug: slug, attemptNo: attempts,
+        score: run.score, passed, alreadyPassed, attemptsLeft: attemptsLeft(attempts), notes: run.notes, code,
+      }, { isAdmin });
+    });
     return NextResponse.json({ success: true, score: run.score, is_passed: passed || alreadyPassed, attempts_used: attempts, attempts_left: attemptsLeft(attempts), report: run.report, notes: run.notes });
   } catch (error) {
     console.error("Exam grade failed:", error);
