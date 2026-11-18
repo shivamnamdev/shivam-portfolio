@@ -31,6 +31,14 @@ test.describe('ADMUI exam attempts @regression', () => {
     await expect(page.getByRole('form', { name: 'Filter submissions' })).toBeVisible();
   });
 
+  test('[ADMUI-EXA-004] while the table is missing the view says so and names the SQL file (it never looks like "no attempts")', async ({ page }) => {
+    const probe = await adminDb().from('exam_attempts').select('id').limit(1);
+    test.skip(!probe.error, 'exam_attempts exists on this project');
+    await open(page);
+    await expect(page.getByText(/step10-exam-attempts\.sql/)).toBeVisible({ timeout: 30000 });
+    await expect(page.getByText('No exam attempts yet.')).toHaveCount(0);
+  });
+
   test.describe('with saved attempts', () => {
     let uid = '';
     test.beforeAll(async () => {
