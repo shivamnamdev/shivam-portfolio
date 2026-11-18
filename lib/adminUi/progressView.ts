@@ -37,3 +37,16 @@ export const statusText = (d: Pick<DirectoryItem, "status" | "enrolments">): str
 export const joinedText = (iso: string | null): string => (iso ? iso.slice(0, 10) : "—");
 export const learnerLine = (p: { name: string; email: string | null; userId: string }): string => `${p.name || "Unknown student"} (${p.email ?? p.userId})`;
 export const submittedText = (iso: string | null): string => (iso ? iso.slice(0, 16).replace("T", " ") + " UTC" : "—");
+
+// ---- exam attempts (SCP-115 part C) ----
+export type ExamAttemptItem = {
+  id: string; userId: string; name: string; email: string | null; cohortSlug: string; attemptNo: number; score: number; passed: boolean;
+  createdAt: string; codeLength: number; mailLearner: string; mailOwner: string;
+};
+export type ExamAttemptNote = { q: number; label: string; passed: boolean; note: string };
+// "Passed" or "Not passed" for one attempt (this attempt's score against the passing score).
+export const attemptResultText = (a: Pick<ExamAttemptItem, "passed">): string => (a.passed ? "Passed" : "Not passed");
+// How the e-mail status reads: "Sent", "Failed", "Skipped" or "Pending".
+export const mailStatusText = (s: string): string => ({ sent: "Sent", failed: "Failed", skipped: "Skipped", pending: "Pending" } as Record<string, string>)[s] ?? "Pending";
+// The mail column: both e-mails in one short line.
+export const mailText = (a: Pick<ExamAttemptItem, "mailLearner" | "mailOwner">): string => `Learner: ${mailStatusText(a.mailLearner)} · You: ${mailStatusText(a.mailOwner)}`;
