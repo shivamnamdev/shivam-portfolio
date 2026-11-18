@@ -357,3 +357,9 @@ Full text: `docs/architecture/exam-switch.md`. Owner decision: exam marking move
 - [x] Owner approved the Blueprint (four defaults accepted)
 - [x] Built with unit tests (CARD-UNIT) and UI tests; screenshots shown
 - [ ] Owner: merge the PR
+
+## Exam grader checks behaviour (2026-11-18, SCP-88, branch feat/SCP-88-behaviour-grader)
+- [x] Finding written, Blueprint proposed (`docs/architecture/exam-grader-behaviour.md`)
+- [x] Owner approved the Blueprint in chat (all or nothing per question)
+- [x] Built with unit tests EXGB-UNIT-001..009 and API tests (`docs/architecture/exam-grader-behaviour.md` section 9)
+- [ ] Owner: merge the PR; review the reference solution
