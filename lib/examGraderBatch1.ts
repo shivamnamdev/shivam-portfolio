@@ -21,6 +21,13 @@ _NS = _learner_ns
 _FIRST = sys.stdout.getvalue()
 score = 0
 PER_Q = 20
+_notes = []
+
+def _sentence(t):
+    return (t if "_" in t.split(" ")[0] else t[0].upper() + t[1:]) + "."
+
+def _note(label, ok, text):
+    _notes.append({"q": int(label[1]), "label": label, "passed": bool(ok), "note": text})
 
 print("\n" + "=" * 50)
 print("🤖 SHIVAM ACADEMY AUTO-GRADER RUNNING...")
@@ -259,10 +266,14 @@ def _award(label, ok, why, good, bad):
     if ok:
         score += PER_Q
         print("✅ " + label + " passed! " + good)
+        _note(label, True, good)
     elif why == "hidden":
-        print("❌ " + label + " failed: it gave the right answer on the given data but not on different data. " + _HINT)
+        msg = "it gave the right answer on the given data but not on different data. " + _HINT
+        print("❌ " + label + " failed: " + msg)
+        _note(label, False, msg)
     else:
         print("❌ " + label + " failed: " + bad)
+        _note(label, False, bad)
 
 # ---------------------------------------------------------------- Q1, Q2, Q3
 try:
@@ -270,18 +281,21 @@ try:
     _award("Q1 (Lists)", ok, why, "Excellent data extraction and improvement logic.", "Check the topper, the lowest scorer, the 3+ subjects above 80, the sorted order and the Improvement Report (Yes/No).")
 except Exception as e:
     print("❌ Q1 (Lists) crashed: " + str(e))
+    _note("Q1 (Lists)", False, "Your code stopped with an error: " + str(e))
 
 try:
     ok, why = _data_question("password", lambda t: _q2_ok(t, _PASSWORD, True), lambda t, h: _q2_ok(t, h["password"], False))
     _award("Q2 (Strings)", ok, why, "Great slicing and formatting.", "Check your character counts, first/last 4 checks, masking, reversal, palindromes and the final rating.")
 except Exception as e:
     print("❌ Q2 (Strings) crashed: " + str(e))
+    _note("Q2 (Strings)", False, "Your code stopped with an error: " + str(e))
 
 try:
     ok, why = _data_question("employees", lambda t: _q3_ok(t, _EMPLOYEES), lambda t, h: _q3_ok(t, h["employees"]))
     _award("Q3 (Dictionaries)", ok, why, "Perfect payroll calculations.", "Verify the department averages, the highest paying department, and every final payslip (gross, deductions, net, band).")
 except Exception as e:
     print("❌ Q3 (Dictionaries) crashed: " + str(e))
+    _note("Q3 (Dictionaries)", False, "Your code stopped with an error: " + str(e))
 
 # ---------------------------------------------------------------- Q4: task logger functions, called with fixed inputs
 def _q4():
@@ -331,11 +345,14 @@ try:
     why = _q4()
     if why:
         print("❌ Q4 (File Handling) failed: " + why + ".")
+        _note("Q4 (File Handling)", False, _sentence(why))
     else:
         score += PER_Q
         print("✅ Q4 (File Handling) passed! The functions work on a real file.")
+        _note("Q4 (File Handling)", True, "The functions work on a real file.")
 except Exception as e:
     print("❌ Q4 (File Handling) crashed: " + str(e))
+    _note("Q4 (File Handling)", False, "Your code stopped with an error: " + str(e))
 
 # ---------------------------------------------------------------- Q5: hospital classes, called with fixed inputs
 def _q5():
@@ -394,13 +411,17 @@ try:
     why = _q5()
     if why:
         print("❌ Q5 (OOPs) failed: " + why + ".")
+        _note("Q5 (OOPs)", False, _sentence(why))
     else:
         score += PER_Q
         print("✅ Q5 (OOPs) passed! Errors fixed and the new methods work.")
+        _note("Q5 (OOPs)", True, "Errors fixed and the new methods work.")
 except Exception as e:
     print("❌ Q5 (OOPs) crashed: " + str(e))
+    _note("Q5 (OOPs)", False, "Your code stopped with an error: " + str(e))
 
 # ---------------------------------------------------------------- FINAL OUTPUT FOR THE REACT FRONTEND
+print("EXAM_FEEDBACK:" + json.dumps(_notes))
 print("=" * 50)
 print("EXAM_SCORE:" + str(score))
 print("=" * 50)

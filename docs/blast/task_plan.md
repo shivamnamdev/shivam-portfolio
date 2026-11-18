@@ -363,3 +363,10 @@ Full text: `docs/architecture/exam-switch.md`. Owner decision: exam marking move
 - [x] Owner approved the Blueprint in chat (all or nothing per question)
 - [x] Built with unit tests EXGB-UNIT-001..009 and API tests (`docs/architecture/exam-grader-behaviour.md` section 9)
 - [ ] Owner: merge the PR; review the reference solution
+
+## Exam result, note, e-mails and admin view (2026-11-18, SCP-115, branch feat/SCP-115-exam-feedback)
+- [x] Owner approved the Blueprint in chat (`docs/architecture/exam-feedback.md`): rule-based notes, three pull requests, owner copy to the site mailbox
+- [x] A: grader notes, result window (green with celebration / red with motivational note), code and notes on screen; unit, API and UI tests
+- [ ] Owner: merge A
+- [ ] B: `exam_attempts` table (owner runs the SQL), saving, e-mails to learner and owner
+- [ ] C: admin API and "Exam attempts" screen

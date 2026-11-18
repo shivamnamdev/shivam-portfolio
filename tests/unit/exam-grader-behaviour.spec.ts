@@ -125,4 +125,16 @@ class Hospital:
     const r = await grade(REFERENCE.replaceAll('students', 'marks'));
     expect(r.report).toMatch(/Q1 \(Lists\) failed: it gave the right answer on the given data but not on different data/);
   });
+
+  test('[EXGB-UNIT-010] the grader returns one improvement note per question: all passed for the reference, the failing question named for a wrong rule', async () => {
+    const ok = await grade(REFERENCE);
+    expect(ok.notes.map(n => n.q)).toEqual([1, 2, 3, 4, 5]);
+    expect(ok.notes.every(n => n.passed)).toBe(true);
+    expect(ok.report).not.toContain('EXAM_FEEDBACK');
+    const bad = await grade(change('if self.get_total_bill() > 20000:', 'if self.get_total_bill() >= 20000:'));
+    const q5 = bad.notes.find(n => n.q === 5)!;
+    expect(q5.passed).toBe(false);
+    expect(q5.note).toContain('calculate_discount');
+    expect(bad.notes.filter(n => n.passed)).toHaveLength(4);
+  });
 });

@@ -132,6 +132,16 @@ for probe in ("js.process.env.SUPABASE_SERVICE_ROLE_KEY", "js.process.env.CLERK_
     expect(body.score).toBeLessThan(80);
   });
 
+  test('[LRNA-EXG-012] the answer carries the attempts left and one improvement note per question, and no feedback line leaks into the report (SCP-115)', async () => {
+    const body = await (await grade(PRINT_ONLY)).json();
+    expect(body.attempts_left).toBe(4);
+    expect(body.notes).toHaveLength(5);
+    expect(body.notes.every((n: { passed: boolean }) => n.passed === false)).toBe(true);
+    expect(body.report).not.toContain('EXAM_FEEDBACK');
+    const ok = await (await grade(PASSING)).json();
+    expect(ok.notes.every((n: { passed: boolean }) => n.passed)).toBe(true);
+  });
+
   test('[LRNA-EXG-010] a course without an exam answers 404', async () => {
     const res = await learner.request.post('/api/learning/exam-grade', { data: { courseSlug: 'git-beginner-batch-1', files: [{ 'main.py': 'print(1)' }], inputs: [] } });
     expect(res.status()).toBe(404);
