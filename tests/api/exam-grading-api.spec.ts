@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
 import { EMAIL } from '../support/personas';
 import { clerkUserId } from '../support/clerk';
 import { adminDb, grantTestEnrolment, revokeTestEnrolment } from '../support/db';
@@ -11,9 +13,10 @@ const SLUG = 'python-beginners';
 const U = EMAIL.edu;
 const uid = () => clerkUserId(U);
 
-// Prints every phrase the current grader looks for and defines the names it checks (the grader scores printed text and
-// definitions; rewriting it to run the learner's functions is a separate follow-up).
-const PASSING = `
+// A real solution of the exam (tests/support/exam-reference/solution.py, written from the exam text) passes. A program that only prints the
+// words the old grader looked for and defines the right names does not (SCP-88: the grader now checks behaviour).
+const PASSING = fs.readFileSync(path.join(process.cwd(), 'tests/support/exam-reference/solution.py'), 'utf8');
+const PRINT_ONLY = `
 print("Jaskeerat Amit Smeeta")
 print("Rahul -> Yes"); print("Smeeta -> No"); print("Amit -> No"); print("Jaskeerat -> Yes"); print("Niraj -> Yes")
 print("2 9 5 Py***5! Medium")
@@ -121,6 +124,12 @@ for probe in ("js.process.env.SUPABASE_SERVICE_ROLE_KEY", "js.process.env.CLERK_
     expect(body.success).toBe(true);
     expect(body.report).not.toMatch(/eyJ|sk_test_|sk_live_/);
     for (const probe of ['js.fetch', 'js.process']) expect(body.report).toMatch(new RegExp(`PROBE ${probe.replace('.', '\\.')} = None|PROBE ${probe.replace('.', '\\.')} blocked`));
+  });
+
+  test('[LRNA-EXG-011] a program that only prints the expected words and defines the right names fails (SCP-88)', async () => {
+    const body = await (await grade(PRINT_ONLY)).json();
+    expect(body).toMatchObject({ success: true, is_passed: false, attempts_used: 1 });
+    expect(body.score).toBeLessThan(80);
   });
 
   test('[LRNA-EXG-010] a course without an exam answers 404', async () => {

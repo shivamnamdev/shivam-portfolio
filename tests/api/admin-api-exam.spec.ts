@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
 import { EMAIL } from '../support/personas';
 import { requireSeed } from '../support/guards';
 import { API_UA, sessionFor, type Session } from '../support/api';
@@ -143,25 +145,7 @@ test.describe('AAPI exam switch @regression', () => {
   });
 
   // Exam library, step 1 (docs/architecture/exam-library.md): a course that has not picked an exam picks one from the library; learners are graded with the PUBLISHED choice.
-  const PASSING = `
-print("Jaskeerat Amit Smeeta")
-print("Rahul -> Yes"); print("Smeeta -> No"); print("Amit -> No"); print("Jaskeerat -> Yes"); print("Niraj -> Yes")
-print("2 9 5 Py***5! Medium")
-print("Finance 54000 55000 28000 Senior Mid")
-def create_log_file(): pass
-def add_task(): pass
-def read_tasks(): pass
-def search_task(): pass
-def delete_task(): pass
-def generate_report(): pass
-class Doctor:
-    def show_cabin(self): pass
-class Patient:
-    def calculate_discount(self): pass
-class Hospital:
-    def discharge_patient(self): pass
-    def get_doctor_report(self): pass
-`;
+  const PASSING = fs.readFileSync(path.join(process.cwd(), 'tests/support/exam-reference/solution.py'), 'utf8');   // a real solution (SCP-88: printing the words no longer passes)
   const LIB = 'python-batch-1-final'; const LESSON = 'qaexm000001';
   const doc = async () => ((await adminDb().from('content_docs').select('doc').eq('kind', 'curriculum').eq('key', NO_GRADER).single()).data!.doc as { examId?: string; publishedExamId?: string });
   const gradeAs = () => admin.request.post('/api/learning/exam-grade', { data: { courseSlug: NO_GRADER, files: [{ 'main.py': PASSING }], inputs: [] } });
