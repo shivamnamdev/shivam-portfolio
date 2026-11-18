@@ -7,6 +7,7 @@ import { CheckCircle2, Loader2, Tag, Lock, PartyPopper, ExternalLink } from 'luc
 import { supabase } from '@/lib/supabaseClient';
 import { checkCouponOnServer } from '@/lib/couponClient';
 import { applyCoupon, formatPrice, parsePrice, resolveCoupon, type Coupon, type PricingPlan } from '@/lib/pricing';
+import { CTA_BUY } from './ctaStyles';
 
 const loadRazorpayScript = () => new Promise<boolean>((resolve) => {
   if ((window as any).Razorpay) return resolve(true);
@@ -211,7 +212,7 @@ export default function CoursePricing({ course, couponCheck = 'browser' }: { cou
                 <button
                   onClick={() => handleEnroll(plan, finalPrice)}
                   disabled={processingPlan !== null}
-                  className={`w-full py-4 rounded-full font-black text-lg transition-colors flex justify-center items-center gap-2 disabled:opacity-70 ${plan.isPopular ? 'bg-amber-500 text-black hover:bg-amber-400' : 'bg-white text-black hover:bg-stone-200'}`}
+                  className={`w-full py-4 rounded-full font-black text-lg transition-colors flex justify-center items-center gap-2 disabled:opacity-70 ${plan.isPopular ? CTA_BUY : 'bg-white text-black hover:bg-stone-200'}`}
                 >
                   {isProcessing && <Loader2 className="animate-spin" size={22} />}
                   {isProcessing ? 'Processing...' : finalPrice === 0 ? `Enroll for Free — ${plan.name}` : `Enroll in ${plan.name} →`}

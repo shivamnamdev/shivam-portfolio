@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { CTA_ENROLL } from './ctaStyles';
 
 // Mobile-only bottom bar that keeps the enroll action one tap away. Hidden while the hero
 // or the enrollment section itself is on screen, so it never duplicates a visible CTA.
@@ -26,7 +27,7 @@ export default function StickyEnrollBar({ targetId, priceLabel, ctaLabel = 'Enro
   return (
     <div className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-[#0a0a0a]/95 backdrop-blur px-4 py-3 flex items-center justify-between gap-3">
       {priceLabel && <p className="text-sm text-stone-300"><span className="block text-[10px] uppercase tracking-widest text-stone-500 font-bold">Starting at</span><span className="font-black text-white text-lg">{priceLabel}</span></p>}
-      <button onClick={() => document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' })} className="flex-1 max-w-[60%] py-3 rounded-full bg-amber-500 text-black font-black">
+      <button onClick={() => document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' })} className={`flex-1 max-w-[60%] py-3 rounded-full font-black ${CTA_ENROLL}`}>
         {ctaLabel}
       </button>
     </div>

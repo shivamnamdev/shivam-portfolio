@@ -1,6 +1,7 @@
 'use client';
 import { motion } from 'framer-motion';
 import { ChevronRight, ChevronDown, Star } from 'lucide-react';
+import { CTA_ENROLL } from './ctaStyles';
 
 interface HeroVSLProps {
   course: any;
@@ -42,7 +43,7 @@ export default function HeroVSL({ course }: HeroVSLProps) {
         )}
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-          <button onClick={() => scrollTo(enrollTarget)} className="w-full sm:w-auto px-8 py-4 rounded-full bg-amber-500 text-black font-black text-lg flex items-center justify-center gap-2 transition-all hover:bg-amber-400 hover:scale-[1.02] group">
+          <button onClick={() => scrollTo(enrollTarget)} className={`w-full sm:w-auto px-8 py-4 rounded-full font-black text-lg flex items-center justify-center gap-2 transition-all group ${!course.enrollmentClosed ? CTA_ENROLL : 'bg-amber-500 text-black hover:bg-amber-400 hover:scale-[1.02]'}`}>
             {ctaLabel} <ChevronRight size={22} className="group-hover:translate-x-1 transition-transform" />
           </button>
           <button onClick={() => scrollTo('curriculum')} className="px-6 py-4 text-stone-300 font-bold flex items-center gap-2 hover:text-white transition-colors">
