@@ -142,6 +142,22 @@ for probe in ("js.process.env.SUPABASE_SERVICE_ROLE_KEY", "js.process.env.CLERK_
     expect(ok.notes.every((n: { passed: boolean }) => n.passed)).toBe(true);
   });
 
+  test('[LRNA-EXG-013] every submission is saved with its code, score and notes; a QA server sends no mail (SCP-115 B)', async () => {
+    const probe = await adminDb().from('exam_attempts').select('id').limit(1);
+    test.skip(!!probe.error, 'exam_attempts does not exist on this Supabase project: run docs/testing/sql/step10-exam-attempts.sql');
+    const first = await (await grade(PRINT_ONLY)).json();
+    const second = await (await grade('print("two")')).json();
+    expect([first.attempts_used, second.attempts_used]).toEqual([1, 2]);
+    const { data } = await adminDb().from('exam_attempts').select('*').eq('user_id', await uid()).eq('course_slug', SLUG).order('attempt_no');
+    expect(data).toHaveLength(2);
+    expect(data![0]).toMatchObject({ attempt_no: 1, score: first.score, passed: false, code: expect.stringContaining('Jaskeerat') });
+    expect(data![0].notes).toHaveLength(5);
+    expect(data![1].code).toBe('print("two")');
+    await expect.poll(async () => (await adminDb().from('exam_attempts').select('mail_learner,mail_owner').eq('user_id', await uid()).eq('course_slug', SLUG).eq('attempt_no', 1).single()).data, { timeout: 15000 })
+      .toEqual({ mail_learner: 'skipped', mail_owner: 'skipped' });
+    await adminDb().from('exam_attempts').delete().eq('user_id', await uid()).eq('course_slug', SLUG);
+  });
+
   test('[LRNA-EXG-010] a course without an exam answers 404', async () => {
     const res = await learner.request.post('/api/learning/exam-grade', { data: { courseSlug: 'git-beginner-batch-1', files: [{ 'main.py': 'print(1)' }], inputs: [] } });
     expect(res.status()).toBe(404);

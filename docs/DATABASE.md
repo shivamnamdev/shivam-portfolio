@@ -42,6 +42,10 @@ Tracks student code submissions from the Interactive IDE.
 - `submitted_code` (Text - Raw Python Code)
 - `completed_at` (Timestamp)
 - *Unique Constraint: user_id + course_slug + video_id*
+### `exam_attempts` (SCP-115)
+One row per exam submission, written by `POST /api/learning/exam-grade` (service role only; RLS on, nothing granted to the browser roles). Created by `docs/testing/sql/step10-exam-attempts.sql` (with rollback). If it is missing the exam still grades and mails, and the server logs "exam attempt not saved".
+- `id` (UUID), `user_id` (Text, Clerk id), `user_name`, `user_email`, `course_slug`, `attempt_no` (Integer, 1 or more), `score` (0 to 100), `passed` (Boolean), `code` (Text, the submitted program, at most 200,000 characters), `notes` (JSONB, `[{ q, label, passed, note }]`), `mail_learner` and `mail_owner` (`pending`, `sent`, `failed` or `skipped`), `created_at`.
+- Unique: `user_id + course_slug + attempt_no`. Index: `created_at desc`.
 ### `rate_limits` (SCP-69, SCP-73)
 Counter for the server-side limits on `/api/send-email` (5 per 10 minutes per IP, 200 a day for the site) and `/api/track-time` (1 per 55 seconds per learner).
 - `key` (Text, for example `send-email:ip:1.2.3.4` or `track-time:<clerk id>`), `window_start` (Timestamp), `hits` (Integer). Primary key: `key + window_start`.

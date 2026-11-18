@@ -164,4 +164,4 @@ Append one line per significant change to architecture, schema, or integrations:
 - 2026-11-16 — Exam library step 1: courses pick an exam from `lib/examGraders.ts` (`examId` on the curriculum, graded by the published choice); results stay per course — owner request to reuse exams across courses; no SQL, no new package (`docs/architecture/exam-library.md`)
 - 2026-11-17 — Exam library step 2: the exam switch is always usable, a library exam fills the lesson's files (read-only), "None" is a new exam with pasted links and no grader (never blocks the certificate) — owner request; no SQL, no new package (`docs/architecture/exam-library.md` section 13)
 - 2026-11-17 — Learner draft preview: "Preview as learner" opens the real course page with the unpublished draft in a new tab (admin only, read only, `GET /api/learning/content/{slug}?draft=1`); the old list is "Outline" — owner request; no SQL, no new package (`docs/architecture/learner-draft-preview.md`)
-
+- 2026-11-18 — Exam attempts table `exam_attempts` (`docs/testing/sql/step10-exam-attempts.sql`, not yet run) and e-mails after every exam submission — SCP-115 part B, owner request; no new package
