@@ -29,7 +29,11 @@ const securityHeaders = [
 const nextConfig = {
   poweredByHeader: false,
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }];
+    return [
+      { source: '/:path*', headers: securityHeaders },
+      // SCP-81: no API answer may be kept by a shared computer, a proxy or the back button (they hold e-mails, code, enrolments and results).
+      { source: '/api/:path*', headers: [{ key: 'Cache-Control', value: 'no-store' }] },
+    ];
   },
   // Playwright runs on a non-default PORT use their own build dir (.next-e2e) so they never clash with a dev server on 3000.
   distDir: process.env.NEXT_DIST_DIR || '.next',
