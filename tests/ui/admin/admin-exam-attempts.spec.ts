@@ -10,6 +10,8 @@ import { clearWriteLimits } from '../../support/adminApi';
 const SLUG = 'qaadmui-exa-batch';
 const HOSTILE = `<img src=x onerror="window.__pwned=1"><script>window.__pwned=1</script>print("hi")`;
 const NOTES = [{ q: 1, label: 'Q1 (Lists)', passed: true, note: 'Good.' }, { q: 2, label: 'Q2 (Strings)', passed: false, note: '<b>Fix</b> the masking.' }];
+// The fixture cohort is not a real cohort, so it is not in the Cohort list: narrow by the fixture learner's name instead.
+const findFixtureRows = async (page: Page) => { await page.getByLabel('Search by name or e-mail').fill('QA Exam Learner'); await page.getByRole('button', { name: 'Search' }).click(); };
 const dialog = (page: Page) => page.getByRole('dialog');
 const open = async (page: Page) => {
   await signInAs(page, EMAIL.admin);
@@ -55,7 +57,7 @@ test.describe('ADMUI exam attempts @regression', () => {
 
     test('[ADMUI-EXA-002] the list shows score, result and both e-mail statuses but no code; opening one shows the note and the code as text; Escape closes', async ({ page }) => {
       await open(page);
-      await page.getByLabel('Cohort').selectOption(SLUG);
+      await findFixtureRows(page);
       const row1 = page.locator('tbody tr', { hasText: '#1' });
       await expect(row1).toHaveCount(1, { timeout: 30000 });
       await expect(row1).toContainText('40% · Not passed');
@@ -74,7 +76,7 @@ test.describe('ADMUI exam attempts @regression', () => {
 
     test('[ADMUI-EXA-003] the Result filter narrows the list to passed or not passed attempts', async ({ page }) => {
       await open(page);
-      await page.getByLabel('Cohort').selectOption(SLUG);
+      await findFixtureRows(page);
       await expect(page.locator('tbody tr')).toHaveCount(2, { timeout: 30000 });
       await page.getByLabel('Result').selectOption('passed');
       await expect(page.locator('tbody tr')).toHaveCount(1, { timeout: 30000 });
