@@ -79,7 +79,7 @@ export default function ExamAttempts() {
         <button type="submit" className={ghostButtonClass}>Search</button>
       </form>
       <ErrorNote failure={list.failure} />
-      {list.loading && !list.items.length ? <Spinner /> : (
+      {list.failure && !list.items.length ? null : list.loading && !list.items.length ? <Spinner /> : (
         <DataTable rows={list.items} rowKey={(a) => a.id} empty="No exam attempts yet."
           columns={[
             { header: 'Learner', cell: (a) => <span>{a.name}<span className="block text-xs text-stone-500">{a.email ?? a.userId}</span></span> },

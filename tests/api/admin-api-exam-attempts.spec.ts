@@ -75,3 +75,19 @@ test.describe('AAPI exam attempts @regression', () => {
     expect([401, 403]).toContain(anon.status);
   });
 });
+
+// Runs only while the table is missing (before step10-exam-attempts.sql): the list must say so instead of looking empty (SCP-116).
+test.describe('AAPI exam attempts without the table @regression', () => {
+  test('[AAPI-EXA-005] while exam_attempts is missing the list answers 424 naming the SQL file, and one attempt is 404', async ({ browser }) => {
+    requireSeed();
+    const probe = await adminDb().from('exam_attempts').select('id').limit(1);
+    test.skip(!probe.error, 'exam_attempts exists on this project');
+    const admin = await sessionFor(browser, EMAIL.admin);
+    try {
+      const res = await admin.request.get(`${BASE}/exam-attempts`);
+      expect(res.status()).toBe(424);
+      expect((await res.json()).error).toMatchObject({ code: 'not_set_up', message: expect.stringContaining('step10-exam-attempts.sql') });
+      expect((await admin.request.get(`${BASE}/exam-attempts/00000000-0000-4000-8000-000000000000`)).status()).toBe(404);
+    } finally { await admin.close(); }
+  });
+});

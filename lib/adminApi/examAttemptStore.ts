@@ -1,9 +1,9 @@
 // lib/adminApi/examAttemptStore.ts
 // Database side of the read-only "Exam attempts" routes (SCP-115 part C). The list selects the code only to count its length and drops it
-// before the answer is built. If the table has not been created yet (docs/testing/sql/step10-exam-attempts.sql) the list is empty and the
-// server logs why; a single attempt is then "not found".
+// before the answer is built. If the table has not been created yet (docs/testing/sql/step10-exam-attempts.sql) the list answers 424 with a
+// message that names the file (the screen shows it), so an empty screen is never mistaken for "no attempts"; a single attempt is then "not found".
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { notFound, badRequest } from "./envelope";
+import { ApiError, notFound, badRequest } from "./envelope";
 import { likeSafe, type ListParams } from "./request";
 import { examAttemptDetail, examAttemptRow, type DbExamAttempt, type ExamAttemptRow } from "./examAttempts";
 
@@ -22,7 +22,7 @@ export async function listExamAttempts(p: ListParams, f: { cohortSlug: string | 
   if (p.q) { const s = likeSafe(p.q); if (s) q = q.or(`user_name.ilike.%${s}%,user_email.ilike.%${s}%`); }
   const { data, error } = await q;
   if (error) {
-    if (missingTable(error)) { console.error("exam attempts list: table exam_attempts is missing (run step10-exam-attempts.sql)"); return { items: [], next: null }; }
+    if (missingTable(error)) throw new ApiError(424, "not_set_up", "The exam attempts table has not been created on this database yet. Run docs/testing/sql/step10-exam-attempts.sql in Supabase, then reload.");
     throw error;
   }
   const rows = (data ?? []) as DbExamAttempt[];

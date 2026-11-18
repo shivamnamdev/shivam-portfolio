@@ -103,7 +103,7 @@ export async function POST(req: Request) {
       await mailAttempt(attemptId, {
         learnerName: name, learnerEmail: email, courseTitle: course?.title ?? slug, courseSlug: slug, attemptNo: attempts,
         score: run.score, passed, alreadyPassed, attemptsLeft: attemptsLeft(attempts), notes: run.notes, code,
-      }, { isAdmin });
+      });
     });
     return NextResponse.json({ success: true, score: run.score, is_passed: passed || alreadyPassed, attempts_used: attempts, attempts_left: attemptsLeft(attempts), report: run.report, notes: run.notes });
   } catch (error) {
