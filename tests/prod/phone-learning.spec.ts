@@ -119,7 +119,7 @@ test.describe('PROD phone: learning page and Python lab (SCP-33, SCP-34)', () =>
       await page.waitForTimeout(400);
       const state = await page.evaluate((k) => {
         const lines = Array.from(document.querySelectorAll('.monaco-editor .view-line')) as HTMLElement[];
-        const el = lines.find((l) => (l.textContent ?? '').includes(`line ${k}'`));
+        const el = lines.find((l) => (l.textContent ?? '').replace(/\u00a0/g, ' ').includes(`line ${k}'`));
         if (!el) return { found: false } as const;
         const r = el.getBoundingClientRect();
         const x = Math.min(Math.max(r.left + 20, 1), innerWidth - 2), y = r.top + r.height / 2;
