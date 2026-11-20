@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Loader2, Tag, Lock, PartyPopper, ExternalLink } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { checkCouponOnServer } from '@/lib/couponClient';
-import { applyCoupon, formatPrice, parsePrice, resolveCoupon, type Coupon, type PricingPlan } from '@/lib/pricing';
+import { applyCoupon, formatPrice, parsePrice, type Coupon, type PricingPlan } from '@/lib/pricing';
 import { CTA_BUY } from './ctaStyles';
 
 const loadRazorpayScript = () => new Promise<boolean>((resolve) => {
@@ -20,7 +20,7 @@ const loadRazorpayScript = () => new Promise<boolean>((resolve) => {
 
 // Plan cards for plan-based courses. Prices shown here are re-computed on the server
 // (/api/create-order, /api/enroll-free) from courseId + planId + coupon — the client never sends an amount.
-export default function CoursePricing({ course, couponCheck = 'browser' }: { course: any; couponCheck?: 'browser' | 'server' }) {
+export default function CoursePricing({ course }: { course: any }) {
   const { isSignedIn, user } = useUser();
   const { openSignIn } = useClerk();
   const router = useRouter();
@@ -45,22 +45,11 @@ export default function CoursePricing({ course, couponCheck = 'browser' }: { cou
 
   const handleApplyCoupon = async () => {
     if (!isSignedIn) { openSignIn(); return; }
-    if (couponCheck === 'server') {
-      // A coupon can be limited to some plans and the plan cards share one coupon box: accept the code if any plan takes it (create-order re-checks the chosen plan).
-      let checked = await checkCouponOnServer({ courseId: course.id, planId: plans[0]?.id, currency: 'INR', couponCode: couponInput });
-      for (const plan of plans.slice(1)) { if (checked.ok) break; if (checked.status !== 400) break; checked = await checkCouponOnServer({ courseId: course.id, planId: plan.id, currency: 'INR', couponCode: couponInput }); }
-      if (!checked.ok) { setAppliedCoupon(null); setCouponMessage({ text: checked.error, type: 'error' }); return; }
-      setAppliedCoupon(checked.coupon);
-      setCouponMessage({ text: 'Coupon applied successfully!', type: 'success' });
-      return;
-    }
-    const result = resolveCoupon(couponInput, user?.id);
-    if (!result.ok || !result.coupon) {
-      setAppliedCoupon(null);
-      setCouponMessage({ text: !result.ok && result.status === 403 ? 'This coupon is restricted to specific accounts.' : 'Invalid coupon code.', type: 'error' });
-      return;
-    }
-    setAppliedCoupon(result.coupon);
+    // A coupon can be limited to some plans and the plan cards share one coupon box: accept the code if any plan takes it (create-order re-checks the chosen plan).
+    let checked = await checkCouponOnServer({ courseId: course.id, planId: plans[0]?.id, currency: 'INR', couponCode: couponInput });
+    for (const plan of plans.slice(1)) { if (checked.ok) break; if (checked.status !== 400) break; checked = await checkCouponOnServer({ courseId: course.id, planId: plan.id, currency: 'INR', couponCode: couponInput }); }
+    if (!checked.ok) { setAppliedCoupon(null); setCouponMessage({ text: checked.error, type: 'error' }); return; }
+    setAppliedCoupon(checked.coupon);
     setCouponMessage({ text: 'Coupon applied successfully!', type: 'success' });
   };
 

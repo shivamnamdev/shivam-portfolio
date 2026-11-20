@@ -1,9 +1,8 @@
 // lib/pricing.ts
 // Shared pricing + coupon rules. Used by the checkout UI and re-run on the server,
 // so the amount a buyer sees is exactly the amount the server charges.
-import { activeCoupons } from "@/data/coupons";
-
-export type Coupon = (typeof activeCoupons)[number];
+// A coupon as checkout reads it (the server answers with this shape). The codes themselves never live in a module the browser imports (SCP-53).
+export type Coupon = { code: string; discountType: string; discountValue: number | Record<string, number>; allowedUsers: string[] };
 export type CurrencyCode = "INR" | "USD";
 
 export function toCurrencyCode(value: unknown): CurrencyCode {
@@ -68,21 +67,6 @@ export function getBasePrice(course: PricedCourse, currency: CurrencyCode, planI
   const label = currency === "USD" ? course.pricing.usd?.currentPrice : course.pricing.inr.currentPrice;
   if (!label) return { ok: false, error: "This course is priced in INR only" };   // a portal cohort may have no USD price
   return { ok: true, amount: parsePrice(label), plan: null };
-}
-
-export type CouponResult =
-  | { ok: true; coupon: Coupon | null }
-  | { ok: false; status: 400 | 403; error: string };
-
-// Messages are part of the API contract (asserted by tests/api).
-export function resolveCoupon(code: string | null | undefined, userId: string | null | undefined): CouponResult {
-  if (!code) return { ok: true, coupon: null };
-  const coupon = activeCoupons.find((c) => c.code.toUpperCase() === code.trim().toUpperCase());
-  if (!coupon) return { ok: false, status: 400, error: "Invalid coupon code" };
-  if (coupon.allowedUsers.length > 0 && (!userId || !coupon.allowedUsers.includes(userId))) {
-    return { ok: false, status: 403, error: "This coupon is not valid for your account." };
-  }
-  return { ok: true, coupon };
 }
 
 export function applyCoupon(basePrice: number, coupon: Coupon | null, currency: CurrencyCode): number {

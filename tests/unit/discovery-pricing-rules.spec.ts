@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { activeCoupons } from '../../data/coupons';
 import { activeCourses } from '../../data/courses';
-import { applyCoupon, formatPrice, MIN_CHARGE, minimumCharge, parsePrice, resolveCoupon, toMinorUnits } from '../../lib/pricing';
+import { applyCoupon, formatPrice, MIN_CHARGE, minimumCharge, parsePrice , toMinorUnits } from '../../lib/pricing';
+import { resolveCoupon } from '../../lib/couponFiles';
 
 // PRD 03 pricing/coupon rules at the logic layer (the same functions the sales page and the payment APIs use).
 const course = activeCourses.find(c => c.slug === 'python-beginners-batch-2')!; // ₹1,999 / $25

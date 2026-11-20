@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { activeCourses, QA_FIXTURES_ENABLED, QA_FIXTURE_SLUG } from '../../data/courses';
 import { activeCoupons } from '../../data/coupons';
-import { applyCoupon, resolveCoupon } from '../../lib/pricing';
+import { applyCoupon } from '../../lib/pricing';
+import { resolveCoupon } from '../../lib/couponFiles';
 
 // Guards the QA-only fixture (docs/testing/TEST_DATA.md). Runs with and without NEXT_PUBLIC_QA_FIXTURES=1.
 test.describe('QA fixture course and coupon', () => {

@@ -9,7 +9,6 @@ export default async function CourseSalesPage(props: { params: Promise<{ slug: s
   const params = await props.params;
   const course = await getCourse(params.slug);
   const support = await getSupport();
-  const couponCheck = course?.pricedBy === 'database' ? 'server' : 'browser';   // a course priced from the portal asks the server (its codes never ship to the browser)
 
   if (!course) {
     notFound();
@@ -22,5 +21,5 @@ export default async function CourseSalesPage(props: { params: Promise<{ slug: s
     if (!canOpenSalesPage({ listed: false, hasAccess })) notFound();
   }
 
-  return <CourseSalesView course={course} support={support} couponCheck={couponCheck} />;
+  return <CourseSalesView course={course} support={support} />;
 }

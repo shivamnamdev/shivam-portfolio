@@ -27,7 +27,7 @@ const PREVIEW_LABEL: Record<PreviewInfo['status'], string> = {
 
 // The course sales page, shared by the public /courses/{slug} and the admin-only /preview/courses/{slug}. The preview looks the same; it adds one slim
 // label and turns the checkout off (nothing can be bought from a preview, and the order routes refuse a draft anyway).
-export default function CourseSalesView({ course, support, couponCheck, preview }: { course: any; support: { whatsappNumber: string }; couponCheck: 'browser' | 'server'; preview?: PreviewInfo }) {
+export default function CourseSalesView({ course, support, preview }: { course: any; support: { whatsappNumber: string }; preview?: PreviewInfo }) {
   // Plan-based courses sell through plan cards (#pricing); others through the cohort box (#live-sessions).
   const hasPlans = !!course.pricingPlans?.length;
   const enrollTarget = hasPlans ? 'pricing' : 'live-sessions';
@@ -54,9 +54,9 @@ export default function CourseSalesView({ course, support, couponCheck, preview 
 
         {preview
           ? <div data-testid="preview-checkout-off" title="Checkout is off in preview" className="w-full opacity-90 pointer-events-none select-none" aria-disabled="true" {...({ inert: true } as object)}>
-              {hasPlans ? <CoursePricing course={course} couponCheck={couponCheck} /> : <ActiveCohorts course={course} hideCurriculum couponCheck={couponCheck} />}
+              {hasPlans ? <CoursePricing course={course} /> : <ActiveCohorts course={course} hideCurriculum />}
             </div>
-          : hasPlans ? <CoursePricing course={course} couponCheck={couponCheck} /> : <ActiveCohorts course={course} hideCurriculum couponCheck={couponCheck} />}
+          : hasPlans ? <CoursePricing course={course} /> : <ActiveCohorts course={course} hideCurriculum />}
 
         {/* COURSE-SPECIFIC TESTIMONIALS */}
         {course.courseTestimonials && course.courseTestimonials.length > 0 && (

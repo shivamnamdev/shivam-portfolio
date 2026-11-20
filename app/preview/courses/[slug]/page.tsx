@@ -9,5 +9,5 @@ export default async function PreviewCoursePage(props: { params: Promise<{ slug:
   const course = await getPreview(params.slug);
   if (!course) notFound();
   const support = await getSupport();
-  return <CourseSalesView course={course} support={support} couponCheck="server" preview={{ status: course.previewStatus, note: course.previewNote }} />;
+  return <CourseSalesView course={course} support={support} preview={{ status: course.previewStatus, note: course.previewNote }} />;
 }
