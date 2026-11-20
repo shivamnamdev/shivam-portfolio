@@ -14,7 +14,7 @@ try { process.loadEnvFile('.env.local'); } catch { /* file not present, e.g. in 
 // PORT lets a flagged run (e.g. NEXT_PUBLIC_QA_FIXTURES=1) use its own server instead of reusing one on 3000.
 const PORT = process.env.PORT ?? '3000';
 
-// SCP-119: PROD_URL (for example https://shivamnamdev.com) switches the run to the read-only phone checks in tests/prod against the live site:
+// SCP-119: PROD_URL (for example https://www.shivamnamdev.com, the address the site redirects to) switches the run to the read-only phone checks in tests/prod against the live site:
 // no local server, no seeding, a saved sign-in session (npm run prod:session) and two phone profiles on the Chromium engine.
 const PROD_URL = process.env.PROD_URL?.replace(/\/$/, '');
 const PROD_SESSION = '.tmp/prod-session.json';

@@ -1,5 +1,5 @@
 // Saves a signed-in browser session of the production site to .tmp/prod-session.json (git-ignored) for the phone checks in tests/prod (SCP-119).
-// Run: PROD_URL=https://shivamnamdev.com node scripts/save-prod-session.mjs
+// Run: PROD_URL=https://www.shivamnamdev.com node scripts/save-prod-session.mjs
 // A browser window opens; sign in yourself (Google included). When your dashboard shows, the session is saved and the window closes.
 // The file holds your login cookies: keep it private, never commit it, delete it when done.
 import { chromium } from "@playwright/test";
@@ -17,7 +17,9 @@ const context = await browser.newContext();
 const page = await context.newPage();
 await page.goto(`${base}/learning`);
 console.log("Sign in in the window that opened. Waiting up to 5 minutes for your dashboard...");
-await page.waitForURL((u) => u.origin === base && u.pathname.startsWith("/learning"), { timeout: 300000 });
+// The site redirects shivamnamdev.com to www.shivamnamdev.com: accept either host.
+const bare = (h) => h.replace(/^www\./, "");
+await page.waitForURL((u) => bare(u.hostname) === bare(new URL(base).hostname) && u.pathname.startsWith("/learning"), { timeout: 300000 });
 await page.getByText(/Total XP|Active Access|My Courses/i).first().waitFor({ timeout: 60000 }).catch(() => {});
 await context.storageState({ path: ".tmp/prod-session.json" });
 await browser.close();

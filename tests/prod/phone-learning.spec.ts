@@ -52,7 +52,7 @@ test.describe('PROD phone: learning page and Python lab (SCP-33, SCP-34)', () =>
 
   test('[PRD-MOB-002] the Python lab loads and runs print() on the phone (SCP-34)', async ({ page }) => {
     await openCourseFromDashboard(page);
-    await page.getByRole('button', { name: /Practice/ }).click();
+    await page.getByRole('button', { name: 'Practice', exact: true }).click();
     await expect(page.locator('.monaco-editor').first()).toBeVisible({ timeout: 60000 });
     const run = page.getByRole('button', { name: /^Run$/ }).first();
     await expect(run).toBeEnabled({ timeout: 90000 });     // disabled while Pyodide loads
