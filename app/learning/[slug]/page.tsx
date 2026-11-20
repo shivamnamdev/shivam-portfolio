@@ -1921,7 +1921,7 @@ sys.settrace(_trace_calls)
                           </div>
                         </div>
                         {!isGitLab && (
-                        <div className="flex-grow relative min-h-[300px]">
+                        <div className="flex-grow relative min-h-[300px] h-[300px] lg:h-auto"> {/* SCP-120: the editor is 100% of this box; a percentage of a min-height-only box is nothing on a phone (5 px tall). h-[300px] fixes it there, lg:h-auto keeps the desktop layout. */}
                           <Editor
                             height="100%"
                             defaultLanguage={getLanguage(activeFile)}

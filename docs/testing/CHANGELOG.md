@@ -346,3 +346,4 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 - 2026-11-19 — SCP-118: the database numbers exam attempts (trigger, step11 SQL, LRNA-EXG-014); no new package
 - 2026-11-19 — SCP-117: exam attempts tests run against the real QA table; reset clears saved attempts, ADMUI-EXA-002/003 find fixture rows by learner name. Result: all table-dependent specs pass (SCP-115)
 - 2026-11-20 — SCP-119: read-only phone checks on production (tests/prod, PROD_URL, saved session via npm run prod:session); no SQL, no new package
+- 2026-11-20 — SCP-120: Python lab editor was 5 px tall on phones and tablets (percentage height inside a min-height box); box now has h-[300px] below lg; LRN-MOB-006; no SQL, no new package
