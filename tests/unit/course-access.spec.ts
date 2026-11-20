@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { canOpenSalesPage, shareDestination, sharePreviewIsPublic } from '../../lib/courseAccess';
+import { canOpenSalesPage, courseGate, shareDestination, sharePreviewIsPublic } from '../../lib/courseAccess';
 
 // Old live cohorts are hidden (listed: false): only their learners and the admin reach them.
 test.describe('Course access rules @regression', () => {
@@ -26,5 +26,21 @@ test.describe('Course access rules @regression', () => {
   test('[CAC-UNIT-005] the link preview names a lesson only for a listed course', () => {
     expect(sharePreviewIsPublic(true)).toBe(true);
     expect(sharePreviewIsPublic(false)).toBe(false);
+  });
+
+  // SCP-39: the server decides before a course page is sent.
+  test('[CAC-UNIT-006] courseGate: enrolled or admin is shown the page, anyone else gets Access Denied', () => {
+    expect(courseGate({ signedIn: true, slugValid: true, hasAccess: true })).toBe('show');
+    expect(courseGate({ signedIn: true, slugValid: true, hasAccess: false })).toBe('denied');
+  });
+
+  test('[CAC-UNIT-007] courseGate: a malformed slug is denied without a lookup; a failed lookup shows the page (the data routes still check)', () => {
+    expect(courseGate({ signedIn: true, slugValid: false, hasAccess: null })).toBe('denied');
+    expect(courseGate({ signedIn: true, slugValid: false, hasAccess: true })).toBe('denied');
+    expect(courseGate({ signedIn: true, slugValid: true, hasAccess: null })).toBe('show');
+  });
+
+  test('[CAC-UNIT-008] courseGate: a visitor with no session is left to the sign-in redirect of the proxy', () => {
+    expect(courseGate({ signedIn: false, slugValid: true, hasAccess: false })).toBe('show');
   });
 });
