@@ -372,3 +372,9 @@ Full text: `docs/architecture/exam-switch.md`. Owner decision: exam marking move
 - [ ] C: admin API and "Exam attempts" screen
 - [x] B built (`docs/architecture/exam-feedback.md` section 10), branch feat/SCP-115b-exam-attempts-mail; owner runs `step10-exam-attempts.sql` on QA then production, then re-runs LRNA-EXG-013 and submits one real exam to check the mails
 - [x] C built (`docs/architecture/exam-feedback.md` section 11), branch feat/SCP-115c-admin-exam-attempts; the row tests skip until the owner has run `step10-exam-attempts.sql` on QA, then they must be re-run
+
+## 2026-11-20 — SCP-53 coupon codes out of the browser (approved by the owner)
+- [x] Blueprint: `docs/architecture/coupon-codes-out-of-browser.md` (browser always asks `/api/coupons/check`; `lib/couponFiles.ts` server only)
+- [x] Unit guard `tests/unit/coupon-not-in-browser.spec.ts`; production bundle search shows 0 files with a code
+- [ ] PR waiting for the owner; after deploy re-run the signed-out production probe; rotate the codes still in use
+- [ ] Next: SCP-39 server guard for `/learning/[slug]` and `/live/[slug]` (separate PR)

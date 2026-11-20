@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { CheckCircle2, ChevronDown, Gift, Calendar, Code2, Download, CreditCard, Loader2, Globe, Tag, PartyPopper, ExternalLink } from 'lucide-react';
 import { CTA_BUY, CTA_TRUST } from './ctaStyles';
-import { applyCoupon, formatPrice, minimumCharge, parsePrice, resolveCoupon, toCurrencyCode, type Coupon } from '@/lib/pricing';
+import { applyCoupon, formatPrice, minimumCharge, parsePrice, toCurrencyCode, type Coupon } from '@/lib/pricing';
 import { checkCouponOnServer } from '@/lib/couponClient';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
@@ -13,7 +13,6 @@ import { fetchWithTimeout } from '@/lib/fetchTimeout';
 interface ActiveCohortsProps {
   course?: any;
   hideCurriculum?: boolean; // the course page renders its own full-width curriculum section
-  couponCheck?: 'browser' | 'server'; // 'server' when PORTAL_COUPONS is database: the codes live in the database and are checked by /api/coupons/check
 }
 
 const loadRazorpayScript = () => {
@@ -26,7 +25,7 @@ const loadRazorpayScript = () => {
   });
 };
 
-export default function ActiveCohorts({ course: propCourse, hideCurriculum = false, couponCheck = 'browser' }: ActiveCohortsProps) {
+export default function ActiveCohorts({ course: propCourse, hideCurriculum = false }: ActiveCohortsProps) {
   const [openModule, setOpenModule] = useState<number | null>(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAlreadyEnrolled, setIsAlreadyEnrolled] = useState(false);
@@ -74,23 +73,9 @@ export default function ActiveCohorts({ course: propCourse, hideCurriculum = fal
     }
     
     setCouponMessage({ text: "", type: "" });
-    if (couponCheck === 'server') {
-      const checked = await checkCouponOnServer({ courseId: displayCourse.id, currency: currencyCode, couponCode: couponInput });
-      if (!checked.ok) { setCouponMessage({ text: checked.error, type: "error" }); setAppliedCoupon(null); return; }
-      setAppliedCoupon(checked.coupon);
-      setCouponMessage({ text: "Coupon applied successfully!", type: "success" });
-      return;
-    }
-    const result = resolveCoupon(couponInput, user?.id);
-
-    if (!result.ok || !result.coupon) {
-      const text = result.ok ? "Invalid coupon code." : result.status === 403 ? "This coupon is restricted to specific accounts." : "Invalid coupon code.";
-      setCouponMessage({ text, type: "error" });
-      setAppliedCoupon(null);
-      return;
-    }
-
-    setAppliedCoupon(result.coupon);
+    const checked = await checkCouponOnServer({ courseId: displayCourse.id, currency: currencyCode, couponCode: couponInput });
+    if (!checked.ok) { setCouponMessage({ text: checked.error, type: "error" }); setAppliedCoupon(null); return; }
+    setAppliedCoupon(checked.coupon);
     setCouponMessage({ text: "Coupon applied successfully!", type: "success" });
   };
 

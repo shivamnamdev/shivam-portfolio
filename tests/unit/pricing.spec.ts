@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { activeCourses } from '../../data/courses';
 import { activeCoupons } from '../../data/coupons';
-import { applyCoupon, formatPrice, getBasePrice, parsePrice, resolveCoupon, roundForCurrency, toMinorUnits } from '../../lib/pricing';
+import { applyCoupon, formatPrice, getBasePrice, parsePrice , roundForCurrency, toMinorUnits } from '../../lib/pricing';
+import { resolveCoupon } from '../../lib/couponFiles';
 
 // Pure logic tests for lib/pricing.ts — shared by the checkout UI and the payment APIs.
 test.describe('lib/pricing @smoke', () => {

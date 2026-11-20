@@ -35,7 +35,7 @@ const swaggerSpec = {
         tags: ['Payments'],
         summary: 'Create Razorpay Order',
         description: 'Generates a secure Order ID for the checkout popup. Validates pricing and coupons.',
-        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', properties: { courseId: { type: 'string', example: 'python-beginners-live-01' }, currency: { type: 'string', example: 'INR' }, couponCode: { type: 'string', example: 'BIRTHDAY20' }, userId: { type: 'string', example: 'user_2aBcD...' } } } } } },
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', properties: { courseId: { type: 'string', example: 'python-beginners-live-01' }, currency: { type: 'string', example: 'INR' }, couponCode: { type: 'string', example: 'SAMPLE20' }, userId: { type: 'string', example: 'user_2aBcD...' } } } } } },
         responses: { '200': { description: 'Order created' }, '400': { description: 'Invalid Data' } }
       }
     },
@@ -53,7 +53,7 @@ const swaggerSpec = {
         tags: ['Payments'],
         summary: 'Process 100% Free Enrollment',
         description: 'Bypasses Razorpay entirely. Verifies a 100% off coupon and directly inserts the enrollment into Supabase.',
-        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', properties: { courseId: { type: 'string', example: 'python-beginners-live-01' }, courseSlug: { type: 'string', example: 'python-beginners' }, currency: { type: 'string', example: 'INR' }, couponCode: { type: 'string', example: 'BATCH002' }, userId: { type: 'string', example: 'user_2aBcD...' }, userName: { type: 'string', example: 'John Doe' }, userEmail: { type: 'string', example: 'student@example.com' } } } } } },
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', properties: { courseId: { type: 'string', example: 'python-beginners-live-01' }, courseSlug: { type: 'string', example: 'python-beginners' }, currency: { type: 'string', example: 'INR' }, couponCode: { type: 'string', example: 'SAMPLE20' }, userId: { type: 'string', example: 'user_2aBcD...' }, userName: { type: 'string', example: 'John Doe' }, userEmail: { type: 'string', example: 'student@example.com' } } } } } },
         responses: { '200': { description: 'Enrolled for free' }, '400': { description: 'Payment required (>0)' } }
       }
     },
