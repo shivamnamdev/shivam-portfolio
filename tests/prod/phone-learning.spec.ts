@@ -61,4 +61,40 @@ test.describe('PROD phone: learning page and Python lab (SCP-33, SCP-34)', () =>
     await expect(page.locator('pre.font-mono').first()).toContainText('phone ok', { timeout: 45000 });
     await noSidewaysScroll(page);
   });
+
+  // Real input, not the editor's API: tap the editor, type with the keyboard, paste text, and check the text is on screen.
+  // PAUSE_MS (default 0) holds the screen after each step so a person watching a headed run can see it.
+  test('[PRD-MOB-003] tapping the Python lab editor and typing or pasting really puts text in it, and it runs (SCP-34)', async ({ page, context }) => {
+    const pause = Number(process.env.PAUSE_MS ?? 0);
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => {});
+    await openCourseFromDashboard(page);
+    await page.getByRole('button', { name: 'Practice', exact: true }).click();
+    const editor = page.locator('.monaco-editor').first();
+    await expect(editor).toBeVisible({ timeout: 60000 });
+    const run = page.getByRole('button', { name: /^Run$/ }).first();
+    await expect(run).toBeEnabled({ timeout: 90000 });
+    const shown = () => page.locator('.monaco-editor .view-lines').first();
+    const content = () => page.evaluate(() => (window as any).monaco.editor.getEditors()[0].getValue() as string);
+
+    await page.evaluate(() => { (window as any).monaco.editor.getEditors()[0].setValue(''); });
+    await editor.scrollIntoViewIfNeeded();
+    await editor.tap();                                           // a finger, not a mouse click
+    await page.keyboard.type("print('typed on phone')", { delay: 80 });
+    await expect(shown()).toContainText('typed on phone');        // visible on screen, not only in the model
+    expect(await content()).toContain("print('typed on phone')");
+    await page.waitForTimeout(pause);
+
+    await page.keyboard.press('Enter');
+    await page.evaluate(() => navigator.clipboard.writeText("print('pasted on phone')"));
+    await page.keyboard.press(process.platform === 'darwin' ? 'Meta+V' : 'Control+V');
+    await expect(shown()).toContainText('pasted on phone');
+    expect(await content()).toContain("print('pasted on phone')");
+    await page.waitForTimeout(pause);
+
+    await run.tap();
+    const out = page.locator('pre.font-mono').first();
+    await expect(out).toContainText('typed on phone', { timeout: 45000 });
+    await expect(out).toContainText('pasted on phone');
+    await page.waitForTimeout(pause);
+  });
 });
