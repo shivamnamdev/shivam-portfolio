@@ -14,11 +14,17 @@ try { process.loadEnvFile('.env.local'); } catch { /* file not present, e.g. in 
 // PORT lets a flagged run (e.g. NEXT_PUBLIC_QA_FIXTURES=1) use its own server instead of reusing one on 3000.
 const PORT = process.env.PORT ?? '3000';
 
+// SCP-119: PROD_URL (for example https://shivamnamdev.com) switches the run to the read-only phone checks in tests/prod against the live site:
+// no local server, no seeding, a saved sign-in session (npm run prod:session) and two phone profiles on the Chromium engine.
+const PROD_URL = process.env.PROD_URL?.replace(/\/$/, '');
+const PROD_SESSION = '.tmp/prod-session.json';
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  testDir: './tests',
+  testDir: PROD_URL ? './tests/prod' : './tests',
+  testIgnore: PROD_URL ? [] : ['**/tests/prod/**'],
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -35,8 +41,8 @@ export default defineConfig({
     ['allure-playwright', { resultsDir: 'allure-results', detail: true, suiteTitle: false }],
   ],
   /* Seeds the canonical persona enrolments once per run (only when E2E_SEED_PERSONAS=1) and restores them after. */
-  globalSetup: './tests/support/global-setup.ts',
-  globalTeardown: './tests/support/global-teardown.ts',
+  globalSetup: PROD_URL ? undefined : './tests/support/global-setup.ts',
+  globalTeardown: PROD_URL ? undefined : './tests/support/global-teardown.ts',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   // use: {
   //   /* Base URL to use in actions like `await page.goto('')`. */
@@ -47,7 +53,10 @@ export default defineConfig({
   // },
 
   /* Configure projects for major browsers */
-  projects: [
+  projects: PROD_URL ? [
+    { name: 'phone-ios-size', use: { ...devices['iPhone 14'], defaultBrowserType: 'chromium', storageState: PROD_SESSION } },
+    { name: 'phone-android', use: { ...devices['Pixel 7'], storageState: PROD_SESSION } },
+  ] : [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
@@ -85,7 +94,7 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
+  webServer: PROD_URL ? undefined : {
     command: `npm run dev -- -p ${PORT}`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
@@ -93,7 +102,7 @@ export default defineConfig({
     timeout: 120 * 1000,
   },
   use: {
-    baseURL: `http://localhost:${PORT}`, // 🚨 Sets the base URL for all tests
+    baseURL: PROD_URL ?? `http://localhost:${PORT}`, // 🚨 Sets the base URL for all tests
     trace: 'on-first-retry',
   },
 });
