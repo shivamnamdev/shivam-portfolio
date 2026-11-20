@@ -348,3 +348,4 @@ Append only. One line per significant change to a testing PRD, plan, spec or the
 - 2026-11-20 — SCP-119: read-only phone checks on production (tests/prod, PROD_URL, saved session via npm run prod:session); no SQL, no new package
 - 2026-11-20 — SCP-120: Python lab editor was 5 px tall on phones and tablets (percentage height inside a min-height box); box now has h-[300px] below lg; LRN-MOB-006; no SQL, no new package
 - 2026-11-20 — SCP-53: coupon codes no longer reach the browser (checkout boxes always call POST /api/coupons/check; lib/couponFiles.ts server only; docs examples use SAMPLE20); guard tests PRC-UNIT-020..023; no SQL, no new package
+- 2026-11-20 — SCP-39: enrolment is checked on the server before /learning/[slug] and /live/[slug] are rendered (layouts + lib/courseGate.ts); AUTH-SRV-001..004, CAC-UNIT-006..008; no SQL, no new package

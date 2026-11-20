@@ -18,3 +18,14 @@ export function shareDestination(input: { slug: string; videoId: string; listed:
 export function sharePreviewIsPublic(listed: boolean): boolean {
   return listed;
 }
+
+// SCP-39: whether the server renders a course page (/learning/{slug}, /live/{slug}) or the "Access Denied" screen. `hasAccess` is null when the
+// enrolment lookup itself failed: the page is then shown and asks again, and every route that returns lessons or links checks enrolment on the
+// server, so a failed lookup never exposes content (and never locks an enrolled learner out because of a database blip).
+export function courseGate(input: { signedIn: boolean; slugValid: boolean; hasAccess: boolean | null }): "show" | "denied" {
+  if (!input.signedIn) return "show";          // the proxy sends a visitor to sign in before a page is rendered; nothing to decide here
+  if (!input.slugValid) return "denied";
+  if (input.hasAccess === null) return "show";
+  return input.hasAccess ? "show" : "denied";
+}
+

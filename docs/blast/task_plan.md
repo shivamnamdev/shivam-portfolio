@@ -378,3 +378,8 @@ Full text: `docs/architecture/exam-switch.md`. Owner decision: exam marking move
 - [x] Unit guard `tests/unit/coupon-not-in-browser.spec.ts`; production bundle search shows 0 files with a code
 - [ ] PR waiting for the owner; after deploy re-run the signed-out production probe; rotate the codes still in use
 - [ ] Next: SCP-39 server guard for `/learning/[slug]` and `/live/[slug]` (separate PR)
+
+## 2026-11-20 — SCP-39 server-side course gate (approved by the owner with SCP-53)
+- [x] Blueprint: `docs/architecture/server-side-course-gate.md` (server layouts on `/learning/[slug]` and `/live/[slug]`; rule in `lib/courseAccess.ts`)
+- [x] Unit tests CAC-UNIT-006..008; server HTML tests AUTH-SRV-001..004
+- [ ] Neighbouring UI specs, PR waiting for the owner, then a production check as a not-enrolled user (needs a second production account, or rely on QA)

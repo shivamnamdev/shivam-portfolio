@@ -3,7 +3,8 @@ import { useUser, UserButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, use } from 'react';
 import Navbar from '@/components/Navbar';
-import { Loader2, ChevronLeft, ShieldAlert, Video, ExternalLink, CheckCircle2 } from 'lucide-react';
+import LiveDenied from '@/components/learning/LiveDenied';
+import { Loader2, ChevronLeft, Video, ExternalLink, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LiveClassLobby(props: { params: Promise<{ slug: string }> }) {
@@ -50,18 +51,8 @@ export default function LiveClassLobby(props: { params: Promise<{ slug: string }
   }
 
   // If they somehow got the link but aren't enrolled, block them!
-  if (!hasAccess) {
-    return (
-      <div className="min-h-screen flex flex-col bg-stone-50 items-center justify-center text-center p-6">
-        <ShieldAlert size={64} className="text-red-500 mb-4" />
-        <h1 className="text-3xl font-black text-stone-900 mb-2">Access Denied</h1>
-        <p className="text-stone-500 mb-6 max-w-md">You are not enrolled in this cohort, or your session has expired.</p>
-        <Link href="/learning" className="px-6 py-3 bg-stone-900 hover:bg-stone-800 text-white rounded-xl font-bold transition-colors">
-          Return to Dashboard
-        </Link>
-      </div>
-    );
-  }
+  // If they somehow got the link but aren't enrolled, block them (the server layout already does this before the page is sent).
+  if (!hasAccess) return <LiveDenied />;
 
   return (
     <div className="relative min-h-screen flex flex-col bg-stone-50 overflow-hidden">
