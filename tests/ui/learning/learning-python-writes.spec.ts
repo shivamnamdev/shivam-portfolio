@@ -383,6 +383,23 @@ test.describe('PRD07 Python course: progress, Q&A and lab (writes)', () => {
         await ctx.close();
       });
 
+      test('[LRN-MOB-006] on a 390 px phone the lab editor has room to show several typed lines (SCP-120)', async ({ browser }) => {
+        const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, baseURL: `http://localhost:${process.env.PORT ?? '3000'}` });
+        const page = await ctx.newPage();
+        await toLab(page);
+        const height = await page.locator('.monaco-editor').first().evaluate((el) => el.getBoundingClientRect().height);
+        expect(height, 'the editor must be tall enough to show code, not a few pixels').toBeGreaterThanOrEqual(200);
+        await page.locator('.monaco-editor').first().tap();
+        await page.evaluate(() => { (window as any).monaco.editor.getEditors()[0].setValue(''); });
+        const pause = Number(process.env.PAUSE_MS ?? 0);
+        test.setTimeout(60_000 + pause * 12);   // a headed run can hold the screen after each line: PAUSE_MS=2500
+        for (const n of [1, 2, 3, 4]) { await page.keyboard.type(`print('row ${n}')`, { delay: pause ? 120 : 0 }); await page.keyboard.press('Enter'); await page.waitForTimeout(pause); }
+        await expect(page.locator('.monaco-editor .view-lines').first()).toContainText("row 4");
+        await expect(page.locator('.monaco-editor .view-lines').first()).toContainText("row 1");
+        await page.waitForTimeout(pause * 2);
+        await ctx.close();
+      });
+
       test('[LRN-E2E-001] watch, complete, reload: progress persists and the dashboard XP rises', async ({ page }) => {
         const uid = await clerkUserId(S2);
         const { data: before } = await adminDb().from('user_stats').select('*').eq('user_id', uid);
