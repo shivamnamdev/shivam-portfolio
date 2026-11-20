@@ -97,4 +97,43 @@ test.describe('PROD phone: learning page and Python lab (SCP-33, SCP-34)', () =>
     await expect(out).toContainText('pasted on phone');
     await page.waitForTimeout(pause);
   });
+
+  // The reported fault: typed text goes under a bar and cannot be seen. Types numbered lines and reports, line by line, whether each one is
+  // inside the screen and not covered by another element. Screenshots go to test-results/ for the report.
+  test('[PRD-MOB-004] every line typed in the Python lab stays visible (not under a bar) (SCP-34)', async ({ page }, info) => {
+    const pause = Number(process.env.PAUSE_MS ?? 0);
+    const LINES = Number(process.env.LINES ?? 6);
+    await openCourseFromDashboard(page);
+    await page.getByRole('button', { name: 'Practice', exact: true }).click();
+    const editor = page.locator('.monaco-editor').first();
+    await expect(editor).toBeVisible({ timeout: 60000 });
+    await expect(page.getByRole('button', { name: /^Run$/ }).first()).toBeEnabled({ timeout: 90000 });
+    await page.evaluate(() => { (window as any).monaco.editor.getEditors()[0].setValue(''); });
+    await editor.scrollIntoViewIfNeeded();
+    await editor.tap();
+    const report: string[] = [];
+    const hidden: number[] = [];
+    for (let n = 1; n <= LINES; n++) {
+      await page.keyboard.type(`print('line ${n}')`, { delay: 40 });
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(400);
+      const state = await page.evaluate((k) => {
+        const lines = Array.from(document.querySelectorAll('.monaco-editor .view-line')) as HTMLElement[];
+        const el = lines.find((l) => (l.textContent ?? '').includes(`line ${k}'`));
+        if (!el) return { found: false } as const;
+        const r = el.getBoundingClientRect();
+        const x = Math.min(Math.max(r.left + 20, 1), innerWidth - 2), y = r.top + r.height / 2;
+        const onScreen = y > 0 && y < (window.visualViewport?.height ?? innerHeight);
+        const top = document.elementFromPoint(x, y) as HTMLElement | null;
+        const covered = !top || !top.closest('.monaco-editor');
+        return { found: true, y: Math.round(y), onScreen, covered, coveredBy: covered && top ? `${top.tagName.toLowerCase()}.${(top.className?.toString() ?? '').slice(0, 60)}` : '' } as const;
+      }, n);
+      report.push(`line ${n}: ` + (state.found ? `y=${state.y} onScreen=${state.onScreen} coveredBy=${state.covered ? state.coveredBy || 'nothing(outside)' : 'no'}` : 'not rendered'));
+      if (!state.found || !state.onScreen || state.covered) hidden.push(n);
+      await info.attach(`after-line-${n}`, { body: await page.screenshot(), contentType: 'image/png' });
+      await page.waitForTimeout(pause);
+    }
+    console.log(`[${info.project.name}] visibility per typed line:\n  ` + report.join('\n  '));
+    expect(hidden, `lines hidden under a bar or off screen: ${hidden.join(', ')} (first hidden: ${hidden[0] ?? 'none'})`).toEqual([]);
+  });
 });
