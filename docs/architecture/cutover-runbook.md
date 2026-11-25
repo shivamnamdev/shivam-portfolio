@@ -25,6 +25,20 @@ If a watched line appears repeatedly, stop and look before the next flag. A requ
 ## 2. Run on QA (result log)
 Run the full learner suites once with all four flags `database` and once with all `files` (`docs/testing/CHANGELOG.md` has the dated result of each run). The flags are set on the server process and on the test process: for example `PORT=3100 PORTAL_CATALOG=database PORTAL_LEARNING=database PORTAL_ENGAGEMENT=database PORTAL_COUPONS=database E2E_SEED_PERSONAS=1 npx playwright test ...` (see `tests/README.md` for the fixture variables).
 
+### QA rehearsal result (2026-11-25, SCP-94)
+Learner suites (`tests/ui/catalog dashboard discovery learning portal`, `tests/api` learning, learner, course gate, portal coupons and engagement, payment, enrolment), Chromium, one worker, dev server on port 3100, all four flags set to the same value:
+
+| Flags | Passed | Failed | Skipped |
+|---|---|---|---|
+| all `database` | 338 | 30 | 17 (+4 did not run) |
+| all `files` | 343 | 5 | 41 |
+
+- **`database`, 26 of 30 failures are coupon tests.** QA has no active portal coupon (`cutover-check PORTAL_COUPONS` says NOT READY there), so the old file codes (`EXISTINGSTUDENT_BATCH03`, the 20% code) stop working, as step 4 above warns. Not a defect. Production has an active coupon (check OK).
+- **`database`, other 4:** `LRN-EXM-002` and `LRN-PY-017` passed on a second run (timeouts). `CAT-UI-002` fails again: it expects the file course "Git Beginner Live Session" to be gone from the list, but the catalog import made it a portal course on QA. QA data, the test needs updating.
+- **`files`, 5 failures:** `PCP-DB-008`, `PCP-UI-002` and `PRV-UI-007` are database-mode specs run in files mode (expected; `PCP-UI-002` also fails on main). `LRN-LOAD-012` passed on a second run. `LRN5B-BND-001` timed out twice in `goto` on the dev server; it then passed in files mode on the dev server and on a production build (`next build`, port 3101) in both `files` and `database` mode, together with `LRN5B-BND-002`. Cause of the timeout not proven (probably the first compile of the lesson page in a freshly started dev server).
+- **Production data check (`cutover-check`, read only, secret key):** `PORTAL_CATALOG`, `PORTAL_LEARNING`, `PORTAL_ENGAGEMENT`, `PORTAL_COUPONS` all OK. A `sb_secret_` key works with the script.
+- **Not done:** the flags on production were not changed; the current production values of the four flags are not known yet. Next: switch one flag at a time in the order above, recreating the coupons you still need before `PORTAL_COUPONS`.
+
 ## 3. After the soak (slice 6e, only on the owner's word)
 Count fallback lines in the production logs (the prefixes above) over the soak period (14 days proposed). With zero, the owner may ask for slice 6e, which stops reading `data/courses.ts`, `data/coupons.ts`, `data/notifications.ts` and the static curriculum at run time. That slice has its own approval; **until then the files stay the safety net**, and the old file coupon codes stay in the client bundle (SCP-53 closes with 6e).
 
