@@ -21,6 +21,10 @@ const pitch = {
   outcomes: ['QA outcome one'], modules: [{ week: 'MODULE 1', title: 'Portal module', topics: ['Portal topic'] }],
 };
 const hdr = (v: number) => ({ 'If-Match': String(v) });
+// What the QA database already publishes besides these fixtures. The catalog import (docs/architecture/portal-existing-courses.md) turns the four sold
+// cohorts, among them STATIC_TITLE, into published portal courses; then the title is no longer "files only" and the list is not the data files when the fixtures go.
+const otherPublished = async () => ((await adminDb().from('content_docs').select('key, doc').in('kind', ['course', 'cohort']).eq('status', 'published')).data ?? []).filter((r) => !String(r.key).startsWith('qa-cat'));
+const staticTitleImported = async () => (await otherPublished()).some((r) => JSON.stringify(r.doc).includes(STATIC_TITLE));
 
 test.describe('Portal catalog, PORTAL_CATALOG=database @regression', () => {
   test.describe.configure({ mode: 'serial' });
@@ -56,7 +60,7 @@ test.describe('Portal catalog, PORTAL_CATALOG=database @regression', () => {
     await expect(page.getByText(STATIC_TITLE)).toBeVisible({ timeout: 60000 });
   });
 
-  test('[CAT-UI-002] a published course and cohort show in the list built from the portal; a draft and an unlisted cohort do not, the unlisted one still opens by its address', async ({ page, request }) => {
+  test('[CAT-UI-002] a published course and cohort show in the list built from the portal; a draft and an unlisted cohort do not; the unlisted page is 404 for a visitor and opens for the admin', async ({ page, request }) => {
     expect((await admin.request.post(`${BASE}/courses`, { data: course(COURSE, { pitch }) })).status()).toBe(201);
     expect((await admin.request.post(`${BASE}/courses/${COURSE}/publish`)).status()).toBe(200);
     const mk = async (slug: string, extra: object) => { const r = await admin.request.post(`${BASE}/cohorts`, { data: cohort(slug, COURSE, { pricing: singlePricing(1499), whatsappLink: SECRET_CHAT, liveLink: SECRET_LIVE, ...extra }) }); expect(r.status(), slug).toBe(201); return (await r.json()).data; };
@@ -70,8 +74,12 @@ test.describe('Portal catalog, PORTAL_CATALOG=database @regression', () => {
     await expect(page.getByText(`QA cohort ${MAIN}`)).toBeVisible({ timeout: 60000 });
     await expect(page.getByText(`QA cohort ${HIDDEN}`)).toHaveCount(0);
     await expect(page.getByText(`QA cohort ${DRAFT}`)).toHaveCount(0);
-    await expect(page.getByText(STATIC_TITLE)).toHaveCount(0);   // the portal is the source now
-    const hidden = await visitorHtml(request, `/courses/${HIDDEN}`);
+    // the portal is the source now: a title only the data files have must be gone; if the import made it a portal course it shows, from the portal
+    if (await staticTitleImported()) await expect(page.getByText(STATIC_TITLE).first()).toBeVisible();
+    else await expect(page.getByText(STATIC_TITLE)).toHaveCount(0);
+    // an unlisted cohort has no public page (docs/architecture/recorded-courses.md): a visitor gets 404, the admin (and an enrolled learner) opens it
+    expect((await visitorHtml(request, `/courses/${HIDDEN}`)).status).toBe(404);
+    const hidden = await html(`/courses/${HIDDEN}`);
     expect(hidden.status).toBe(200);
     expect(hidden.text).toContain('QA catalog headline');
     expect((await visitorHtml(request, `/courses/${DRAFT}`)).status).toBe(404);
@@ -120,7 +128,9 @@ test.describe('Portal catalog, PORTAL_CATALOG=database @regression', () => {
     expect((await admin.request.post(`${BASE}/courses/${COURSE}/unpublish`)).status()).toBe(200);
     await expect.poll(async () => (await visitorHtml(request, `/courses/${MAIN}`)).status, { timeout: 20000, intervals: [500, 1000] }).toBe(404);
     await page.goto('/courses');
-    await expect(page.getByText(STATIC_TITLE)).toBeVisible({ timeout: 60000 });
+    // nothing else published: the list is the data files again; other courses published (the import): the list shows those and the fixtures are gone
+    if ((await otherPublished()).length === 0) await expect(page.getByText(STATIC_TITLE)).toBeVisible({ timeout: 60000 });
+    else await expect(page.getByText(`QA cohort ${MAIN}`)).toHaveCount(0);
     await expect(page.getByText('QA cohort renamed')).toHaveCount(0);
   });
 });
