@@ -81,13 +81,16 @@ test.describe('ADMUI draft course: starter code of a Python lab @regression', ()
     await signInAs(page, EMAIL.admin);
     await mockExternals(page);
     await fulfil(page, { status: 404, body: 'Not Found' });
+    const hold = () => page.waitForTimeout(Number(process.env.PAUSE_MS ?? 0));   // PAUSE_MS (default 0) holds the screen for a person watching a headed run
     await openLab(page);
     expect(await getCode(page)).toContain(FALLBACK);   // the lab opened with the plain template (the starter link was not set or not readable yet)
+    await hold();                                       // step 1 on screen: the plain template
     await page.waitForTimeout(1500);                    // the autosave runs
     await page.unroute(`${RAW}/**`);
     await fulfil(page, { status: 200, body: STARTER });   // the starter file is now in place
     await openLab(page);
     await expect(page.locator('.monaco-editor .view-lines').first()).toContainText('def login(username, password)', { timeout: 20000 });
     expect(await getCode(page)).toContain('return True only for admin / secret');
+    await hold();                                       // step 2 on screen: the starter code
   });
 });
