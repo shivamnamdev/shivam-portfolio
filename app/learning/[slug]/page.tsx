@@ -23,6 +23,7 @@ import { isGradedExam } from '@/lib/examRule';
 import { examResultView, PASS_MARK, MAX_ATTEMPTS } from '@/lib/examResult';
 import ExamResultModal, { type ExamResultData } from '@/components/learning/ExamResultModal';
 import { canViewSolution, hasCode, NO_CODE_MESSAGE } from '@/lib/labRules';
+import { hasMeaningfulDraft, hasRealCode } from '@/lib/labDraft';
 import { PREVIEW_BANNER, PREVIEW_BLOCKED, contentUrl, isDraftPreview } from '@/lib/learnerPreview';
 
 // XP is recomputed server-side from progress rows; fire-and-forget after progress changes.
@@ -88,13 +89,6 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
 
   const getAssignmentDraftKey = (videoId: string) => `${STORAGE_KEY}-assignment-${videoId}`;
 
-  const hasMeaningfulDraft = (candidate: Record<string, string>[] | undefined) => {
-    if (!Array.isArray(candidate)) return false;
-    return candidate.some(step => {
-      if (!step) return false;
-      return Object.keys(step).some(key => (step[key] || '').trim().length > 0);
-    });
-  };
 
   const syncCurrentStepFiles = (nextFiles: Record<string, string>, stepIndex = currentStepIndex) => {
     setStepFiles(prev => {
@@ -467,8 +461,8 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
   useEffect(() => {
     // SCP-48: not while the assignment is still loading, or the editor's default content overwrites the learner's saved draft before it is read
     if (typeof window === 'undefined' || !activeVideo || !activeVideo.githubAssignment || assignmentSteps.length === 0 || isFetchingCode) return;
-    const hasMeaningfulContent = stepFiles.some(step => Object.keys(step || {}).some(key => (step[key] || '').trim().length > 0));
-    if (!hasMeaningfulContent && !files['main.py']?.trim()) return;
+    // the plain template is not a draft: saving it would hide a starter file that is added later
+    if (!hasMeaningfulDraft(stepFiles) && !hasRealCode(files['main.py'])) return;
     try {
       const draftKey = getAssignmentDraftKey(activeVideo.id);
       const payload = { stepFiles, currentStepIndex };

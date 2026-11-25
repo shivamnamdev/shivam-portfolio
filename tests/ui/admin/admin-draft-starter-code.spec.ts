@@ -77,4 +77,17 @@ test.describe('ADMUI draft course: starter code of a Python lab @regression', ()
     console.log('STC-003 editor starts with:', JSON.stringify(code.slice(0, 60)));
     expect(code).not.toContain('def login');
   });
+  test('[ADMUI-STC-004] a lab first opened while its starter was missing shows the starter once the starter is added', async ({ page }) => {
+    await signInAs(page, EMAIL.admin);
+    await mockExternals(page);
+    await fulfil(page, { status: 404, body: 'Not Found' });
+    await openLab(page);
+    expect(await getCode(page)).toContain(FALLBACK);   // the lab opened with the plain template (the starter link was not set or not readable yet)
+    await page.waitForTimeout(1500);                    // the autosave runs
+    await page.unroute(`${RAW}/**`);
+    await fulfil(page, { status: 200, body: STARTER });   // the starter file is now in place
+    await openLab(page);
+    await expect(page.locator('.monaco-editor .view-lines').first()).toContainText('def login(username, password)', { timeout: 20000 });
+    expect(await getCode(page)).toContain('return True only for admin / secret');
+  });
 });
