@@ -24,6 +24,7 @@ import { examResultView, PASS_MARK, MAX_ATTEMPTS } from '@/lib/examResult';
 import ExamResultModal, { type ExamResultData } from '@/components/learning/ExamResultModal';
 import { canViewSolution, hasCode, NO_CODE_MESSAGE } from '@/lib/labRules';
 import { hasMeaningfulDraft, hasRealCode } from '@/lib/labDraft';
+import { advanceStarter, initialStarter, parseStarterSteps, type StarterStep } from '@/lib/labStarter';
 import { PREVIEW_BANNER, PREVIEW_BLOCKED, contentUrl, isDraftPreview } from '@/lib/learnerPreview';
 
 // XP is recomputed server-side from progress rows; fire-and-forget after progress changes.
@@ -185,6 +186,9 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
   
   const [assignmentSteps, setAssignmentSteps] = useState<string[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  // carry-over labs: the starter file read step by step, and which steps have already added their starter (docs/architecture/lab-starter-carryover.md)
+  const [starterSteps, setStarterSteps] = useState<StarterStep[]>([]);
+  const [appliedStarter, setAppliedStarter] = useState<number[]>([0]);
   const [assignmentSubmissions, setAssignmentSubmissions] = useState<Record<string, string>>({});
 
   const [pyodide, setPyodide] = useState<any>(null);
@@ -308,6 +312,7 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
       setCurrentStepIndex(0);
 
       let starterCodeSteps = ["# Write your Python code below:\n\n"];
+      let carrySteps: StarterStep[] = [];
       if (assignmentObj.starterCodeUrl) {
         try {
           const starterRes = await fetch(`${assignmentObj.starterCodeUrl}?t=${Date.now()}`);
@@ -315,9 +320,12 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
             const rawStarter = await starterRes.text();
             const parsedStarter = rawStarter.split(/^#\s*-{10,}\s*$/gm).map(s => s.trim()).filter(s => s.length > 0);
             if (parsedStarter.length > 0) starterCodeSteps = parsedStarter;
+            if (assignmentObj.carryOverCode) carrySteps = parseStarterSteps(rawStarter);
           }
         } catch (e) {}
       }
+
+      setStarterSteps(carrySteps);
 
       let supportingWorkspace: Record<string, string> = {};
       if (assignmentObj.supportingFiles) {
@@ -331,12 +339,13 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
       
       const initialFilesArray: Record<string, string>[] = Array.from({ length: finalSteps.length }, (_, idx) => ({ 
         ...supportingWorkspace,
-        "main.py": starterCodeSteps[idx] || starterCodeSteps[0] || "# Write your Python code below:\n\n"
+        "main.py": carrySteps.length > 0 ? initialStarter(carrySteps) : (starterCodeSteps[idx] || starterCodeSteps[0] || "# Write your Python code below:\n\n")
       }));
 
       // Prefer local draft (from localStorage) if available, otherwise restore from DB submission if present
       let finalFilesArray = initialFilesArray;
       let restoredStepIndex = 0;
+      let savedApplied: number[] | null = null;
       try {
         if (typeof window !== 'undefined' && lessonId) {
           const draftKey = getAssignmentDraftKey(lessonId);
@@ -346,6 +355,7 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
             if (hasMeaningfulDraft(parsed?.stepFiles)) {
               finalFilesArray = parsed.stepFiles;
               restoredStepIndex = typeof parsed.currentStepIndex === 'number' ? parsed.currentStepIndex : 0;
+              if (Array.isArray(parsed.appliedStarterSteps)) savedApplied = parsed.appliedStarterSteps.filter((n: unknown) => Number.isInteger(n));
             } else {
               const savedSubmission = fallbackSubmission ?? (lessonId ? assignmentSubmissionsRef.current[lessonId] : null);
               if (savedSubmission) {
@@ -371,6 +381,7 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
 
       setStepFiles(finalFilesArray);
       setCurrentStepIndex(restoredStepIndex);
+      setAppliedStarter(savedApplied ?? Array.from({ length: Math.max(0, restoredStepIndex) + 1 }, (_, i) => i));
       setFiles(finalFilesArray[Math.max(0, restoredStepIndex)] || finalFilesArray[0] || initialFilesArray[0]);
       setActiveFile("main.py");
 
@@ -465,10 +476,10 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
     if (!hasMeaningfulDraft(stepFiles) && !hasRealCode(files['main.py'])) return;
     try {
       const draftKey = getAssignmentDraftKey(activeVideo.id);
-      const payload = { stepFiles, currentStepIndex };
+      const payload = { stepFiles, currentStepIndex, appliedStarterSteps: appliedStarter };
       window.localStorage.setItem(draftKey, JSON.stringify(payload));
     } catch (e) {}
-  }, [stepFiles, currentStepIndex, activeVideo, assignmentSteps.length, files, isFetchingCode]);
+  }, [stepFiles, currentStepIndex, appliedStarter, activeVideo, assignmentSteps.length, files, isFetchingCode]);
 
   useEffect(() => {
     if (!activeVideo) return;
@@ -755,6 +766,19 @@ export default function CoursePlayerPage(props: { params: Promise<{ slug: string
   const handleStepChange = (newIndex: number) => {
     const isCarryOver = activeVideo?.githubAssignment?.carryOverCode;
     if (isCarryOver) {
+      if (starterSteps.length > 0) {
+        // the starter of each step is added under the learner's code the first time they reach it (blank or # @carry adds nothing)
+        const next = advanceStarter({ steps: starterSteps, current: files['main.py'] ?? '', toIndex: newIndex, applied: appliedStarter });
+        const nextFiles = next.code === (files['main.py'] ?? '') ? files : { ...files, 'main.py': next.code };
+        if (next.applied.length !== appliedStarter.length) setAppliedStarter(next.applied);
+        if (nextFiles !== files) setFiles(nextFiles);
+        setStepFiles(prev => {
+          const updated = [...prev];
+          while (updated.length <= newIndex) updated.push({ "main.py": "" });
+          updated[newIndex] = nextFiles;
+          return updated;
+        });
+      }
       setCurrentStepIndex(newIndex);
       setOutput("");
       setAiResponse(null);

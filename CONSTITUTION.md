@@ -168,3 +168,4 @@ Append one line per significant change to architecture, schema, or integrations:
 - 2026-11-18 — `Cache-Control: no-store` on every `/api/:path*` answer in `next.config.mjs` — SCP-81, API answers hold personal data; no new package
 - 2026-11-20 — SCP-53: coupon codes out of the browser bundle (`docs/architecture/coupon-codes-out-of-browser.md`) — found on production by a signed-out probe; no SQL, no new package
 - 2026-11-20 — SCP-39: server-side course gate on the learning and live pages (`docs/architecture/server-side-course-gate.md`) — page code is no longer sent to users who may not open it; no SQL, no new package
+- 2026-11-26 — SCP-124 starter code for every step of a carry-over lab (`docs/architecture/lab-starter-carryover.md`, `lib/labStarter.ts`) — owner request for Python batch 2; no SQL, no new package

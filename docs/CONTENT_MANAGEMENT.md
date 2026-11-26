@@ -24,3 +24,23 @@ File: `data/learning-content.ts`
 3. In `learning-content.ts`, add the YouTube Video ID to the `githubAssignments` dictionary.
 4. Provide a `title` and paste the `rawUrl`.
 *Result:* A "Practice 💻" tab automatically appears under that specific video in the Learning Portal, featuring the Pyodide compiler.
+### Starter code for a lab that carries code over (SCP-124)
+Applies to a lesson with "carry over code" switched on (`carryOverCode: true`). The starter file (`starterCodeUrl`) is split on lines of `# ----------` (ten or more dashes). Section 1 is step 1, section 2 is step 2, and so on.
+
+| Section | What the learner gets when they reach that step |
+|---|---|
+| Blank | Nothing changes: their code carries over |
+| `# @carry` alone | The same, written out |
+| `# @clear` alone | The editor is reset to the plain template (this removes the learner's code, so use it on purpose) |
+| Anything else | The text is added **below** the learner's code, once, with a blank line between. If the editor only holds the plain template, the text replaces it |
+
+Going back to an earlier step changes nothing, and a starter is never added twice. A file with fewer sections than the lesson has steps carries over for the missing ones. Other labs (carry over off) read the file as before. Example for a three-step lesson:
+
+```
+base = 10
+# ----------
+
+# ----------
+double = base * 2
+```
+Step 1 opens with `base = 10`; step 2 keeps what the learner typed; step 3 adds `double = base * 2` under it. Design: `docs/architecture/lab-starter-carryover.md`.
