@@ -383,3 +383,10 @@ Full text: `docs/architecture/exam-switch.md`. Owner decision: exam marking move
 - [x] Blueprint: `docs/architecture/server-side-course-gate.md` (server layouts on `/learning/[slug]` and `/live/[slug]`; rule in `lib/courseAccess.ts`)
 - [x] Unit tests CAC-UNIT-006..008; server HTML tests AUTH-SRV-001..004
 - [ ] Neighbouring UI specs, PR waiting for the owner, then a production check as a not-enrolled user (needs a second production account, or rely on QA)
+
+## 2026-11-26 — Starter code for every step of a carry-over lab (branch feat/carryover-starter-steps)
+- [x] Owner request: starter file steps usable in a carry-over lesson (blank or `# @carry` = carry on, `# @clear` = plain template, other text added under the learner's code); owner answers recorded
+- [x] Blueprint written: `docs/architecture/lab-starter-carryover.md`
+- [x] Owner approved the Blueprint, `# @clear` kept (SCP-124)
+- [x] Unit tests LABS-UNIT-001..013, code, UI tests ADMUI-COS-001..003, docs
+- [ ] PR waiting for the owner; then check the Python batch 2 starter files (a carry-over lesson with several sections now adds them)
