@@ -389,6 +389,6 @@ Full text: `docs/architecture/exam-switch.md`. Owner decision: exam marking move
 - [x] Blueprint written: `docs/architecture/lab-starter-carryover.md`
 - [x] Owner approved the Blueprint, `# @clear` kept (SCP-124)
 - [x] Unit tests LABS-UNIT-001..013, code, UI tests ADMUI-COS-001..003, docs
-- [ ] PR waiting for the owner; then check the Python batch 2 starter files (a carry-over lesson with several sections now adds them)
-- [x] SCP-125 `# @clear` + code in one starter section (branch `fix/carryover-clear-with-code`); PR waiting for the owner, then check the Python batch 2 starter file
-- [x] SCP-126 review window after Submit lists every step (branch `fix/SCP-126-solution-review-all-steps`); PR waiting for the owner
+- [x] PR #142 merged 2026-11-26 (SCP-124 Done); Python batch 2 starter file checked on production by the owner on 2026-11-28 (a wrong starter URL and the `# @clear` + code case were found and fixed, see SCP-125)
+- [x] SCP-125 `# @clear` + code in one starter section: PR #143 merged 2026-11-28, owner confirmed the steps on production (Done)
+- [x] SCP-126 review window after Submit lists every step: PR #144 merged 2026-11-28, owner confirmed on production (Done)
