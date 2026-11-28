@@ -3,15 +3,17 @@
 // The file is split on lines of "# ----------" (ten or more dashes). Section n belongs to step n:
 //   blank or "# @carry"  -> the learner's code carries on, nothing is added
 //   "# @clear"           -> the editor is set to the plain template (the only marker that removes learner code)
+//   "# @clear" as the first line, code below -> the editor is reset and shows only that code
 //   anything else        -> added below the learner's code, once
 import { LAB_PLACEHOLDER, hasRealCode } from "./labDraft";
 
-export type StarterStep = { kind: "carry" } | { kind: "clear" } | { kind: "code"; code: string };
+export type StarterStep = { kind: "carry" } | { kind: "clear"; code?: string } | { kind: "code"; code: string };
 
 const TEMPLATE = `${LAB_PLACEHOLDER}\n\n`;
 const SEPARATOR = /^#[ \t]*-{10,}[ \t]*$/m;   // the same line the lesson files use today
 const CARRY = /^#\s*@carry$/i;
 const CLEAR = /^#\s*@clear$/i;
+const CLEAR_FIRST_LINE = /^#[ \t]*@clear[ \t]*\n([\s\S]+)$/i;   // "# @clear" on the first line, code below it
 
 // Blank sections are KEPT (the older reader dropped them, which moved every later section up by one step).
 export function parseStarterSteps(raw: string): StarterStep[] {
@@ -20,6 +22,8 @@ export function parseStarterSteps(raw: string): StarterStep[] {
     const t = section.trim();
     if (!t || CARRY.test(t)) return { kind: "carry" };
     if (CLEAR.test(t)) return { kind: "clear" };
+    const withCode = CLEAR_FIRST_LINE.exec(t);
+    if (withCode && withCode[1].trim()) return { kind: "clear", code: withCode[1].trim() };
     return { kind: "code", code: t };
   });
 }
@@ -27,7 +31,9 @@ export function parseStarterSteps(raw: string): StarterStep[] {
 // What the editor holds when the lab opens: the first section's code, or the plain template.
 export function initialStarter(steps: StarterStep[]): string {
   const first = steps[0];
-  return first && first.kind === "code" ? first.code : TEMPLATE;
+  if (first && first.kind === "code") return first.code;
+  if (first && first.kind === "clear" && first.code) return first.code;
+  return TEMPLATE;
 }
 
 // What the editor holds after the learner moves forward to step `toIndex` (0-based). `applied` lists the steps already handled
@@ -41,7 +47,7 @@ export function advanceStarter(input: { steps: StarterStep[]; current: string; t
     done.add(i);
     const step = input.steps[i];
     if (!step || step.kind === "carry") continue;
-    if (step.kind === "clear") { code = TEMPLATE; continue; }
+    if (step.kind === "clear") { code = step.code ? `${step.code}\n` : TEMPLATE; continue; }
     if (code.includes(step.code)) continue;   // already there, for example from a restored submission
     code = hasRealCode(code) ? `${code.replace(/\s+$/, "")}\n\n${step.code}\n` : `${step.code}\n`;
   }

@@ -82,6 +82,36 @@ test.describe('lab starter steps @unit', () => {
     expect(next.code).toBe('c = 3\n');
   });
 
+  test('[LABS-UNIT-014] "# @clear" as the first line with code below resets the editor and shows only that code, marker line not included', () => {
+    const steps = parseStarterSteps(`a = 1\n${SEP}\n# @clear\nclass Student:\n    pass\n\n# Write your Python code below:\n${SEP}\nc = 3`);
+    expect(steps[1]).toEqual({ kind: 'clear', code: 'class Student:\n    pass\n\n# Write your Python code below:' });
+    const r = advanceStarter({ steps, current: 'a = 1\nprint(a)\nmine = 5', toIndex: 1, applied: [0] });
+    expect(r.code).toBe('class Student:\n    pass\n\n# Write your Python code below:\n');
+    expect(r.code).not.toContain('@clear');
+    expect(r.code).not.toContain('mine = 5');
+    const later = advanceStarter({ steps, current: `${r.code}\nx = 1`, toIndex: 2, applied: r.applied });
+    expect(later.code).toBe(`${r.code}\nx = 1\n\nc = 3\n`);
+  });
+
+  test('[LABS-UNIT-015] clearing with code works in two steps in a row, in any letter case and with Windows line ends, and as the first section', () => {
+    const steps = parseStarterSteps(`#@CLEAR\r\nfirst = 1\r\n${SEP}\r\n# @Clear  \r\nsecond = 2\r\n${SEP}\r\n# @clear\r\nthird = 3`);
+    expect(initialStarter(steps)).toBe('first = 1');
+    const r = advanceStarter({ steps, current: 'first = 1\ntyped = 9', toIndex: 2, applied: [0] });
+    expect(r.code).toBe('third = 3\n');
+    const once = advanceStarter({ steps, current: 'first = 1', toIndex: 1, applied: [0] });
+    expect(once.code).toBe('second = 2\n');
+  });
+
+  test('[LABS-UNIT-016] "# @clear" followed only by blank lines stays a plain clear; going back and forward never clears twice', () => {
+    expect(parseStarterSteps('# @clear\n\n   \n')).toEqual([{ kind: 'clear' }]);
+    const steps = parseStarterSteps(`a = 1\n${SEP}\n# @clear\nb = 2`);
+    const at = advanceStarter({ steps, current: 'a = 1', toIndex: 1, applied: [0] });
+    const typed = `${at.code}typed = 7\n`;
+    const back = advanceStarter({ steps, current: typed, toIndex: 0, applied: at.applied });
+    const fwd = advanceStarter({ steps, current: back.code, toIndex: 1, applied: back.applied });
+    expect(fwd.code).toBe(typed);
+  });
+
   test('[LABS-UNIT-011] a step with no section (starter file shorter than the lesson) carries over', () => {
     const steps = parseStarterSteps('a = 1');
     const r = advanceStarter({ steps, current: 'a = 1\nmore', toIndex: 3, applied: [0] });

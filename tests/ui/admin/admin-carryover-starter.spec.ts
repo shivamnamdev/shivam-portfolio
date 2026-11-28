@@ -13,11 +13,13 @@ const COURSE = 'qa-admui-cos-course';
 const COHORT = 'qa-admui-cos-batch';
 const ADD = 'qacos000001';    // steps: code, blank, code
 const CLEAR = 'qacos000002';  // steps: code, @clear, code
+const CWC = 'qacos000003';    // steps: code, @clear + code, blank, @clear + code
 const RAW = 'https://raw.githubusercontent.com/qa/carry-lab/main';
 const SEP = '# ----------';
 const STARTERS: Record<string, string> = {
   'starter-add': `base = 10\n${SEP}\n\n${SEP}\ndouble = base * 2`,
   'starter-clear': `base = 10\n${SEP}\n# @clear\n${SEP}\nfresh = 3`,
+  'starter-cwc': `base = 10\n${SEP}\n# @clear\nfresh = 3\n${SEP}\n\n${SEP}\n# @clear\nlast = 4`,
 };
 const count = (text: string, part: string) => text.split(part).length - 1;
 
@@ -26,7 +28,7 @@ const fulfil = (page: Page) =>
     const url = route.request().url();
     const key = Object.keys(STARTERS).find((k) => url.includes(`/${k}`));
     if (key) return route.fulfill({ status: 200, contentType: 'text/plain', body: STARTERS[key] });
-    return route.fulfill({ status: 200, contentType: 'text/plain', body: 'Step one.\n---\nStep two.\n---\nStep three.' });
+    return route.fulfill({ status: 200, contentType: 'text/plain', body: 'Step one.\n---\nStep two.\n---\nStep three.\n---\nStep four.' });
   });
 
 const openLab = async (page: Page, lesson: string) => {
@@ -59,7 +61,7 @@ test.describe('ADMUI carry-over lab: starter code per step @regression', () => {
     const version = existing.ok() ? (await existing.json()).data?.version : undefined;
     const lab = (id: string, starter: string) => ({ id, assignment: { labType: 'python', title: id, carryOverCode: true, rawUrl: `${RAW}/assignment.txt`, starterCodeUrl: `${RAW}/${starter}.py` } });
     const put = await admin.request.put(`${BASE}/curriculum/${COHORT}`, {
-      data: { modules: [{ title: 'Draft module', lessons: [lab(ADD, 'starter-add'), lab(CLEAR, 'starter-clear')] }] },
+      data: { modules: [{ title: 'Draft module', lessons: [lab(ADD, 'starter-add'), lab(CLEAR, 'starter-clear'), lab(CWC, 'starter-cwc')] }] },
       headers: version ? { 'If-Match': String(version) } : {},
     });
     expect([200, 201], await put.text()).toContain(put.status());
@@ -130,5 +132,33 @@ test.describe('ADMUI carry-over lab: starter code per step @regression', () => {
     await next(page);                                  // step 3 starter on the clean editor
     await expect(screen(page)).toContainText('fresh = 3');
     expect(await getCode(page)).not.toContain('Write your Python code below');
+  });
+
+  test('[ADMUI-COS-004] "# @clear" with code below it resets the editor to just that code (no marker text), a blank step keeps the typed code, and the next "# @clear" resets again', async ({ page }) => {
+    await signInAs(page, EMAIL.admin);
+    await mockExternals(page);
+    await fulfil(page);
+    await openLab(page, CWC);
+    await expect(screen(page)).toContainText('base = 10', { timeout: 20000 });
+    await typeLine(page, 'mine = 5');
+    await hold(page);
+    await next(page);                                  // step 2: reset, only the new code
+    await expect(screen(page)).toContainText('fresh = 3');
+    let code = await getCode(page);
+    expect(code).not.toContain('base = 10');
+    expect(code).not.toContain('mine = 5');
+    expect(code).not.toContain('@clear');
+    await hold(page);
+    await typeLine(page, 'kept = 6');                  // the learner works after the reset
+    await next(page);                                  // step 3 is blank: their work stays
+    await expect(screen(page)).toContainText('kept = 6');
+    expect(await getCode(page)).toContain('fresh = 3');
+    await hold(page);
+    await next(page);                                  // step 4: reset again
+    await expect(screen(page)).toContainText('last = 4');
+    code = await getCode(page);
+    expect(code).not.toContain('kept = 6');
+    expect(code).not.toContain('fresh = 3');
+    expect(code).not.toContain('@clear');
   });
 });
