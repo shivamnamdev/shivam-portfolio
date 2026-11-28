@@ -391,3 +391,4 @@ Full text: `docs/architecture/exam-switch.md`. Owner decision: exam marking move
 - [x] Unit tests LABS-UNIT-001..013, code, UI tests ADMUI-COS-001..003, docs
 - [ ] PR waiting for the owner; then check the Python batch 2 starter files (a carry-over lesson with several sections now adds them)
 - [x] SCP-125 `# @clear` + code in one starter section (branch `fix/carryover-clear-with-code`); PR waiting for the owner, then check the Python batch 2 starter file
+- [x] SCP-126 review window after Submit lists every step (branch `fix/SCP-126-solution-review-all-steps`); PR waiting for the owner

@@ -198,6 +198,46 @@ test.describe('PRD07 Python course: progress, Q&A and lab (writes)', () => {
       });
 
 
+      test('[LRN-PY-021] after Submit the review window lists every step with the learner code and the solution of that step (SCP-126)', async ({ page }) => {
+        // a 3-step lab answered locally so the steps and the solutions are exact; the learner types with the real keyboard
+        await signInAs(page, S2);
+        await mockExternals(page);
+        await page.route('https://raw.githubusercontent.com/**', route => {
+          const url = route.request().url();
+          const body = /olution/.test(url) ? 'sol_one = 1\n# ----------\nsol_two = 2\n# ----------\nsol_three = 3'
+            : /tarter/.test(url) ? '# Write your Python code below:\n\n' : 'Step one.\n---\nStep two.\n---\nStep three.';
+          return route.fulfill({ status: 200, contentType: 'text/plain', body });
+        });
+        await page.goto(`/learning/${SLUG}`);
+        await expect(page.getByText('Course Content')).toBeVisible({ timeout: 40000 });
+        await tab(page, /Practice/).click();
+        await labReady(page);
+        const typeHere = async (line: string) => {
+          await page.locator('.monaco-editor .view-lines').first().click();
+          await page.keyboard.press('ControlOrMeta+End');
+          await page.keyboard.type(line);
+        };
+        const nextStep = () => page.getByRole('button', { name: 'Next', exact: true }).click();
+        await typeHere('answer_one = 1');
+        await nextStep();
+        await typeHere('answer_two = 2');
+        await nextStep();
+        await typeHere('answer_three = 3');
+        await page.getByRole('button', { name: /^Submit$/ }).click();
+        const review = page.getByRole('dialog', { name: 'Official Solution and Code Review' });
+        await expect(review).toBeVisible({ timeout: 20000 });
+        for (const [n, mine, sol] of [[1, 'answer_one = 1', 'sol_one = 1'], [2, 'answer_two = 2', 'sol_two = 2'], [3, 'answer_three = 3', 'sol_three = 3']] as const) {
+          const block = review.getByRole('region', { name: `Review of step ${n}` });
+          await block.scrollIntoViewIfNeeded();
+          await expect(block).toContainText(`Your Submitted Code (Step ${n})`);
+          await expect(block).toContainText(mine);
+          await expect(block).toContainText(`Instructor's Solution (Step ${n})`);
+          await expect(block).toContainText(sol);
+          await expect(block).toBeVisible();
+        }
+        await expect(review.getByRole('region', { name: 'Review of step 1' })).not.toContainText('answer_two = 2');
+      });
+
       test('[LRN-PY-010] submitted code is back in the editor after a reload', async ({ page }) => {
         await toLab(page);
         await setCode(page, "print('my answer')");

@@ -24,6 +24,7 @@ import { examResultView, PASS_MARK, MAX_ATTEMPTS } from '@/lib/examResult';
 import ExamResultModal, { type ExamResultData } from '@/components/learning/ExamResultModal';
 import { canViewSolution, hasCode, NO_CODE_MESSAGE } from '@/lib/labRules';
 import { hasMeaningfulDraft, hasRealCode } from '@/lib/labDraft';
+import { buildReviewSteps } from '@/lib/labReview';
 import { advanceStarter, initialStarter, parseStarterSteps, type StarterStep } from '@/lib/labStarter';
 import { PREVIEW_BANNER, PREVIEW_BLOCKED, contentUrl, isDraftPreview } from '@/lib/learnerPreview';
 
@@ -1649,16 +1650,34 @@ sys.settrace(_trace_calls)
                     <h3 className="text-xl font-bold text-white flex items-center gap-2"><Award className="text-amber-500" /> Official Solution & Code Review</h3>
                     <button ref={solutionCloseRef} aria-label="Close solution" onClick={() => setShowSolutionModal(false)} className="text-stone-400 hover:text-white transition-colors"><X size={24} /></button>
                   </div>
-                  <div className="flex flex-col md:flex-row flex-grow overflow-hidden h-[60vh]">
-                     <div className="w-full md:w-1/2 border-r border-stone-800 flex flex-col">
-                        <div className="bg-[#161b22] px-4 py-3 border-b border-stone-800 text-stone-400 text-xs font-mono font-bold uppercase tracking-widest flex items-center gap-2">Your Submitted Code (Step {currentStepIndex + 1})</div>
-                        <div className="flex-grow p-5 overflow-y-auto"><pre className="text-sm font-mono text-stone-300 whitespace-pre-wrap leading-relaxed">{files['main.py']}</pre></div>
-                     </div>
-                     <div className="w-full md:w-1/2 flex flex-col bg-[#0a0c10]">
-                        <div className="bg-[#161b22] px-4 py-3 border-b border-stone-800 text-amber-500 text-xs font-mono font-bold uppercase tracking-widest flex items-center gap-2"><Code2 size={16}/> Instructor's Solution (Step {currentStepIndex + 1})</div>
-                        <div className="flex-grow relative"><Editor height="100%" defaultLanguage="python" theme="vs-dark" value={officialSolutionSteps[currentStepIndex] || "# No official solution provided for this specific step."} options={{ readOnly: true, minimap: { enabled: false }, fontSize: 14, padding: { top: 16 } }} /></div>
-                     </div>
-                  </div>
+                  {(() => {
+                    // SCP-126: every step of the lab, the learner's code beside the instructor's solution for that step
+                    const review = buildReviewSteps({ stepCount: assignmentSteps.length, stepFiles, currentIndex: currentStepIndex, currentFiles: files, solutions: officialSolutionSteps, carryOver: !!activeVideo?.githubAssignment?.carryOverCode });
+                    return (
+                      <div className="flex-grow overflow-y-auto h-[60vh] p-4 space-y-6" data-testid="review-steps">
+                        {review.sharedCode !== null && (
+                          <div className="rounded-2xl border border-stone-800 overflow-hidden">
+                            <div className="bg-[#161b22] px-4 py-3 border-b border-stone-800 text-stone-400 text-xs font-mono font-bold uppercase tracking-widest">Your Submitted Code (all steps)</div>
+                            <pre className="p-5 text-sm font-mono text-stone-300 whitespace-pre-wrap leading-relaxed">{review.sharedCode}</pre>
+                          </div>
+                        )}
+                        {review.steps.map(st => (
+                          <section key={st.step} aria-label={`Review of step ${st.step}`} className="rounded-2xl border border-stone-800 overflow-hidden flex flex-col md:flex-row">
+                            {st.code !== null && (
+                              <div className="w-full md:w-1/2 md:border-r border-stone-800 flex flex-col">
+                                <div className="bg-[#161b22] px-4 py-3 border-b border-stone-800 text-stone-400 text-xs font-mono font-bold uppercase tracking-widest">Your Submitted Code (Step {st.step})</div>
+                                <pre className="flex-grow p-5 text-sm font-mono text-stone-300 whitespace-pre-wrap leading-relaxed">{st.hasCode ? st.code : "# No code was written for this step."}</pre>
+                              </div>
+                            )}
+                            <div className={`w-full ${st.code !== null ? 'md:w-1/2' : ''} flex flex-col bg-[#0a0c10]`}>
+                              <div className="bg-[#161b22] px-4 py-3 border-b border-stone-800 text-amber-500 text-xs font-mono font-bold uppercase tracking-widest flex items-center gap-2"><Code2 size={16}/> Instructor's Solution (Step {st.step})</div>
+                              <pre className="flex-grow p-5 text-sm font-mono text-stone-200 whitespace-pre-wrap leading-relaxed">{st.solution ?? "# No official solution provided for this specific step."}</pre>
+                            </div>
+                          </section>
+                        ))}
+                      </div>
+                    );
+                  })()}
                   <div className="p-4 border-t border-stone-800 bg-[#161b22] flex justify-end">
                     <button onClick={() => setShowSolutionModal(false)} className="px-8 py-3 bg-stone-700 hover:bg-stone-600 text-white rounded-xl font-bold transition-colors">Close Code Review</button>
                   </div>
