@@ -88,3 +88,8 @@ UI, a Playwright spec in `tests/ui/admin/` (ADMUI-STC-005): a carry-over lesson 
 - Small rule added while building: when the editor holds only the plain template, a step's code replaces the template instead of sitting under its comment (LABS-UNIT-012).
 - Known limit: "already there" is a plain text match, so a starter that is a piece of text the learner already wrote is not added again.
 - Content authors: `docs/CONTENT_MANAGEMENT.md`.
+
+## 9. Addendum 2026-11-28: `# @clear` with code (SCP-125)
+
+Owner's starter file wrote `# @clear` as the first line of a section with code under it (to start again with new code in one step). The first version only knew `# @clear` as the whole section, so the marker line and the code were added under the learner's code. Rule now: a section whose first line is `# @clear` and that has code below resets the editor to **only that code** (marker line removed, no template comment). `# @clear` with nothing else is still the plain reset. Works in any step, also two in a row; a blank step after it keeps the learner's new work. Same for section 1 (the editor opens with the code). Type: `{ kind: "clear"; code?: string }` in `lib/labStarter.ts`. Tests: LABS-UNIT-014..016, ADMUI-COS-004. No SQL, no new package.
+

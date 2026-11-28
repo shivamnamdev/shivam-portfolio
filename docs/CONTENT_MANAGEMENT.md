@@ -32,6 +32,7 @@ Applies to a lesson with "carry over code" switched on (`carryOverCode: true`). 
 | Blank | Nothing changes: their code carries over |
 | `# @carry` alone | The same, written out |
 | `# @clear` alone | The editor is reset to the plain template (this removes the learner's code, so use it on purpose) |
+| `# @clear` as the first line, code below it | The editor is reset and shows **only** that code (the `# @clear` line itself is not shown). Use it for "start again with this code"; it can be used in several steps |
 | Anything else | The text is added **below** the learner's code, once, with a blank line between. If the editor only holds the plain template, the text replaces it |
 
 Going back to an earlier step changes nothing, and a starter is never added twice. A file with fewer sections than the lesson has steps carries over for the missing ones. Other labs (carry over off) read the file as before. Example for a three-step lesson:
